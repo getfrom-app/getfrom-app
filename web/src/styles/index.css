@@ -251,6 +251,8 @@ a { color: inherit; text-decoration: none; }
   min-height: 0;
   display: flex;
   flex-direction: column; /* view / StatusBar apilados verticalmente */
+  position: relative;     /* contiene el lienzo full-bleed (position:absolute inset:0)
+                             a esta columna → NO se solapa con la columna derecha */
 }
 
 /* ── TopBar ───────────────────────────────────────────────────────────────── */
