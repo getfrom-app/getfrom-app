@@ -557,15 +557,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     try { return computeCanvasLayout(findContextRoot()?.id ?? parentId) }
     catch { return null } // ante cualquier fallo, el lienzo se pinta sin auto-layout (no rompe)
   }, [globalCanvas, parentId, nodesVersion])
-  // Zonas = marcos (no tarjetas): áreas guardadas + (en global) contextos con contenido.
+  // Zonas = marcos (no tarjetas): solo áreas guardadas explícitamente. En el lienzo
+  // global los CONTEXTOS se pintan como TARJETAS (items de la lista), no como marcos.
   const zoneIds = useMemo(() => {
     const set = new Set<string>()
-    for (const n of children) {
-      if (isArea(n)) set.add(n.id)
-      else if (globalCanvas && isMarkedContext(n) && (autoLayout?.get(n.id)?.zone || readAreaRect(n))) set.add(n.id)
-    }
+    for (const n of children) if (isArea(n)) set.add(n.id)
     return set
-  }, [children, globalCanvas, autoLayout])
+  }, [children])
   const layout = useMemo(() => {
     const map = new Map<string, WorldPos>()
     for (const n of children) {

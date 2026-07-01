@@ -125,8 +125,10 @@ export default function WFTopBar({
         </button>
       </div>
 
-      {/* ── Breadcrumb integrado con casa (oculto en el lienzo) ── */}
-      <div className="wf-topbar-breadcrumb" style={onCanvas ? { display: 'none' } : undefined}>
+      {/* ── Breadcrumb integrado con casa. En el LIENZO se oculta pero el div queda
+             como hueco flex:1 → los botones de acción siguen a la DERECHA. ── */}
+      <div className="wf-topbar-breadcrumb" style={onCanvas ? { flex: 1 } : undefined}>
+        {!onCanvas && (<>
         {/* Casa — siempre visible, lleva al raíz */}
         <button className="wf-topbar-crumb-home" onClick={goHome} title={t('common.home')}>
           <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
@@ -157,6 +159,7 @@ export default function WFTopBar({
             </span>
           </span>
         )}
+        </>)}
       </div>
 
       <div className="wf-topbar-spacer" />
