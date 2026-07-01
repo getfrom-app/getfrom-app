@@ -1914,17 +1914,15 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'copy' }}
       onDrop={onCanvasDrop}
       style={{
-        position: 'relative',
-        width: '100%',
-        height: 'calc(100vh - 160px)',
-        minHeight: 480,
+        position: globalCanvas ? 'absolute' : 'relative',
+        ...(globalCanvas ? { inset: 0 } : { width: '100%', height: 'calc(100vh - 160px)', minHeight: 480 }),
         overflow: 'hidden',
         background: 'var(--bg, #fff)',
         backgroundImage: 'radial-gradient(circle, var(--border-subtle, #e3e3e3) 1px, transparent 1px)',
         ...dotGrid(cam.x, cam.y, cam.scale), // paso adaptativo: fondo siempre blanco con puntos
         touchAction: 'none',
         cursor: panRef.current ? 'grabbing' : (tool === 'pen' || tool === 'marker' || tool === 'highlighter' || tool === 'eraser' || isShapeTool(tool) ? 'crosshair' : tool === 'text' || tool === 'doc' ? 'text' : 'default'),
-        borderRadius: 8,
+        borderRadius: globalCanvas ? 0 : 8, // sin bordes: la app ES el lienzo
         animation: 'pizarra-dive 0.28s ease-out',
       }}
     >

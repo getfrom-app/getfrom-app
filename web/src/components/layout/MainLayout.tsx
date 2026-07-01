@@ -9,6 +9,7 @@ import { userStore } from '../../store/userStore'
 import { getHotkeyKey } from '../../store/hotkeysStore'
 import StatusBar from './StatusBar'
 import NodeView from '../views/NodeView'
+import PizarraView from '../views/PizarraView'
 import ContextListPanel, { UNCLASSIFIED_FILTER_ID } from '../panels/ContextListPanel'
 import ContextPropertiesPanel from '../panels/ContextPropertiesPanel'
 import PromptListPanel from '../panels/PromptListPanel'
@@ -44,17 +45,22 @@ function DiaryRedirect() {
   return <div className="view-loading">{t('app.loadingDiary')}</div>
 }
 
-// Home = el lienzo infinito. Al abrir la app aterrizas en el nodo-lienzo raíz
-// (en modo pizarra), siempre presente. No hay que pulsar ningún botón.
-function CanvasHome() {
-  const navigate = useNavigate()
+// Home = el lienzo infinito, renderizado como la PROPIA app en `/app` (no se navega
+// a ningún nodo). Es la superficie fija: PizarraView global a pantalla completa, sin
+// título ni breadcrumb (eso lo da NodeView, que aquí NO se usa). La columna derecha
+// la pinta MainLayout alrededor. El nodo-lienzo raíz es solo el contenedor interno
+// (cámara/trazos); el contenido son tus contextos.
+function CanvasApp() {
   const s = useStore()
-  useEffect(() => {
-    if (!store.isLoaded) return // esperar a que el árbol cargue (evita crear/navegar en vacío)
-    const root = ensureCanvasRoot()
-    if (root?.id) navigate(`/node/${root.id}`, { replace: true }) // nunca a /node/ vacío
-  }, [s.nodesVersion]) // reintenta al cargar el store
-  return <div className="view-loading" />
+  void s.nodesVersion
+  if (!store.isLoaded) return <div className="view-loading" />
+  const root = ensureCanvasRoot()
+  if (!root?.id) return <div className="view-loading" />
+  return (
+    <div style={{ position: 'absolute', inset: 0 }}>
+      <PizarraView parentId={root.id} globalCanvas />
+    </div>
+  )
 }
 // Eliminadas en v9.1: TasksView, ChatView, KanbanView, TagView, FilesView, InboxView, TrashView
 // (reemplazadas por nodos del árbol o eliminadas sin sustituto)
@@ -350,7 +356,12 @@ export default function MainLayout() {
   // Nodo de la columna del día: el seleccionado (nota/tarea) o, EN EL LIENZO, el día
   // activo (mini-calendario / «hoy») por METADATO — sin navegar. `ensureDiaryForDate`
   // solo asegura el nodo-día interno que alimenta la columna; el lienzo no se mueve.
-  const _onCanvasRoot = isCanvasRoot(currentNodeIdFromRoute ? store.getNode(currentNodeIdFromRoute) : null)
+  // «En el lienzo» = estar en el index (/app), que ahora renderiza el lienzo.
+  const _onCanvasRoot = location.pathname.replace(/^\/app\/?/, '').replace(/^\/+|\/+$/g, '') === ''
+  // En el lienzo, la columna derecha por defecto es la del DÍA (hoy).
+  useEffect(() => {
+    if (_onCanvasRoot) setRightPanel(p => (p === 'filter' ? 'day' : p))
+  }, [_onCanvasRoot])
   const dayPanelNodeId = useMemo(() => {
     if (detailNodeId) return detailNodeId
     if (_onCanvasRoot) return ensureDiaryForDate(selectedDay ?? new Date()).id
@@ -727,17 +738,10 @@ export default function MainLayout() {
         } else {
           setTimeout(prefetchLazyChunks, 4000)
         }
-        // Canvas-first: el lienzo infinito es la vista por defecto al abrir. Solo si
-        // se entró por la raíz — los deep links (/node/x, /settings…) se respetan.
-        // La estructura temporal (Agenda→Año→Mes→Diario) queda INTERNA: alimenta la
-        // columna del día (hoy) y el mini-calendario, pero ya no es la cara principal.
-        const path = window.location.pathname.replace(/\/+$/, '')
-        if (path === '' || path === '/app') {
-          try {
-            const root = ensureCanvasRoot()
-            if (root?.id) navigate(`/node/${root.id}`, { replace: true }) // nunca a /node/ vacío
-          } catch { /* si falla, se queda en la raíz — no bloquear el arranque */ }
-        }
+        // Canvas-first: al entrar por la raíz (/app) el index ya renderiza el lienzo
+        // (CanvasApp), sin navegar a ningún nodo. No hace falta redirect. Solo
+        // asegurar que el nodo-lienzo raíz existe (contenedor interno de cámara/trazos).
+        try { ensureCanvasRoot() } catch { /* no bloquear el arranque */ }
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err)
@@ -1169,7 +1173,7 @@ export default function MainLayout() {
           <Route index element={
             (filterText || contextNodeId)
               ? <WFHomeView filterText={filterText} contextFilterId={contextNodeId} />
-              : <CanvasHome />
+              : <CanvasApp />
           } />
           {/* /followup obsoleto desde v8.20: redirige al diario */}
           <Route path="followup" element={<DiaryRedirect />} />

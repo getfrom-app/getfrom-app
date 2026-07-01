@@ -63,8 +63,8 @@ export default function WFTopBar({
   const path = location.pathname.replace(/^\/app/, '') || '/'
   const isNodeView = path.startsWith('/node/')
   const nodeId = isNodeView ? path.split('/node/')[1] : null
-  // En el LIENZO no hay breadcrumb: la app ES el lienzo, sin cromo encima.
-  const onCanvas = isCanvasRoot(nodeId ? s.getNode(nodeId) : null)
+  // En el LIENZO (index /app) no hay breadcrumb: la app ES el lienzo, sin cromo encima.
+  const onCanvas = path === '/' || isCanvasRoot(nodeId ? s.getNode(nodeId) : null)
 
   const { ancestors, current } = useMemo(() => {
     if (!nodeId) return { ancestors: [], current: null }
