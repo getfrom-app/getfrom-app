@@ -131,7 +131,7 @@ import { ensureAgentesNode, migrateAgentsV2, migrateAgentMetaChildren, getAgente
 import { cleanupOrphanProfileKnowledge, migrateKnowledgeNodesToFromly } from '../../api/userKnowledge'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
-import { isContextNode } from '../../utils/cajones'
+import { isCanvasRoot } from '../../utils/canvasRoot'
 import { invalidatePredictionCache } from '../../store/predictionStore'
 
 export default function MainLayout() {
@@ -343,6 +343,10 @@ export default function MainLayout() {
   // superponerse). Igual que en la vista de documento; sin overlay flotante.
   const activeDocEditor = useHasActiveDocEditor()
   const showDocInspector = rightPanel === 'doc' || activeDocEditor
+  // Nodo de la columna del día: el seleccionado (nota/tarea) o, en el lienzo sin
+  // selección, HOY (cockpit) en vez de la columna del propio nodo-lienzo.
+  const _onCanvasRoot = isCanvasRoot(currentNodeIdFromRoute ? store.getNode(currentNodeIdFromRoute) : null)
+  const dayPanelNodeId = detailNodeId ?? (_onCanvasRoot ? (store.todayDiary()?.id ?? currentNodeIdFromRoute) : currentNodeIdFromRoute)
 
   // Migración única: BUCLES → tareas de seguimiento (tarea SIN fecha). Idempotente
   // y acotada (solo nodos con el tipo 'bucle'): quita el tipo y fija status (abierto
@@ -581,15 +585,20 @@ export default function MainLayout() {
     // y pide revertir (a filtro) al salir de ese modo.
     function onOpenDay() { setRightPanel('day') }
     function onCloseDay() { setRightPanel(p => p === 'day' ? 'filter' : p) }
-    // Lienzo global: seleccionar un nodo → su columna derecha SIN salir del lienzo.
-    // Solo para nodos-CONTEXTO (zonas/subcontextos): muestran ContextPropertiesPanel.
-    // (Un nodo normal no secuestra la columna del día; se navega a él como siempre.)
+    // Lienzo global: seleccionar un nodo → SU columna derecha (la de siempre de ese
+    // tipo), SIN salir del lienzo. Al deseleccionar → vuelve a la del día (hoy).
     function onOpenDetail(e: Event) {
       const id = (e as CustomEvent).detail?.nodeId
       const n = id ? store.getNode(id) : null
-      if (n && isContextNode(n.id)) { setRightCollapsed(false); setDetailNodeId(id); setRightPanel('context') }
+      if (!n) return
+      setRightCollapsed(false)
+      setDetailNodeId(id)
+      if (isDocNode(n)) { setRightPanel('doc'); return }
+      const kind = classifyNodeRoot(id) // contexto/prompt/agente/plantilla
+      // Nota / tarea / diaria → columna del día (DayPanel resuelve NoteColumn o cockpit).
+      setRightPanel(kind ?? 'day')
     }
-    function onCloseDetail() { setRightPanel(p => p === 'context' ? 'day' : p); setDetailNodeId(null) }
+    function onCloseDetail() { setDetailNodeId(null); setRightPanel('day') }
     window.addEventListener('from:open-detail', onOpenDetail as EventListener)
     window.addEventListener('from:close-detail', onCloseDetail)
     window.addEventListener('from:node-trashed', onTrashed)
@@ -1244,7 +1253,7 @@ export default function MainLayout() {
             <AudioPanel nodeId={currentNodeIdFromRoute} />
           )}
           {rightPanel === 'day' && (
-            <DayPanel nodeId={currentNodeIdFromRoute} />
+            <DayPanel nodeId={dayPanelNodeId} />
           )}
           {rightPanel === 'porplanificar' && (
             <PorPlanificarPanel />
