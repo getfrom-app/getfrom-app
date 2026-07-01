@@ -927,6 +927,14 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
 
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
+      // 0. Si el resultado ACTIVO es "abrir contexto" (buscaste un contexto por su
+      //    nombre), Enter lo ABRE — igual que el clic — por encima de la sugerencia
+      //    ghost de etiquetar la captura con ese contexto. Buscar un contexto y pulsar
+      //    Enter navega a él; no lo convierte en etiqueta de una captura vacía.
+      {
+        const active = items[activeIdx]
+        if (active && active.id.startsWith('ctx-')) { active.action(); return }
+      }
       // 1. @ picker (ya manejado arriba)
       // 2. ctx suggestion → aceptar ghost text
       if (ctxSuggestion) { acceptCtx(); return }
