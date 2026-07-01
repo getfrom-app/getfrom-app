@@ -27,6 +27,7 @@ import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import { firstContextOf, contextColor, isMarkedContext } from '../../utils/cajones'
+import { findTagNodeBySlug } from '../../utils/tagsHelper'
 import { createMarkdownNode } from '../../utils/importMarkdown'
 import { computeCanvasLayout } from '../../utils/canvasLayout'
 import type { CanvasViewKind } from '../../utils/docNode'
@@ -1899,7 +1900,16 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
          contexto → solo SELECCIONAN el nodo (abre su columna derecha). Nada navega. */
       onClickCapture={globalCanvas ? (e) => {
         const tgt = e.target as HTMLElement
-        if (tgt.closest('.bullet-nav-dot, .context-inline, .cajon-inline, .node-context-chip')) {
+        // Chip de @contexto → abre la columna del CONTEXTO (selecciona el contexto,
+        // no el nodo). La «×» de quitar contexto NO se intercepta: cae en OutlinerNode.
+        const chip = tgt.closest('.context-inline') as HTMLElement | null
+        if (chip && !tgt.closest('.ctx-chip-remove')) {
+          const slug = chip.getAttribute('data-slug') || ''
+          const ctx = slug ? findTagNodeBySlug(slug) : null
+          if (ctx) { e.preventDefault(); e.stopPropagation(); setSelectedId(ctx.id); return }
+        }
+        // Dot «abrir página» / cajón → seleccionar el propio nodo (su columna derecha).
+        if (tgt.closest('.bullet-nav-dot, .cajon-inline, .node-context-chip')) {
           const card = tgt.closest('[data-node-id]') as HTMLElement | null
           const id = card?.getAttribute('data-node-id')
           e.preventDefault(); e.stopPropagation()
@@ -1958,10 +1968,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       )}
 
       {/* ÁREAS — frames etiquetados (región rectangular) dibujados DETRÁS de las cards.
-          Color del contexto; clic en la etiqueta vuela a la región. */}
-      {/* En el LIENZO GLOBAL las zonas (contextos/subcontextos) son invisibles: no
-          rectángulo ni etiqueta. Son solo regiones a las que la cámara vuela. */}
-      {!globalCanvas && children.filter(n => zoneIds.has(n.id)).map(a => {
+          Un ÁREA es un CONTEXTO con cuerpo físico: mismo dato (`_ctx='1'`) + `_area`.
+          En el lienzo global también se dibujan (el contexto sin área NO se pinta;
+          con área SÍ, como marco). Clic en la etiqueta → abre su columna de contexto
+          (nunca navega ni hace zoom-in). */}
+      {children.filter(n => zoneIds.has(n.id)).map(a => {
         const rect = readAreaRect(a) ?? (autoLayout ? autoLayout.get(a.id) ?? null : null); if (!rect) return null
         const col = (() => { const cx = firstContextOf(a) ?? (isMarkedContext(a) ? a : null); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()
         const sx = cam.x + rect.x * cam.scale, sy = cam.y + rect.y * cam.scale
@@ -1977,7 +1988,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               onPointerUp={(e) => {
                 const d = areaDragRef.current; areaDragRef.current = null; setAreaDrag(null)
                 if (!d || d.id !== a.id) return
-                if (!d.moved) { flyToArea(a.id); return }
+                // Clic (sin arrastre): en el lienzo global NO se vuela ni se entra —
+                // solo se SELECCIONA el área → abre su columna derecha de contexto.
+                if (!d.moved) { if (globalCanvas) setSelectedId(a.id); else flyToArea(a.id); return }
                 const wdx = (e.clientX - d.sx) / cam.scale, wdy = (e.clientY - d.sy) / cam.scale
                 const node = store.getNode(a.id); if (!node) return
                 const r = readAreaRect(node)
@@ -2524,7 +2537,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 onClickCapture={(e) => {
                   if (!globalCanvas) return
                   const tgt = e.target as HTMLElement
-                  if (tgt.closest('.bullet-nav-dot, .context-inline, .cajon-inline, a')) {
+                  if (tgt.closest('.bullet-nav-dot, .cajon-inline, a')) {
                     e.stopPropagation(); e.preventDefault(); setSelectedId(node.id)
                   }
                 }}>
@@ -2631,7 +2644,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 onClickCapture={(e) => {
                   if (!globalCanvas) return
                   const tgt = e.target as HTMLElement
-                  if (tgt.closest('.bullet-nav-dot, .context-inline, .cajon-inline, a')) {
+                  if (tgt.closest('.bullet-nav-dot, .cajon-inline, a')) {
                     e.stopPropagation(); e.preventDefault(); setSelectedId(node.id)
                   }
                 }}>

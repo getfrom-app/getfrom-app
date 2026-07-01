@@ -127,7 +127,14 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
         {/* Contiene — agrupado por tipo (Tareas / Eventos / Notas), con cabeceras
             al estilo de la columna derecha del día. */}
         {(() => {
-          const assigned = nodesInContext(nodeId)
+          // Columna del contexto = miembros que NO están físicamente en el lienzo.
+          // Lo que tiene posición (pin `_pinX`/`_gx`) ya se ve colocado en el plano →
+          // aquí se muestran solo los "sueltos" (quick-capture, etiquetados sin colocar).
+          const hasCanvasPos = (n: { extraData?: string | null }): boolean => {
+            try { const ed = JSON.parse(n.extraData || '{}'); return ed._pinX != null || ed._gx != null }
+            catch { return false }
+          }
+          const assigned = nodesInContext(nodeId).filter(a => !hasCanvasPos(a))
           if (assigned.length === 0) return null
           const eventos = assigned.filter(a => a.isEvent)
           // Tareas ordenadas: atrasadas → hoy → futuras → sin fecha; completadas al final.

@@ -137,6 +137,7 @@ import { ensureAgentesNode, migrateAgentsV2, migrateAgentMetaChildren, getAgente
 import { cleanupOrphanProfileKnowledge, migrateKnowledgeNodesToFromly } from '../../api/userKnowledge'
 import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
+import { isMarkedContext } from '../../utils/cajones'
 import { isCanvasRoot } from '../../utils/canvasRoot'
 import { ensureDiaryForDate } from '../../utils/diaryNav'
 import { invalidatePredictionCache } from '../../store/predictionStore'
@@ -614,7 +615,10 @@ export default function MainLayout() {
       setRightCollapsed(false)
       setDetailNodeId(id)
       if (isDocNode(n)) { setRightPanel('doc'); return }
-      const kind = classifyNodeRoot(id) // contexto/prompt/agente/plantilla
+      // Contexto/prompt/agente/plantilla por ubicación en el árbol; ADEMÁS, cualquier
+      // nodo marcado como contexto (`_ctx='1'`, p.ej. un ÁREA del lienzo) abre su
+      // columna de contexto aunque no cuelgue de la raíz 🧠 Contexto.
+      const kind = classifyNodeRoot(id) ?? (isMarkedContext(n) ? 'context' as const : null)
       // Nota / tarea / diaria → columna del día (DayPanel resuelve NoteColumn o cockpit).
       setRightPanel(kind ?? 'day')
     }

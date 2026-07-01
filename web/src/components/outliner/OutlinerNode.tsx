@@ -296,8 +296,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   // dejan de entrar a /node de un solo golpe, sin tocar cada call-site.
   const navigate = canvasMode
     ? ((to: unknown) => {
+        // El destino /node/<id> nos dice QUÉ seleccionar: para el dot es el propio
+        // nodo; para el chip de un @contexto es el ID del CONTEXTO → así clicar un
+        // contexto abre SU columna derecha (no la del nodo), sin navegar ni entrar.
         const m = /\/node\/([^/?#]+)/.exec(String(to))
-        if (m) onSelect(node.id)
+        if (m) onSelect(m[1])
       }) as typeof _rrNavigate
     : _rrNavigate
   // Cada nodo calcula su propio estado de multi-selección desde el estado global,
