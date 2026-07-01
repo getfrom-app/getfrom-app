@@ -26,7 +26,7 @@ import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSyn
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
-import { firstContextOf, contextColor, isMarkedContext } from '../../utils/cajones'
+import { firstContextOf, contextColor, isMarkedContext, reparentContext, clearContextParent } from '../../utils/cajones'
 import { findTagNodeBySlug } from '../../utils/tagsHelper'
 import { createMarkdownNode } from '../../utils/importMarkdown'
 import { computeNestedLayout, CONTENT_W, type NestedLayout } from '../../utils/nestedCanvasLayout'
@@ -2030,6 +2030,25 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 if (!d.moved) { if (globalCanvas) setSelectedId(a.id); else flyToArea(a.id); return }
                 const wdx = (e.clientX - d.sx) / cam.scale, wdy = (e.clientY - d.sy) / cam.scale
                 const node = store.getNode(a.id); if (!node) return
+                if (globalCanvas) {
+                  // Soltar un contexto DENTRO de otro → se ANIDA (reparenta) en él; soltarlo
+                  // FUERA de todo → pasa a contexto raíz. El layout lo recoloca solo.
+                  const rr = readAreaRect(node) ?? nested?.boxes.get(a.id) ?? null
+                  if (rr && nested) {
+                    const cxp = rr.x + rr.w / 2 + wdx, cyp = rr.y + rr.h / 2 + wdy
+                    let target: { id: string; area: number } | null = null
+                    for (const [id, b] of nested.boxes) {
+                      if (id === a.id) continue
+                      if (cxp >= b.x && cxp <= b.x + b.w && cyp >= b.y && cyp <= b.y + b.h) {
+                        const ar = b.w * b.h
+                        if (!target || ar < target.area) target = { id, area: ar }
+                      }
+                    }
+                    if (target && store.getNode(a.id)?.parentId !== target.id) reparentContext(a.id, target.id)
+                    else if (!target) clearContextParent(a.id)
+                  }
+                  return
+                }
                 const r = readAreaRect(node)
                 store.beginBatch()
                 try {

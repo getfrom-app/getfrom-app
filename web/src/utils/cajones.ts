@@ -222,7 +222,11 @@ export function reparentContext(nodeId: string, newParentContextId: string): voi
   }
   const sibs = store.children(newParentContextId).filter(x => !x.deletedAt)
   const maxOrder = sibs.reduce((m, x) => Math.max(m, x.siblingOrder), 0)
-  store.updateNode(nodeId, { parentId: newParentContextId, siblingOrder: maxOrder + 1000 })
+  // Marcar `_ctx='1'`: un contexto RAÍZ (marcado por ubicación) al meterse dentro de otro
+  // deja de ser raíz → sin este marcador pasaría a tratarse como texto. Con él sigue
+  // siendo un CONTEXTO (área propia) dentro del padre.
+  const e = ed(store.getNode(nodeId)); e._ctx = '1'
+  store.updateNode(nodeId, { parentId: newParentContextId, siblingOrder: maxOrder + 1000, extraData: JSON.stringify(e) })
   clearAreaPosition(nodeId) // suelta la posición fija → se re-anida DENTRO del nuevo padre
   ensureTagDefinition(nodeId) // recalcula el slug jerárquico
 }
