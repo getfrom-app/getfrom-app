@@ -7489,14 +7489,41 @@ textarea:focus-visible,
 .doc-editor .ProseMirror s { text-decoration: line-through; }
 .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--text-tertiary, #aaa); float: left; pointer-events: none; height: 0; }
 .doc-title::placeholder { color: var(--text-tertiary, #bbb); }
-/* Casillas de tarea dentro del texto (TaskList/TaskItem de TipTap). */
-.doc-editor .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.45em 0; }
-.doc-editor .ProseMirror ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 8px; margin: 0.15em 0; }
-.doc-editor .ProseMirror ul[data-type="taskList"] li > label { flex-shrink: 0; margin-top: 0.28em; user-select: none; }
-.doc-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent, #6c5ce7); }
-.doc-editor .ProseMirror ul[data-type="taskList"] li > div { flex: 1; min-width: 0; }
-.doc-editor .ProseMirror ul[data-type="taskList"] li > div > p { margin: 0; }
-.doc-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--text-tertiary, #999); text-decoration: line-through; }
+/* Casillas de tarea dentro del texto (TaskList/TaskItem de TipTap). Mismo look que las
+   tareas de From (checkbox rect redondeado: pending amarillo, done verde + check). Aplica
+   TANTO en edición (.doc-editor .ProseMirror) como en reposo (.pizarra-text, que pinta el
+   body estático con dangerouslySetInnerHTML). */
+.doc-editor .ProseMirror ul[data-type="taskList"],
+.pizarra-text ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.3em 0; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li,
+.pizarra-text ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 8px; margin: 0.12em 0; padding: 0; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li::marker,
+.pizarra-text ul[data-type="taskList"] li::marker { content: none; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li > label,
+.pizarra-text ul[data-type="taskList"] li > label { flex-shrink: 0; margin: 0.16em 0 0; user-select: none; display: flex; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li > div,
+.pizarra-text ul[data-type="taskList"] li > div { flex: 1; min-width: 0; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li > div > p,
+.pizarra-text ul[data-type="taskList"] li > div > p { margin: 0; }
+/* Checkbox estilo From (rect redondeado 1.5px). Pending = amarillo, done = verde + check. */
+.doc-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"],
+.pizarra-text ul[data-type="taskList"] li > label input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; margin: 0; position: relative; flex-shrink: 0;
+  width: 15px; height: 15px; border-radius: 3px; cursor: pointer;
+  border: 1.5px solid #fbbf24; background: rgba(251,191,36,0.08);
+  transition: border-color .1s, background .1s;
+}
+.doc-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > label input[type="checkbox"],
+.pizarra-text ul[data-type="taskList"] li[data-checked="true"] > label input[type="checkbox"] {
+  border-color: #22c55e; background: rgba(34,197,94,0.15);
+}
+.doc-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > label input[type="checkbox"]::after,
+.pizarra-text ul[data-type="taskList"] li[data-checked="true"] > label input[type="checkbox"]::after {
+  content: ''; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px;
+  border: solid #22c55e; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg);
+}
+.doc-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div,
+.pizarra-text ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--text-tertiary, #999); text-decoration: line-through; }
 
 /* En el lienzo (compact) el editor debe calcar al preview estático .pizarra-text
    para que al pasar a edición el texto NO se desplace ni reflowee. */
