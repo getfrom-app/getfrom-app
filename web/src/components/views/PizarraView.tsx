@@ -498,6 +498,10 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
   // Menú de clic derecho sobre un CONTEXTO (área): eliminar + color de acento.
   const [areaMenu, setAreaMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+  // REGIÓN visible del lienzo: 'contexts' (contextos) o 'agenda' (calendario de días).
+  // Son como DOS hojas del mismo plano infinito: solo se ve/pana una a la vez; se cambia
+  // volando (calendario/día → agenda; contexto → contextos). No te tropiezas con la otra.
+  const [region, setRegion] = useState<'contexts' | 'agenda'>('contexts')
 
   // Drag de tarjeta (en curso): id + posición de mundo provisional + guías.
   const dragRef = useRef<{ id: string; startWorld: WorldPos; origin: WorldPos; moved: boolean } | null>(null)
@@ -557,10 +561,15 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         const n = store.getNode(id)
         if (n && !n.deletedAt) { seen.add(id); out.push(n) }
       }
+      if (region === 'agenda') {
+        // Hoja AGENDA: solo el contenido de los DÍAS (calendario). Los contextos no se ven.
+        for (const id of nested.dayContentIds) add(id)
+        return out
+      }
+      // Hoja CONTEXTOS: contextos (marcos) + su contenido (excluyendo el de días).
       for (const id of nested.contextIds) add(id)
-      for (const id of nested.contentIds) add(id)
-      // Áreas EXPLÍCITAS (`_area`, movidas a mano o legacy) que no estén en el árbol de
-      // contextos → seguir pintándolas con su contenido para no perderlas.
+      for (const id of nested.contentIds) if (!nested.dayContentIds.has(id)) add(id)
+      // Áreas EXPLÍCITAS (`_area`, movidas a mano o legacy) → seguir pintándolas.
       for (const n of store.allActive()) {
         if (n.deletedAt || seen.has(n.id) || !isArea(n)) continue
         add(n.id)
@@ -571,7 +580,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     const out = [...directChildren]
     for (const n of directChildren) if (isArea(n)) out.push(...store.children(n.id).filter(c => !c.deletedAt))
     return out
-  }, [parentId, globalCanvas, nodesVersion, nested]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [parentId, globalCanvas, nodesVersion, nested, region]) // eslint-disable-line react-hooks/exhaustive-deps
   // Referencias (espejos) de este lienzo — nodos de la columna arrastrados aquí.
   const refIds = readRefs(parentId)
   const refsKey = refIds.join(',')
@@ -843,6 +852,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // de crearse, la caja aparece tras el re-render del layout → reintento breve.
   const flyToToday = useCallback(() => {
     const day = ensureDayPath(new Date())
+    setRegion('agenda') // entrar en la hoja de la agenda
     window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: day.id } }))
     flyToArea(day.id)
     setTimeout(() => flyToArea(day.id), 90)
@@ -866,14 +876,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     setSelectedId(null)
   }, [])
 
-  // Al ABRIR el lienzo: la cámara vuela al día de HOY y abre su columna (una sola vez).
-  const didFlyTodayRef = useRef(false)
-  useEffect(() => {
-    if (!globalCanvas || didFlyTodayRef.current || !nested) return
-    didFlyTodayRef.current = true
-    const h = setTimeout(() => flyToToday(), 120)
-    return () => clearTimeout(h)
-  }, [globalCanvas, nested, flyToToday])
+  // Al abrir, el lienzo arranca en la hoja de CONTEXTOS (principal). La AGENDA es una
+  // hoja aparte a la que se entra desde el botón de día / el calendario. (Antes se
+  // auto-volaba a hoy; ahora la agenda es separada y no se entra sin pedirlo.)
 
   // Auto-reparentar una card según la REGIÓN donde cae su pin: si entra en un área →
   // pasa a ser su hija; si sale de toda área → vuelve a la nota. Mantiene viva la
@@ -1316,8 +1321,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       if (!id) return
       const n = store.getNode(id)
       if (!n) return
-      // Área explícita, contexto (caja) o DÍA (celda de la agenda) → volar a su región.
-      if (isArea(n) || nestedRef.current?.boxes.has(id) || nestedRef.current?.dayCells.has(id)) { flyToArea(id); return }
+      // DÍA (celda de agenda) → cambia a la HOJA agenda y vuela. Contexto/área → hoja contextos.
+      if (nestedRef.current?.dayCells.has(id)) { setRegion('agenda'); flyToArea(id); return }
+      if (isArea(n) || nestedRef.current?.boxes.has(id)) { setRegion('contexts'); flyToArea(id); return }
       if (store.children(parentId).some(c => c.id === id)) flyToNode(n)
     }
     window.addEventListener('from:pizarra-flyto', h)
@@ -2164,20 +2170,6 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         )
       })}
 
-      {/* AGENDA: etiqueta SUTIL de cada día (fecha), SIN marco. Solo orienta; escala con
-          el zoom (de lejos desaparece, no ensucia). Clic → abre la columna del día + vuela. */}
-      {globalCanvas && nested && Array.from(nested.dayCells.entries()).map(([id, r]) => {
-        const n = store.getNode(id); if (!n) return null
-        const sx = cam.x + r.x * cam.scale, sy = cam.y + r.y * cam.scale
-        if (sx + r.w * cam.scale < -50 || sx > viewport.w + 50 || sy + r.h * cam.scale < -50 || sy > viewport.h + 50) return null
-        return (
-          <div key={`day-${id}`} data-node-id={id}
-            onPointerDown={(e) => { e.stopPropagation(); setSelectedId(id) }}
-            style={{ position: 'absolute', left: sx, top: sy, transform: `scale(${cam.scale})`, transformOrigin: '0 0', pointerEvents: 'auto', cursor: 'pointer', zIndex: 2, padding: '8px 10px' }}>
-            <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.3px', textTransform: 'uppercase', color: 'var(--text-tertiary, #b5b5bd)', whiteSpace: 'nowrap' }}>{n.text || ''}</span>
-          </div>
-        )
-      })}
 
       {/* En la tarjeta el ÚNICO tirador de arrastre es el de la izquierda → ocultar
           el tirador interno del OutlinerNode (node-drag-handle) para no duplicar. */}

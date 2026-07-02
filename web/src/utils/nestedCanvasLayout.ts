@@ -21,6 +21,7 @@ export interface NestedLayout {
   dayCells: Map<string, NRect>   // zona de cada DÍA (NO se dibuja marco) — solo posición
   contextIds: Set<string>
   contentIds: Set<string>
+  dayContentIds: Set<string>     // contenido que pertenece a DÍAS (región agenda)
   todayId: string | null         // id del día de HOY (para volar la cámara), si existe
 }
 
@@ -189,7 +190,7 @@ function placeRegion(rootId: string, aspect: number, isBox: (n: Node) => boolean
  *  viene de su FECHA — columna = día de la semana (lun→dom), fila = semana (las semanas
  *  bajan; los meses y años emergen solos). El contenido del día se coloca dentro de su
  *  celda. NO se dibuja ningún rectángulo: solo posiciones que Fromly reutiliza siempre. */
-function computeAgendaGrid(agendaRootId: string, originX: number, out: { items: Map<string, NRect>; dayCells: Map<string, NRect> }): void {
+function computeAgendaGrid(agendaRootId: string, originX: number, out: { items: Map<string, NRect>; dayCells: Map<string, NRect>; dayContentIds: Set<string> }): void {
   const days: Node[] = []
   const walk = (id: string) => {
     for (const c of store.children(id)) {
@@ -225,7 +226,7 @@ function computeAgendaGrid(agendaRootId: string, originX: number, out: { items: 
       const x = originX + inf.col * (DAY_W + DAY_GAP)
       out.dayCells.set(inf.day.id, { x, y, w: DAY_W, h: rowH })
       const ox = x + PAD, oy = y + HEADER + PAD
-      for (const r of inf.content.rows) out.items.set(r.id, { x: ox + r.x, y: oy + r.y, w: CONTENT_W, h: r.h })
+      for (const r of inf.content.rows) { out.items.set(r.id, { x: ox + r.x, y: oy + r.y, w: CONTENT_W, h: r.h }); out.dayContentIds.add(r.id) }
     }
     y += rowH + WEEK_GAP
   }
@@ -241,6 +242,7 @@ export function computeNestedLayout(rootId: string, aspect = DEFAULT_ASPECT): Ne
   const boxes = new Map<string, NRect>()
   const items = new Map<string, NRect>()
   const dayCells = new Map<string, NRect>()
+  const dayContentIds = new Set<string>()
 
   // Región de CONTEXTOS (cajas anidadas).
   const ctxRoot = findContextRoot()?.id ?? rootId
@@ -251,7 +253,7 @@ export function computeNestedLayout(rootId: string, aspect = DEFAULT_ASPECT): Ne
   let ctxRight = 0
   for (const r of boxes.values()) ctxRight = Math.max(ctxRight, r.x + r.w)
   const agenda = findAgendaRoot()
-  if (agenda) computeAgendaGrid(agenda.id, ctxRight + REGION_GAP, { items, dayCells })
+  if (agenda) computeAgendaGrid(agenda.id, ctxRight + REGION_GAP, { items, dayCells, dayContentIds })
 
   // Id del día de HOY (para volar la cámara al abrir / pulsar «hoy»).
   let todayId: string | null = null
@@ -265,5 +267,5 @@ export function computeNestedLayout(rootId: string, aspect = DEFAULT_ASPECT): Ne
     }
   }
 
-  return { boxes, items, dayCells, contextIds: new Set(boxes.keys()), contentIds: new Set(items.keys()), todayId }
+  return { boxes, items, dayCells, contextIds: new Set(boxes.keys()), contentIds: new Set(items.keys()), dayContentIds, todayId }
 }
