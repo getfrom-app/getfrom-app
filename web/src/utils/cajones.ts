@@ -108,14 +108,14 @@ function defaultAccentHex(): string {
   return CONTEXT_DEFAULT_COLOR
 }
 
-/** Color del contexto: lo HEREDA de su contexto padre (recursivo). Si es raíz, usa
- *  su `_tagColor` propio si lo tiene, o el color por defecto de Ajustes.
- *  (Ya no hay selector de color por contexto.) */
+/** Color del contexto: su `_tagColor` PROPIO manda (se puede fijar por contexto desde el
+ *  menú de clic derecho); si no tiene, lo HEREDA del contexto padre; si es raíz sin color,
+ *  usa el acento por defecto de Ajustes. */
 export function contextColor(nodeId: string): string {
-  const p = contextParent(nodeId)
-  if (p) return contextColor(p.id)
   const own = ed(store.getNode(nodeId))._tagColor
   if (typeof own === 'string' && own) return own
+  const p = contextParent(nodeId)
+  if (p) return contextColor(p.id)
   return defaultAccentHex()
 }
 

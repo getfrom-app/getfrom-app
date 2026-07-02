@@ -114,7 +114,18 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
                     <ContextPicker
                       currentId={parent?.id ?? null}
                       exclude={c => c.id === nodeId || isDesc(c.id)}
-                      onPick={id => { if (id && id !== parent?.id) reparentContext(nodeId, id); setParentPicker(null) }}
+                      onPick={id => {
+                        if (id && id !== parent?.id) {
+                          // Soltar la posición libre para que se RE-ANIDE dentro del padre.
+                          const n0 = store.getNode(nodeId)
+                          if (n0) { try { const e = JSON.parse(n0.extraData || '{}'); delete e._gx; delete e._gy; store.updateNode(nodeId, { extraData: JSON.stringify(e) }) } catch { /* noop */ } }
+                          reparentContext(nodeId, id)
+                          // El contexto se recoloca físicamente dentro del nuevo padre →
+                          // la cámara le sigue (tras el recálculo del layout, con margen).
+                          setTimeout(() => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId } })), 320)
+                        }
+                        setParentPicker(null)
+                      }}
                     />
                   </div>
                 </>

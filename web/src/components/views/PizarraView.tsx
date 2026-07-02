@@ -496,6 +496,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 
   // Menú contextual de nodo (clic derecho en una tarjeta) — el mismo de la lista.
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
+  // Menú de clic derecho sobre un CONTEXTO (área): eliminar + color de acento.
+  const [areaMenu, setAreaMenu] = useState<{ id: string; x: number; y: number } | null>(null)
 
   // Drag de tarjeta (en curso): id + posición de mundo provisional + guías.
   const dragRef = useRef<{ id: string; startWorld: WorldPos; origin: WorldPos; moved: boolean } | null>(null)
@@ -845,6 +847,24 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     flyToArea(day.id)
     setTimeout(() => flyToArea(day.id), 90)
   }, [flyToArea])
+
+  // Color de acento de un contexto (`_tagColor`) — desde el menú de clic derecho.
+  const setContextAccentColor = useCallback((id: string, color: string) => {
+    const n = store.getNode(id); if (!n) return
+    let eo: Record<string, unknown> = {}; try { eo = JSON.parse(n.extraData || '{}') } catch { /* noop */ }
+    eo._tagColor = color
+    store.updateNode(id, { extraData: JSON.stringify(eo) })
+  }, [])
+
+  // Eliminar un contexto Y todo su contenido (subárbol completo).
+  const deleteContextTree = useCallback((id: string) => {
+    const ids: string[] = []
+    const collect = (nid: string) => { ids.push(nid); for (const c of store.children(nid)) if (!c.deletedAt) collect(c.id) }
+    collect(id)
+    store.beginBatch()
+    try { for (const nid of ids) store.deleteNode(nid) } finally { store.endBatch() }
+    setSelectedId(null)
+  }, [])
 
   // Al ABRIR el lienzo: la cámara vuela al día de HOY y abre su columna (una sola vez).
   const didFlyTodayRef = useRef(false)
@@ -2118,6 +2138,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                   }
                 } finally { store.endBatch() }
               }}
+              onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setAreaMenu({ id: a.id, x: e.clientX, y: e.clientY }) }}
               style={{ position: 'absolute', top: -10, left: 12, pointerEvents: 'auto', cursor: 'grab', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 9px', borderRadius: 3, background: 'var(--bg-elevated, #fff)', color: 'var(--text-secondary, #52525b)', fontSize: 11, fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase', whiteSpace: 'nowrap', border: '1px solid var(--border, #e0e0e4)', touchAction: 'none' }}
               title={t('tip.dragAreaMove')}
             ><span style={{ width: 6, height: 6, borderRadius: '50%', background: col, flexShrink: 0 }} />{a.text || t('pizarra.area')}</div>
@@ -2928,6 +2949,25 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       {/* Menú contextual de la pizarra. Si el nodo clicado forma parte de una
           MULTISELECCIÓN → acciones en lote (eliminar/duplicar todos). Si no →
           menú normal: QUITAR (saca de la pizarra, NO borra) o ELIMINAR. */}
+      {/* Menú de clic derecho de un CONTEXTO: color de acento + eliminar (con contenido). */}
+      {areaMenu && store.getNode(areaMenu.id) && (
+        <>
+          <div onPointerDown={() => setAreaMenu(null)} onContextMenu={(e) => { e.preventDefault(); setAreaMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
+          <div style={{ position: 'fixed', top: areaMenu.y, left: areaMenu.x, zIndex: 2000, minWidth: 190, background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, padding: 8, boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
+            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary,#999)', padding: '2px 6px 6px' }}>{t('ctxPanel.accentColor', 'Color de acento')}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 4px 8px' }}>
+              {['#6c5ce7', '#e03131', '#f76707', '#f59f00', '#2f9e44', '#1098ad', '#1971c2', '#7048e8', '#9c36b5', '#e64980', '#495057'].map(c => (
+                <button key={c} title={c} onClick={() => { setContextAccentColor(areaMenu.id, c); setAreaMenu(null) }}
+                  style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: '1px solid rgba(0,0,0,0.12)', cursor: 'pointer' }} />
+              ))}
+            </div>
+            <div style={{ height: 1, background: 'var(--border,#eee)', margin: '2px 0 6px' }} />
+            <button onClick={() => { deleteContextTree(areaMenu.id); setAreaMenu(null) }} style={{ ...ctxItem, color: 'var(--danger,#e03131)' }}>
+              {t('pizarra.deleteContext', 'Eliminar contexto y su contenido')}
+            </button>
+          </div>
+        </>
+      )}
       {contextMenu && store.getNode(contextMenu.nodeId) && (() => {
         const isMulti = multiSel.has(contextMenu.nodeId) && multiSel.size > 1
         return (
