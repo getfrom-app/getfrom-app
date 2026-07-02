@@ -26,7 +26,7 @@ import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSyn
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
-import { firstContextOf, contextColor, isMarkedContext, reparentContext, clearContextParent } from '../../utils/cajones'
+import { firstContextOf, contextColor, isMarkedContext, reparentContext, clearContextParent, assignContext } from '../../utils/cajones'
 import { findTagNodeBySlug } from '../../utils/tagsHelper'
 import { createMarkdownNode } from '../../utils/importMarkdown'
 import { computeNestedLayout, CONTENT_W, type NestedLayout } from '../../utils/nestedCanvasLayout'
@@ -1386,6 +1386,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     // Tras crear, el nodo queda enfocado (cursor parpadeando) listo para escribir.
     setTool('select')
     setSelectedId(node.id)
+    return node.id
   }, [parentId])
 
 
@@ -1408,7 +1409,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   }, [parentId])
 
   // Al SALIR de la edición de un texto: si quedó VACÍO (no se escribió nada), se borra
-  // → no deja nodos «Sin título» sueltos por clics accidentales.
+  // → no deja nodos «Sin título» sueltos por clics accidentales. Cubre el DOCUMENTO
+  // (editText) y el NODO de esquema creado con un clic (selección).
   const prevEditRef = useRef<string | null>(null)
   useEffect(() => {
     const prev = prevEditRef.current
@@ -1421,6 +1423,18 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       }
     }
   }, [editText])
+  const clickCreatedRef = useRef<string | null>(null)
+  const prevSelForCleanRef = useRef<string | null>(null)
+  useEffect(() => {
+    const prevSel = prevSelForCleanRef.current
+    prevSelForCleanRef.current = selectedId
+    const cc = clickCreatedRef.current
+    if (cc && prevSel === cc && selectedId !== cc) {
+      const n = store.getNode(cc)
+      if (n && !(n.text || '').trim() && !store.children(cc).some(c => !c.deletedAt)) store.deleteNode(cc)
+      clickCreatedRef.current = null
+    }
+  }, [selectedId])
 
   const deleteText = useCallback((id: string) => {
     store.deleteNode(id)
@@ -2025,20 +2039,23 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         if (toolRef.current !== 'select') return // con herramienta de dibujo activa, no crear texto
         const rect = containerRef.current!.getBoundingClientRect()
         const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-        // LIENZO: UN CLIC en zona vacía → crea TEXTO LIBRE ahí (cursor + barra de estilos),
-        // dentro del contexto más interno que contiene el punto (para que le pertenezca).
+        // LIENZO: UN CLIC en zona vacía → crea TEXTO LIBRE ahí (nodo de esquema: slash +
+        // Magic + barra de formato). Suelto (renderiza y enfoca al instante); si cae dentro
+        // de un contexto, se le ASIGNA ese contexto (pertenece a él sin ser hijo del árbol).
         if (globalCanvas) {
-          let parent: string | undefined
+          let ctxId: string | undefined
           let bestArea = Infinity
           for (const a of children) {
             if (!zoneIds.has(a.id)) continue
             const r = readAreaRect(a) ?? nested?.boxes.get(a.id) ?? null; if (!r) continue
             if (world.x >= r.x && world.x <= r.x + r.w && world.y >= r.y && world.y <= r.y + r.h) {
               const sz = r.w * r.h
-              if (sz < bestArea) { bestArea = sz; parent = a.id }
+              if (sz < bestArea) { bestArea = sz; ctxId = a.id }
             }
           }
-          createTextAt(world, parent)
+          const id = createNodeAt(world)
+          clickCreatedRef.current = id ?? null
+          if (id && ctxId) assignContext(id, ctxId)
         }
       }}
       onContextMenu={(e) => {
