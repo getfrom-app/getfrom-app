@@ -521,6 +521,14 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // LIENZO GLOBAL: layout ANIDADO auto-calculado — cada contexto es un ÁREA (caja) y
   // sus subcontextos son cajas DENTRO. No destructivo (solo memoria); el `_area` propio
   // de un contexto (si el usuario lo movió) manda sobre la caja calculada.
+  // RENDIMIENTO: el recálculo (recorre el árbol) NO corre en cada tecla/sync; se DEBOUNCEA
+  // con `layoutTick` (~250ms tras el último cambio) → evita tormentas de recomputación.
+  const [layoutTick, setLayoutTick] = useState(0)
+  useEffect(() => {
+    if (!globalCanvas) return
+    const h = setTimeout(() => setLayoutTick(t => t + 1), 250)
+    return () => clearTimeout(h)
+  }, [nodesVersion, globalCanvas])
   const nested = useMemo<NestedLayout | null>(() => {
     if (!globalCanvas) return null
     try {
@@ -528,7 +536,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       const aspect = vp && vp.h > 0 ? vp.w / vp.h : 1.6 // cajas con forma de PANTALLA
       return computeNestedLayout(findContextRoot()?.id ?? parentId, aspect)
     } catch { return null } // ante cualquier fallo, el lienzo se pinta sin layout (no rompe)
-  }, [globalCanvas, parentId, nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [globalCanvas, parentId, layoutTick]) // eslint-disable-line react-hooks/exhaustive-deps
   const nestedRef = useRef<NestedLayout | null>(null)
   useEffect(() => { nestedRef.current = nested }, [nested])
 
@@ -1894,8 +1902,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   const margin = 200
   const visible = useMemo(() => {
     void heightsV
+    // LOD (rendimiento): de LEJOS (zoom bajo) NO se monta el CONTENIDO de los contextos,
+    // solo sus cajas + etiquetas (baratísimo). El contenido aparece al ACERCARSE. Así el
+    // DOM se mantiene pequeño sin importar cuántos nodos totales haya (web + iPad).
+    const contentLOD = globalCanvas && cam.scale < 0.34 && !!nested
     const out: { node: Node; pos: WorldPos }[] = []
     for (const n of children) {
+      if (contentLOD && nested!.contentIds.has(n.id)) continue
       const base = layout.get(n.id)
       if (!base) continue // sin posición → no va al lienzo
       const pos = (dragPos && dragPos.id === n.id) ? dragPos.pos : base

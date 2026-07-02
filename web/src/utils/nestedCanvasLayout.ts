@@ -41,17 +41,28 @@ const EMPTY_BOTTOM = 1000 // espacio libre bajo el contenido dentro de la caja
 const DEFAULT_ASPECT = 1.6
 
 let _ctx: CanvasRenderingContext2D | null = null
+// CACHÉ de líneas por texto: mismo texto = medir una sola vez (measureText es lo caro).
+// El font y TEXT_W son fijos → el resultado es determinista y reutilizable. Acotada por
+// nº de textos distintos; se limpia si crece demasiado (evita fuga de memoria).
+const _lineCache = new Map<string, number>()
 function countLines(text: string): number {
   const t = (text || '').trim()
   if (!t) return 1
+  const cached = _lineCache.get(t)
+  if (cached !== undefined) return cached
   if (!_ctx) { try { _ctx = document.createElement('canvas').getContext('2d') } catch { _ctx = null } }
-  if (!_ctx) return Math.max(1, Math.ceil(t.length / 52))
-  _ctx.font = TEXT_FONT
-  let line = '', lines = 1
-  for (const word of t.split(/\s+/)) {
-    const test = line ? line + ' ' + word : word
-    if (_ctx.measureText(test).width > TEXT_W && line) { lines++; line = word } else line = test
+  let lines = 1
+  if (!_ctx) { lines = Math.max(1, Math.ceil(t.length / 52)) }
+  else {
+    _ctx.font = TEXT_FONT
+    let line = ''
+    for (const word of t.split(/\s+/)) {
+      const test = line ? line + ' ' + word : word
+      if (_ctx.measureText(test).width > TEXT_W && line) { lines++; line = word } else line = test
+    }
   }
+  if (_lineCache.size > 20000) _lineCache.clear()
+  _lineCache.set(t, lines)
   return lines
 }
 export function rowHeight(text: string | null | undefined): number {
