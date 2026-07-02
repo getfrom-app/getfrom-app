@@ -64,6 +64,52 @@ export function findConvertibleNotes(): ConvertibleNote[] {
   return out
 }
 
+/** Tipo legible de un nodo (para el diagnóstico). */
+function kindOf(n: Node): string {
+  if (isMarkedContext(n)) return 'contexto'
+  if (isDocNode(n)) return 'bloque-doc'
+  if (n.isResource) return 'recurso'
+  if (n.isEvent) return 'evento'
+  if (n.isDiaryEntry) return 'diaria'
+  const e = ed(n)
+  if (e._resource) return 'recurso'
+  if (e.viewBlock) return 'vista(' + String(e.viewBlock) + ')'
+  if (e._agentDef === '1') return 'agente'
+  if (e._promptDef === '1') return 'prompt'
+  if (e._tagDefinition) return 'tag'
+  if (e._perfilIA === '1') return 'perfil-IA'
+  if (e.temporalType) return 'temporal'
+  return 'texto'
+}
+function findBlockingDescendant(n: Node): Node | null {
+  for (const k of activeChildren(n.id)) {
+    if (isBlockingKind(k)) return k
+    const deep = findBlockingDescendant(k)
+    if (deep) return deep
+  }
+  return null
+}
+/** DIAGNÓSTICO: por qué una nota NO se convierte (cuenta razones + ejemplos). No modifica. */
+export function diagnoseNotes(): { convertible: number; reasons: Record<string, number>; examples: string[] } {
+  let convertible = 0
+  const reasons: Record<string, number> = {}
+  const examples: string[] = []
+  for (const n of store.allActive()) {
+    if (!store.isNote(n)) continue
+    if (isTopConvertible(n)) { convertible++; continue }
+    let reason: string
+    if (isBlockingKind(n)) reason = 'la-nota-es-' + kindOf(n)
+    else {
+      const parent = n.parentId ? store.getNode(n.parentId) : null
+      if (parent && !parent.deletedAt && !isBlockingKind(parent) && activeChildren(parent.id).length > 0 && activeChildren(parent.id).every(subtreeConvertible)) reason = 'es-subseccion (se aplana en su nota padre)'
+      else { const b = findBlockingDescendant(n); reason = b ? 'contiene-' + kindOf(b) : 'otro' }
+    }
+    reasons[reason] = (reasons[reason] || 0) + 1
+    if (examples.length < 10 && !reason.startsWith('es-subseccion')) examples.push(`${(n.text || '(sin título)').slice(0, 32)} → ${reason}`)
+  }
+  return { convertible, reasons, examples }
+}
+
 /** Texto de una línea → HTML de bloque (respeta encabezados/citas/listas markdown). */
 function lineToHtml(text: string): string {
   const t = (text || '').trim()
