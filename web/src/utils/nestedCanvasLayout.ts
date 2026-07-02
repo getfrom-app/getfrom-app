@@ -34,10 +34,12 @@ const HEADER = 46
 const PAD = 36
 const SUB_GAP = 120       // aire generoso entre subcontextos
 const CONTENT_SUB_GAP = 140 // aire entre el texto y los subcontextos
-const REGION_GAP = 900    // separación entre la región de contextos y la de agenda
+const REGION_GAP = 8000   // separación GRANDE entre contextos y agenda (lienzo infinito)
 const TOP_GAP = 500       // separación entre cajas de contexto de nivel superior
 const DAY_W = 760        // ancho de la ZONA de un día (columna = día de la semana)
-const DAY_H = 620        // alto de la zona de un día (fila = semana; bajan hacia abajo)
+const DAY_GAP = 340      // aire horizontal entre días de una misma semana
+const DAY_H_MIN = 620    // alto MÍNIMO de un día (un día vacío aún ocupa esto)
+const WEEK_GAP = 600     // aire vertical entre semanas (las semanas bajan)
 const EPOCH_MON = Date.UTC(2024, 0, 1) // lunes de referencia (determinista)
 const DAY_MS = 86400000
 const BASE_H = 1300       // alto MÍNIMO de un contexto (aunque tenga poco) → grande
@@ -198,6 +200,9 @@ function computeAgendaGrid(agendaRootId: string, originX: number, out: { items: 
   }
   walk(agendaRootId)
   const noBox = () => false
+  // 1) Agrupar por SEMANA y medir el contenido de cada día una sola vez.
+  interface DayInfo { day: Node; col: number; content: ReturnType<typeof layoutContent> }
+  const byWeek = new Map<number, DayInfo[]>()
   for (const day of days) {
     if (!day.diaryDate) continue
     const d = new Date(day.diaryDate)
@@ -205,12 +210,24 @@ function computeAgendaGrid(agendaRootId: string, originX: number, out: { items: 
     const col = (d.getDay() + 6) % 7 // lunes=0 … domingo=6
     const dayStart = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
     const weekIndex = Math.floor((dayStart - EPOCH_MON) / (7 * DAY_MS))
-    const x = originX + col * DAY_W
-    const y = weekIndex * DAY_H
-    out.dayCells.set(day.id, { x, y, w: DAY_W, h: DAY_H })
-    const content = layoutContent(day.id, noBox)
-    const ox = x + PAD, oy = y + HEADER + PAD
-    for (const r of content.rows) out.items.set(r.id, { x: ox + r.x, y: oy + r.y, w: CONTENT_W, h: r.h })
+    const info: DayInfo = { day, col, content: layoutContent(day.id, noBox) }
+    const arr = byWeek.get(weekIndex); if (arr) arr.push(info); else byWeek.set(weekIndex, [info])
+  }
+  // 2) Cada SEMANA es una fila tan ALTA como su día más largo (nada se desborda). Las
+  //    semanas bajan con aire entre ellas; los días llevan aire horizontal → nunca chocan.
+  const weeks = [...byWeek.keys()].sort((a, b) => a - b)
+  let y = 0
+  for (const wi of weeks) {
+    const infos = byWeek.get(wi)!
+    let rowH = DAY_H_MIN
+    for (const inf of infos) rowH = Math.max(rowH, HEADER + PAD + inf.content.h + PAD)
+    for (const inf of infos) {
+      const x = originX + inf.col * (DAY_W + DAY_GAP)
+      out.dayCells.set(inf.day.id, { x, y, w: DAY_W, h: rowH })
+      const ox = x + PAD, oy = y + HEADER + PAD
+      for (const r of inf.content.rows) out.items.set(r.id, { x: ox + r.x, y: oy + r.y, w: CONTENT_W, h: r.h })
+    }
+    y += rowH + WEEK_GAP
   }
 }
 
@@ -227,11 +244,14 @@ export function computeNestedLayout(rootId: string, aspect = DEFAULT_ASPECT): Ne
 
   // Región de CONTEXTOS (cajas anidadas).
   const ctxRoot = findContextRoot()?.id ?? rootId
-  const afterCtx = placeRegion(ctxRoot, asp, isContextBox, 0, meta, { boxes, items })
+  placeRegion(ctxRoot, asp, isContextBox, 0, meta, { boxes, items })
 
-  // Región de AGENDA (calendario espacial, a la derecha).
+  // Región de AGENDA (calendario espacial): MUY LEJOS a la derecha, tras el borde
+  // derecho de TODOS los contextos (incluidos los movidos a mano) → nunca se solapan.
+  let ctxRight = 0
+  for (const r of boxes.values()) ctxRight = Math.max(ctxRight, r.x + r.w)
   const agenda = findAgendaRoot()
-  if (agenda) computeAgendaGrid(agenda.id, afterCtx + REGION_GAP, { items, dayCells })
+  if (agenda) computeAgendaGrid(agenda.id, ctxRight + REGION_GAP, { items, dayCells })
 
   // Id del día de HOY (para volar la cámara al abrir / pulsar «hoy»).
   let todayId: string | null = null
