@@ -53,6 +53,7 @@ function subtreeConvertible(n: Node): boolean {
 /** ¿Es una nota convertible de ALTO NIVEL? Tiene contenido, todo su subárbol es texto/tareas,
  *  y su padre NO es a su vez una nota convertible (para no partir la jerarquía). */
 function isTopConvertible(n: Node): boolean {
+  if (isDocNode(n)) return false // YA es un bloque (aunque sea `_fromNote`): no se re-convierte
   if (isBlockingKind(n)) return false
   const kids = activeChildren(n.id)
   if (kids.length === 0) return false            // hoja: no es nota
@@ -111,7 +112,8 @@ export function diagnoseNotes(): { convertible: number; reasons: Record<string, 
     if (!store.isNote(n)) continue
     if (isTopConvertible(n)) { convertible++; continue }
     let reason: string
-    if (isBlockingKind(n)) reason = 'la-nota-es-' + kindOf(n)
+    if (isDocNode(n)) reason = 'ya-es-bloque'
+    else if (isBlockingKind(n)) reason = 'la-nota-es-' + kindOf(n)
     else {
       const parent = n.parentId ? store.getNode(n.parentId) : null
       if (parent && !parent.deletedAt && !isBlockingKind(parent) && activeChildren(parent.id).length > 0 && activeChildren(parent.id).every(subtreeConvertible)) reason = 'es-subseccion (se aplana en su nota padre)'
