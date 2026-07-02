@@ -140,6 +140,7 @@ import { ensurePapeleraNode } from '../../utils/papeleraHelper'
 import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
 import { isMarkedContext } from '../../utils/cajones'
 import { TaskPropsBody } from '../modals/TaskPropsModal'
+import NodeConfigModal, { type ConfigKind } from '../modals/NodeConfigModal'
 import { isCanvasRoot } from '../../utils/canvasRoot'
 import { ensureDiaryForDate } from '../../utils/diaryNav'
 import { invalidatePredictionCache } from '../../store/predictionStore'
@@ -192,6 +193,8 @@ export default function MainLayout() {
   // El panel Filtrar es el de inicio SIEMPRE al abrir la app — escribir una
   // palabra basta para buscar, y tiene filtros y favoritos a mano.
   const [rightPanel, setRightPanel] = useState<RightPanel>('filter')
+  // Editor modal (prompt/agente/plantilla) SOBRE el lienzo — se editan sin salir del plano.
+  const [configNode, setConfigNode] = useState<{ id: string; kind: ConfigKind } | null>(null)
   // contextNodeId: solo para el filtro especial "Sin clasificar" (se pasa a WFHomeView).
   const [contextNodeId, setContextNodeId] = useState<string | null>(null)
   // detailNodeId: nodo cuyas propiedades se muestran en los paneles context/prompt/agent.
@@ -247,11 +250,12 @@ export default function MainLayout() {
   // columna derecha muestra sus propiedades con un botón ← para volver a la lista.
   function openDetail(kind: 'context' | 'prompt' | 'agent', nodeId: string) {
     setContextNodeId(null)            // limpiar el filtro "Sin clasificar" si estaba activo
+    // En el LIENZO, prompts/agentes se editan en un MODAL sobre el plano (contenido +
+    // propiedades) → NO se navega fuera. Fuera del lienzo, abren su página.
+    const onCanvas = location.pathname.replace(/^\/app\/?/, '').replace(/^\/+|\/+$/g, '') === ''
+    if (onCanvas && (kind === 'prompt' || kind === 'agent')) { setConfigNode({ id: nodeId, kind }); return }
     setDetailNodeId(nodeId)
     setRightPanel(kind)
-    // Prompts/agentes son CONFIGURACIÓN (no contenido del lienzo): abren su editor
-    // completo (contenido + propiedades). Los CONTEXTOS van por handleSelectContext,
-    // que en el lienzo abre su columna en el sitio sin navegar.
     navigate(`/node/${nodeId}`)
   }
   function backToList(kind: 'context' | 'prompt' | 'agent' | 'template') {
@@ -636,6 +640,8 @@ export default function MainLayout() {
       // nodo marcado como contexto (`_ctx='1'`, p.ej. un ÁREA del lienzo) abre su
       // columna de contexto aunque no cuelgue de la raíz 🧠 Contexto.
       const kind = classifyNodeRoot(id) ?? (isMarkedContext(n) ? 'context' as const : null)
+      // Prompt/agente/plantilla → editor MODAL sobre el lienzo (contenido + propiedades).
+      if (kind === 'prompt' || kind === 'agent' || kind === 'template') { setConfigNode({ id, kind }); return }
       // Nota / diaria → columna del día (DayPanel resuelve NoteColumn o cockpit).
       setRightPanel(kind ?? 'day')
       // Contexto con cuerpo físico (área): además de su columna, el lienzo vuela a su
@@ -1396,6 +1402,7 @@ export default function MainLayout() {
         {showVoiceCapture && <VoiceCaptureModal onClose={() => setShowVoiceCapture(false)} />}
         {teachNodeId && <TeachMagicModal nodeId={teachNodeId} onClose={() => setTeachNodeId(null)} />}
         {taskPropsId && <TaskPropsModal nodeId={taskPropsId} onClose={() => setTaskPropsId(null)} />}
+        {configNode && <NodeConfigModal nodeId={configNode.id} kind={configNode.kind} onClose={() => setConfigNode(null)} onTestInMagic={handleTestPromptInMagic} />}
         {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
         {showShortcuts && <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />}
       </Suspense>
