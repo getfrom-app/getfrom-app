@@ -2730,11 +2730,16 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: plainHasKids ? '2px solid var(--accent-soft,#e9e6ff)' : '2px solid var(--bg,#fff)', boxShadow: plainHasKids ? '0 0 0 2px var(--accent,#6c5ce7)' : '0 0 0 1px var(--border,#d8d8d8)' }} />
               </div>
             )}
-            {/* Tirador de ANCHO del texto: en el LIENZO el texto es puro (sin tirador, sin dot,
-                sin accesorios) → solo fuera del lienzo (vista pizarra antigua) se muestra. */}
-            {isText && !globalCanvas && (hovered || selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
-              <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
-                style={{ position: 'absolute', right: -7, top: '50%', width: 5, height: 26, marginTop: -13, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
+            {/* Texto del lienzo: en REPOSO es puro (sin accesorios). Al SELECCIONARLO/editarlo
+                aparece el recuadro (borde, por CSS) + tiradores para REDIMENSIONAR: ancho a la
+                derecha (reajusta el salto de línea) y escala en la esquina inf-derecha. */}
+            {isText && (selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
+              <>
+                <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
+                  style={{ position: 'absolute', right: -7, top: '50%', width: 6, height: 28, marginTop: -14, background: 'var(--accent,#6c5ce7)', opacity: 0.85, borderRadius: 4, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
+                <div title={t('tip.scale')} onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
+                  style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--accent,#6c5ce7)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none', zIndex: 21 }} />
+              </>
             )}
             {showHandles && !isText && !isClean && ((elView || res) ? (
               // Vista o entidad embebida: ancho a la DERECHA + escala en la esquina.
