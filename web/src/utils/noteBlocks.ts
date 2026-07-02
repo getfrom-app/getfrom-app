@@ -26,6 +26,20 @@ function isSimpleLine(k: Node): boolean {
   return !store.children(k.id).some(c => !c.deletedAt)
 }
 
+/** ¿Es una TAREA hoja? = tarea (status≠null) sin hijos, no evento/recurso/contexto/doc. Estas
+ *  SÍ pueden ir dentro de un bloque: se mantienen como casilla enlazada (tarea-From real). */
+function isTaskLeaf(k: Node): boolean {
+  if (k.deletedAt) return false
+  if (k.status === null || k.isEvent || k.isResource || k.isDiaryEntry) return false
+  if (isMarkedContext(k) || isDocNode(k)) return false
+  return !store.children(k.id).some(c => !c.deletedAt)
+}
+
+/** Un hijo es CONVERTIBLE dentro de un bloque si es una línea simple o una tarea hoja. */
+function isConvertibleChild(k: Node): boolean {
+  return isSimpleLine(k) || isTaskLeaf(k)
+}
+
 export interface ConvertibleNote { id: string; title: string; lines: string[] }
 
 /** DRY-RUN: identifica las notas convertibles SIN modificar nada. */
@@ -37,7 +51,7 @@ export function findConvertibleNotes(): ConvertibleNote[] {
     if (isDocNode(n)) continue            // ya es un bloque _doc
     const kids = store.children(n.id).filter(k => !k.deletedAt)
     if (kids.length === 0) continue
-    if (!kids.every(isSimpleLine)) continue   // todos los hijos = líneas simples, si no NO tocar
+    if (!kids.every(isConvertibleChild)) continue   // hijos = líneas o tareas hoja; si no, NO tocar
     out.push({ id: n.id, title: (n.text || '').trim(), lines: kids.map(k => (k.text || '')) })
   }
   return out
@@ -56,6 +70,13 @@ function lineToHtml(text: string): string {
   return `<p>${inner}</p>`
 }
 
+/** Una TAREA hoja → casilla enlazada (taskItem con su `data-node-id`) dentro del bloque. */
+function taskToHtml(k: Node): string {
+  const checked = k.status === 'done'
+  const text = (k.text || '').trim()
+  return `<ul data-type="taskList"><li data-type="taskItem" data-checked="${checked}" data-node-id="${k.id}"><label><input type="checkbox"${checked ? ' checked="checked"' : ''}><span></span></label><div><p>${renderInlineToHtml(text)}</p></div></li></ul>`
+}
+
 /**
  * Convierte UNA nota en bloque `_doc`. Fase 1 REVERSIBLE: fusiona el título + las líneas en
  * el `body` HTML del propio nodo, lo marca como `_doc`, y OCULTA las líneas-hijas con
@@ -67,23 +88,28 @@ export function convertNoteToBlock(id: string): boolean {
   if (!n || n.deletedAt) return false
   if (!store.isNote(n) || isMarkedContext(n) || isDocNode(n)) return false
   const kids = store.children(id).filter(k => !k.deletedAt)
-  if (kids.length === 0 || !kids.every(isSimpleLine)) return false
+  if (kids.length === 0 || !kids.every(isConvertibleChild)) return false
 
   const parts: string[] = []
   if ((n.text || '').trim()) parts.push(`<h2>${renderInlineToHtml((n.text || '').trim())}</h2>`)
-  for (const k of kids) parts.push(lineToHtml(k.text || ''))
+  for (const k of kids) parts.push(isTaskLeaf(k) ? taskToHtml(k) : lineToHtml(k.text || ''))
   const body = parts.join('') || '<p></p>'
 
   store.beginBatch?.()
   try {
     const ed = (() => { try { return JSON.parse(n.extraData || '{}') } catch { return {} } })()
-    ed[DOC] = '1'; ed[CTEXT] = '1'
+    ed[DOC] = '1'; ed[CTEXT] = '1'; ed._fromNote = '1' // marca de «bloque venido de una nota» → deshacer seguro
     if (ed._pinW == null) ed._pinW = '360'
     store.updateNode(id, { body, extraData: JSON.stringify(ed) })
-    // Fase 1: ocultar (no borrar) las líneas → reversible.
     for (const k of kids) {
       const ke = (() => { try { return JSON.parse(k.extraData || '{}') } catch { return {} } })()
-      ke._absorbedBy = id
+      if (isTaskLeaf(k)) {
+        // TAREA: se mantiene como tarea-From real, enlazada al body (casilla). No se oculta.
+        ke._taskEmbed = '1'
+      } else {
+        // LÍNEA: Fase 1 → ocultar (no borrar) = reversible.
+        ke._absorbedBy = id
+      }
       store.updateNode(k.id, { extraData: JSON.stringify(ke) })
     }
   } finally {
@@ -113,15 +139,16 @@ export function revertAllNoteBlocks(): number {
   store.beginBatch?.()
   try {
     for (const node of store.allActive()) {
-      const kids = store.children(node.id).filter(k => !k.deletedAt)
-      const absorbed = kids.filter(k => { try { return JSON.parse(k.extraData || '{}')._absorbedBy === node.id } catch { return false } })
-      if (absorbed.length === 0) continue
       const e = (() => { try { return JSON.parse(node.extraData || '{}') } catch { return {} } })()
-      delete e[DOC]; delete e[CTEXT]
+      if (e._fromNote !== '1') continue // solo bloques venidos de una NOTA (no los textos propios)
+      const kids = store.children(node.id).filter(k => !k.deletedAt)
+      delete e[DOC]; delete e[CTEXT]; delete e._fromNote
       store.updateNode(node.id, { extraData: JSON.stringify(e), body: null })
-      for (const k of absorbed) {
+      for (const k of kids) {
         const ke = (() => { try { return JSON.parse(k.extraData || '{}') } catch { return {} } })()
-        delete ke._absorbedBy
+        if (ke._absorbedBy === node.id) delete ke._absorbedBy // línea → vuelve a verse
+        else if (ke._taskEmbed === '1') delete ke._taskEmbed   // tarea → vuelve a suelta
+        else continue
         store.updateNode(k.id, { extraData: JSON.stringify(ke) })
       }
       n++
