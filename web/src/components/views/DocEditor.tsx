@@ -20,6 +20,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { assignContext } from '../../utils/cajones'
 import { firstLineTitle } from '../../utils/docNode'
 import { extractDateFromEnd } from '../../utils/naturalDate'
+import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { uploadFile } from '../../api/client'
 import { setDocEditor, notifyDocEditor } from '../../utils/docEditorStore'
 
@@ -126,6 +127,36 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
     }
   }
 
+  // MAGIC automático: convierte en casilla los PÁRRAFOS que parecen tarea (verbo de acción),
+  // pero SOLO los que ya no tienes editando (el cursor está en otra línea) → nunca interrumpe
+  // mientras escribes. Conservador: mínimo 6 chars y solo párrafos sueltos (no dentro de lista).
+  const magicRef = useRef(false)
+  const autoMagicTasks = () => {
+    const ed = editorRef.current
+    if (!ed || magicRef.current) return
+    const $from = ed.state.selection.$from
+    // Solo actúa si acabas de pulsar Enter: el cursor está en un párrafo VACÍO. Así NUNCA
+    // reconvierte prosa de un documento largo — solo la línea que acabas de terminar.
+    const cur = $from.parent
+    if (cur.type.name !== 'paragraph' || cur.textContent.trim().length > 0) return
+    const curStart = $from.before($from.depth)
+    const prev = ed.state.doc.resolve(curStart).nodeBefore
+    if (!prev || prev.type.name !== 'paragraph') return
+    const text = prev.textContent.trim()
+    if (text.length < 6) return
+    const normed = text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    if (!buildTaskVerbRegex().test(normed)) return
+    const prevInner = curStart - prev.nodeSize + 1
+    const cursorPos = ed.state.selection.from
+    magicRef.current = true
+    try {
+      ed.chain().setTextSelection(prevInner).toggleTaskList().run()
+      ed.commands.setTextSelection(Math.min(cursorPos, ed.state.doc.content.size))
+    } finally {
+      magicRef.current = false
+    }
+  }
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -147,7 +178,8 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
       if (saveTimer.current) clearTimeout(saveTimer.current)
       const html = editor.getHTML()
       saveTimer.current = window.setTimeout(() => {
-        store.updateNode(node.id, { body: html, text: firstLineTitle(html) })
+        autoMagicTasks() // Magic: párrafos-tarea (fuera del cursor) → casilla
+        store.updateNode(node.id, { body: editor.getHTML(), text: firstLineTitle(editor.getHTML()) })
         syncTasksToNodes()
       }, 500)
     },
