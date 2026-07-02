@@ -2015,31 +2015,18 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           if (id) setSelectedId(id)
         }
       } : undefined}
-      onClick={(e) => {
+      onDoubleClick={(e) => {
         if ((e.target as HTMLElement).dataset.bg !== '1') return
         if (toolRef.current !== 'select') return // con herramienta de dibujo activa, no crear texto
         const rect = containerRef.current!.getBoundingClientRect()
         const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-        // LIENZO: UN CLIC en zona vacía → crea TEXTO LIBRE ahí (nodo de esquema: slash +
-        // Magic + barra de formato). Suelto (renderiza y enfoca al instante); si cae dentro
-        // de un contexto, se le ASIGNA ese contexto (pertenece a él sin ser hijo del árbol).
-        if (globalCanvas) {
-          let ctxId: string | undefined
-          let bestArea = Infinity
-          for (const a of children) {
-            if (!zoneIds.has(a.id)) continue
-            const r = readAreaRect(a) ?? nested?.boxes.get(a.id) ?? null; if (!r) continue
-            if (world.x >= r.x && world.x <= r.x + r.w && world.y >= r.y && world.y <= r.y + r.h) {
-              const sz = r.w * r.h
-              if (sz < bestArea) { bestArea = sz; ctxId = a.id }
-            }
-          }
-          // Texto del lienzo = nodo `_doc` (TipTap WYSIWYG): negrita/color en vivo, multilínea
-          // como UN bloque que se mueve junto. Entra directo en edición. Si cae en un contexto,
-          // se le asigna. (Antes creaba un OutlinerNode de texto plano → sin WYSIWYG ni color.)
-          const id = createTextAt(world)
-          if (id && ctxId) assignContext(id, ctxId)
-        }
+        // LIENZO: DOBLE CLIC en zona vacía → crea TEXTO LIBRE ahí (el clic simple es demasiado
+        // intrusivo). Texto = nodo `_doc` (TipTap WYSIWYG): negrita/color en vivo, multilínea
+        // como UN bloque que se mueve junto. Entra directo en edición.
+        // NO se etiqueta con el contexto aunque caiga dentro de su área: la pertenencia se
+        // SOBREENTIENDE por la posición física. Etiquetar (`_ctxRefs`) se reserva para
+        // tareas/textos creados en un DÍA, FUERA del contexto o desde quick-capture.
+        if (globalCanvas) createTextAt(world)
       }}
       onContextMenu={(e) => {
         // Con una herramienta activa (no «seleccionar»), el clic derecho vuelve a
@@ -2636,6 +2623,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               // Colapsado → solo el título + chevron (el usuario despliega para leer).
               editing ? (
                 <DocEditor node={node} compact />
+              ) : globalCanvas ? (
+                // LIENZO: TEXTO PURO — sin gutter, sin chevron, sin dot, sin accesorios.
+                // Solo el cuerpo del documento renderizado. (El formato va en la barra
+                // flotante al seleccionar; se edita con doble clic / al seleccionarlo.)
+                <div className="pizarra-text" style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
+                  dangerouslySetInnerHTML={{ __html: node.body || `<span style="opacity:.4">${t('pizarra.textPlaceholder')}</span>` }}
+                />
               ) : (
                 // Gutter [chevron][dot] + cuerpo, alineados con la 1ª línea — como el
                 // bullet de la lista. chevron = colapsar/desplegar · dot = abrir página.
@@ -2736,8 +2730,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: plainHasKids ? '2px solid var(--accent-soft,#e9e6ff)' : '2px solid var(--bg,#fff)', boxShadow: plainHasKids ? '0 0 0 2px var(--accent,#6c5ce7)' : '0 0 0 1px var(--border,#d8d8d8)' }} />
               </div>
             )}
-            {/* Tirador de ANCHO del texto: visible en hover, selección y también EN EDICIÓN. */}
-            {isText && (hovered || selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
+            {/* Tirador de ANCHO del texto: en el LIENZO el texto es puro (sin tirador, sin dot,
+                sin accesorios) → solo fuera del lienzo (vista pizarra antigua) se muestra. */}
+            {isText && !globalCanvas && (hovered || selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
               <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                 style={{ position: 'absolute', right: -7, top: '50%', width: 5, height: 26, marginTop: -13, background: 'var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
             )}
