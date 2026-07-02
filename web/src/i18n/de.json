@@ -1978,5 +1978,8 @@
   "elements.images": "Bilder",
   "elements.pdfs": "PDFs",
   "elements.searchPlaceholder": "Auf der Leinwand suchen…",
-  "elements.empty": "Noch keine Elemente."
+  "elements.empty": "Noch keine Elemente.",
+  "tip.saveSelection": "Speichern",
+  "elements.savedToast": "Auswahl gespeichert",
+  "elements.loadMore": "{{n}} weitere laden"
 }

@@ -1978,5 +1978,8 @@
   "elements.images": "Afbeeldingen",
   "elements.pdfs": "PDF's",
   "elements.searchPlaceholder": "Zoeken op canvas…",
-  "elements.empty": "Nog geen elementen."
+  "elements.empty": "Nog geen elementen.",
+  "tip.saveSelection": "Opslaan",
+  "elements.savedToast": "Selectie opgeslagen",
+  "elements.loadMore": "Nog {{n}} laden"
 }

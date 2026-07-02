@@ -1381,7 +1381,7 @@ export default function MainLayout() {
             )
           })()}
           {rightPanel === 'elements' && detailNodeId && (
-            <ElementsPanel nodeId={detailNodeId} onBack={() => openPanel('filter')} />
+            <ElementsPanel nodeId={detailNodeId} />
           )}
           {rightPanel === 'porplanificar' && (
             <PorPlanificarPanel />

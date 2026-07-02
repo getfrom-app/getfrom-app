@@ -1978,5 +1978,8 @@
   "elements.images": "Bilder",
   "elements.pdfs": "PDF-filer",
   "elements.searchPlaceholder": "Sök i duken…",
-  "elements.empty": "Inga element än."
+  "elements.empty": "Inga element än.",
+  "tip.saveSelection": "Spara",
+  "elements.savedToast": "Markering sparad",
+  "elements.loadMore": "Ladda {{n}} till"
 }

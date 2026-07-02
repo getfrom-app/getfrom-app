@@ -1979,5 +1979,8 @@
   "elements.images": "Imágenes",
   "elements.pdfs": "PDFs",
   "elements.searchPlaceholder": "Buscar en el lienzo…",
-  "elements.empty": "Sin elementos todavía."
+  "elements.empty": "Sin elementos todavía.",
+  "tip.saveSelection": "Guardar",
+  "elements.savedToast": "Selección guardada",
+  "elements.loadMore": "Cargar {{n}} más"
 }

@@ -1978,5 +1978,8 @@
   "elements.images": "Görseller",
   "elements.pdfs": "PDF'ler",
   "elements.searchPlaceholder": "Tuvalde ara…",
-  "elements.empty": "Henüz öğe yok."
+  "elements.empty": "Henüz öğe yok.",
+  "tip.saveSelection": "Kaydet",
+  "elements.savedToast": "Seçim kaydedildi",
+  "elements.loadMore": "{{n}} tane daha yükle"
 }

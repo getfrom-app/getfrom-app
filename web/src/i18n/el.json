@@ -1978,5 +1978,8 @@
   "elements.images": "Εικόνες",
   "elements.pdfs": "PDF",
   "elements.searchPlaceholder": "Αναζήτηση στον καμβά…",
-  "elements.empty": "Δεν υπάρχουν ακόμη στοιχεία."
+  "elements.empty": "Δεν υπάρχουν ακόμη στοιχεία.",
+  "tip.saveSelection": "Αποθήκευση",
+  "elements.savedToast": "Η επιλογή αποθηκεύτηκε",
+  "elements.loadMore": "Φόρτωση {{n}} ακόμη"
 }

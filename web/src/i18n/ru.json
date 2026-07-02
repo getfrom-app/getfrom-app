@@ -1978,5 +1978,8 @@
   "elements.images": "Изображения",
   "elements.pdfs": "PDF-файлы",
   "elements.searchPlaceholder": "Поиск на холсте…",
-  "elements.empty": "Пока нет элементов."
+  "elements.empty": "Пока нет элементов.",
+  "tip.saveSelection": "Сохранить",
+  "elements.savedToast": "Выделение сохранено",
+  "elements.loadMore": "Загрузить ещё {{n}}"
 }

@@ -1979,5 +1979,8 @@
   "elements.images": "Images",
   "elements.pdfs": "PDFs",
   "elements.searchPlaceholder": "Search the canvas…",
-  "elements.empty": "No elements yet."
+  "elements.empty": "No elements yet.",
+  "tip.saveSelection": "Save",
+  "elements.savedToast": "Selection saved",
+  "elements.loadMore": "Load {{n}} more"
 }

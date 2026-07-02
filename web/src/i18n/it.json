@@ -1978,5 +1978,8 @@
   "elements.images": "Immagini",
   "elements.pdfs": "PDF",
   "elements.searchPlaceholder": "Cerca nella lavagna…",
-  "elements.empty": "Ancora nessun elemento."
+  "elements.empty": "Ancora nessun elemento.",
+  "tip.saveSelection": "Salva",
+  "elements.savedToast": "Selezione salvata",
+  "elements.loadMore": "Carica altri {{n}}"
 }

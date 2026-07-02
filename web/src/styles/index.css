@@ -6057,13 +6057,17 @@ body.outliner-drag-active {
   font-size: calc(var(--total-scale-factor, 1) * var(--font-height, 1px));
 }
 .pdf-text-layer ::selection { background: rgba(139,92,246,.35); }
-.pdf-send-to-canvas-btn {
+.pdf-selection-actions {
   position: absolute; transform: translate(-50%, -130%); z-index: 20;
+  display: flex; gap: 4px;
+}
+.pdf-send-to-canvas-btn {
   background: var(--accent); color: #fff; border: none; border-radius: 6px;
   font-size: 12px; font-weight: 600; padding: 6px 10px; white-space: nowrap;
   cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,.35);
 }
 .pdf-send-to-canvas-btn:hover { opacity: .9; }
+.pdf-send-to-canvas-btn--save { background: #444; }
 
 .node-resource-pdf-wrap {
   display: flex;

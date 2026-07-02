@@ -176,10 +176,20 @@ interface ResourceMeta { url: string; type: ResourceKind }
 function readResource(node: Node): ResourceMeta | null {
   try {
     const ed = JSON.parse(node.extraData || '{}')
-    const url = ed._resourceUrl as string | undefined
+    // Nodos antiguos guardan la url/tipo en el campo del nodo (`node.resourceUrl`), no en
+    // extraData (migración «Antes extraData._resourceUrl» — types/index.ts); aceptar ambos.
+    const url = (ed._resourceUrl as string | undefined) || node.resourceUrl || undefined
     if (!url) return null
-    const t = (ed._resourceType as string) || 'file'
-    const type: ResourceKind = t === 'image' || t === 'pdf' || t === 'url' ? t : 'file'
+    // El tipo puede venir como código corto ('pdf'/'image') O como MIME crudo
+    // ('application/pdf', 'image/png'…) si el nodo se creó con una versión anterior
+    // del sistema de recursos → antes caía siempre en el fallback genérico 'file'
+    // (icono + nombre) en vez de la previsualización real. Como último recurso, mirar
+    // la extensión de la URL.
+    const raw = (ed._resourceType as string | undefined) || node.resourceType || ''
+    const type: ResourceKind =
+      raw === 'image' || raw.startsWith('image/') || /\.(jpe?g|png|gif|webp|svg|heic)$/i.test(url) ? 'image' :
+      raw === 'pdf' || raw === 'application/pdf' || /\.pdf$/i.test(url) ? 'pdf' :
+      raw === 'url' ? 'url' : 'file'
     return { url, type }
   } catch { return null }
 }
@@ -1460,24 +1470,35 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // «Enviar al lienzo» → tarjeta `_doc` con la cita, anclada junto al PDF de origen.
   // Se marca `_pdfSelection` (+ referencia al PDF y página) para que sea BUSCABLE y
   // filtrable como «selección» en el panel de Elementos (igual que en Heptabase).
+  // `mode:'canvas'` (Enviar al lienzo) coloca la tarjeta con pin, visible, y vuela la
+  // cámara. `mode:'save'` (Guardar) crea el MISMO nodo buscable pero SIN pin: no ocupa
+  // sitio en el lienzo, solo aparece por búsqueda / panel Elementos.
   useEffect(() => {
     const h = (e: Event) => {
-      const detail = (e as CustomEvent<{ text?: string; sourceNodeId?: string; filename?: string; page?: number | null }>).detail
+      const detail = (e as CustomEvent<{ text?: string; sourceNodeId?: string; filename?: string; page?: number | null; mode?: 'canvas' | 'save' }>).detail
       const text = (detail?.text || '').trim()
       const sourceId = detail?.sourceNodeId
       if (!text || !sourceId) return
       const src = store.getNode(sourceId)
       if (!src) return
       const targetParent = src.parentId || parentId
-      const pin = readPin(src) || { x: 0, y: 0 }
-      const world = { x: pin.x + 380, y: pin.y }
-      const extra: Record<string, string> = { ...newTextExtra(world), _pdfSelection: '1', _pdfSourceId: sourceId }
+      const mode = detail?.mode ?? 'canvas'
+      let extra: Record<string, string> = { [DOC]: '1', [CTEXT]: '1', _pdfSelection: '1', _pdfSourceId: sourceId }
+      if (mode === 'canvas') {
+        const pin = readPin(src) || { x: 0, y: 0 }
+        const world = { x: pin.x + 380, y: pin.y }
+        extra = { ...extra, ...newTextExtra(world) }
+      }
       if (detail?.page != null) extra._pdfPage = String(detail.page)
       const quoteNode = store.createNode({ text: '', parentId: targetParent, extraData: extra })
       const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       store.updateNode(quoteNode.id, { body: `<blockquote><p>${escapeHtml(text)}</p></blockquote>` })
-      setSelectedId(quoteNode.id)
-      setTimeout(() => { const n = store.getNode(quoteNode.id); if (n) flyToNode(n) }, 200)
+      if (mode === 'canvas') {
+        setSelectedId(quoteNode.id)
+        setTimeout(() => { const n = store.getNode(quoteNode.id); if (n) flyToNode(n) }, 200)
+      } else {
+        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('elements.savedToast'), type: 'success' } }))
+      }
     }
     window.addEventListener('from:pdf-send-to-canvas', h)
     return () => window.removeEventListener('from:pdf-send-to-canvas', h)

@@ -1978,5 +1978,8 @@
   "elements.images": "Obrazy",
   "elements.pdfs": "PDF-y",
   "elements.searchPlaceholder": "Szukaj na tablicy…",
-  "elements.empty": "Jeszcze brak elementów."
+  "elements.empty": "Jeszcze brak elementów.",
+  "tip.saveSelection": "Zapisz",
+  "elements.savedToast": "Zaznaczenie zapisane",
+  "elements.loadMore": "Wczytaj {{n}} więcej"
 }

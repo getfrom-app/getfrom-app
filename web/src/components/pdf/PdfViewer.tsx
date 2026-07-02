@@ -100,17 +100,16 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         canvas.width = vp.width; canvas.height = vp.height
         await page.render({ canvasContext: canvas.getContext('2d')!, viewport: vp }).promise
         // Capa de texto invisible (seleccionable) para poder copiar/enviar fragmentos al lienzo.
+        // Tamaño: SIEMPRE 100%/100% del contenedor por CSS (JSX) — NO se fuerza en px aquí, para
+        // que siga fielmente el tamaño real (posiblemente reducido por `maxWidth`/`aspectRatio`
+        // del `.pdf-viewer-page`) en vez de imponer el ancho "ideal" sin recortar del cálculo JS.
         const textLayerDiv = textLayerRefs.current.get(i)
         if (textLayerDiv) {
           textLayerDiv.replaceChildren()
-          textLayerDiv.style.width = `${vp.width}px`
-          textLayerDiv.style.height = `${vp.height}px`
           textLayerDiv.style.setProperty('--total-scale-factor', String(scale))
           try {
             const tl = new pdfjsLib.TextLayer({ textContentSource: page.streamTextContent(), container: textLayerDiv, viewport: vp })
             await tl.render()
-            textLayerDiv.style.width = `${vp.width}px`
-            textLayerDiv.style.height = `${vp.height}px`
           } catch (e) { console.error('[PdfViewer] text layer error:', e) }
         }
       }
@@ -178,10 +177,13 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
     return () => document.removeEventListener('selectionchange', onSelChange)
   }, [])
 
-  function sendSelectionToCanvas() {
+  // «Enviar al lienzo» coloca la tarjeta visible (con pin) y vuela la cámara a ella.
+  // «Guardar» crea el mismo nodo-selección buscable pero SIN pin: no aparece en el
+  // lienzo, solo queda accesible por búsqueda / el panel Elementos.
+  function actOnSelection(mode: 'canvas' | 'save') {
     if (!textSel) return
     window.dispatchEvent(new CustomEvent('from:pdf-send-to-canvas', {
-      detail: { text: textSel.text, sourceNodeId: nodeId, filename, page: textSel.page },
+      detail: { text: textSel.text, sourceNodeId: nodeId, filename, page: textSel.page, mode },
     }))
     window.getSelection()?.removeAllRanges()
     setTextSel(null)
@@ -261,13 +263,16 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
           const page = i+1
           const w = pageWidths[i]||0; const h = pageHeights[i]||0
           return (
-            <div key={page} className="pdf-viewer-page" data-page={page} style={{width:w,height:h}}>
+            <div key={page} className="pdf-viewer-page" data-page={page} style={{width:w,maxWidth:'100%',aspectRatio:`${w} / ${h}`,overflow:'hidden'}}>
+              {/* `maxWidth:100%` + `aspectRatio` son la garantía DURA de que la página nunca se
+                  sale del contenedor, pase lo que pase con el cálculo de escala en JS (que solo
+                  decide la RESOLUCIÓN de render, no el layout final). */}
               <canvas ref={el=>{if(el)canvasRefs.current.set(page,el)}}
-                style={{position:'absolute',top:0,left:0}}/>
+                style={{position:'absolute',top:0,left:0,width:'100%',height:'100%'}}/>
               {/* Capa de texto: SIEMPRE activa (única forma de interacción de este visor). */}
               <div ref={el=>{if(el)textLayerRefs.current.set(page,el)}}
                 className="pdf-text-layer"
-                style={{position:'absolute',top:0,left:0}}/>
+                style={{position:'absolute',top:0,left:0,width:'100%',height:'100%'}}/>
               {/* Anotaciones YA existentes (de sesiones anteriores) — solo lectura, sin captura de ratón. */}
               <svg ref={el=>{if(el){svgRefs.current.set(page,el);renderSvg(el,page,annotations)}}}
                 className="pdf-viewer-svg" style={{pointerEvents:'none'}} />
@@ -275,16 +280,18 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
             </div>
           )
         })}
-        {/* Botón flotante: enviar el fragmento seleccionado como tarjeta al lienzo */}
+        {/* Botones flotantes sobre la selección: enviar al lienzo (con pin, visible) o
+            guardar (buscable, sin colocarlo en el lienzo) — acciones independientes. */}
         {textSel && (
-          <button
-            className="pdf-send-to-canvas-btn"
-            style={{ left: textSel.x, top: textSel.y }}
-            onMouseDown={e=>e.preventDefault() /* no perder la selección al hacer clic */}
-            onClick={sendSelectionToCanvas}
-          >
-            ⤴ {tr('tip.sendToCanvas')}
-          </button>
+          <div className="pdf-selection-actions" style={{ left: textSel.x, top: textSel.y }}
+            onMouseDown={e=>e.preventDefault() /* no perder la selección al hacer clic */}>
+            <button className="pdf-send-to-canvas-btn" onClick={()=>actOnSelection('canvas')}>
+              ⤴ {tr('tip.sendToCanvas')}
+            </button>
+            <button className="pdf-send-to-canvas-btn pdf-send-to-canvas-btn--save" onClick={()=>actOnSelection('save')}>
+              💾 {tr('tip.saveSelection')}
+            </button>
+          </div>
         )}
       </div>
     </div>
