@@ -1316,8 +1316,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       if (!id) return
       const n = store.getNode(id)
       if (!n) return
-      // Área explícita o contexto con caja anidada → volar a su región.
-      if (isArea(n) || nestedRef.current?.boxes.has(id)) { flyToArea(id); return }
+      // Área explícita, contexto (caja) o DÍA (celda de la agenda) → volar a su región.
+      if (isArea(n) || nestedRef.current?.boxes.has(id) || nestedRef.current?.dayCells.has(id)) { flyToArea(id); return }
       if (store.children(parentId).some(c => c.id === id)) flyToNode(n)
     }
     window.addEventListener('from:pizarra-flyto', h)
