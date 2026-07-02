@@ -113,13 +113,10 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
         tr.setMeta('addToHistory', false)
         ed.view.dispatch(tr)
       }
-      // Borrar las tareas-embed cuyas casillas ya no existen en el texto.
-      for (const c of store.children(node.id)) {
-        if (c.deletedAt) continue
-        let emb = false
-        try { emb = JSON.parse(c.extraData || '{}')._taskEmbed === '1' } catch { /* ignore */ }
-        if (emb && !seen.has(c.id)) store.deleteNode(c.id)
-      }
+      // ⚠️ SEGURIDAD DE DATOS: el borrado automático de tareas-embed queda DESACTIVADO por
+      // ahora (se investigó un reporte de contenido desaparecido). Nunca se borran nodos
+      // desde el sync; las tareas huérfanas se limpiarán con un mecanismo revisado.
+      void seen
     } finally {
       syncingRef.current = false
     }
