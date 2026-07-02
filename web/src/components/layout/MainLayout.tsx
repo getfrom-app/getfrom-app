@@ -638,7 +638,9 @@ export default function MainLayout() {
       if (!onCanvas) { navigate(`/node/${id}`); return }
       setRightCollapsed(false)
       setDetailNodeId(id)
-      if (isDocNode(n)) { setRightPanel('doc'); return }
+      // Nota: un `_doc` del LIENZO (texto libre) NO abre el inspector de documento — su
+      // formato va en la barra flotante. Cae abajo → columna de su contexto/tarea/día,
+      // igual que cualquier otro nodo. (El inspector solo aparece en la página /node del doc.)
       // TAREA/evento → columna de TAREA (fecha, repetición, prioridad), en el lienzo.
       if (n.status != null || n.isEvent) { setRightPanel('task'); return }
       // Contexto/prompt/agente/plantilla por ubicación en el árbol; ADEMÁS, cualquier

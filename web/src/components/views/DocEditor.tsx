@@ -83,13 +83,15 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
   }, [editor, node.id])
   useEffect(() => () => { if (saveTimer.current) { clearTimeout(saveTimer.current); if (editor) store.updateNode(node.id, { body: editor.getHTML(), text: firstLineTitle(editor.getHTML()) }) } }, [editor, node.id])
 
-  // Registrar el editor activo para la barra de formato (DocInspector, columna derecha).
+  // Registrar el editor activo para la barra de formato de PÁGINA (DocInspector, columna
+  // derecha). En el LIENZO (compact) NO se registra: el formato va en la barra flotante y
+  // la columna derecha debe seguir siendo la del contexto/tarea, no el inspector de doc.
   useEffect(() => {
-    if (!editor) return
+    if (!editor || compact) return
     setDocEditor(editor, insertImage)
     return () => setDocEditor(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor])
+  }, [editor, compact])
 
   if (!editor) return null
 
