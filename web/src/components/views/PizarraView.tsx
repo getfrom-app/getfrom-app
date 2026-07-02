@@ -15,7 +15,6 @@
 //    el lienzo sin librería — un canvas necesita posicionamiento 2D libre).
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
-import type { CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
@@ -2979,66 +2978,6 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           MULTISELECCIÓN → acciones en lote (eliminar/duplicar todos). Si no →
           menú normal: QUITAR (saca de la pizarra, NO borra) o ELIMINAR. */}
       {/* Menú de clic derecho de un CONTEXTO: color de acento + eliminar (con contenido). */}
-      {/* ── Barra FLOTANTE de formato del texto del lienzo ────────────────────────
-         Aparece ENCIMA del texto seleccionado (no en la columna derecha, que sigue
-         siendo la del contexto/tarea/lo que sea). Aplica markdown a la selección:
-         negrita **, cursiva *, código `, tachado ~~, resaltado ==. Además botón de
-         cabecera/lista (prefijo de línea) y «convertir en tarea». Todo sobre el
-         contentEditable del propio nodo → OutlinerNode lo guarda como texto plano. */}
-      {globalCanvas && selectedId && (() => {
-        const n = store.getNode(selectedId)
-        if (!n) return null
-        // Solo texto: nada de docs (TipTap), vistas (tabla/kanban/cal) ni recursos.
-        if (isDocNode(n) || canvasViewKind(n) || readResource(n)) return null
-        const pos = layout.get(selectedId)
-        if (!pos) return null
-        const sx = cam.x + pos.x * cam.scale
-        const sy = cam.y + pos.y * cam.scale
-        if (sx < -40 || sx > viewport.w + 40 || sy < 8 || sy > viewport.h) return null
-        const editable = () => containerRef.current?.querySelector(`[data-node-id="${selectedId}"] .node-text`) as HTMLElement | null
-        const wrapSel = (mark: string) => {
-          const el = editable(); if (!el) return
-          el.focus()
-          const sel = window.getSelection()
-          const txt = sel && !sel.isCollapsed ? sel.toString() : ''
-          document.execCommand('insertText', false, mark + txt + mark)
-        }
-        const prefixLine = (mark: string) => {
-          const cur = store.getNode(selectedId); if (!cur) return
-          const raw = cur.text || ''
-          const stripped = raw.replace(/^(#{1,6}\s+|-\s+|\d+\.\s+|>\s+)/, '')
-          store.updateNode(selectedId, { text: raw.startsWith(mark) ? stripped : mark + stripped })
-        }
-        const makeTask = () => {
-          const cur = store.getNode(selectedId); if (!cur) return
-          store.updateNode(selectedId, { status: cur.status != null ? null : 'pending' })
-        }
-        const bBtn: CSSProperties = { width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', background: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 13, color: 'var(--text-primary,#222)', lineHeight: 1 }
-        const sep = <div style={{ width: 1, alignSelf: 'stretch', background: 'var(--border-subtle,#eee)', margin: '3px 2px' }} />
-        const isTask = n.status != null
-        return (
-          <div
-            onPointerDown={(e) => e.preventDefault()}
-            style={{
-              position: 'absolute', left: Math.max(6, Math.min(sx, viewport.w - 260)), top: Math.max(6, sy - 42),
-              zIndex: 40, display: 'flex', alignItems: 'center', gap: 1,
-              background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
-              borderRadius: 9, padding: 3, boxShadow: '0 6px 22px rgba(0,0,0,0.15)',
-            }}
-          >
-            <button style={bBtn} title={t('pizarra.fmtBold', 'Negrita')} onClick={() => wrapSel('**')}><b>B</b></button>
-            <button style={bBtn} title={t('pizarra.fmtItalic', 'Cursiva')} onClick={() => wrapSel('*')}><i>i</i></button>
-            <button style={bBtn} title={t('pizarra.fmtCode', 'Código')} onClick={() => wrapSel('`')}><span style={{ fontFamily: 'monospace', fontSize: 12 }}>{'</>'}</span></button>
-            <button style={bBtn} title={t('pizarra.fmtStrike', 'Tachado')} onClick={() => wrapSel('~~')}><s>S</s></button>
-            <button style={bBtn} title={t('pizarra.fmtHighlight', 'Resaltado')} onClick={() => wrapSel('==')}><span style={{ background: '#fef08a', padding: '0 3px', borderRadius: 3 }}>H</span></button>
-            {sep}
-            <button style={bBtn} title={t('pizarra.fmtHeading', 'Título')} onClick={() => prefixLine('# ')}>H1</button>
-            <button style={bBtn} title={t('pizarra.fmtList', 'Lista')} onClick={() => prefixLine('- ')}>•</button>
-            {sep}
-            <button style={{ ...bBtn, color: isTask ? 'var(--accent,#6c5ce7)' : undefined }} title={t('pizarra.fmtTask', 'Convertir en tarea')} onClick={makeTask}>✓</button>
-          </div>
-        )
-      })()}
       {areaMenu && store.getNode(areaMenu.id) && (
         <>
           <div onPointerDown={() => setAreaMenu(null)} onContextMenu={(e) => { e.preventDefault(); setAreaMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
