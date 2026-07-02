@@ -7,7 +7,7 @@ import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { ensureCanvasRoot, isCanvasRoot } from '../../utils/canvasRoot'
-import { findConvertibleNotes, convertAllNotesToBlocks, revertAllNoteBlocks, diagnoseNotes } from '../../utils/noteBlocks'
+import { findConvertibleNotes, convertAllNotesToBlocks, revertAllNoteBlocks, diagnoseNotes, inspectUnabsorbed } from '../../utils/noteBlocks'
 import { getAgentesNode } from '../../utils/agentesHelper'
 import { getPapeleraNode } from '../../utils/papeleraHelper'
 import { findRootByKey } from '../../utils/rootLookup'
@@ -291,6 +291,9 @@ export default function WFTopBar({
               window.alert(`Convertibles ahora: ${d.convertible}\n\nNotas NO convertibles por motivo:\n${reasons || '(ninguna)'}\n\nEjemplos:\n${d.examples.join('\n') || '(ninguno)'}`)
             }}>
               <span>🔎</span> Diagnóstico de notas
+            </button>
+            <button className="wf-topbar-dropdown-item" onClick={() => { setMenuOpen(false); window.alert(inspectUnabsorbed()) }}>
+              <span>🔬</span> Inspeccionar bloques
             </button>
             <div className="wf-topbar-dropdown-sep" />
             <button className="wf-topbar-dropdown-item wf-topbar-dropdown-danger" onClick={onLogout}>

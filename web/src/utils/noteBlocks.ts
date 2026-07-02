@@ -125,6 +125,21 @@ export function diagnoseNotes(): { convertible: number; reasons: Record<string, 
   return { convertible, reasons, examples }
 }
 
+/** INSPECCIÓN: bloques `_doc` que tienen hijos SUELTOS (sin `_absorbedBy`/`_taskEmbed`) → esas
+ *  líneas se ven fuera del recuadro. Revela por qué no se absorbieron. No modifica. */
+export function inspectUnabsorbed(): string {
+  const out: string[] = []
+  for (const n of store.allActive()) {
+    if (!isDocNode(n)) continue
+    const kids = store.children(n.id).filter(k => !k.deletedAt)
+    const loose = kids.filter(k => { const e = ed(k); return !e._absorbedBy && !e._taskEmbed })
+    if (loose.length === 0) continue
+    out.push(`▸ «${(n.text || '(sin título)').slice(0, 28)}» — ${loose.length}/${kids.length} hijos SUELTOS · body ${(n.body || '').length}c · _fromNote=${ed(n)._fromNote === '1' ? 'sí' : 'NO'}`)
+    for (const l of loose.slice(0, 3)) out.push(`    └ ${isDocNode(l) ? '[bloque]' : l.status != null ? '[tarea]' : '[texto]'} «${(l.text || '').slice(0, 34)}» hijos:${store.children(l.id).filter(c => !c.deletedAt).length}`)
+  }
+  return out.slice(0, 40).join('\n') || 'No hay bloques con hijos sueltos ✓'
+}
+
 /** Texto de una línea → HTML de bloque (respeta encabezados/citas/listas markdown). */
 function lineToHtml(text: string): string {
   const t = (text || '').trim()
