@@ -1984,5 +1984,10 @@
   "elements.loadMore": "Φόρτωση {{n}} ακόμη",
   "export.markdown": "Εξαγωγή Markdown",
   "export.html": "Εξαγωγή HTML",
-  "export.pdf": "Εξαγωγή PDF"
+  "export.pdf": "Εξαγωγή PDF",
+  "export.textsOnlyTitle": "Μόνο κείμενα",
+  "export.textsOnlyLabel": "Εξαγωγή όλων των κειμένων και σημειώσεών σου",
+  "export.textsOnlyHint": "Ένα ενιαίο αρχείο Markdown με όλες τις σημειώσεις και τα έγγραφά σου, για να τα ελέγξεις και να κρατήσεις ό,τι θέλεις. ΔΕΝ περιλαμβάνει εργασίες ή περιβάλλοντα — αυτά παραμένουν όπως είναι.",
+  "export.textsOnlyButton": "Εξαγωγή όλων των κειμένων",
+  "export.textsOnlyDone": "{{count}} σημειώσεις/έγγραφα εξήχθησαν."
 }

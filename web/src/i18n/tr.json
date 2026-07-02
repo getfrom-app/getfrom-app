@@ -1984,5 +1984,10 @@
   "elements.loadMore": "{{n}} tane daha yükle",
   "export.markdown": "Markdown olarak dışa aktar",
   "export.html": "HTML olarak dışa aktar",
-  "export.pdf": "PDF olarak dışa aktar"
+  "export.pdf": "PDF olarak dışa aktar",
+  "export.textsOnlyTitle": "Sadece metinler",
+  "export.textsOnlyLabel": "Tüm metinlerini ve notlarını dışa aktar",
+  "export.textsOnlyHint": "Tüm notlarını ve belgelerini içeren tek bir Markdown dosyası; gözden geçirip saklamak istediklerini seç. Görevleri veya bağlamları İÇERMEZ — onlar olduğu gibi kalır.",
+  "export.textsOnlyButton": "Tüm metinleri dışa aktar",
+  "export.textsOnlyDone": "{{count}} not/belge dışa aktarıldı."
 }

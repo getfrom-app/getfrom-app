@@ -1984,5 +1984,10 @@
   "elements.loadMore": "Wczytaj {{n}} więcej",
   "export.markdown": "Eksportuj Markdown",
   "export.html": "Eksportuj HTML",
-  "export.pdf": "Eksportuj PDF"
+  "export.pdf": "Eksportuj PDF",
+  "export.textsOnlyTitle": "Tylko teksty",
+  "export.textsOnlyLabel": "Eksportuj wszystkie teksty i notatki",
+  "export.textsOnlyHint": "Jeden plik Markdown ze wszystkimi Twoimi notatkami i dokumentami, do przejrzenia i zachowania tego, co chcesz. NIE zawiera zadań ani kontekstów — te pozostają bez zmian.",
+  "export.textsOnlyButton": "Eksportuj wszystkie teksty",
+  "export.textsOnlyDone": "Wyeksportowano {{count}} notatek/dokumentów."
 }

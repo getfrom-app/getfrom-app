@@ -1984,5 +1984,10 @@
   "elements.loadMore": "Загрузить ещё {{n}}",
   "export.markdown": "Экспорт в Markdown",
   "export.html": "Экспорт в HTML",
-  "export.pdf": "Экспорт в PDF"
+  "export.pdf": "Экспорт в PDF",
+  "export.textsOnlyTitle": "Только тексты",
+  "export.textsOnlyLabel": "Экспортировать все тексты и заметки",
+  "export.textsOnlyHint": "Единый файл Markdown со всеми вашими заметками и документами — просмотрите и сохраните то, что нужно. НЕ включает задачи и контексты — они остаются как есть.",
+  "export.textsOnlyButton": "Экспортировать все тексты",
+  "export.textsOnlyDone": "Экспортировано заметок/документов: {{count}}."
 }

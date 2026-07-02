@@ -16,6 +16,7 @@ import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextE
 import HotkeysPane from '../settings/HotkeysPane'
 import { getGoogleOAuthUrl, disconnectGoogle } from '../../api/googleCalendar'
 import { aiLangBCP47 } from '../../utils/aiLang'
+import { downloadFullTextExport } from '../../utils/bulkTextExport'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -931,6 +932,21 @@ export function ExportarPane() {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [textsLoading, setTextsLoading] = useState(false)
+  const [textsCount, setTextsCount] = useState<number | null>(null)
+
+  function handleExportTexts() {
+    setTextsLoading(true); setTextsCount(null)
+    try {
+      // Trabajo síncrono pesado (recorre TODO el árbol) — dar un frame al loading antes.
+      setTimeout(() => {
+        try {
+          const count = downloadFullTextExport()
+          setTextsCount(count)
+        } finally { setTextsLoading(false) }
+      }, 30)
+    } catch { setTextsLoading(false) }
+  }
 
   async function handleExport(format: 'json' | 'markdown') {
     setError(''); setLoading(true)
@@ -963,6 +979,15 @@ export function ExportarPane() {
         </button>
         <button className="btn-secondary" onClick={() => handleExport('markdown')} disabled={loading}>
           {loading ? t('common.exporting') : t('export.markdownServerButton')}
+        </button>
+      </div>
+
+      <SectionTitle>{t('export.textsOnlyTitle')}</SectionTitle>
+      <Row label={t('export.textsOnlyLabel')} hint={t('export.textsOnlyHint')} />
+      {textsCount != null && <div style={{ fontSize: 12.5, color: 'var(--accent,#6c5ce7)', marginTop: 6 }}>{t('export.textsOnlyDone', { count: textsCount })}</div>}
+      <div className="st-actions">
+        <button className="btn-secondary" onClick={handleExportTexts} disabled={textsLoading}>
+          {textsLoading ? t('common.exporting') : t('export.textsOnlyButton')}
         </button>
       </div>
     </div>

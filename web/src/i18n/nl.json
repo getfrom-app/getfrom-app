@@ -1984,5 +1984,10 @@
   "elements.loadMore": "Nog {{n}} laden",
   "export.markdown": "Markdown exporteren",
   "export.html": "HTML exporteren",
-  "export.pdf": "PDF exporteren"
+  "export.pdf": "PDF exporteren",
+  "export.textsOnlyTitle": "Alleen teksten",
+  "export.textsOnlyLabel": "Exporteer al je teksten en notities",
+  "export.textsOnlyHint": "Eén Markdown-bestand met al je notities en documenten, om te beoordelen en te bewaren wat je wilt. Bevat GEEN taken of contexten — die blijven zoals ze zijn.",
+  "export.textsOnlyButton": "Alle teksten exporteren",
+  "export.textsOnlyDone": "{{count}} notities/documenten geëxporteerd."
 }

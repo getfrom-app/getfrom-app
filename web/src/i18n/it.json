@@ -1984,5 +1984,10 @@
   "elements.loadMore": "Carica altri {{n}}",
   "export.markdown": "Esporta Markdown",
   "export.html": "Esporta HTML",
-  "export.pdf": "Esporta PDF"
+  "export.pdf": "Esporta PDF",
+  "export.textsOnlyTitle": "Solo testi",
+  "export.textsOnlyLabel": "Esporta tutti i tuoi testi e note",
+  "export.textsOnlyHint": "Un unico file Markdown con tutte le tue note e documenti, per rivedere e conservare ciò che vuoi. NON include attività né contesti — restano invariati.",
+  "export.textsOnlyButton": "Esporta tutti i testi",
+  "export.textsOnlyDone": "{{count}} note/documenti esportati."
 }
