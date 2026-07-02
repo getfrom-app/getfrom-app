@@ -665,7 +665,10 @@ export default function MainLayout() {
       setDetailNodeId(day.id)
       setRightCollapsed(false)
       setRightPanel('day')
-      window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: day.id } }))
+      // Volar a la ZONA del día. Si el día se acaba de crear, su celda aparece tras el
+      // recálculo (debounced) del layout → reintentos para no perder el vuelo.
+      const flyDay = () => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: day.id } }))
+      flyDay(); setTimeout(flyDay, 320); setTimeout(flyDay, 640)
     }
     window.addEventListener('from:open-detail', onOpenDetail as EventListener)
     window.addEventListener('from:close-detail', onCloseDetail)
