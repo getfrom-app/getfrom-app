@@ -74,6 +74,7 @@ const SettingsView = lazy(() => import('../views/SettingsView'))
 const ResourcesView = lazy(() => import('../views/ResourcesView'))
 import SearchPanel from '../panels/SearchPanel'
 import DocInspector from '../views/DocInspector'
+import PdfContainer from '../pdf/PdfContainer'
 import { isDocNode } from '../../utils/docNode'
 import { useHasActiveDocEditor } from '../../utils/docEditorStore'
 // Componentes pesados: lazy-loaded para reducir el bundle inicial
@@ -183,6 +184,7 @@ export default function MainLayout() {
     | 'day'
     | 'task'
     | 'doc'
+    | 'resource'
     | 'porplanificar'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
   // (context/prompt/agent-list) y el planner salen del ciclo: contextos/prompts/
@@ -641,6 +643,11 @@ export default function MainLayout() {
       // Nota: un `_doc` del LIENZO (texto libre) NO abre el inspector de documento — su
       // formato va en la barra flotante. Cae abajo → columna de su contexto/tarea/día,
       // igual que cualquier otro nodo. (El inspector solo aparece en la página /node del doc.)
+      // RECURSO (PDF / imagen / archivo) → se abre GRANDE en la columna derecha para leerlo,
+      // anotarlo y (PDF) dibujar/resaltar. La tarjeta sigue en el lienzo. (Estilo Heptabase.)
+      if (n.isResource || (() => { try { return !!JSON.parse(n.extraData || '{}')._resourceUrl } catch { return false } })()) {
+        setRightPanel('resource'); return
+      }
       // TAREA/evento → columna de TAREA (fecha, repetición, prioridad), en el lienzo.
       if (n.status != null || n.isEvent) { setRightPanel('task'); return }
       // Contexto/prompt/agente/plantilla por ubicación en el árbol; ADEMÁS, cualquier
@@ -1338,6 +1345,29 @@ export default function MainLayout() {
               <TaskPropsBody nodeId={detailNodeId} />
             </div>
           )}
+          {rightPanel === 'resource' && detailNodeId && (() => {
+            const n = store.getNode(detailNodeId)
+            if (!n) return null
+            let ed: Record<string, unknown> = {}
+            try { ed = JSON.parse(n.extraData || '{}') } catch { /* ignore */ }
+            const url = (ed._resourceUrl as string) || ''
+            const type = (ed._resourceType as string) || ''
+            const key = ed._resourceKey as string | undefined
+            if (!url) return <div style={{ padding: 16, color: 'var(--text-tertiary)' }}>{t('common.noContent', 'Sin contenido')}</div>
+            if (type === 'pdf') return <div style={{ height: '100%', overflow: 'hidden' }}><PdfContainer url={url} nodeId={detailNodeId} filename={n.text || 'PDF'} resourceKey={key} /></div>
+            if (type === 'image') return (
+              <div style={{ height: '100%', overflowY: 'auto', padding: 16 }}>
+                <div className="rc-section-label" style={{ marginBottom: 10 }}>{n.text || 'Imagen'}</div>
+                <img src={url} alt={n.text || ''} style={{ maxWidth: '100%', height: 'auto', borderRadius: 8, display: 'block' }} />
+              </div>
+            )
+            return (
+              <div style={{ padding: 16 }}>
+                <div className="rc-section-label" style={{ marginBottom: 10 }}>{n.text || 'Archivo'}</div>
+                <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>{t('common.open', 'Abrir')}</a>
+              </div>
+            )
+          })()}
           {rightPanel === 'porplanificar' && (
             <PorPlanificarPanel />
           )}
