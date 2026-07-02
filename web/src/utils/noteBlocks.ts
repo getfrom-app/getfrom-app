@@ -20,10 +20,19 @@ function activeChildren(id: string): Node[] {
   return store.children(id).filter(k => !k.deletedAt)
 }
 
-/** Tipos que NO se pueden aplanar en un bloque (rompen la conversión): contexto, doc, recurso,
- *  vista, evento, diaria, agente/prompt/tag/perfil, estructura temporal. (Una TAREA sí vale.) */
+/** ¿Es un sub-bloque venido de una nota (`_fromNote`)? Estos SÍ se pueden re-aplanar dentro
+ *  de su nota madre (deshacen su conversión y su contenido se integra). Un `_doc` PROPIO del
+ *  usuario (creado a mano en el lienzo, sin `_fromNote`) NO se toca. */
+function isFromNoteBlock(n: Node): boolean {
+  return isDocNode(n) && ed(n)._fromNote === '1'
+}
+
+/** Tipos que NO se pueden aplanar en un bloque (rompen la conversión): contexto, doc PROPIO,
+ *  recurso, vista, evento, diaria, agente/prompt/tag/perfil, temporal. (Tarea y sub-bloque
+ *  `_fromNote` sí valen.) */
 function isBlockingKind(n: Node): boolean {
-  if (isMarkedContext(n) || isDocNode(n)) return true
+  if (isMarkedContext(n)) return true
+  if (isDocNode(n) && !isFromNoteBlock(n)) return true // _doc propio = blocking; _fromNote = aplanable
   if (n.isResource || n.isEvent || n.isDiaryEntry) return true
   const e = ed(n)
   if (e._resource || e.viewBlock || e._agentDef === '1' || e._promptDef === '1' || e._tagDefinition || e._perfilIA === '1' || e.temporalType) return true
@@ -139,19 +148,25 @@ function taskToHtml(k: Node): string {
 
 /** Recorre el subárbol construyendo el body y recogiendo qué nodos ocultar (líneas) o
  *  enlazar como tarea (`_taskEmbed`). */
-function walkSubtree(id: string, depth: number, parts: string[], absorb: string[], tasks: string[]): void {
+function walkSubtree(id: string, depth: number, parts: string[], absorb: string[], tasks: string[], undoc: string[]): void {
   for (const k of activeChildren(id)) {
     const isTask = k.status !== null
     const kids = activeChildren(k.id)
     if (isTask) {
       parts.push(taskToHtml(k))
       tasks.push(k.id)
-      if (kids.length) walkSubtree(k.id, depth + 1, parts, absorb, tasks)
+      if (kids.length) walkSubtree(k.id, depth + 1, parts, absorb, tasks, undoc)
+    } else if (isFromNoteBlock(k)) {
+      // Sub-bloque YA convertido (de una nota): título = encabezado, se DES-CONVIERTE y su
+      // contenido (líneas ya absorbidas) se re-aplana dentro de esta nota madre.
+      parts.push(headingHtml(k.text || '', depth))
+      undoc.push(k.id)
+      walkSubtree(k.id, depth + 1, parts, absorb, tasks, undoc)
     } else if (kids.length) {
       // Sub-sección: su título = encabezado, y su contenido se aplana debajo.
       parts.push(headingHtml(k.text || '', depth))
       absorb.push(k.id)
-      walkSubtree(k.id, depth + 1, parts, absorb, tasks)
+      walkSubtree(k.id, depth + 1, parts, absorb, tasks, undoc)
     } else {
       parts.push(lineToHtml(k.text || ''))
       absorb.push(k.id)
@@ -167,8 +182,9 @@ export function convertNoteToBlock(id: string): boolean {
   const parts: string[] = []
   const absorb: string[] = []
   const tasks: string[] = []
+  const undoc: string[] = []
   if ((n.text || '').trim()) parts.push(`<h2>${renderInlineToHtml((n.text || '').trim())}</h2>`)
-  walkSubtree(id, 0, parts, absorb, tasks)
+  walkSubtree(id, 0, parts, absorb, tasks, undoc)
   const body = parts.join('') || '<p></p>'
 
   store.beginBatch?.()
@@ -181,6 +197,13 @@ export function convertNoteToBlock(id: string): boolean {
       const le = (() => { const x = store.getNode(lid); return x ? ed(x) : {} })()
       le._absorbedBy = id
       store.updateNode(lid, { extraData: JSON.stringify(le) })
+    }
+    // Sub-bloques `_fromNote`: dejan de ser bloque (des-convertir) y se absorben en la madre.
+    for (const did of undoc) {
+      const de = (() => { const x = store.getNode(did); return x ? ed(x) : {} })()
+      delete de[DOC]; delete de[CTEXT]; delete de._fromNote; delete de._pinW
+      de._absorbedBy = id
+      store.updateNode(did, { extraData: JSON.stringify(de), body: null })
     }
     for (const tid of tasks) {
       const te = (() => { const x = store.getNode(tid); return x ? ed(x) : {} })()
