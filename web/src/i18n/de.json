@@ -1955,5 +1955,20 @@
   "globalCanvas.openDay": "Tag",
   "miniCal.goToDay": "Zu einem Tag",
   "miniCal.today": "Heute",
-  "wftopbar.canvas": "Leinwand"
+  "wftopbar.canvas": "Leinwand",
+  "tip.pen": "Stift",
+  "tip.highlighter": "Textmarker",
+  "tip.text": "Text",
+  "tip.eraser": "Radierer",
+  "tip.undoLastAnnotation": "Letzte Anmerkung rückgängig machen",
+  "tip.restoreClean": "Original wiederherstellen",
+  "tip.confirmRestoreClean": "PDF ohne Anmerkungen wiederherstellen? Kann nicht rückgängig gemacht werden.",
+  "tip.restore": "Wiederherstellen",
+  "tip.saved": "Gespeichert",
+  "tip.open": "Öffnen",
+  "tip.download": "Herunterladen",
+  "tip.pageLabel": "Seite {{page}} von {{total}}",
+  "ph.writeEllipsis": "Schreiben…",
+  "tip.selectText": "Text auswählen",
+  "tip.sendToCanvas": "An die Leinwand senden"
 }

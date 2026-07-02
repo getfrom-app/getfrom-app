@@ -1445,6 +1445,29 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     setEditText(copy.id)
   }, [parentId])
 
+  // Heptabase Fase 2: seleccionar texto en el visor PDF (columna derecha) → botón
+  // «Enviar al lienzo» → tarjeta `_doc` con la cita, anclada junto al PDF de origen.
+  useEffect(() => {
+    const h = (e: Event) => {
+      const detail = (e as CustomEvent<{ text?: string; sourceNodeId?: string }>).detail
+      const text = (detail?.text || '').trim()
+      const sourceId = detail?.sourceNodeId
+      if (!text || !sourceId) return
+      const src = store.getNode(sourceId)
+      if (!src) return
+      const targetParent = src.parentId || parentId
+      const pin = readPin(src) || { x: 0, y: 0 }
+      const world = { x: pin.x + 380, y: pin.y }
+      const quoteNode = store.createNode({ text: '', parentId: targetParent, extraData: newTextExtra(world) })
+      const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      store.updateNode(quoteNode.id, { body: `<blockquote><p>${escapeHtml(text)}</p></blockquote>` })
+      setSelectedId(quoteNode.id)
+      setTimeout(() => { const n = store.getNode(quoteNode.id); if (n) flyToNode(n) }, 200)
+    }
+    window.addEventListener('from:pdf-send-to-canvas', h)
+    return () => window.removeEventListener('from:pdf-send-to-canvas', h)
+  }, [parentId, flyToNode])
+
   // ── Elementos de VISTA del lienzo (tabla/kanban/calendario) ──────────────────
   // Un nodo hijo con `extraData.viewBlock`; se embebe en el lienzo y se abre en
   // solitario igual (NodeView ya renderiza su vista). Se crea en el centro de la

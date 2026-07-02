@@ -1956,5 +1956,20 @@
   "globalCanvas.openDay": "Day",
   "miniCal.goToDay": "Go to a day",
   "miniCal.today": "Today",
-  "wftopbar.canvas": "Canvas"
+  "wftopbar.canvas": "Canvas",
+  "tip.pen": "Pen",
+  "tip.highlighter": "Highlighter",
+  "tip.text": "Text",
+  "tip.eraser": "Eraser",
+  "tip.undoLastAnnotation": "Undo last annotation",
+  "tip.restoreClean": "Restore clean",
+  "tip.confirmRestoreClean": "Restore the PDF without annotations? This can't be undone.",
+  "tip.restore": "Restore",
+  "tip.saved": "Saved",
+  "tip.open": "Open",
+  "tip.download": "Download",
+  "tip.pageLabel": "Page {{page}} of {{total}}",
+  "ph.writeEllipsis": "Write…",
+  "tip.selectText": "Select text",
+  "tip.sendToCanvas": "Send to canvas"
 }

@@ -1955,5 +1955,20 @@
   "globalCanvas.openDay": "Giorno",
   "miniCal.goToDay": "Vai a un giorno",
   "miniCal.today": "Oggi",
-  "wftopbar.canvas": "Tela"
+  "wftopbar.canvas": "Tela",
+  "tip.pen": "Penna",
+  "tip.highlighter": "Evidenziatore",
+  "tip.text": "Testo",
+  "tip.eraser": "Gomma",
+  "tip.undoLastAnnotation": "Annulla ultima annotazione",
+  "tip.restoreClean": "Ripristina senza annotazioni",
+  "tip.confirmRestoreClean": "Ripristinare il PDF senza annotazioni? Azione irreversibile.",
+  "tip.restore": "Ripristina",
+  "tip.saved": "Salvato",
+  "tip.open": "Apri",
+  "tip.download": "Scarica",
+  "tip.pageLabel": "Pagina {{page}} di {{total}}",
+  "ph.writeEllipsis": "Scrivi…",
+  "tip.selectText": "Seleziona testo",
+  "tip.sendToCanvas": "Invia alla lavagna"
 }

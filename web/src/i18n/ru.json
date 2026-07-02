@@ -1955,5 +1955,20 @@
   "globalCanvas.openDay": "День",
   "miniCal.goToDay": "Перейти к дню",
   "miniCal.today": "Сегодня",
-  "wftopbar.canvas": "Холст"
+  "wftopbar.canvas": "Холст",
+  "tip.pen": "Карандаш",
+  "tip.highlighter": "Маркер",
+  "tip.text": "Текст",
+  "tip.eraser": "Ластик",
+  "tip.undoLastAnnotation": "Отменить последнюю пометку",
+  "tip.restoreClean": "Восстановить без пометок",
+  "tip.confirmRestoreClean": "Восстановить PDF без пометок? Это действие нельзя отменить.",
+  "tip.restore": "Восстановить",
+  "tip.saved": "Сохранено",
+  "tip.open": "Открыть",
+  "tip.download": "Скачать",
+  "tip.pageLabel": "Страница {{page}} из {{total}}",
+  "ph.writeEllipsis": "Напишите…",
+  "tip.selectText": "Выделить текст",
+  "tip.sendToCanvas": "Отправить на холст"
 }

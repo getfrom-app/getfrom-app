@@ -1955,5 +1955,20 @@
   "globalCanvas.openDay": "Jour",
   "miniCal.goToDay": "Aller à un jour",
   "miniCal.today": "Aujourd'hui",
-  "wftopbar.canvas": "Canevas"
+  "wftopbar.canvas": "Canevas",
+  "tip.pen": "Stylo",
+  "tip.highlighter": "Surligneur",
+  "tip.text": "Texte",
+  "tip.eraser": "Gomme",
+  "tip.undoLastAnnotation": "Annuler la dernière annotation",
+  "tip.restoreClean": "Restaurer sans annotations",
+  "tip.confirmRestoreClean": "Restaurer le PDF sans annotations ? Action irréversible.",
+  "tip.restore": "Restaurer",
+  "tip.saved": "Enregistré",
+  "tip.open": "Ouvrir",
+  "tip.download": "Télécharger",
+  "tip.pageLabel": "Page {{page}} sur {{total}}",
+  "ph.writeEllipsis": "Écrire…",
+  "tip.selectText": "Sélectionner le texte",
+  "tip.sendToCanvas": "Envoyer sur la toile"
 }

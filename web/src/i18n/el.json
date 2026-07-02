@@ -1955,5 +1955,20 @@
   "globalCanvas.openDay": "Ημέρα",
   "miniCal.goToDay": "Μετάβαση σε ημέρα",
   "miniCal.today": "Σήμερα",
-  "wftopbar.canvas": "Καμβάς"
+  "wftopbar.canvas": "Καμβάς",
+  "tip.pen": "Στυλό",
+  "tip.highlighter": "Μαρκαδόρος",
+  "tip.text": "Κείμενο",
+  "tip.eraser": "Γόμα",
+  "tip.undoLastAnnotation": "Αναίρεση τελευταίας σημείωσης",
+  "tip.restoreClean": "Επαναφορά χωρίς σημειώσεις",
+  "tip.confirmRestoreClean": "Επαναφορά του PDF χωρίς σημειώσεις; Δεν αναιρείται.",
+  "tip.restore": "Επαναφορά",
+  "tip.saved": "Αποθηκεύτηκε",
+  "tip.open": "Άνοιγμα",
+  "tip.download": "Λήψη",
+  "tip.pageLabel": "Σελίδα {{page}} από {{total}}",
+  "ph.writeEllipsis": "Γράψε…",
+  "tip.selectText": "Επιλογή κειμένου",
+  "tip.sendToCanvas": "Αποστολή στον καμβά"
 }

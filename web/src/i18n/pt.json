@@ -1955,5 +1955,20 @@
   "globalCanvas.openDay": "Dia",
   "miniCal.goToDay": "Ir para um dia",
   "miniCal.today": "Hoje",
-  "wftopbar.canvas": "Quadro"
+  "wftopbar.canvas": "Quadro",
+  "tip.pen": "Caneta",
+  "tip.highlighter": "Marca-texto",
+  "tip.text": "Texto",
+  "tip.eraser": "Borracha",
+  "tip.undoLastAnnotation": "Desfazer última anotação",
+  "tip.restoreClean": "Restaurar sem anotações",
+  "tip.confirmRestoreClean": "Restaurar o PDF sem anotações? Não é possível desfazer.",
+  "tip.restore": "Restaurar",
+  "tip.saved": "Guardado",
+  "tip.open": "Abrir",
+  "tip.download": "Transferir",
+  "tip.pageLabel": "Página {{page}} de {{total}}",
+  "ph.writeEllipsis": "Escreve…",
+  "tip.selectText": "Selecionar texto",
+  "tip.sendToCanvas": "Enviar para a tela"
 }

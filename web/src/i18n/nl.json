@@ -1955,5 +1955,20 @@
   "globalCanvas.openDay": "Dag",
   "miniCal.goToDay": "Naar een dag",
   "miniCal.today": "Vandaag",
-  "wftopbar.canvas": "Canvas"
+  "wftopbar.canvas": "Canvas",
+  "tip.pen": "Pen",
+  "tip.highlighter": "Markeerstift",
+  "tip.text": "Tekst",
+  "tip.eraser": "Gum",
+  "tip.undoLastAnnotation": "Laatste aantekening ongedaan maken",
+  "tip.restoreClean": "Herstellen zonder aantekeningen",
+  "tip.confirmRestoreClean": "PDF herstellen zonder aantekeningen? Kan niet ongedaan worden gemaakt.",
+  "tip.restore": "Herstellen",
+  "tip.saved": "Opgeslagen",
+  "tip.open": "Openen",
+  "tip.download": "Downloaden",
+  "tip.pageLabel": "Pagina {{page}} van {{total}}",
+  "ph.writeEllipsis": "Schrijf…",
+  "tip.selectText": "Tekst selecteren",
+  "tip.sendToCanvas": "Naar canvas sturen"
 }

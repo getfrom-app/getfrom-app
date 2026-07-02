@@ -1955,5 +1955,20 @@
   "globalCanvas.openDay": "Dag",
   "miniCal.goToDay": "Gå till en dag",
   "miniCal.today": "Idag",
-  "wftopbar.canvas": "Arbetsyta"
+  "wftopbar.canvas": "Arbetsyta",
+  "tip.pen": "Penna",
+  "tip.highlighter": "Överstrykningspenna",
+  "tip.text": "Text",
+  "tip.eraser": "Suddgummi",
+  "tip.undoLastAnnotation": "Ångra senaste anteckningen",
+  "tip.restoreClean": "Återställ utan anteckningar",
+  "tip.confirmRestoreClean": "Återställa PDF:en utan anteckningar? Går inte att ångra.",
+  "tip.restore": "Återställ",
+  "tip.saved": "Sparat",
+  "tip.open": "Öppna",
+  "tip.download": "Ladda ner",
+  "tip.pageLabel": "Sida {{page}} av {{total}}",
+  "ph.writeEllipsis": "Skriv…",
+  "tip.selectText": "Markera text",
+  "tip.sendToCanvas": "Skicka till duken"
 }

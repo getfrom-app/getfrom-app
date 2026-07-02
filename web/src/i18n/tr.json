@@ -1955,5 +1955,20 @@
   "globalCanvas.openDay": "Gün",
   "miniCal.goToDay": "Bir güne git",
   "miniCal.today": "Bugün",
-  "wftopbar.canvas": "Tuval"
+  "wftopbar.canvas": "Tuval",
+  "tip.pen": "Kalem",
+  "tip.highlighter": "Fosforlu kalem",
+  "tip.text": "Metin",
+  "tip.eraser": "Silgi",
+  "tip.undoLastAnnotation": "Son notu geri al",
+  "tip.restoreClean": "Notlar olmadan geri yükle",
+  "tip.confirmRestoreClean": "PDF notlar olmadan geri yüklensin mi? Bu işlem geri alınamaz.",
+  "tip.restore": "Geri yükle",
+  "tip.saved": "Kaydedildi",
+  "tip.open": "Aç",
+  "tip.download": "İndir",
+  "tip.pageLabel": "Sayfa {{page}} / {{total}}",
+  "ph.writeEllipsis": "Yaz…",
+  "tip.selectText": "Metni seç",
+  "tip.sendToCanvas": "Tuvale gönder"
 }

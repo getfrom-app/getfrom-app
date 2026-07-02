@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { uploadFile, fetchFileContent } from '../../api/client'
 
-type Tool = 'pen' | 'highlight' | 'text' | 'eraser'
+type Tool = 'select' | 'pen' | 'highlight' | 'text' | 'eraser'
 
 interface PathAnnotation {
   type: 'path'; page: number; color: string; width: number; opacity: number
@@ -36,6 +36,8 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
   const { t: tr }    = useTranslation()
   const canvasRefs   = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const svgRefs      = useRef<Map<number, SVGSVGElement>>(new Map())
+  const textLayerRefs= useRef<Map<number, HTMLDivElement>>(new Map())
+  const pagesRootRef = useRef<HTMLDivElement>(null)
   const pdfDocRef    = useRef<any>(null)
   const drawingRef   = useRef<PathAnnotation | null>(null)
   const isDrawingRef = useRef(false)
@@ -48,7 +50,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
   const [pageHeights, setPageHeights] = useState<number[]>([])
   const [scale,       setScale]       = useState(1.0)  // se recalcula al cargar la primera página
   const scaleInitialized = useRef(false)
-  const [tool,        setTool]        = useState<Tool>('pen')
+  const [tool,        setTool]        = useState<Tool>('select')
   const [color,       setColor]       = useState('#e53e3e')
   const [penSize,     setPenSize]     = useState(3)
   // annotations viene del padre (NodeView) — sobrevive al unmount/remount de PdfViewer
@@ -58,6 +60,8 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
   const [textInput,   setTextInput]   = useState<{page:number;x:number;y:number;pxX:number;pxY:number}|null>(null)
   const [textValue,   setTextValue]   = useState('')
   const textInputRef  = useRef<HTMLInputElement>(null)
+  // Selección de texto (Heptabase Fase 2): botón flotante «Enviar al lienzo»
+  const [textSel,     setTextSel]     = useState<{ text: string; x: number; y: number } | null>(null)
 
   // Las anotaciones vienen del padre (NodeView) — no se cargan aquí
 
@@ -188,12 +192,27 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
   useEffect(() => {
     if (!pdfDocRef.current || numPages === 0) return
     async function renderAll() {
+      const pdfjsLib = await import('pdfjs-dist')
       for (let i = 1; i <= numPages; i++) {
         const canvas = canvasRefs.current.get(i); if (!canvas) continue
         const page = await pdfDocRef.current.getPage(i)
         const vp = page.getViewport({scale})
         canvas.width = vp.width; canvas.height = vp.height
         await page.render({ canvasContext: canvas.getContext('2d')!, viewport: vp }).promise
+        // Capa de texto invisible (seleccionable) para poder copiar/enviar fragmentos al lienzo.
+        const textLayerDiv = textLayerRefs.current.get(i)
+        if (textLayerDiv) {
+          textLayerDiv.replaceChildren()
+          textLayerDiv.style.width = `${vp.width}px`
+          textLayerDiv.style.height = `${vp.height}px`
+          textLayerDiv.style.setProperty('--total-scale-factor', String(scale))
+          try {
+            const tl = new pdfjsLib.TextLayer({ textContentSource: page.streamTextContent(), container: textLayerDiv, viewport: vp })
+            await tl.render()
+            textLayerDiv.style.width = `${vp.width}px`
+            textLayerDiv.style.height = `${vp.height}px`
+          } catch (e) { console.error('[PdfViewer] text layer error:', e) }
+        }
       }
     }
     renderAll().catch(console.error)
@@ -321,14 +340,48 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
     onAnnotationsChange(next); saveToNode(next); scheduleAutoSave(next)
   }
 
+  // ── Selección de texto (Heptabase Fase 2) ───────────────────────────────────
+  // Con la herramienta «seleccionar» activa, marcar texto muestra un botón flotante
+  // para enviar la cita como tarjeta nueva al lienzo (evento hacia PizarraView).
+  useEffect(() => {
+    if (tool !== 'select') { setTextSel(null); return }
+    function onSelChange() {
+      const sel = window.getSelection()
+      const root = pagesRootRef.current
+      if (!sel || sel.isCollapsed || !root || !sel.anchorNode || !root.contains(sel.anchorNode)) {
+        setTextSel(null); return
+      }
+      const text = sel.toString().trim()
+      if (!text) { setTextSel(null); return }
+      const rect = sel.getRangeAt(0).getBoundingClientRect()
+      const rootRect = root.getBoundingClientRect()
+      setTextSel({ text, x: rect.left + rect.width / 2 - rootRect.left + root.scrollLeft, y: rect.top - rootRect.top + root.scrollTop })
+    }
+    document.addEventListener('selectionchange', onSelChange)
+    return () => document.removeEventListener('selectionchange', onSelChange)
+  }, [tool])
+
+  function sendSelectionToCanvas() {
+    if (!textSel) return
+    window.dispatchEvent(new CustomEvent('from:pdf-send-to-canvas', {
+      detail: { text: textSel.text, sourceNodeId: nodeId, filename },
+    }))
+    window.getSelection()?.removeAllRanges()
+    setTextSel(null)
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
-  const cursorMap: Record<Tool,string> = { pen:'crosshair', highlight:'crosshair', eraser:'cell', text:'text' }
+  const cursorMap: Record<Tool,string> = { select:'text', pen:'crosshair', highlight:'crosshair', eraser:'cell', text:'text' }
 
   return (
     <div className="pdf-viewer-root">
       {/* Barra de herramientas de anotación */}
       <div className="pdf-viewer-toolbar">
         <div className="pdf-tb-group">
+          <button className={`pdf-tb-btn${tool==='select'?' pdf-tb-btn--active':''}`}
+            onClick={()=>setTool('select')} title={tr('tip.selectText')}>
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2l10 4.2-4 1.6-1.6 4z"/></svg>
+          </button>
           {(['pen','highlight','text','eraser'] as Tool[]).map(t=>(
             <button key={t} className={`pdf-tb-btn${tool===t?' pdf-tb-btn--active':''}`}
               onClick={()=>setTool(t)}
@@ -373,7 +426,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         {saveStatus==='saved'  && <span style={{fontSize:11,color:'var(--accent)'}}>✓ {tr('tip.saved')}</span>}
         {/* Acciones del archivo */}
         <div className="pdf-tb-group" style={{borderLeft:'1px solid var(--border)',paddingLeft:8,marginLeft:4,borderRight:'none'}}>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="node-resource-pdf-open" title={tr('tip.openInNewTab')} style={{textDecoration:'none'}}>
+          <a href={url} target="_blank" rel="noopener noreferrer" className="node-resource-pdf-open" title={tr('tip.openNewTab')} style={{textDecoration:'none'}}>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/><path d="M10 2h4v4"/><path d="M14 2L8 8"/></svg>
             {tr('tip.open')}
           </a>
@@ -384,7 +437,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
       </div>
 
       {/* Páginas */}
-      <div className="pdf-viewer-pages" style={{ position: 'relative' }}>
+      <div className="pdf-viewer-pages" ref={pagesRootRef} style={{ position: 'relative' }}>
         {/* Loading como overlay — no afecta al layout ni causa saltos */}
         {loading && (
           <div style={{
@@ -392,7 +445,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: '#404040', borderRadius: 0,
           }}>
-            <div className="pdf-viewer-loading"><div className="footer-spinner"/> {tr('tip.loadingPdf')}</div>
+            <div className="pdf-viewer-loading"><div className="footer-spinner"/> {tr('pdf.loadingPdf')}</div>
           </div>
         )}
         {Array.from({length:numPages},(_,i)=>{
@@ -402,8 +455,11 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
             <div key={page} className="pdf-viewer-page" style={{width:w,height:h}}>
               <canvas ref={el=>{if(el)canvasRefs.current.set(page,el)}}
                 style={{position:'absolute',top:0,left:0}}/>
+              <div ref={el=>{if(el)textLayerRefs.current.set(page,el)}}
+                className="pdf-text-layer"
+                style={{position:'absolute',top:0,left:0,pointerEvents:tool==='select'?'auto':'none'}}/>
               <svg ref={el=>{if(el){svgRefs.current.set(page,el);renderSvg(el,page,annotations)}}}
-                className="pdf-viewer-svg" style={{cursor:cursorMap[tool]}}
+                className="pdf-viewer-svg" style={{cursor:cursorMap[tool],pointerEvents:tool==='select'?'none':'auto'}}
                 onMouseDown={e=>handleMouseDown(e,page)}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
@@ -429,6 +485,17 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
             </div>
           )
         })}
+        {/* Botón flotante: enviar el fragmento seleccionado como tarjeta al lienzo */}
+        {textSel && (
+          <button
+            className="pdf-send-to-canvas-btn"
+            style={{ left: textSel.x, top: textSel.y }}
+            onMouseDown={e=>e.preventDefault() /* no perder la selección al hacer clic */}
+            onClick={sendSelectionToCanvas}
+          >
+            ⤴ {tr('tip.sendToCanvas')}
+          </button>
+        )}
       </div>
     </div>
   )
