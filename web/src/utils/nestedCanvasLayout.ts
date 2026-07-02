@@ -100,6 +100,7 @@ function isContent(n: Node, isBox: (n: Node) => boolean): boolean {
   if (isContextKnowledge(n.text)) return false
   const e = ed(n)
   if (e._capture === '1' || e._logAt) return false
+  if (e._absorbedBy) return false // línea ABSORBIDA en un bloque _doc → no se pinta suelta
   return true
 }
 function contentChildren(id: string, isBox: (n: Node) => boolean): Node[] {

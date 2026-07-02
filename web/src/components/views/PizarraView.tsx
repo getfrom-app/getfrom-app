@@ -109,7 +109,7 @@ function readPin(node: Node): WorldPos | null {
 
 // ¿Es un marcador de vista (no se pinta en el lienzo)?
 function isHiddenPin(node: Node): boolean {
-  try { return JSON.parse(node.extraData || '{}')[PIN_HIDDEN] === '1' } catch { return false }
+  try { const e = JSON.parse(node.extraData || '{}'); return e[PIN_HIDDEN] === '1' || !!e._absorbedBy } catch { return false }
 }
 
 // ── ÁREAS: región rectangular del lienzo (contenedora). El área es un nodo

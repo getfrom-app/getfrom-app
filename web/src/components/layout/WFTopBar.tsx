@@ -7,6 +7,7 @@ import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { ensureCanvasRoot, isCanvasRoot } from '../../utils/canvasRoot'
+import { findConvertibleNotes, convertAllNotesToBlocks } from '../../utils/noteBlocks'
 import { getAgentesNode } from '../../utils/agentesHelper'
 import { getPapeleraNode } from '../../utils/papeleraHelper'
 import { findRootByKey } from '../../utils/rootLookup'
@@ -261,6 +262,19 @@ export default function WFTopBar({
             )}
             <button className="wf-topbar-dropdown-item" onClick={() => { onOpenSettings(); setMenuOpen(false) }}>
               <span>⚙️</span> {t('wftopbar.menuSettings')}
+            </button>
+            <button className="wf-topbar-dropdown-item" onClick={() => {
+              setMenuOpen(false)
+              // DRY-RUN primero: cuenta y muestra ejemplos SIN tocar nada. Solo al confirmar
+              // se convierte (Fase 1 reversible: oculta las líneas, no las borra).
+              const notes = findConvertibleNotes()
+              if (notes.length === 0) { window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'No hay notas convertibles', type: 'info' } })); return }
+              const sample = notes.slice(0, 5).map(n => `• ${(n.title || n.lines[0] || '(sin título)').slice(0, 40)} (${n.lines.length} líneas)`).join('\n')
+              if (!window.confirm(`Se convertirán ${notes.length} notas en bloques de texto único.\n\nEjemplos:\n${sample}\n\nEs REVERSIBLE (las líneas se ocultan, no se borran). ¿Continuar?`)) return
+              const done = convertAllNotesToBlocks()
+              window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${done} notas convertidas a bloques`, type: 'success' } }))
+            }}>
+              <span>🧱</span> Convertir notas a bloques
             </button>
             <div className="wf-topbar-dropdown-sep" />
             <button className="wf-topbar-dropdown-item wf-topbar-dropdown-danger" onClick={onLogout}>
