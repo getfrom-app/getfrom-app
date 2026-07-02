@@ -35,7 +35,7 @@ const SUB_GAP = 44
 const CONTENT_SUB_GAP = 50
 const REGION_GAP = 400   // separación entre la región de contextos y la de agenda
 const TOP_GAP = 220
-const BASE_H = 640
+const BASE_H = 820   // alto nominal de "pantalla" grande → cajas amplias, el texto respira
 const DEFAULT_ASPECT = 1.6
 
 let _ctx: CanvasRenderingContext2D | null = null

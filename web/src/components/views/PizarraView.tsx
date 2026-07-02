@@ -2490,7 +2490,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         const cardScale = (live ? live.scale : readCardScale(node)) * xfScale
         // LIENZO ANIDADO: el contenido ocupa EXACTAMENTE su hueco calculado (ancho fijo
         // + alto medido, `overflow:hidden`) → nunca desborda su contexto ni se solapa.
-        const slot = (globalCanvas && !readPin(node)) ? nested?.items.get(node.id) ?? null : null
+        const slot = globalCanvas ? nested?.items.get(node.id) ?? null : null
         const sx = cam.x + p.x * cam.scale
         const sy = cam.y + p.y * cam.scale
         const grouped = nodeGroupId(node) != null
@@ -2522,7 +2522,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         const lod = cam.scale < LOD_SCALE && !editing && !!elView
         const lodTitle = (node.text || (isText ? t('pizarra.document') : elView ? (elView[0].toUpperCase() + elView.slice(1)) : t('common.noTitle'))).slice(0, 60)
         return (
-          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${isClean ? ' pizarra-node--cleantext' : ''}${hasChrome ? ' pizarra-node--check' : ''}${elView ? ' pizarra-node--el' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
+          <div key={node.id} data-card="1" data-node-id={node.id} className={`pizarra-node${isText ? ' pizarra-node--text' : ''}${isClean ? ' pizarra-node--cleantext' : ''}${hasChrome ? ' pizarra-node--check' : ''}${elView ? ' pizarra-node--el' : ''}${slot ? ' pizarra-node--fit' : ''}${(multiSel.has(node.id) || ((isText || elView) && selectedId === node.id)) ? ' pizarra-node--sel' : ''}${editing ? ' pizarra-node--editing' : ''}${grouped ? ' pizarra-node--grouped' : ''}${hovered ? ' pizarra-node--hover' : ''}`}
             onPointerEnter={() => { if (tool === 'select' && !dragPos && !nodeRzRef.current) setHoverNode(node.id) }}
             onPointerLeave={() => setHoverNode(h => h === node.id ? null : h)}
             onPointerDownCapture={tool === 'arrow' ? (e) => { e.preventDefault(); e.stopPropagation(); handleArrowClick(node.id) } : undefined}
