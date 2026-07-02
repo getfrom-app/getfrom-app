@@ -951,10 +951,14 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     for (const file of files) {
       const off = { x: world.x + i * 28, y: world.y + i * 28 }
       const type: ResourceKind = file.type.startsWith('image/') ? 'image' : file.type === 'application/pdf' ? 'pdf' : 'file'
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Subiendo ${file.name}…`, type: 'info' } }))
       try {
         const { key, publicUrl } = await uploadFile(file)
         createResourceAt(off, { url: publicUrl, type, key, title: file.name })
-      } catch { /* subida fallida → se ignora ese archivo */ }
+        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${file.name} añadido al lienzo`, type: 'success' } }))
+      } catch (err) {
+        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Error subiendo ${file.name}: ${err instanceof Error ? err.message : 'desconocido'}`, type: 'warning' } }))
+      }
       i++
     }
   }, [createResourceAt])
