@@ -220,14 +220,22 @@ export function convertNoteToBlock(id: string): boolean {
   return true
 }
 
-/** Convierte TODAS las notas convertibles. Devuelve cuántas convirtió. */
+/** Convierte TODAS las notas convertibles, EN CASCADA: al fusionar una nota madre, su
+ *  «abuela» pasa a ser convertible → se repite hasta que no queda ninguna. Devuelve el total. */
 export function convertAllNotesToBlocks(): number {
-  const notes = findConvertibleNotes()
-  let n = 0
+  let total = 0
   store.beginBatch?.()
-  try { for (const note of notes) if (convertNoteToBlock(note.id)) n++ }
-  finally { store.endBatch?.() }
-  return n
+  try {
+    for (let iter = 0; iter < 30; iter++) {
+      const notes = findConvertibleNotes()
+      if (notes.length === 0) break
+      let did = 0
+      for (const note of notes) if (convertNoteToBlock(note.id)) did++
+      total += did
+      if (did === 0) break
+    }
+  } finally { store.endBatch?.() }
+  return total
 }
 
 /** DESHACER: revierte todos los bloques venidos de notas (`_fromNote`). Recorre TODO el
