@@ -654,13 +654,18 @@ export default function MainLayout() {
       if (kind === 'context') window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
     }
     function onCloseDetail() { setDetailNodeId(null); setRightPanel('day') }
-    // Mini-calendario / «hoy»: cambia el DÍA de la columna, SIN navegar (lienzo único).
+    // Mini-calendario / «hoy»: cambia el DÍA (sin navegar). El día ELEGIDO queda como
+    // detalle activo → el breadcrumb sigue visible y apunta a ese día; y el lienzo vuela
+    // a su zona (agenda-calendario).
     function onSetDay(e: Event) {
       const iso = (e as CustomEvent).detail?.date
+      const date = iso ? new Date(iso) : new Date()
       setSelectedDay(iso ? new Date(iso) : null)
-      setDetailNodeId(null)
+      const day = ensureDiaryForDate(date)
+      setDetailNodeId(day.id)
       setRightCollapsed(false)
       setRightPanel('day')
+      window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: day.id } }))
     }
     window.addEventListener('from:open-detail', onOpenDetail as EventListener)
     window.addEventListener('from:close-detail', onCloseDetail)
