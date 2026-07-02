@@ -17,12 +17,30 @@ import Image from '@tiptap/extension-image'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { store, useStore } from '../../store/nodeStore'
+import { assignContext } from '../../utils/cajones'
 import { firstLineTitle } from '../../utils/docNode'
 import { uploadFile } from '../../api/client'
 import { setDocEditor, notifyDocEditor } from '../../utils/docEditorStore'
 
 // Paleta de la barra flotante (misma que FormatToolbar del outliner).
 const DOC_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#a16207', '#6b7280']
+
+// TaskItem con un id ESTABLE (`data-node-id`) que enlaza cada casilla del texto con su
+// nodo-tarea de From real. Es la clave anti-duplicación: el sync reconcilia por este id
+// (actualiza si existe, crea solo si falta y le escribe el id de vuelta). Se persiste en
+// el HTML del body, así sobrevive a recargas.
+const TaskItemLinked = TaskItem.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      dataNodeId: {
+        default: null,
+        parseHTML: (el: HTMLElement) => el.getAttribute('data-node-id'),
+        renderHTML: (attrs: { dataNodeId?: string | null }) => (attrs.dataNodeId ? { 'data-node-id': attrs.dataNodeId } : {}),
+      },
+    }
+  },
+})
 
 export default function DocEditor({ node, compact }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean }) {
   useStore()
@@ -39,6 +57,60 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
     catch { /* silencioso */ }
   }
 
+  // ── Paso 2: sincroniza las CASILLAS del texto con tareas-From REALES ──────────
+  // Cada `taskItem` ↔ un nodo-tarea hijo del `_doc` (con `_taskEmbed='1'`), status según
+  // la casilla. Idempotente y anti-duplicación: reconcilia por `dataNodeId` (actualiza si
+  // existe; crea SOLO si falta y le escribe el id de vuelta en el mismo tick; borra los
+  // huérfanos). Hereda el contexto (`_ctxRefs`) del `_doc` si lo tiene → la tarea aparece
+  // en la columna del contexto/día. Solo corre para el editor en edición (el activo).
+  const syncingRef = useRef(false)
+  const syncTasksToNodes = () => {
+    const ed = editorRef.current
+    if (!ed || syncingRef.current) return
+    syncingRef.current = true
+    try {
+      const seen = new Set<string>()
+      const assign: { pos: number; id: string }[] = []
+      let parentRefs: string[] = []
+      try { const r = JSON.parse(store.getNode(node.id)?.extraData || '{}')._ctxRefs; if (Array.isArray(r)) parentRefs = r } catch { /* ignore */ }
+      ed.state.doc.descendants((item, pos) => {
+        if (item.type.name !== 'taskItem') return true
+        const text = item.textContent.trim()
+        if (!text) return true // casilla vacía: aún no es tarea (evita nodos «Sin título»)
+        const status = item.attrs.checked ? 'done' : 'pending'
+        const id = item.attrs.dataNodeId as string | null
+        const existing = id ? store.getNode(id) : null
+        if (existing && !existing.deletedAt) {
+          if (existing.text !== text || existing.status !== status) store.updateNode(id!, { text, status })
+          seen.add(id!)
+        } else {
+          const created = store.createNode({ text, parentId: node.id, extraData: { _taskEmbed: '1' } })
+          store.updateNode(created.id, { status })
+          // Hereda el contexto del `_doc` (si lo tiene) → la tarea aparece en su columna.
+          for (const ref of parentRefs) assignContext(created.id, ref)
+          assign.push({ pos, id: created.id })
+          seen.add(created.id)
+        }
+        return true
+      })
+      if (assign.length) {
+        const tr = ed.state.tr
+        for (const a of assign) tr.setNodeAttribute(a.pos, 'dataNodeId', a.id)
+        tr.setMeta('addToHistory', false)
+        ed.view.dispatch(tr)
+      }
+      // Borrar las tareas-embed cuyas casillas ya no existen en el texto.
+      for (const c of store.children(node.id)) {
+        if (c.deletedAt) continue
+        let emb = false
+        try { emb = JSON.parse(c.extraData || '{}')._taskEmbed === '1' } catch { /* ignore */ }
+        if (emb && !seen.has(c.id)) store.deleteNode(c.id)
+      }
+    } finally {
+      syncingRef.current = false
+    }
+  }
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -49,7 +121,7 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
       // nativo de TaskList). Paso 1 = casilla WYSIWYG marcable. Paso 2 (pendiente) = cada
       // casilla se enlazará a una tarea-From real (agenda) por su nodo hijo.
       TaskList,
-      TaskItem.configure({ nested: true }),
+      TaskItemLinked.configure({ nested: true }),
       Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener nofollow' } }),
       Placeholder.configure({ placeholder: 'Escribe tu documento…' }),
       Image.configure({ inline: false, allowBase64: false }),
@@ -59,7 +131,10 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
     onUpdate: ({ editor }) => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
       const html = editor.getHTML()
-      saveTimer.current = window.setTimeout(() => store.updateNode(node.id, { body: html, text: firstLineTitle(html) }), 500)
+      saveTimer.current = window.setTimeout(() => {
+        store.updateNode(node.id, { body: html, text: firstLineTitle(html) })
+        syncTasksToNodes()
+      }, 500)
     },
     onSelectionUpdate: () => notifyDocEditor(),
     onTransaction: () => notifyDocEditor(),
@@ -88,7 +163,14 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
     if (t && t !== node.text) store.updateNode(node.id, { text: t })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, node.id])
-  useEffect(() => () => { if (saveTimer.current) { clearTimeout(saveTimer.current); if (editor) store.updateNode(node.id, { body: editor.getHTML(), text: firstLineTitle(editor.getHTML()) }) } }, [editor, node.id])
+  useEffect(() => () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    if (editor) {
+      syncTasksToNodes() // reconcilia y asigna ids al doc ANTES de guardar el HTML final
+      store.updateNode(node.id, { body: editor.getHTML(), text: firstLineTitle(editor.getHTML()) })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, node.id])
 
   // Registrar el editor activo para la barra de formato de PÁGINA (DocInspector, columna
   // derecha). En el LIENZO (compact) NO se registra: el formato va en la barra flotante y
