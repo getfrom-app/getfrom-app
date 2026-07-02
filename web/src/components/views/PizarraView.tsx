@@ -2218,10 +2218,6 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 .pizarra-card-body{padding:4px 6px 8px}
 .pizarra-node--sel{box-shadow:0 0 0 1.5px var(--border,#d8d8d8);border-radius:8px}
 .pizarra-node--hover{box-shadow:0 0 0 1px var(--border-subtle,#e6e6e6);border-radius:8px}
-/* TEXTO LIMPIO del lienzo (nodo plano): sin bullet/marcador, sin caja ni sombra al
-   seleccionar/hover — absolutamente limpio, solo el texto. (Al ser tarea muestra su check.) */
-.pizarra-node--cleantext .node-bullet-slot{display:none!important}
-.pizarra-node--cleantext.pizarra-node--sel,.pizarra-node--cleantext.pizarra-node--hover{box-shadow:none!important}
 .pizarra-node--text.pizarra-node--hover,.pizarra-node--text.pizarra-node--editing{box-shadow:none}
 .pizarra-node--text.pizarra-node--sel:not(.pizarra-node--editing){box-shadow:0 0 0 1.5px var(--accent,#6c5ce7);border-radius:8px}
 .pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:6px}
