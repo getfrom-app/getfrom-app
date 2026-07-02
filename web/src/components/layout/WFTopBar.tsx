@@ -7,7 +7,7 @@ import { useStore } from '../../store/nodeStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { ensureCanvasRoot, isCanvasRoot } from '../../utils/canvasRoot'
-import { findConvertibleNotes, convertAllNotesToBlocks } from '../../utils/noteBlocks'
+import { findConvertibleNotes, convertAllNotesToBlocks, revertAllNoteBlocks } from '../../utils/noteBlocks'
 import { getAgentesNode } from '../../utils/agentesHelper'
 import { getPapeleraNode } from '../../utils/papeleraHelper'
 import { findRootByKey } from '../../utils/rootLookup'
@@ -275,6 +275,14 @@ export default function WFTopBar({
               window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${done} notas convertidas a bloques`, type: 'success' } }))
             }}>
               <span>🧱</span> Convertir notas a bloques
+            </button>
+            <button className="wf-topbar-dropdown-item" onClick={() => {
+              setMenuOpen(false)
+              if (!window.confirm('Deshacer la conversión: los bloques vuelven a ser notas con sus líneas sueltas. ¿Continuar?')) return
+              const n = revertAllNoteBlocks()
+              window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${n} bloques revertidos a notas`, type: 'info' } }))
+            }}>
+              <span>↩︎</span> Deshacer conversión de notas
             </button>
             <div className="wf-topbar-dropdown-sep" />
             <button className="wf-topbar-dropdown-item wf-topbar-dropdown-danger" onClick={onLogout}>

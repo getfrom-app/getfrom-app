@@ -96,6 +96,36 @@ export function convertNoteToBlock(id: string): boolean {
 export function convertAllNotesToBlocks(): number {
   const notes = findConvertibleNotes()
   let n = 0
-  for (const note of notes) if (convertNoteToBlock(note.id)) n++
+  store.beginBatch?.()
+  try { for (const note of notes) if (convertNoteToBlock(note.id)) n++ }
+  finally { store.endBatch?.() }
+  return n
+}
+
+/**
+ * DESHACER: revierte todas las notas convertidas. Un bloque convertido se reconoce porque
+ * tiene hijos con `_absorbedBy === suId`. Al padre le quita `_doc`/`_ctext` y el body (vuelve
+ * a ser nota normal con su `text`); a las líneas les quita `_absorbedBy` (vuelven a pintarse).
+ * No se pierde nada porque en la conversión NUNCA se borró: solo se ocultó.
+ */
+export function revertAllNoteBlocks(): number {
+  let n = 0
+  store.beginBatch?.()
+  try {
+    for (const node of store.allActive()) {
+      const kids = store.children(node.id).filter(k => !k.deletedAt)
+      const absorbed = kids.filter(k => { try { return JSON.parse(k.extraData || '{}')._absorbedBy === node.id } catch { return false } })
+      if (absorbed.length === 0) continue
+      const e = (() => { try { return JSON.parse(node.extraData || '{}') } catch { return {} } })()
+      delete e[DOC]; delete e[CTEXT]
+      store.updateNode(node.id, { extraData: JSON.stringify(e), body: null })
+      for (const k of absorbed) {
+        const ke = (() => { try { return JSON.parse(k.extraData || '{}') } catch { return {} } })()
+        delete ke._absorbedBy
+        store.updateNode(k.id, { extraData: JSON.stringify(ke) })
+      }
+      n++
+    }
+  } finally { store.endBatch?.() }
   return n
 }
