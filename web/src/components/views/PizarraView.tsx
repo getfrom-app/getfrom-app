@@ -1378,30 +1378,6 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 
   // Crear un nodo colocado en coordenadas de mundo y seleccionarlo (el
   // OutlinerNode embebido se enfoca al estar seleccionado → listo para escribir).
-  const createNodeAt = useCallback((world: WorldPos, parentOverride?: string) => {
-    // El nodo guarda el ZOOM actual del lienzo (_pinScale) → al pulsarlo después,
-    // la cámara vuela a su posición con ese zoom (estilo iPad). Si se pasa
-    // `parentOverride`, el texto NACE dentro de ese contexto (pertenece a él).
-    // El texto se crea SIEMPRE a tamaño NORMAL (legible) sea cual sea el zoom actual:
-    // `_cardScale = 1/zoom` compensa el zoom del lienzo → en pantalla se ve a tamaño 1.
-    // Queda anclado a ese zoom: al acercar se ve más grande, al alejar más pequeño.
-    const cs = camRef.current.scale
-    const node = store.createNode({
-      text: '',
-      parentId: parentOverride || parentId,
-      extraData: {
-        [PIN_X]: String(Math.round(world.x)),
-        [PIN_Y]: String(Math.round(world.y)),
-        [PIN_SCALE]: String(Number(cs.toFixed(4))),
-        _cardScale: String(Number((1 / cs).toFixed(3))),
-      },
-    })
-    // Tras crear, el nodo queda enfocado (cursor parpadeando) listo para escribir.
-    setTool('select')
-    setSelectedId(node.id)
-    return node.id
-  }, [parentId])
-
 
   // ── Elementos-texto del lienzo = NODOS `_doc`+`_ctext` anclados (FUENTE ÚNICA) ─
   // El texto del lienzo ya NO vive como WBText en el body de la pizarra: es un nodo
@@ -1415,10 +1391,15 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   const createTextAt = useCallback((world: WorldPos, parentOverride?: string) => {
     // Texto libre (DocEditor/TipTap): entra directo en EDICIÓN → cursor parpadeando y
     // barra flotante de estilos. Nace dentro del contexto donde se hace clic (si hay).
-    const node = store.createNode({ text: '', parentId: parentOverride || parentId, extraData: newTextExtra(world) })
+    // Se crea SIEMPRE a tamaño NORMAL legible sea cual sea el zoom (`_cardScale = 1/zoom`
+    // compensa el zoom del lienzo) y queda anclado a ese zoom (acercar→más grande).
+    const cs = camRef.current.scale
+    const extra = { ...newTextExtra(world), [PIN_SCALE]: String(Number(cs.toFixed(4))), _cardScale: String(Number((1 / cs).toFixed(3))) }
+    const node = store.createNode({ text: '', parentId: parentOverride || parentId, extraData: extra })
     store.updateNode(node.id, { body: '<p></p>' })
     setTool('select')
     setEditText(node.id)
+    return node.id
   }, [parentId])
 
   // Al SALIR de la edición de un texto: si quedó VACÍO (no se escribió nada), se borra
@@ -1436,19 +1417,6 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       }
     }
   }, [editText])
-  const clickCreatedRef = useRef<string | null>(null)
-  const prevSelForCleanRef = useRef<string | null>(null)
-  useEffect(() => {
-    const prevSel = prevSelForCleanRef.current
-    prevSelForCleanRef.current = selectedId
-    const cc = clickCreatedRef.current
-    if (cc && prevSel === cc && selectedId !== cc) {
-      const n = store.getNode(cc)
-      if (n && !(n.text || '').trim() && !store.children(cc).some(c => !c.deletedAt)) store.deleteNode(cc)
-      clickCreatedRef.current = null
-    }
-  }, [selectedId])
-
   const deleteText = useCallback((id: string) => {
     store.deleteNode(id)
     setEditText(e => e === id ? null : e)
@@ -2066,8 +2034,10 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               if (sz < bestArea) { bestArea = sz; ctxId = a.id }
             }
           }
-          const id = createNodeAt(world)
-          clickCreatedRef.current = id ?? null
+          // Texto del lienzo = nodo `_doc` (TipTap WYSIWYG): negrita/color en vivo, multilínea
+          // como UN bloque que se mueve junto. Entra directo en edición. Si cae en un contexto,
+          // se le asigna. (Antes creaba un OutlinerNode de texto plano → sin WYSIWYG ni color.)
+          const id = createTextAt(world)
           if (id && ctxId) assignContext(id, ctxId)
         }
       }}
@@ -2504,8 +2474,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       {quickMenu && (() => {
         const runQuick = (key: string) => {
           switch (key) {
-            case 'text': createNodeAt(quickMenu.world); break   // Texto = nodo-outliner
-            case 'node': createNodeAt(quickMenu.world); break   // compat
+            case 'text': createTextAt(quickMenu.world); break   // Texto = nodo `_doc` (TipTap WYSIWYG)
+            case 'node': createTextAt(quickMenu.world); break   // compat
             case 'pen': setTool('pen'); break
             case 'eraser': setTool('eraser'); break
             case 'select': setTool('select'); break
