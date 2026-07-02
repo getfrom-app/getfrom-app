@@ -1875,6 +1875,7 @@
   "temporal.weeksOf": "Semanas de {{month}}",
   "temporal.daysOfWeek": "Días de la semana",
   "pizarra.group": "Agrupar",
+  "pizarra.mergeText": "Unir en texto",
   "pizarra.deleteArrow": "Eliminar flecha",
   "pizarra.selectedCount": "{{n}} seleccionados",
   "pizarra.duplicateAll": "Duplicar todos",

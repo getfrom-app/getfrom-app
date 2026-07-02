@@ -237,6 +237,59 @@ export function convertNoteToBlock(id: string): boolean {
   return true
 }
 
+/** UNIR MANUAL: fusiona los nodos SELECCIONADOS (líneas/tareas sueltas) en UN bloque `_doc`.
+ *  El bloque nace en la posición del primer nodo; los originales se ocultan (`_absorbedBy`) o
+ *  se enlazan como casilla (tareas). Devuelve el id del bloque nuevo, o null. */
+export function mergeNodesToBlock(ids: string[]): string | null {
+  const nodes = ids.map(id => store.getNode(id)).filter((n): n is Node => !!n && !n.deletedAt)
+  if (nodes.length === 0) return null
+  // Orden visual: por su posición en el padre común (o por _pinY si están sueltos).
+  const firstParent = nodes[0].parentId
+  const siblings = firstParent ? store.children(firstParent).map(c => c.id) : []
+  nodes.sort((a, b) => {
+    const ia = siblings.indexOf(a.id), ib = siblings.indexOf(b.id)
+    if (ia !== -1 && ib !== -1) return ia - ib
+    const ya = Number(ed(a)._pinY ?? 0), yb = Number(ed(b)._pinY ?? 0)
+    return ya - yb
+  })
+
+  const parts: string[] = []
+  const absorb: string[] = []
+  const tasks: string[] = []
+  const undoc: string[] = []
+  const process = (list: Node[], depth: number) => {
+    for (const k of list) {
+      const kids = activeChildren(k.id)
+      if (isFromNoteBlock(k)) { parts.push(k.body || ''); undoc.push(k.id); process(kids, depth + 1) }
+      else if (k.status !== null) { parts.push(taskToHtml(k)); tasks.push(k.id); if (kids.length) process(kids, depth + 1) }
+      else if (kids.length) { parts.push(headingHtml(k.text || '', depth)); absorb.push(k.id); process(kids, depth + 1) }
+      else { parts.push(lineToHtml(k.text || '')); absorb.push(k.id) }
+    }
+  }
+  process(nodes, 0)
+  const body = parts.join('') || '<p></p>'
+
+  const first = nodes[0]
+  const fe = ed(first)
+  const extra: Record<string, string> = { [DOC]: '1', [CTEXT]: '1', _fromNote: '1', _pinW: '360' }
+  for (const key of ['_pinX', '_pinY', '_pinScale', '_cardScale', '_gx', '_gy'] as const) {
+    if (fe[key] != null) extra[key] = String(fe[key])
+  }
+  let docId: string | null = null
+  store.beginBatch?.()
+  try {
+    const doc = store.createNode({ text: (first.text || 'Texto').slice(0, 80), parentId: first.parentId ?? null, extraData: extra })
+    docId = doc.id
+    store.updateNode(doc.id, { body })
+    for (const lid of absorb) { const e = (() => { const x = store.getNode(lid); return x ? ed(x) : {} })(); e._absorbedBy = doc.id; store.updateNode(lid, { extraData: JSON.stringify(e) }) }
+    for (const did of undoc) { const e = (() => { const x = store.getNode(did); return x ? ed(x) : {} })(); delete e[DOC]; delete e[CTEXT]; delete e._fromNote; delete e._pinW; e._absorbedBy = doc.id; store.updateNode(did, { extraData: JSON.stringify(e), body: null }) }
+    for (const tid of tasks) { const e = (() => { const x = store.getNode(tid); return x ? ed(x) : {} })(); e._taskEmbed = '1'; e._absorbedBy = doc.id; store.updateNode(tid, { extraData: JSON.stringify(e) }) }
+  } finally {
+    store.endBatch?.()
+  }
+  return docId
+}
+
 /** Convierte TODAS las notas convertibles, EN CASCADA: al fusionar una nota madre, su
  *  «abuela» pasa a ser convertible → se repite hasta que no queda ninguna. Devuelve el total. */
 export function convertAllNotesToBlocks(): number {

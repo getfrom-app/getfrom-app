@@ -31,6 +31,7 @@ import { findTagNodeBySlug } from '../../utils/tagsHelper'
 import { createMarkdownNode } from '../../utils/importMarkdown'
 import { computeNestedLayout, CONTENT_W, type NestedLayout } from '../../utils/nestedCanvasLayout'
 import type { CanvasViewKind } from '../../utils/docNode'
+import { mergeNodesToBlock } from '../../utils/noteBlocks'
 import DocEditor from './DocEditor'
 import OutlinerNode from '../outliner/OutlinerNode'
 import ContextPicker from '../panels/ContextPicker'
@@ -2431,6 +2432,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)',
           borderRadius: 12, boxShadow: '0 8px 28px rgba(0,0,0,0.16)',
         }}>
+          {multiSel.size > 1 && (
+            <button style={miniItem} onClick={() => {
+              const id = mergeNodesToBlock([...multiSel])
+              clearSelection()
+              if (id) { setSelectedId(id); setMenuPos(null) }
+            }}>{t('pizarra.mergeText', 'Unir en texto')}</button>
+          )}
           {(multiSel.size + selStrokes.size) > 1 && (
             <button style={miniItem} onClick={() => groupSelection()}>{t('pizarra.group')}</button>
           )}

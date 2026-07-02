@@ -1875,6 +1875,7 @@
   "temporal.weeksOf": "Weeks of {{month}}",
   "temporal.daysOfWeek": "Days of the week",
   "pizarra.group": "Group",
+  "pizarra.mergeText": "Merge into text",
   "pizarra.deleteArrow": "Delete arrow",
   "pizarra.selectedCount": "{{n}} selected",
   "pizarra.duplicateAll": "Duplicate all",
