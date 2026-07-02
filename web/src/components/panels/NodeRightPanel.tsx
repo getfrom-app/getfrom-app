@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { store, useStore, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -14,7 +14,6 @@ interface Props {
 
 export default function NodeRightPanel({ node }: Props) {
   const s = useStore()
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const [newType, setNewType] = useState('')
 
@@ -284,7 +283,7 @@ export default function NodeRightPanel({ node }: Props) {
             const isOverdue = task.due ? new Date(task.due) < new Date(new Date().setHours(0,0,0,0)) : false
             return (
               <div key={task.id} className="node-right-task-row"
-                onClick={() => navigate(`/node/${task.id}`)}>
+                onClick={() => openNodeDetail(task.id)}>
                 <button className="node-right-task-check"
                   onClick={e => { e.stopPropagation()
                     store.updateNode(task.id, { status: task.status === 'done' ? null : 'done' })
@@ -327,7 +326,7 @@ export default function NodeRightPanel({ node }: Props) {
       {/* Ver área completa */}
       {tagNodes.map(td => (
         <div key={td.id} className="prop-section">
-          <button className="prop-area-link" onClick={() => navigate(`/node/${td.id}`)}>
+          <button className="prop-area-link" onClick={() => openNodeDetail(td.id)}>
             <span className="prop-area-link-icon">◈</span>
             <span>{s.tagName(td)}</span>
             <span className="prop-area-link-arrow">→</span>

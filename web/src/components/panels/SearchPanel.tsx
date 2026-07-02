@@ -3,7 +3,7 @@
  * Reemplaza el buscador expandible del topbar con un panel tipo MagicChat
  */
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { createFilterShortcut, getAtajosNode, getShortcutData } from '../../utils/atajosHelper'
@@ -408,7 +408,6 @@ function SavedPanelsList({ onApply, activeQuery }: { onApply: (q: string) => voi
 function FavoritesSection() {
   const { t } = useTranslation()
   const s = useStore()
-  const navigate = useNavigate()
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const [hoveredId, setHoveredId] = useState<string | null>(null)
@@ -453,7 +452,7 @@ function FavoritesSection() {
         return (
           <div
             key={n.id}
-            onClick={() => { if (!isRenaming) navigate(`/node/${n.id}`) }}
+            onClick={() => { if (!isRenaming) openNodeDetail(n.id) }}
             onMouseEnter={() => setHoveredId(n.id)}
             onMouseLeave={() => setHoveredId(null)}
             style={{

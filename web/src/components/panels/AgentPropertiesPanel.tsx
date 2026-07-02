@@ -5,7 +5,7 @@
  * el prompt del usuario (instrucciones editables).
  */
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { getAgentData, setAgentEnabled, syncAgentUserMessage } from '../../utils/agentesHelper'
@@ -33,7 +33,6 @@ interface Props {
 
 export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
   const s = useStore()
-  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const isEn = i18n.language?.startsWith('en')
   const node = s.getNode(nodeId)
@@ -115,7 +114,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
           store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
         } catch { /* ignore */ }
         setSaved(true)
-        navigate(`/node/${resultParent.id}`)
+        openNodeDetail(resultParent.id)
       } else {
         setError(res.error || (isEn ? 'Run failed' : 'Error al ejecutar'))
       }

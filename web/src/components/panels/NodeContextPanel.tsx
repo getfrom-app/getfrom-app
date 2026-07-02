@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store/nodeStore'
 
@@ -9,7 +9,6 @@ interface Props {
 export default function NodeContextPanel({ nodeId }: Props) {
   const s = useStore()
   const node = s.getNode(nodeId)
-  const navigate = useNavigate()
   const { t } = useTranslation()
 
   if (!node) return null
@@ -92,7 +91,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
         <div className="context-section">
           <div className="context-section-label">Subtareas</div>
           {childTasks.slice(0, 10).map(task => (
-            <div key={task.id} className="context-task-row" onClick={() => navigate(`/node/${task.id}`)}>
+            <div key={task.id} className="context-task-row" onClick={() => openNodeDetail(task.id)}>
               <span className="context-task-status">{task.status === 'done' ? '✓' : '○'}</span>
               <span className="context-task-text">{task.text || t('common.noTitle')}</span>
             </div>
@@ -104,7 +103,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
       {tagNodes.map(td => (
         <div key={td.id} className="context-section">
           <div className="context-section-label">#{s.tagName(td)}</div>
-          <div className="context-tag-link" onClick={() => navigate(`/node/${td.id}`)}>
+          <div className="context-tag-link" onClick={() => openNodeDetail(td.id)}>
             Ver área completa →
           </div>
         </div>
@@ -115,7 +114,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
         <div className="context-section">
           <div className="context-section-label">→ Enlaza a</div>
           {outgoingLinks.map(n => (
-            <div key={n.id} className="context-backlink" onClick={() => navigate(`/node/${n.id}`)}>
+            <div key={n.id} className="context-backlink" onClick={() => openNodeDetail(n.id)}>
               {n.text || t('common.noTitle')}
             </div>
           ))}
@@ -127,7 +126,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
         <div className="context-section">
           <div className="context-section-label">← Mencionado en</div>
           {backlinks.map(n => (
-            <div key={n.id} className="context-backlink" onClick={() => navigate(`/node/${n.id}`)}>
+            <div key={n.id} className="context-backlink" onClick={() => openNodeDetail(n.id)}>
               {n.text || t('common.noTitle')}
             </div>
           ))}
@@ -139,7 +138,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
         <div className="context-section">
           <div className="context-section-label">Relacionadas</div>
           {relatedByTag.map(n => (
-            <div key={n.id} className="context-backlink" onClick={() => navigate(`/node/${n.id}`)}>
+            <div key={n.id} className="context-backlink" onClick={() => openNodeDetail(n.id)}>
               {n.text || t('common.noTitle')}
             </div>
           ))}
@@ -151,7 +150,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
         <div className="context-section">
           <div className="context-section-label">Contenido ({children.length} bullets)</div>
           {children.slice(0, 8).map(child => (
-            <div key={child.id} className="context-child" onClick={() => navigate(`/node/${child.id}`)}>
+            <div key={child.id} className="context-child" onClick={() => openNodeDetail(child.id)}>
               <span className="context-child-bullet">
                 {child.status === 'done' ? '✓' : child.status === 'pending' ? '○' : '·'}
               </span>
@@ -172,7 +171,7 @@ export default function NodeContextPanel({ nodeId }: Props) {
         <div className="context-section">
           <div className="context-section-label">Hermanas ({siblings.length - 1})</div>
           {siblings.filter(sib => sib.id !== node.id).slice(0, 5).map(sib => (
-            <div key={sib.id} className="context-backlink" onClick={() => navigate(`/node/${sib.id}`)}>
+            <div key={sib.id} className="context-backlink" onClick={() => openNodeDetail(sib.id)}>
               <span>{sib.text || t('common.noTitle')}</span>
             </div>
           ))}

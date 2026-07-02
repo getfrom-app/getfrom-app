@@ -10,7 +10,7 @@
  *      en la columna derecha para trabajar sobre esa nota.
  */
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { useRecordingStore } from '../../store/recordingStore'
 import { createNoteFromTranscript } from '../../utils/recordingProcessor'
@@ -27,7 +27,6 @@ interface Props { onClose: () => void }
 export default function RecorderPanel({ onClose }: Props) {
   const { t }      = useTranslation()
   const r          = useRecordingStore()
-  const navigate   = useNavigate()
   const [micPerm, setMicPerm] = useState<MicPerm>('unknown')
   const [state,   setState]   = useState<State>(r.phase === 'recording' ? 'recording' : 'idle')
   const [errMsg,  setErrMsg]  = useState('')
@@ -81,7 +80,7 @@ export default function RecorderPanel({ onClose }: Props) {
       const { parentId } = await createNoteFromTranscript(text, r.elapsed)
       r.resetRecording()
       // Navegar a la nota (izquierda) y abrir Magic (derecha) para trabajar sobre ella.
-      navigate(`/node/${parentId}`)
+      openNodeDetail(parentId)
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent('magic-chat:open-with-text', { detail: { text: '' } }))
       }, 60)

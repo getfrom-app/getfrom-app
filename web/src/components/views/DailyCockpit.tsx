@@ -4,7 +4,7 @@
 // Las filas se arrastran al planificador (dataTransfer 'nodeId') para ponerles hora,
 // y al interactuar con el bloque la columna derecha cambia a planificador.
 import { useState, useRef, useLayoutEffect, type CSSProperties } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import { collectDailyCockpit, toggleTaskDone } from '../../utils/dailyCockpit'
@@ -27,7 +27,6 @@ const ctxMenuItem: CSSProperties = {
 
 export default function DailyCockpit({ disablePlanner = false, bare = false }: { disablePlanner?: boolean; bare?: boolean } = {}) {
   useStore() // suscripción: re-render con cada cambio del store
-  const navigate = useNavigate()
   const { t, i18n } = useTranslation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
   // Menú contextual de las filas de CONTEXTO + animación de salida.
@@ -195,7 +194,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       key={n.id}
       ref={registerRow(n.id)}
       className={`dc-row ${n.status === 'done' ? 'dc-row--done' : ''}`}
-      onClick={() => navigate(`/node/${n.id}`)}
+      onClick={() => openNodeDetail(n.id)}
       onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
       {...dragProps(n)}
     >
@@ -226,7 +225,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   )
 
   const renderBucleRow = (n: Node) => (
-    <div key={n.id} className="dc-row" onClick={() => navigate(`/node/${n.id}`)}
+    <div key={n.id} className="dc-row" onClick={() => openNodeDetail(n.id)}
       onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
       {...dragProps(n)}>
       <button
@@ -271,7 +270,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         <div className={`dc-row dc-row--cajon${closing ? ' dc-row--closing' : ''}`}
           draggable
           onDragStart={e => { e.dataTransfer.setData('nodeId', c.id); e.dataTransfer.effectAllowed = 'copy' }}
-          onClick={() => navigate(`/node/${c.id}`)}
+          onClick={() => openNodeDetail(c.id)}
           onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ id: c.id, x: e.clientX, y: e.clientY }) }}
           onAnimationEnd={closing ? () => {
             if (ctxClosing!.action === 'close') setContextClosed(c.id, true)
@@ -285,7 +284,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {parent && (
             <ContextChip context={parent} title={t('dailyCockpit.goParentContext')}
               removeTitle="Quitar del contexto padre"
-              onClick={e => { e.stopPropagation(); navigate(`/node/${parent.id}`) }}
+              onClick={e => { e.stopPropagation(); openNodeDetail(parent.id) }}
               onRemove={() => clearContextParent(c.id)} />
           )}
           <span style={{ flex: 1 }} />

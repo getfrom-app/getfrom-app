@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -44,7 +44,6 @@ function formatDate(iso: string): string {
 
 export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
   const s = useStore()
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const [sort, setSort] = useState<SortKey>('updated')
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'done' | 'notes'>('all')
@@ -67,7 +66,7 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
       extraData: { _tagPrompt: '1' },
     })
     setEditingPromptId(created.id)
-    navigate(`/node/${created.id}`)
+    openNodeDetail(created.id)
   }
 
   function deletePrompt(id: string) {
@@ -180,7 +179,7 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
               }}>
                 <span style={{ fontSize: 12 }}>✨</span>
                 <button
-                  onClick={() => navigate(`/node/${p.id}`)}
+                  onClick={() => openNodeDetail(p.id)}
                   style={{
                     background: 'none', border: 'none', padding: 0,
                     fontSize: 12, color: 'var(--text-primary)',
@@ -249,7 +248,7 @@ export default function TagNodesPanel({ tagName }: TagNodesPanelProps) {
             <button
               key={n.id}
               className={`tag-nodes-item${n.status === 'done' ? ' done' : ''}`}
-              onClick={() => navigate(`/node/${n.id}`)}
+              onClick={() => openNodeDetail(n.id)}
               title={n.text || t('common.noTitle')}
             >
               <span className="tag-nodes-item-icon">{nodeIcon(n)}</span>

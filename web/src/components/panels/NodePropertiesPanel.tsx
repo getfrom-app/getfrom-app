@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -11,7 +11,6 @@ interface Props {
 
 export default function NodePropertiesPanel({ node, onClose }: Props) {
   const s = useStore()
-  const navigate = useNavigate()
   const { t } = useTranslation()
   const [newType, setNewType] = useState('')
   const [areaInput, setAreaInput] = useState('')
@@ -375,7 +374,7 @@ export default function NodePropertiesPanel({ node, onClose }: Props) {
           <div className="prop-section">
             <div className="prop-section-label">{t('prop.linked')}</div>
             {mentionedNodes.map(n => (
-              <button key={n.id} className="prop-linked-btn" onClick={() => navigate(`/node/${n.id}`)}>
+              <button key={n.id} className="prop-linked-btn" onClick={() => openNodeDetail(n.id)}>
                 📄 {n.text || t('common.noTitle')}
               </button>
             ))}
