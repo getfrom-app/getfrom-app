@@ -77,6 +77,23 @@ export function rowHeight(text: string | null | undefined): number {
   return countLines(text || '') * LINE_H + ROW_PAD
 }
 
+/** Altura estimada de un BLOQUE de texto (`_doc`) por su `body` HTML: cada bloque
+ *  (p/h/li/quote) cuenta sus líneas con salto de línea real → el layout reserva el alto
+ *  correcto y los bloques NO se solapan. */
+function docBodyHeight(n: Node): number {
+  const body = n.body || ''
+  if (!body.trim()) return rowHeight(n.text)
+  const text = body
+    .replace(/<\/(p|h1|h2|h3|li|blockquote|div|tr)>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+  let lines = 0
+  for (const l of text.split('\n')) if (l.trim()) lines += countLines(l.trim())
+  return Math.max(1, lines) * LINE_H + ROW_PAD
+}
+
 function ed(n: Node): Record<string, unknown> {
   try { return JSON.parse(n.extraData || '{}') } catch { return {} }
 }
@@ -114,12 +131,15 @@ function layoutContent(boxId: string, isBox: (n: Node) => boolean): { rows: Plan
   let y = 0, w = CONTENT_W
   const walk = (id: string, depth: number) => {
     const n = store.getNode(id)
-    const h = rowHeight(n?.text)
+    // Bloque de texto (`_doc`): alto = su body completo, y NO se recorren sus hijos (las
+    // líneas están absorbidas dentro del bloque). Un nodo normal: 1 fila + sus hijos.
+    const isDoc = !!n && (() => { try { return JSON.parse(n.extraData || '{}')._doc === '1' } catch { return false } })()
+    const h = isDoc ? docBodyHeight(n!) : rowHeight(n?.text)
     rows.push({ id, x: depth * INDENT, y, h })
     y += h
     const right = depth * INDENT + CONTENT_W
     if (right > w) w = right
-    for (const c of contentChildren(id, isBox)) walk(c.id, depth + 1)
+    if (!isDoc) for (const c of contentChildren(id, isBox)) walk(c.id, depth + 1)
   }
   for (const c of contentChildren(boxId, isBox)) walk(c.id, 0)
   return { rows, w, h: y }

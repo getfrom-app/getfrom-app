@@ -2553,9 +2553,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         const cardScale = (live ? live.scale : readCardScale(node)) * xfScale
         // LIENZO ANIDADO: el contenido ocupa EXACTAMENTE su hueco calculado (ancho fijo
         // + alto medido, `overflow:hidden`) → nunca desborda su contexto ni se solapa.
-        // `slot` (ancho fijo + ajuste de línea) SOLO para contenido de texto plano del
-        // esquema; documentos/vistas/recursos conservan su propio ancho.
-        const slot = (globalCanvas && !isDocNode(node) && !canvasViewKind(node) && !readResource(node)) ? nested?.items.get(node.id) ?? null : null
+        // `slot` (ancho fijo + posición del layout) para el contenido de un contexto: texto
+        // plano del esquema Y bloques `_doc` convertidos (que viven dentro del contexto sin
+        // pin propio). Un `_doc` SUELTO (con pin) no está en `items` → slot null → va libre.
+        // Vistas/recursos conservan su propio ancho.
+        const slot = (globalCanvas && !canvasViewKind(node) && !readResource(node)) ? nested?.items.get(node.id) ?? null : null
         const sx = cam.x + p.x * cam.scale
         const sy = cam.y + p.y * cam.scale
         const grouped = nodeGroupId(node) != null
