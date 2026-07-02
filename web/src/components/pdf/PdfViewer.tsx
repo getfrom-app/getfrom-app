@@ -79,7 +79,9 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         // ínfimo solo para evitar 0/negativo, no para imponer un tamaño "legible" a la fuerza).
         const containerW = pagesRootRef.current?.clientWidth || 780
         const fitScale = Math.max(0.15, Math.min(2.5, (containerW - 48) / vpAt1.width))
-        effectiveScale = Math.round(fitScale * 4) / 4  // snap a 0.25
+        // Redondear siempre HACIA ABAJO (nunca hacia arriba: `Math.round` a 0.25 podía
+        // pasarse del hueco real por unos pocos px — recorte residual, ej. "Previas" → "Previa").
+        effectiveScale = Math.floor(fitScale * 100) / 100
         scaleInitialized.current = true
       }
 
