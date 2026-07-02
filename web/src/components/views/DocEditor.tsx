@@ -19,6 +19,7 @@ import TaskItem from '@tiptap/extension-task-item'
 import { store, useStore } from '../../store/nodeStore'
 import { assignContext } from '../../utils/cajones'
 import { firstLineTitle } from '../../utils/docNode'
+import { extractDateFromEnd } from '../../utils/naturalDate'
 import { uploadFile } from '../../api/client'
 import { setDocEditor, notifyDocEditor } from '../../utils/docEditorStore'
 
@@ -64,6 +65,7 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
   // huérfanos). Hereda el contexto (`_ctxRefs`) del `_doc` si lo tiene → la tarea aparece
   // en la columna del contexto/día. Solo corre para el editor en edición (el activo).
   const syncingRef = useRef(false)
+  const lastDetailRef = useRef<string | null>(null)
   const syncTasksToNodes = () => {
     const ed = editorRef.current
     if (!ed || syncingRef.current) return
@@ -85,7 +87,19 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
           seen.add(id!)
         } else {
           const created = store.createNode({ text, parentId: node.id, extraData: { _taskEmbed: '1' } })
-          store.updateNode(created.id, { status })
+          const updates: Record<string, unknown> = { status }
+          // Magic de FECHA: si el texto lleva una fecha natural («… mañana», «… el viernes»),
+          // la tarea coge ese `due` y entra en la agenda del día correcto. Solo al CREAR (no
+          // se re-machaca luego: si el usuario ajusta la fecha en la columna, se respeta).
+          try {
+            const dt = extractDateFromEnd(text)
+            if (dt?.parsed?.date) {
+              const d = new Date(dt.parsed.date); d.setHours(0, 0, 0, 0)
+              if (dt.timeStr) { const [h, m] = dt.timeStr.split(':').map(Number); updates.due = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m).toISOString() }
+              else updates.due = d.toISOString()
+            }
+          } catch { /* sin fecha */ }
+          store.updateNode(created.id, updates)
           // Hereda el contexto del `_doc` (si lo tiene) → la tarea aparece en su columna.
           for (const ref of parentRefs) assignContext(created.id, ref)
           assign.push({ pos, id: created.id })
@@ -136,7 +150,24 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
         syncTasksToNodes()
       }, 500)
     },
-    onSelectionUpdate: () => notifyDocEditor(),
+    onSelectionUpdate: ({ editor }) => {
+      notifyDocEditor()
+      // En el LIENZO: si el cursor está DENTRO de una casilla enlazada, la columna derecha
+      // muestra las propiedades de ESA tarea (fecha/repetición/prioridad). Fuera de una
+      // casilla → vuelve a la columna del propio texto (contexto/día). Solo al cambiar el
+      // objetivo (no en cada tecla) para no spamear.
+      if (!compact) return
+      const { $from } = editor.state.selection
+      let taskId: string | null = null
+      for (let d = $from.depth; d > 0; d--) {
+        if ($from.node(d).type.name === 'taskItem') { taskId = ($from.node(d).attrs.dataNodeId as string | null) ?? null; break }
+      }
+      const linked = taskId && store.getNode(taskId) && !store.getNode(taskId)!.deletedAt ? taskId : node.id
+      if (linked !== lastDetailRef.current) {
+        lastDetailRef.current = linked
+        window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: linked } }))
+      }
+    },
     onTransaction: () => notifyDocEditor(),
     editorProps: {
       // Pegar / soltar imágenes → subir a R2 e insertar.
