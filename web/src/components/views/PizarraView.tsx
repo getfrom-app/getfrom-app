@@ -946,21 +946,24 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   }, [parentId])
 
   // Sube archivos a R2 y los ancla como tarjetas (apiladas con un pequeño offset).
-  const uploadAndPinFiles = useCallback(async (files: File[], world: WorldPos) => {
+  const uploadAndPinFiles = useCallback(async (files: File[], world: WorldPos): Promise<string | null> => {
     let i = 0
+    let firstId: string | null = null
     for (const file of files) {
       const off = { x: world.x + i * 28, y: world.y + i * 28 }
       const type: ResourceKind = file.type.startsWith('image/') ? 'image' : file.type === 'application/pdf' ? 'pdf' : 'file'
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Subiendo ${file.name}…`, type: 'info' } }))
       try {
         const { key, publicUrl } = await uploadFile(file)
-        createResourceAt(off, { url: publicUrl, type, key, title: file.name })
+        const id = createResourceAt(off, { url: publicUrl, type, key, title: file.name })
+        if (!firstId) firstId = id
         window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${file.name} añadido al lienzo`, type: 'success' } }))
       } catch (err) {
         window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Error subiendo ${file.name}: ${err instanceof Error ? err.message : 'desconocido'}`, type: 'warning' } }))
       }
       i++
     }
+    return firstId
   }, [createResourceAt])
 
   // Soltar sobre la pizarra: archivos→subida+ancla; un nodo interno arrastrado de la
@@ -994,7 +997,14 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           } finally { store.endBatch() }
         })()
       }
-      if (otherFiles.length) void uploadAndPinFiles(otherFiles, w)
+      if (otherFiles.length) uploadAndPinFiles(otherFiles, w).then(id => {
+        // Vuela al recurso recién soltado y lo selecciona → visible aunque estés muy alejado
+        // (zoom bajo) o el drop cayera lejos. Abre además su columna derecha (visor).
+        if (!id) return
+        setSelectedId(id)
+        const n = store.getNode(id)
+        if (n) setTimeout(() => flyToNode(n), 200)
+      })
       return
     }
     // Nodo arrastrado desde la columna derecha / árbol (varias claves posibles).
