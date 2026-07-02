@@ -575,6 +575,12 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         add(n.id)
         for (const c of store.children(n.id)) add(c.id)
       }
+      // Elementos SUELTOS del lienzo (hijos directos del nodo-lienzo con posición): vistas
+      // (tabla/kanban/calendario), texto creado fuera de un contexto, recursos pegados…
+      for (const n of store.children(parentId)) {
+        if (n.deletedAt || seen.has(n.id)) continue
+        if (readPin(n) || canvasViewKind(n)) add(n.id)
+      }
       return out
     }
     const out = [...directChildren]
@@ -1439,8 +1445,12 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     const wy = (vp.h / 2 - c.y) / c.scale
     const titles: Record<CanvasViewKind, string> = { tabla: 'Tabla', kanban: 'Kanban', calendario: 'Calendario' }
     const width = kind === 'kanban' ? '760' : kind === 'calendario' ? '720' : '560'
+    // Nace DENTRO del contexto donde está el centro del viewport (si lo hay) → le pertenece.
+    let parent = parentId
+    const boxes = nestedRef.current?.boxes
+    if (boxes) { let best = Infinity; for (const [id, r] of boxes) { if (wx >= r.x && wx <= r.x + r.w && wy >= r.y && wy <= r.y + r.h) { const sz = r.w * r.h; if (sz < best) { best = sz; parent = id } } } }
     const node = store.createNode({
-      text: titles[kind], parentId,
+      text: titles[kind], parentId: parent,
       extraData: { viewBlock: kind, [PIN_X]: String(Math.round(wx - Number(width) / 2)), [PIN_Y]: String(Math.round(wy - 120)), [PIN_SCALE]: '1', _pinW: width },
     })
     // La TABLA arranca con una fila vacía → las celdas aparecen ya y se puede escribir al
@@ -2556,7 +2566,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         const cardScale = (live ? live.scale : readCardScale(node)) * xfScale
         // LIENZO ANIDADO: el contenido ocupa EXACTAMENTE su hueco calculado (ancho fijo
         // + alto medido, `overflow:hidden`) → nunca desborda su contexto ni se solapa.
-        const slot = globalCanvas ? nested?.items.get(node.id) ?? null : null
+        // `slot` (ancho fijo + ajuste de línea) SOLO para contenido de texto plano del
+        // esquema; documentos/vistas/recursos conservan su propio ancho.
+        const slot = (globalCanvas && !isDocNode(node) && !canvasViewKind(node) && !readResource(node)) ? nested?.items.get(node.id) ?? null : null
         const sx = cam.x + p.x * cam.scale
         const sy = cam.y + p.y * cam.scale
         const grouped = nodeGroupId(node) != null
