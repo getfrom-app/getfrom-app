@@ -156,6 +156,22 @@ export default function MainLayout() {
     const m = location.pathname.match(/\/node\/([^/]+)/)
     return m ? m[1] : undefined
   })()
+  // INTERCEPTOR GLOBAL: estando en el LIENZO, cualquier navegación a /node/:id (venga
+  // del panel que venga: filas de tarea, contextos, backlinks, OutlinerNode…) se ABRE
+  // EN SITIO — vuelve al lienzo y abre su columna derecha + vuela. Así NO se entra a la
+  // página del nodo desde el lienzo, sin tener que arreglar decenas de navigate() a mano.
+  const prevPathRef = useRef(location.pathname)
+  useEffect(() => {
+    const prev = prevPathRef.current
+    prevPathRef.current = location.pathname
+    const wasCanvas = prev.replace(/^\/app\/?/, '').replace(/^\/+|\/+$/g, '') === ''
+    if (wasCanvas && currentNodeIdFromRoute) {
+      const nodeId = currentNodeIdFromRoute
+      navigate('/', { replace: true })
+      // El lienzo se monta en el siguiente render → esperar un tick para el vuelo.
+      setTimeout(() => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId } })), 40)
+    }
+  }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
   const [loadError, setLoadError] = useState('')
   const [filterText, setFilterText] = useFilterStore()
 
