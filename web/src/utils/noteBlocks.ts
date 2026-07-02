@@ -258,8 +258,10 @@ export function revertAllNoteBlocks(): number {
   store.beginBatch?.()
   try {
     for (const node of store.allActive()) {
+      // Revierte TODO bloque venido de una nota: los marcados `_fromNote` Y los antiguos
+      // (convertidos antes de la marca), reconocidos por tener líneas absorbidas.
+      if (!isFromNoteBlock(node)) continue
       const e = ed(node)
-      if (e._fromNote !== '1') continue
       delete e[DOC]; delete e[CTEXT]; delete e._fromNote
       store.updateNode(node.id, { extraData: JSON.stringify(e), body: null })
       clearSubtree(node.id)
