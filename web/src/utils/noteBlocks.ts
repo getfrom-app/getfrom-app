@@ -24,7 +24,11 @@ function activeChildren(id: string): Node[] {
  *  de su nota madre (deshacen su conversión y su contenido se integra). Un `_doc` PROPIO del
  *  usuario (creado a mano en el lienzo, sin `_fromNote`) NO se toca. */
 function isFromNoteBlock(n: Node): boolean {
-  return isDocNode(n) && ed(n)._fromNote === '1'
+  if (!isDocNode(n)) return false
+  if (ed(n)._fromNote === '1') return true
+  // Retro-compat: bloques convertidos ANTES de la marca `_fromNote` se reconocen porque
+  // tienen líneas absorbidas (`_absorbedBy === suId`). Un `_doc` propio del usuario no.
+  return store.children(n.id).some(k => !k.deletedAt && ed(k)._absorbedBy === n.id)
 }
 
 /** Tipos que NO se pueden aplanar en un bloque (rompen la conversión): contexto, doc PROPIO,
