@@ -2137,7 +2137,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                   eo._ctxW = String(Math.round(nw)); eo._ctxH = String(Math.round(nh))
                   store.updateNode(a.id, { extraData: JSON.stringify(eo) })
                 }}
-                style={{ position: 'absolute', right: -7, bottom: -7, width: 15, height: 15, borderRadius: 3, background: 'var(--bg-elevated,#fff)', border: `1.5px solid ${col}`, cursor: 'nwse-resize', pointerEvents: 'auto', touchAction: 'none', zIndex: 3 }} />
+                style={{ position: 'absolute', right: -11, bottom: -11, width: 24, height: 24, background: 'transparent', cursor: 'nwse-resize', pointerEvents: 'auto', touchAction: 'none', zIndex: 3 }} />
             )}
           </div>
         )
