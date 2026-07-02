@@ -503,6 +503,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // Arrastre del MARCO de un área desde su etiqueta → mueve la región + sus hijos.
   const [areaDrag, setAreaDrag] = useState<{ id: string; dx: number; dy: number } | null>(null)
   const areaDragRef = useRef<{ id: string; sx: number; sy: number; moved: boolean } | null>(null)
+  // Redimensionado manual de un contexto (tirador esquina) → guarda `_ctxW/_ctxH`.
+  const [areaRz, setAreaRz] = useState<{ id: string; w: number; h: number } | null>(null)
+  const areaRzRef = useRef<{ id: string; sx: number; sy: number; w0: number; h0: number } | null>(null)
   const [guides, setGuides] = useState<{ vx?: number; hy?: number }>({})
 
   // Pan del lienzo (en curso).
@@ -833,6 +836,33 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       : Math.min(vp.w / rect.w, vp.h / rect.h) * 0.9
     flyTo(rect.x + rect.w / 2, rect.y + rect.h / 2, scale)
   }, [flyTo, flyToNode])
+
+  // MOVER un contexto = REORDENARLO entre sus hermanos según dónde se suelta. La
+  // colocación del layout es secuencial (por siblingOrder) → tras reordenar se recoloca
+  // y NUNCA solapa a otro. El eje (horizontal para contextos raíz, vertical para
+  // subcontextos) se deduce de cómo están dispuestos los hermanos.
+  const reorderContextByDrop = useCallback((id: string, dropCenter: { x: number; y: number }) => {
+    const n = store.getNode(id); if (!n || !n.parentId) return
+    const boxes = nestedRef.current?.boxes; if (!boxes) return
+    const sibs = store.children(n.parentId)
+      .filter(s => !s.deletedAt && s.id !== id && boxes.has(s.id))
+      .map(s => ({ s, r: boxes.get(s.id)! }))
+    if (sibs.length === 0) return
+    const xs = sibs.map(o => o.r.x), ys = sibs.map(o => o.r.y)
+    const horizontal = (Math.max(...xs) - Math.min(...xs)) >= (Math.max(...ys) - Math.min(...ys))
+    sibs.sort((a, b) => horizontal ? a.r.x - b.r.x : a.r.y - b.r.y)
+    const coord = horizontal ? dropCenter.x : dropCenter.y
+    let idx = 0
+    for (const o of sibs) { const c = horizontal ? o.r.x + o.r.w / 2 : o.r.y + o.r.h / 2; if (c < coord) idx++ }
+    const before = sibs[idx - 1]?.s.siblingOrder
+    const after = sibs[idx]?.s.siblingOrder
+    let order: number
+    if (before == null && after == null) order = 1000
+    else if (before == null) order = (after as number) - 1000
+    else if (after == null) order = (before as number) + 1000
+    else order = (before + after) / 2
+    store.updateNode(id, { siblingOrder: order })
+  }, [])
 
   // Volar al DÍA DE HOY (área de la agenda) + abrir su columna del día. Si el día acaba
   // de crearse, la caja aparece tras el re-render del layout → reintento breve.
@@ -2057,8 +2087,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       {children.filter(n => zoneIds.has(n.id)).map(a => {
         const rect = readAreaRect(a) ?? (nested ? nested.boxes.get(a.id) ?? null : null); if (!rect) return null
         const col = (() => { const cx = firstContextOf(a) ?? (isMarkedContext(a) ? a : null); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()
+        // Preview en vivo del redimensionado manual (tirador esquina).
+        const pw = areaRz?.id === a.id ? areaRz.w : rect.w
+        const ph = areaRz?.id === a.id ? areaRz.h : rect.h
         const sx = cam.x + rect.x * cam.scale, sy = cam.y + rect.y * cam.scale
-        const sw = rect.w * cam.scale, sh = rect.h * cam.scale
+        const sw = pw * cam.scale, sh = ph * cam.scale
         // Culling: fuera del viewport → no montar.
         if (sx + sw < -50 || sx > viewport.w + 50 || sy + sh < -50 || sy > viewport.h + 50) return null
         const off = areaDrag?.id === a.id ? `translate(${areaDrag.dx}px, ${areaDrag.dy}px)` : undefined
@@ -2076,21 +2109,25 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 const wdx = (e.clientX - d.sx) / cam.scale, wdy = (e.clientY - d.sy) / cam.scale
                 const node = store.getNode(a.id); if (!node) return
                 if (globalCanvas) {
-                  // Soltar un contexto DENTRO de otro → se ANIDA (reparenta) en él; soltarlo
-                  // FUERA de todo → pasa a contexto raíz. El layout lo recoloca solo.
                   const rr = readAreaRect(node) ?? nested?.boxes.get(a.id) ?? null
                   if (rr && nested) {
                     const cxp = rr.x + rr.w / 2 + wdx, cyp = rr.y + rr.h / 2 + wdy
+                    // ¿Soltado DENTRO de OTRO contexto? → anidar (reparentar) en él.
                     let target: { id: string; area: number } | null = null
+                    const selfBox = nested.boxes.get(a.id)
                     for (const [id, b] of nested.boxes) {
                       if (id === a.id) continue
+                      // Ignorar cajas que CONTIENEN a la nuestra (su propio padre/ancestros)
+                      if (selfBox && b.x <= selfBox.x && b.y <= selfBox.y && b.x + b.w >= selfBox.x + selfBox.w && b.y + b.h >= selfBox.y + selfBox.h) continue
                       if (cxp >= b.x && cxp <= b.x + b.w && cyp >= b.y && cyp <= b.y + b.h) {
                         const ar = b.w * b.h
                         if (!target || ar < target.area) target = { id, area: ar }
                       }
                     }
-                    if (target && store.getNode(a.id)?.parentId !== target.id) reparentContext(a.id, target.id)
-                    else if (!target) clearContextParent(a.id)
+                    if (target && store.getNode(a.id)?.parentId !== target.id) { reparentContext(a.id, target.id); return }
+                    // Si no cae dentro de otro contexto → REORDENAR entre sus hermanos según
+                    // dónde se suelta. La colocación secuencial lo recoloca → nunca solapa.
+                    reorderContextByDrop(a.id, { x: cxp, y: cyp })
                   }
                   return
                 }
@@ -2108,6 +2145,24 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               style={{ position: 'absolute', top: -10, left: 12, pointerEvents: 'auto', cursor: 'grab', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 9px', borderRadius: 3, background: 'var(--bg-elevated, #fff)', color: 'var(--text-secondary, #52525b)', fontSize: 11, fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase', whiteSpace: 'nowrap', border: '1px solid var(--border, #e0e0e4)', touchAction: 'none' }}
               title={t('tip.dragAreaMove')}
             ><span style={{ width: 6, height: 6, borderRadius: '50%', background: col, flexShrink: 0 }} />{a.text || t('pizarra.area')}</div>
+            {/* Tirador de REDIMENSIONADO (esquina inferior derecha) — solo en el lienzo.
+                Al arrastrar guarda `_ctxW/_ctxH`; la colocación secuencial recoloca a los
+                demás → nunca solapa. */}
+            {globalCanvas && (
+              <div title={t('tip.scale')}
+                onPointerDown={(e) => { if (e.button !== 0) return; e.stopPropagation(); try { (e.target as HTMLElement).setPointerCapture(e.pointerId) } catch { /* noop */ }; areaRzRef.current = { id: a.id, sx: e.clientX, sy: e.clientY, w0: rect.w, h0: rect.h }; setAreaRz({ id: a.id, w: rect.w, h: rect.h }) }}
+                onPointerMove={(e) => { const r = areaRzRef.current; if (!r || r.id !== a.id) return; const nw = Math.max(360, r.w0 + (e.clientX - r.sx) / cam.scale); const nh = Math.max(240, r.h0 + (e.clientY - r.sy) / cam.scale); setAreaRz({ id: a.id, w: nw, h: nh }) }}
+                onPointerUp={(e) => {
+                  const r = areaRzRef.current; areaRzRef.current = null; setAreaRz(null)
+                  if (!r || r.id !== a.id) return
+                  const nw = Math.max(360, r.w0 + (e.clientX - r.sx) / cam.scale), nh = Math.max(240, r.h0 + (e.clientY - r.sy) / cam.scale)
+                  const node = store.getNode(a.id); if (!node) return
+                  let eo: Record<string, unknown> = {}; try { eo = JSON.parse(node.extraData || '{}') } catch { /* vacío */ }
+                  eo._ctxW = String(Math.round(nw)); eo._ctxH = String(Math.round(nh))
+                  store.updateNode(a.id, { extraData: JSON.stringify(eo) })
+                }}
+                style={{ position: 'absolute', right: -7, bottom: -7, width: 15, height: 15, borderRadius: 3, background: 'var(--bg-elevated,#fff)', border: `1.5px solid ${col}`, cursor: 'nwse-resize', pointerEvents: 'auto', touchAction: 'none', zIndex: 3 }} />
+            )}
           </div>
         )
       })}

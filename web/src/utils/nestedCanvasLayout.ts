@@ -134,12 +134,16 @@ function measureBox(boxId: string, aspect: number, isBox: (n: Node) => boolean, 
   const subBottom = subBoxes.length ? sy - SUB_GAP : subTop
   const innerW = Math.max(content.w, subW)
   const innerH = Math.max(content.h, subBottom)
-  // La caja es MUCHO más grande que su contenido: el texto ocupa un ~5-10% del área,
-  // anclado arriba-izquierda, y queda MUCHÍSIMO espacio libre dentro para navegar,
-  // escribir y dibujar más adelante. (El lienzo es infinito → el zoom lo ajusta.)
+  // Mínimo para contener el contenido sin recortarlo (el texto NUNCA se sale).
+  const minW = innerW + PAD * 2
+  const minH = HEADER + PAD + innerH + PAD
+  // Tamaño MANUAL (redimensionado a mano) si existe (`_ctxW/_ctxH`), acotado al mínimo.
+  // Si no, tamaño AUTO grande y generoso (el texto ~5-10% del área; resto libre).
+  const eo = ed(store.getNode(boxId) as Node)
+  const ovW = Number(eo._ctxW), ovH = Number(eo._ctxH)
   const box = {
-    w: Math.max(screenW, innerW + EMPTY_RIGHT),
-    h: Math.max(BASE_H, HEADER + PAD + innerH + PAD + EMPTY_BOTTOM),
+    w: ovW > 0 ? Math.max(ovW, minW) : Math.max(screenW, innerW + EMPTY_RIGHT),
+    h: ovH > 0 ? Math.max(ovH, minH) : Math.max(BASE_H, minH + EMPTY_BOTTOM),
   }
   meta.set(boxId, { box, content: content.rows, subs })
   return box
