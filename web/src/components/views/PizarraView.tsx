@@ -2804,14 +2804,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
             )}
             {/* (Documento: chevron + DOT van INLINE en el cuerpo, alineados con la 1ª
                 línea como el bullet de la lista — ya no en el margen.) */}
-            {/* DOT del RECURSO (imagen/PDF/enlace/archivo) → abre en su página. */}
-            {res && (
-              <div title={t('tip.openOwnPage')}
-                onPointerDown={(e) => { e.stopPropagation(); openTextAsDoc(node.id) }}
-                style={{ position: 'absolute', left: -30, top: 6, height: 28, width: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', zIndex: 22 }}>
-                <span style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: '2px solid var(--bg,#fff)', boxShadow: '0 0 0 1px var(--border,#d8d8d8)' }} />
-              </div>
-            )}
+            {/* El RECURSO (imagen/PDF/enlace/archivo) ya no tiene dot de «abrir en su página»:
+                no aportaba nada desde el lienzo (navegar a otro plano), igual que se quitó
+                «Abrir nodo» del menú clic-derecho. */}
             {/* TEXTO LIMPIO: SOLO en hover (no al crear) aparece el dot (zoom a su pin) a
                 la izquierda y el tirador de ancho a la derecha. Nada más. */}
             {/* DOT del texto del lienzo: en hover SIEMPRE; sin hover, solo si tiene hijos
@@ -2823,33 +2818,33 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: plainHasKids ? '2px solid var(--accent-soft,#e9e6ff)' : '2px solid var(--bg,#fff)', boxShadow: plainHasKids ? '0 0 0 2px var(--accent,#6c5ce7)' : '0 0 0 1px var(--border,#d8d8d8)' }} />
               </div>
             )}
-            {/* Texto del lienzo: en REPOSO es puro (sin accesorios). Al SELECCIONARLO/editarlo
-                aparece el recuadro (borde, por CSS) + tiradores para REDIMENSIONAR: ancho a la
-                derecha (reajusta el salto de línea) y escala en la esquina inf-derecha. */}
+            {/* Redimensionar SIN tiradores visibles: pinchar y arrastrar directamente desde el
+                borde/esquina de la propia tarjeta (zona invisible pero interactiva, cursor
+                ew-resize/nwse-resize da la pista). Mismo criterio para texto/imagen/PDF/vista. */}
             {isText && (selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
               <>
                 <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
-                  style={{ position: 'absolute', right: -7, top: '50%', width: 6, height: 28, marginTop: -14, background: 'var(--accent,#6c5ce7)', opacity: 0.85, borderRadius: 4, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
+                  style={{ position: 'absolute', right: -5, top: 0, bottom: 0, width: 10, background: 'transparent', cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
                 <div title={t('tip.scale')} onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
-                  style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--accent,#6c5ce7)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none', zIndex: 21 }} />
+                  style={{ position: 'absolute', right: -6, bottom: -6, width: 16, height: 16, background: 'transparent', cursor: 'nwse-resize', touchAction: 'none', zIndex: 21 }} />
               </>
             )}
             {showHandles && !isText && !isClean && ((elView || res) ? (
-              // Vista o entidad embebida: ancho a la DERECHA + escala en la esquina.
+              // Vista o entidad embebida: borde derecho + esquina inferior derecha.
               <>
                 <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
-                  style={{ position: 'absolute', right: -5, top: '50%', width: 7, height: 28, marginTop: -14, background: 'var(--text-tertiary,#bbb)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.9, touchAction: 'none' }} />
+                  style={{ position: 'absolute', right: -5, top: 0, bottom: 0, width: 10, background: 'transparent', cursor: 'ew-resize', touchAction: 'none' }} />
                 <div title={t('tip.scale')} onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
-                  style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--text-tertiary,#bbb)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
+                  style={{ position: 'absolute', right: -6, bottom: -6, width: 16, height: 16, background: 'transparent', cursor: 'nwse-resize', touchAction: 'none' }} />
               </>
             ) : (
               <>
-                {/* Manija de ANCHURA — borde izquierdo, a media altura. Arrastra → reajusta ancho y salto de línea. */}
+                {/* Borde izquierdo — arrastra → reajusta ancho y salto de línea. */}
                 <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
-                  style={{ position: 'absolute', left: -5, top: '50%', width: 8, height: 30, marginTop: -15, background: 'var(--accent,#6c5ce7)', borderRadius: 4, cursor: 'ew-resize', opacity: 0.85, touchAction: 'none' }} />
-                {/* Manija de ESCALA — esquina inferior derecha (escala uniforme desde arriba-izquierda). */}
+                  style={{ position: 'absolute', left: -5, top: 0, bottom: 0, width: 10, background: 'transparent', cursor: 'ew-resize', touchAction: 'none' }} />
+                {/* Esquina inferior derecha — escala uniforme desde arriba-izquierda. */}
                 <div title={t('tip.scale')} onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
-                  style={{ position: 'absolute', right: -6, bottom: -6, width: 12, height: 12, background: '#fff', border: '2px solid var(--accent,#6c5ce7)', borderRadius: 3, cursor: 'nwse-resize', touchAction: 'none' }} />
+                  style={{ position: 'absolute', right: -6, bottom: -6, width: 16, height: 16, background: 'transparent', cursor: 'nwse-resize', touchAction: 'none' }} />
               </>
             ))}
           </div>
