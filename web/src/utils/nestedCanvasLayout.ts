@@ -73,6 +73,14 @@ function ed(n: Node): Record<string, unknown> {
   try { return JSON.parse(n.extraData || '{}') } catch { return {} }
 }
 
+/** Posición LIBRE (absoluta) de un contexto movido a mano (`_gx/_gy`). null = auto-flujo. */
+function freePos(n: Node | null | undefined): { x: number; y: number } | null {
+  if (!n) return null
+  const e = ed(n)
+  const x = Number(e._gx), y = Number(e._gy)
+  return (Number.isFinite(x) && Number.isFinite(y)) ? { x, y } : null
+}
+
 // ── Predicados de CAJA (sub-área) por región ─────────────────────────────────
 /** Contextos: una caja es un contexto marcado (`_ctx='1'`). */
 function isContextBox(n: Node): boolean { return isMarkedContext(n) }
@@ -154,7 +162,12 @@ function placeBox(boxId: string, x: number, y: number, meta: Map<string, Plan>, 
   out.boxes.set(boxId, { x, y, w: plan.box.w, h: plan.box.h })
   const ox = x + PAD, oy = y + HEADER + PAD
   for (const c of plan.content) out.items.set(c.id, { x: ox + c.x, y: oy + c.y, w: CONTENT_W, h: c.h })
-  for (const s of plan.subs) placeBox(s.id, ox + s.x, oy + s.y, meta, out)
+  for (const s of plan.subs) {
+    // Subcontexto MOVIDO a mano → posición absoluta libre; si no, anidado (auto).
+    const fp = freePos(store.getNode(s.id))
+    if (fp) placeBox(s.id, fp.x, fp.y, meta, out)
+    else placeBox(s.id, ox + s.x, oy + s.y, meta, out)
+  }
 }
 
 /** Coloca una REGIÓN (los hijos-caja de `rootId`) en una fila horizontal desde `startX`.
@@ -164,8 +177,10 @@ function placeRegion(rootId: string, aspect: number, isBox: (n: Node) => boolean
   for (const tc of tops) measureBox(tc.id, aspect, isBox, meta)
   let x = startX
   for (const tc of tops) {
-    placeBox(tc.id, x, 0, meta, out)
-    x += (meta.get(tc.id)?.box.w ?? CONTENT_W) + TOP_GAP
+    // Contexto MOVIDO a mano → posición absoluta libre (no avanza el flujo); si no, fluye.
+    const fp = freePos(store.getNode(tc.id))
+    if (fp) { placeBox(tc.id, fp.x, fp.y, meta, out) }
+    else { placeBox(tc.id, x, 0, meta, out); x += (meta.get(tc.id)?.box.w ?? CONTENT_W) + TOP_GAP }
   }
   return x
 }

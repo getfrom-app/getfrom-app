@@ -837,33 +837,6 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     flyTo(rect.x + rect.w / 2, rect.y + rect.h / 2, scale)
   }, [flyTo, flyToNode])
 
-  // MOVER un contexto = REORDENARLO entre sus hermanos según dónde se suelta. La
-  // colocación del layout es secuencial (por siblingOrder) → tras reordenar se recoloca
-  // y NUNCA solapa a otro. El eje (horizontal para contextos raíz, vertical para
-  // subcontextos) se deduce de cómo están dispuestos los hermanos.
-  const reorderContextByDrop = useCallback((id: string, dropCenter: { x: number; y: number }) => {
-    const n = store.getNode(id); if (!n || !n.parentId) return
-    const boxes = nestedRef.current?.boxes; if (!boxes) return
-    const sibs = store.children(n.parentId)
-      .filter(s => !s.deletedAt && s.id !== id && boxes.has(s.id))
-      .map(s => ({ s, r: boxes.get(s.id)! }))
-    if (sibs.length === 0) return
-    const xs = sibs.map(o => o.r.x), ys = sibs.map(o => o.r.y)
-    const horizontal = (Math.max(...xs) - Math.min(...xs)) >= (Math.max(...ys) - Math.min(...ys))
-    sibs.sort((a, b) => horizontal ? a.r.x - b.r.x : a.r.y - b.r.y)
-    const coord = horizontal ? dropCenter.x : dropCenter.y
-    let idx = 0
-    for (const o of sibs) { const c = horizontal ? o.r.x + o.r.w / 2 : o.r.y + o.r.h / 2; if (c < coord) idx++ }
-    const before = sibs[idx - 1]?.s.siblingOrder
-    const after = sibs[idx]?.s.siblingOrder
-    let order: number
-    if (before == null && after == null) order = 1000
-    else if (before == null) order = (after as number) - 1000
-    else if (after == null) order = (before as number) + 1000
-    else order = (before + after) / 2
-    store.updateNode(id, { siblingOrder: order })
-  }, [])
-
   // Volar al DÍA DE HOY (área de la agenda) + abrir su columna del día. Si el día acaba
   // de crearse, la caja aparece tras el re-render del layout → reintento breve.
   const flyToToday = useCallback(() => {
@@ -2111,23 +2084,26 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 if (globalCanvas) {
                   const rr = readAreaRect(node) ?? nested?.boxes.get(a.id) ?? null
                   if (rr && nested) {
+                    // POSICIÓN LIBRE: la nueva esquina sup-izq absoluta = donde lo sueltas.
+                    const nx = Math.round(rr.x + wdx), ny = Math.round(rr.y + wdy)
                     const cxp = rr.x + rr.w / 2 + wdx, cyp = rr.y + rr.h / 2 + wdy
-                    // ¿Soltado DENTRO de OTRO contexto? → anidar (reparentar) en él.
+                    let eo: Record<string, unknown> = {}; try { eo = JSON.parse(node.extraData || '{}') } catch { /* vacío */ }
+                    eo._gx = String(nx); eo._gy = String(ny)
+                    store.updateNode(a.id, { extraData: JSON.stringify(eo) })
+                    // Congruencia con el árbol (como un elemento): si cae DENTRO de otro
+                    // contexto → se anida en él; si cae FUERA de todo → pasa a raíz.
                     let target: { id: string; area: number } | null = null
                     const selfBox = nested.boxes.get(a.id)
                     for (const [id, b] of nested.boxes) {
                       if (id === a.id) continue
-                      // Ignorar cajas que CONTIENEN a la nuestra (su propio padre/ancestros)
                       if (selfBox && b.x <= selfBox.x && b.y <= selfBox.y && b.x + b.w >= selfBox.x + selfBox.w && b.y + b.h >= selfBox.y + selfBox.h) continue
                       if (cxp >= b.x && cxp <= b.x + b.w && cyp >= b.y && cyp <= b.y + b.h) {
                         const ar = b.w * b.h
                         if (!target || ar < target.area) target = { id, area: ar }
                       }
                     }
-                    if (target && store.getNode(a.id)?.parentId !== target.id) { reparentContext(a.id, target.id); return }
-                    // Si no cae dentro de otro contexto → REORDENAR entre sus hermanos según
-                    // dónde se suelta. La colocación secuencial lo recoloca → nunca solapa.
-                    reorderContextByDrop(a.id, { x: cxp, y: cyp })
+                    if (target && store.getNode(a.id)?.parentId !== target.id) reparentContext(a.id, target.id)
+                    else if (!target) clearContextParent(a.id)
                   }
                   return
                 }
