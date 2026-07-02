@@ -1971,5 +1971,13 @@
   "tip.pageLabel": "Page {{page}} of {{total}}",
   "ph.writeEllipsis": "Write…",
   "tip.selectText": "Select text",
-  "tip.sendToCanvas": "Send to canvas"
+  "tip.sendToCanvas": "Send to canvas",
+  "elements.title": "Elements",
+  "elements.all": "All",
+  "elements.texts": "Texts",
+  "elements.selections": "Selections",
+  "elements.images": "Images",
+  "elements.pdfs": "PDFs",
+  "elements.searchPlaceholder": "Search the canvas…",
+  "elements.empty": "No elements yet."
 }

@@ -1970,5 +1970,13 @@
   "tip.pageLabel": "Страница {{page}} из {{total}}",
   "ph.writeEllipsis": "Напишите…",
   "tip.selectText": "Выделить текст",
-  "tip.sendToCanvas": "Отправить на холст"
+  "tip.sendToCanvas": "Отправить на холст",
+  "elements.title": "Элементы",
+  "elements.all": "Все",
+  "elements.texts": "Тексты",
+  "elements.selections": "Выделения",
+  "elements.images": "Изображения",
+  "elements.pdfs": "PDF-файлы",
+  "elements.searchPlaceholder": "Поиск на холсте…",
+  "elements.empty": "Пока нет элементов."
 }

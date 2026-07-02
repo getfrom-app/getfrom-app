@@ -1,19 +1,23 @@
-// Render del PDF COMPLETO en el lienzo (todas las páginas apiladas). Se ve pequeño
-// por defecto y NÍTIDO al ampliar: re-renderiza a más resolución cuando la escala en
-// pantalla sube (con debounce). Las herramientas del lienzo marcan por encima
-// (strokes en el body, autoguardados); el dot abre el editor completo.
+// Render del PDF en el lienzo: UNA página a la vez (como Apple Notes/Heptabase), con
+// paginador ‹ N/total › sobre la propia tarjeta. Se ve pequeño por defecto y NÍTIDO
+// al ampliar: re-renderiza a más resolución cuando la escala en pantalla sube (con
+// debounce). Las herramientas del lienzo marcan por encima (strokes en el body,
+// autoguardados); el dot abre el editor completo.
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PdfDoc = any
 
-export default function PdfCanvasPreview({ url, width, scale = 1, title }: { url: string; width: number; scale?: number; title?: string }) {
+export default function PdfCanvasPreview({ url, width, scale = 1, title, allPages = false }: { url: string; width: number; scale?: number; title?: string; allPages?: boolean }) {
   const { t } = useTranslation()
   const docRef = useRef<PdfDoc | null>(null)
-  const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map())
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const allCanvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const renderedTargetRef = useRef(0)
+  const renderedPageRef = useRef(0)
   const [pages, setPages] = useState(0)
+  const [page, setPage] = useState(1)
   const [state, setState] = useState<'loading' | 'ok' | 'fail'>('loading')
 
   // Cargar el documento una vez.
@@ -27,7 +31,9 @@ export default function PdfCanvasPreview({ url, width, scale = 1, title }: { url
         if (cancelled) return
         docRef.current = doc
         renderedTargetRef.current = 0
+        renderedPageRef.current = 0
         setPages(doc.numPages)
+        setPage(1)
         setState('ok')
       } catch {
         if (!cancelled) setState('fail')
@@ -36,15 +42,42 @@ export default function PdfCanvasPreview({ url, width, scale = 1, title }: { url
     return () => { cancelled = true; docRef.current = null }
   }, [url])
 
-  // Renderizar / re-renderizar a la resolución que toca para la escala en pantalla.
+  // Renderizar / re-renderizar la página actual a la resolución que toca para la escala en pantalla.
   useEffect(() => {
-    if (!docRef.current || pages === 0) return
+    if (!docRef.current || pages === 0 || allPages) return
     const dpr = Math.min(2, window.devicePixelRatio || 1)
-    // Resolución objetivo (px) del ancho de cada página = ancho de tarjeta × escala
-    // en pantalla × dpr, con tope para no reventar memoria.
     const target = Math.min(2800, Math.max(width, Math.round(width * Math.max(1, scale) * dpr)))
-    // Solo re-renderiza al SUBIR la resolución de forma notable (zoom-in). Al alejar
-    // se conserva la alta resolución y se ve igual de bien escalada hacia abajo.
+    // Re-renderiza si cambia de página, o al SUBIR la resolución de forma notable (zoom-in).
+    const samePage = renderedPageRef.current === page
+    if (samePage && renderedTargetRef.current && target <= renderedTargetRef.current * 1.3) return
+
+    let cancelled = false
+    const timer = setTimeout(async () => {
+      const doc = docRef.current
+      const canvas = canvasRef.current
+      if (!doc || !canvas || cancelled) return
+      renderedTargetRef.current = target
+      renderedPageRef.current = page
+      try {
+        const pdfPage = await doc.getPage(page)
+        const base = pdfPage.getViewport({ scale: 1 })
+        const vp = pdfPage.getViewport({ scale: target / base.width })
+        canvas.width = Math.round(vp.width)
+        canvas.height = Math.round(vp.height)
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        await pdfPage.render({ canvasContext: ctx, viewport: vp }).promise
+      } catch { /* página fallida */ }
+    }, samePage ? 220 : 0)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [pages, page, width, scale, allPages])
+
+  // Modo «PDF de fondo» (legacy, `pdfBackground`): TODAS las páginas apiladas, para
+  // dibujar/anotar encima con las herramientas del lienzo.
+  useEffect(() => {
+    if (!docRef.current || pages === 0 || !allPages) return
+    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    const target = Math.min(2800, Math.max(width, Math.round(width * Math.max(1, scale) * dpr)))
     if (renderedTargetRef.current && target <= renderedTargetRef.current * 1.3) return
 
     let cancelled = false
@@ -54,22 +87,22 @@ export default function PdfCanvasPreview({ url, width, scale = 1, title }: { url
       renderedTargetRef.current = target
       for (let i = 1; i <= pages; i++) {
         if (cancelled) return
-        const canvas = canvasRefs.current.get(i)
+        const canvas = allCanvasRefs.current.get(i)
         if (!canvas) continue
         try {
-          const page = await doc.getPage(i)
-          const base = page.getViewport({ scale: 1 })
-          const vp = page.getViewport({ scale: target / base.width })
+          const pdfPage = await doc.getPage(i)
+          const base = pdfPage.getViewport({ scale: 1 })
+          const vp = pdfPage.getViewport({ scale: target / base.width })
           canvas.width = Math.round(vp.width)
           canvas.height = Math.round(vp.height)
           const ctx = canvas.getContext('2d')
           if (!ctx) continue
-          await page.render({ canvasContext: ctx, viewport: vp }).promise
+          await pdfPage.render({ canvasContext: ctx, viewport: vp }).promise
         } catch { /* página fallida, sigue */ }
       }
     }, 220)
     return () => { cancelled = true; clearTimeout(timer) }
-  }, [pages, width, scale])
+  }, [pages, width, scale, allPages])
 
   if (state === 'fail') {
     return (
@@ -79,14 +112,36 @@ export default function PdfCanvasPreview({ url, width, scale = 1, title }: { url
       </div>
     )
   }
+  if (allPages) {
+    return (
+      <div style={{ position: 'relative', minHeight: state === 'loading' ? 90 : undefined, background: '#fff' }}>
+        {Array.from({ length: pages }, (_, idx) => (
+          <canvas key={idx + 1} ref={el => { if (el) allCanvasRefs.current.set(idx + 1, el) }}
+            style={{ display: 'block', width: '100%', height: 'auto', borderBottom: idx < pages - 1 ? '1px solid #eaeaea' : undefined }} />
+        ))}
+        {state === 'loading' && (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary,#aaa)', fontSize: 13 }}>{t('pdf.loadingPdf')}</div>
+        )}
+      </div>
+    )
+  }
   return (
     <div style={{ position: 'relative', minHeight: state === 'loading' ? 90 : undefined, background: '#fff' }}>
-      {Array.from({ length: pages }, (_, idx) => (
-        <canvas key={idx + 1} ref={el => { if (el) canvasRefs.current.set(idx + 1, el) }}
-          style={{ display: 'block', width: '100%', height: 'auto', borderBottom: idx < pages - 1 ? '1px solid #eaeaea' : undefined }} />
-      ))}
+      <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: 'auto' }} />
       {state === 'loading' && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary,#aaa)', fontSize: 13 }}>{t('pdf.loadingPdf')}</div>
+      )}
+      {pages > 1 && (
+        <div
+          onPointerDown={e => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
+          style={{ position: 'absolute', bottom: 8, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(0,0,0,.6)', color: '#fff', borderRadius: 20, padding: '3px 6px 3px 10px', fontSize: 11.5, userSelect: 'none' }}>
+          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+            style={{ background: 'none', border: 'none', color: '#fff', opacity: page <= 1 ? .35 : .9, cursor: page <= 1 ? 'default' : 'pointer', fontSize: 14, lineHeight: 1, padding: '2px 4px' }}>‹</button>
+          <span>{page}/{pages}</span>
+          <button onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page >= pages}
+            style={{ background: 'none', border: 'none', color: '#fff', opacity: page >= pages ? .35 : .9, cursor: page >= pages ? 'default' : 'pointer', fontSize: 14, lineHeight: 1, padding: '2px 4px' }}>›</button>
+        </div>
       )}
     </div>
   )

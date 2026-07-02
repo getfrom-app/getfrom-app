@@ -1970,5 +1970,13 @@
   "tip.pageLabel": "Pagina {{page}} van {{total}}",
   "ph.writeEllipsis": "Schrijf…",
   "tip.selectText": "Tekst selecteren",
-  "tip.sendToCanvas": "Naar canvas sturen"
+  "tip.sendToCanvas": "Naar canvas sturen",
+  "elements.title": "Elementen",
+  "elements.all": "Alle",
+  "elements.texts": "Teksten",
+  "elements.selections": "Selecties",
+  "elements.images": "Afbeeldingen",
+  "elements.pdfs": "PDF's",
+  "elements.searchPlaceholder": "Zoeken op canvas…",
+  "elements.empty": "Nog geen elementen."
 }

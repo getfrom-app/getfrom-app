@@ -1970,5 +1970,13 @@
   "tip.pageLabel": "Sida {{page}} av {{total}}",
   "ph.writeEllipsis": "Skriv…",
   "tip.selectText": "Markera text",
-  "tip.sendToCanvas": "Skicka till duken"
+  "tip.sendToCanvas": "Skicka till duken",
+  "elements.title": "Element",
+  "elements.all": "Alla",
+  "elements.texts": "Texter",
+  "elements.selections": "Markeringar",
+  "elements.images": "Bilder",
+  "elements.pdfs": "PDF-filer",
+  "elements.searchPlaceholder": "Sök i duken…",
+  "elements.empty": "Inga element än."
 }

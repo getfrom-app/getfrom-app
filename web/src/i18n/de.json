@@ -1970,5 +1970,13 @@
   "tip.pageLabel": "Seite {{page}} von {{total}}",
   "ph.writeEllipsis": "Schreiben…",
   "tip.selectText": "Text auswählen",
-  "tip.sendToCanvas": "An die Leinwand senden"
+  "tip.sendToCanvas": "An die Leinwand senden",
+  "elements.title": "Elemente",
+  "elements.all": "Alle",
+  "elements.texts": "Texte",
+  "elements.selections": "Auswahlen",
+  "elements.images": "Bilder",
+  "elements.pdfs": "PDFs",
+  "elements.searchPlaceholder": "Auf der Leinwand suchen…",
+  "elements.empty": "Noch keine Elemente."
 }

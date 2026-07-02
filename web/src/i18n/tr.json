@@ -1970,5 +1970,13 @@
   "tip.pageLabel": "Sayfa {{page}} / {{total}}",
   "ph.writeEllipsis": "Yaz…",
   "tip.selectText": "Metni seç",
-  "tip.sendToCanvas": "Tuvale gönder"
+  "tip.sendToCanvas": "Tuvale gönder",
+  "elements.title": "Öğeler",
+  "elements.all": "Tümü",
+  "elements.texts": "Metinler",
+  "elements.selections": "Seçimler",
+  "elements.images": "Görseller",
+  "elements.pdfs": "PDF'ler",
+  "elements.searchPlaceholder": "Tuvalde ara…",
+  "elements.empty": "Henüz öğe yok."
 }

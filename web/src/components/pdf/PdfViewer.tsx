@@ -1,16 +1,14 @@
 /**
- * PdfViewer — Visor PDF con anotaciones persistentes.
- * - PDF.js para renderizar en canvas
- * - SVG overlay para anotaciones (pen, highlight, text, eraser)
- * - Auto-guardado en extraData inmediato + re-subida a R2 con debounce 3s
+ * PdfViewer — Visor PDF de SOLO LECTURA + selección de texto (columna derecha).
+ * - PDF.js para renderizar en canvas + capa de texto seleccionable (TextLayer)
+ * - Anotaciones antiguas (`_annotations`) se siguen viendo (SVG read-only) pero ya
+ *   no se crean desde aquí: dibujar/marcar ahora se hace en el LIENZO (con sus
+ *   propias herramientas de pluma/resaltador, que dibujan por encima de la tarjeta).
  */
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { store } from '../../store/nodeStore'
-import { uploadFile, fetchFileContent } from '../../api/client'
-
-type Tool = 'select' | 'pen' | 'highlight' | 'text' | 'eraser'
+import { fetchFileContent } from '../../api/client'
 
 interface PathAnnotation {
   type: 'path'; page: number; color: string; width: number; opacity: number
@@ -29,122 +27,22 @@ interface Props {
 
 export type { Annotation, PathAnnotation, TextAnnotation }
 
-const COLORS    = ['#e53e3e','#dd6b20','#d69e2e','#38a169','#3182ce','#805ad5','#000000']
-const PEN_SIZES = [2, 4, 6, 10]
-
-export default function PdfViewer({ url, nodeId, filename, resourceKey, annotations, onAnnotationsChange }: Props) {
+export default function PdfViewer({ url, nodeId, filename, resourceKey, annotations }: Props) {
   const { t: tr }    = useTranslation()
   const canvasRefs   = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const svgRefs      = useRef<Map<number, SVGSVGElement>>(new Map())
   const textLayerRefs= useRef<Map<number, HTMLDivElement>>(new Map())
   const pagesRootRef = useRef<HTMLDivElement>(null)
   const pdfDocRef    = useRef<any>(null)
-  const drawingRef   = useRef<PathAnnotation | null>(null)
-  const isDrawingRef = useRef(false)
-  const autoSaveTimer= useRef<ReturnType<typeof setTimeout>|null>(null)
-  const isSavingRef  = useRef(false)
-  const pendingSave  = useRef(false)
 
   const [numPages,    setNumPages]    = useState(0)
   const [pageWidths,  setPageWidths]  = useState<number[]>([])
   const [pageHeights, setPageHeights] = useState<number[]>([])
   const [scale,       setScale]       = useState(1.0)  // se recalcula al cargar la primera página
   const scaleInitialized = useRef(false)
-  const [tool,        setTool]        = useState<Tool>('select')
-  const [color,       setColor]       = useState('#e53e3e')
-  const [penSize,     setPenSize]     = useState(3)
-  // annotations viene del padre (NodeView) — sobrevive al unmount/remount de PdfViewer
   const [loading,     setLoading]     = useState(true)
-  const [saveStatus,  setSaveStatus]  = useState<'idle'|'saving'|'saved'>('idle')
-  // Text tool
-  const [textInput,   setTextInput]   = useState<{page:number;x:number;y:number;pxX:number;pxY:number}|null>(null)
-  const [textValue,   setTextValue]   = useState('')
-  const textInputRef  = useRef<HTMLInputElement>(null)
   // Selección de texto (Heptabase Fase 2): botón flotante «Enviar al lienzo»
-  const [textSel,     setTextSel]     = useState<{ text: string; x: number; y: number } | null>(null)
-
-  // Las anotaciones vienen del padre (NodeView) — no se cargan aquí
-
-  // ── Guardar anotaciones en el nodo (extraData) ─────────────────────────────
-  const saveToNode = useCallback((anns: Annotation[]) => {
-    const node = store.getNode(nodeId)
-    if (!node) return
-    let ed: Record<string,unknown> = {}
-    try { ed = JSON.parse(node.extraData || '{}') } catch {}
-    ed._annotations = anns
-    store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
-  }, [nodeId])
-
-  // ── Auto-guardar en PDF (debounce 3s) ──────────────────────────────────────
-  const savePdfBackground = useCallback(async (anns: Annotation[]) => {
-    if (isSavingRef.current) { pendingSave.current = true; return }
-    if (!resourceKey) return
-    isSavingRef.current = true
-    setSaveStatus('saving')
-    try {
-      const { PDFDocument, rgb, StandardFonts } = await import('pdf-lib')
-      const pdfBytes = await fetchFileContent(resourceKey)
-      const pdfDoc = await PDFDocument.load(pdfBytes)
-      const pages = pdfDoc.getPages()
-
-      for (const ann of anns) {
-        const pageIdx = ann.page - 1
-        if (pageIdx < 0 || pageIdx >= pages.length) continue
-        const page = pages[pageIdx]
-        const { width: pw, height: ph } = page.getSize()
-        const hexRgb = (hex: string) => {
-          const r = parseInt(hex.slice(1,3),16)/255
-          const g = parseInt(hex.slice(3,5),16)/255
-          const b = parseInt(hex.slice(5,7),16)/255
-          return rgb(r,g,b)
-        }
-        if (ann.type === 'path' && ann.points.length >= 2) {
-          for (let i = 1; i < ann.points.length; i++) {
-            const [x1,y1] = ann.points[i-1]; const [x2,y2] = ann.points[i]
-            page.drawLine({ start:{x:x1*pw,y:ph-y1*ph}, end:{x:x2*pw,y:ph-y2*ph},
-              thickness: ann.width/scale, color: hexRgb(ann.color), opacity: ann.opacity })
-          }
-        } else if (ann.type === 'text' && ann.text) {
-          const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
-          page.drawText(ann.text, { x:ann.x*pw, y:ph-ann.y*ph,
-            size: ann.fontSize/scale, font, color: hexRgb(ann.color) })
-        }
-      }
-
-      const newBytes = await pdfDoc.save()
-      const blob = new Blob([newBytes.buffer as ArrayBuffer], { type:'application/pdf' })
-      const file = new File([blob], filename+'.pdf', { type:'application/pdf' })
-      const { key, publicUrl } = await uploadFile(file)
-      const node = store.getNode(nodeId)
-      if (node) {
-        let ed: Record<string,unknown> = {}; try { ed = JSON.parse(node.extraData||'{}') } catch {}
-        ed._resourceUrl = publicUrl; ed._resourceKey = key
-        store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
-      }
-      // NO llamar onUrlUpdated — evita re-render de NodeView → re-creación de props → bucle de guardado
-      // La nueva URL/key ya está en extraData y se usará la próxima vez que se abra el nodo.
-      setSaveStatus('saved')
-      setTimeout(() => setSaveStatus('idle'), 2000)
-    } catch (e) {
-      console.error('[PdfViewer] auto-save error:', e)
-      setSaveStatus('idle')
-    } finally {
-      isSavingRef.current = false
-      if (pendingSave.current) { pendingSave.current = false; savePdfBackground(anns) }
-    }
-  }, [resourceKey, nodeId, filename, scale]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const scheduleAutoSave = useCallback((anns: Annotation[]) => {
-    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
-    autoSaveTimer.current = setTimeout(() => savePdfBackground(anns), 3000)
-  }, [savePdfBackground])
-
-  // Guardar al desmontar
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimer.current) { clearTimeout(autoSaveTimer.current); savePdfBackground(annotations) }
-    }
-  }, [annotations, savePdfBackground]) // eslint-disable-line react-hooks/exhaustive-deps
+  const [textSel,     setTextSel]     = useState<{ text: string; x: number; y: number; page: number | null } | null>(null)
 
   // ── Cargar PDF ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -168,8 +66,10 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
       if (!scaleInitialized.current) {
         const firstPage = await doc.getPage(1)
         const vpAt1 = firstPage.getViewport({ scale: 1 })
-        // Ancho disponible: ancho del visor ~800px menos padding
-        const containerW = document.querySelector('.pdf-viewer-pages')?.clientWidth || 780
+        // Ancho disponible: el propio contenedor (ref, no querySelector global — evita medir
+        // un ancho ajeno cuando el visor vive en la columna derecha, mucho más estrecha que
+        // el fallback de 780px, lo que hacía que el PDF se renderizara más ancho y se cortara).
+        const containerW = pagesRootRef.current?.clientWidth || 780
         const fitScale = Math.max(0.5, Math.min(2.5, (containerW - 48) / vpAt1.width))
         effectiveScale = Math.round(fitScale * 4) / 4  // snap a 0.25
         setScale(effectiveScale)
@@ -218,7 +118,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
     renderAll().catch(console.error)
   }, [numPages, scale])
 
-  // ── Renderizar SVG ────────────────────────────────────────────────────────
+  // ── Renderizar SVG de anotaciones YA existentes (solo lectura, sin captura de ratón) ──
   const renderSvg = useCallback((svg: SVGSVGElement, page: number, anns: Annotation[]) => {
     while (svg.firstChild) svg.removeChild(svg.firstChild)
     const w = pageWidths[page-1] || svg.clientWidth || 1
@@ -254,97 +154,10 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
     return () => clearTimeout(t)
   }, [annotations, renderSvg, numPages])
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-  function getRelPos(e: React.MouseEvent|MouseEvent, el: Element): [number,number] {
-    const r = el.getBoundingClientRect()
-    return [(e.clientX-r.left)/r.width, (e.clientY-r.top)/r.height]
-  }
-  function getAbsPos(e: React.MouseEvent, el: Element): [number,number] {
-    const r = el.getBoundingClientRect()
-    return [e.clientX-r.left, e.clientY-r.top]
-  }
-
-  // ── Eventos de dibujo ─────────────────────────────────────────────────────
-  function handleMouseDown(e: React.MouseEvent<SVGSVGElement>, page: number) {
-    if (tool === 'text') {
-      e.stopPropagation()
-      const [rx, ry] = getRelPos(e, e.currentTarget)
-      const [ax, ay] = getAbsPos(e, e.currentTarget)
-      setTextInput({ page, x: rx, y: ry, pxX: ax, pxY: ay })
-      setTextValue('')
-      setTimeout(() => textInputRef.current?.focus(), 20)
-      return
-    }
-    if (tool === 'eraser') {
-      const [x,y] = getRelPos(e, e.currentTarget)
-      eraseAt(page, x, y); return
-    }
-    isDrawingRef.current = true
-    const [x,y] = getRelPos(e, e.currentTarget)
-    drawingRef.current = {
-      type:'path', page, color, opacity: tool==='highlight'?0.35:1,
-      width: tool==='highlight'?penSize*5:penSize, points:[[x,y]]
-    }
-  }
-
-  function handleMouseMove(e: React.MouseEvent<SVGSVGElement>) {
-    if (!isDrawingRef.current || !drawingRef.current) return
-    const [x,y] = getRelPos(e, e.currentTarget)
-    drawingRef.current.points.push([x,y])
-    // Preview en SVG
-    const svg = e.currentTarget
-    const prev = svg.querySelector('.pdf-preview'); if (prev) svg.removeChild(prev)
-    const w = svg.clientWidth; const h = svg.clientHeight
-    const d = drawingRef.current.points.map((p,i)=>`${i===0?'M':'L'} ${p[0]*w} ${p[1]*h}`).join(' ')
-    const el = document.createElementNS('http://www.w3.org/2000/svg','path')
-    el.setAttribute('class','pdf-preview'); el.setAttribute('d',d)
-    el.setAttribute('stroke',drawingRef.current.color)
-    el.setAttribute('stroke-width',String(drawingRef.current.width))
-    el.setAttribute('stroke-opacity',String(drawingRef.current.opacity))
-    el.setAttribute('fill','none'); el.setAttribute('stroke-linecap','round')
-    svg.appendChild(el)
-  }
-
-  function handleMouseUp() {
-    if (!isDrawingRef.current || !drawingRef.current) return
-    isDrawingRef.current = false
-    const ann = drawingRef.current; drawingRef.current = null
-    if (ann.points.length < 2) return
-    const next = [...annotations, ann]
-    onAnnotationsChange(next); saveToNode(next); scheduleAutoSave(next)
-  }
-
-  function eraseAt(page: number, x: number, y: number) {
-    const T = 0.05
-    const next = annotations.filter(a => {
-      if (a.page !== page) return true
-      if (a.type === 'path') return !a.points.some(([px,py])=>Math.abs(px-x)<T&&Math.abs(py-y)<T)
-      return Math.abs(a.x-x)>T||Math.abs(a.y-y)>T
-    })
-    onAnnotationsChange(next); saveToNode(next); scheduleAutoSave(next)
-  }
-
-  function confirmText() {
-    if (!textInput || !textValue.trim()) { setTextInput(null); setTextValue(''); return }
-    const ann: TextAnnotation = {
-      type:'text', page:textInput.page, color,
-      x:textInput.x, y:textInput.y, text:textValue, fontSize:Math.round(16*scale)/scale
-    }
-    const next = [...annotations, ann]
-    onAnnotationsChange(next); saveToNode(next); scheduleAutoSave(next)
-    setTextInput(null); setTextValue('')
-  }
-
-  function handleUndo() {
-    const next = annotations.slice(0,-1)
-    onAnnotationsChange(next); saveToNode(next); scheduleAutoSave(next)
-  }
-
   // ── Selección de texto (Heptabase Fase 2) ───────────────────────────────────
-  // Con la herramienta «seleccionar» activa, marcar texto muestra un botón flotante
-  // para enviar la cita como tarjeta nueva al lienzo (evento hacia PizarraView).
+  // Marcar texto muestra un botón flotante para enviar la cita como tarjeta nueva
+  // al lienzo (evento hacia PizarraView).
   useEffect(() => {
-    if (tool !== 'select') { setTextSel(null); return }
     function onSelChange() {
       const sel = window.getSelection()
       const root = pagesRootRef.current
@@ -355,84 +168,80 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
       if (!text) { setTextSel(null); return }
       const rect = sel.getRangeAt(0).getBoundingClientRect()
       const rootRect = root.getBoundingClientRect()
-      setTextSel({ text, x: rect.left + rect.width / 2 - rootRect.left + root.scrollLeft, y: rect.top - rootRect.top + root.scrollTop })
+      // Página de origen (para citar/filtrar la selección guardada): del ancestro marcado con data-page.
+      const anchorEl = sel.anchorNode instanceof Element ? sel.anchorNode : sel.anchorNode?.parentElement
+      const pageEl = anchorEl?.closest<HTMLElement>('[data-page]')
+      const page = pageEl ? Number(pageEl.dataset.page) : null
+      setTextSel({ text, x: rect.left + rect.width / 2 - rootRect.left + root.scrollLeft, y: rect.top - rootRect.top + root.scrollTop, page })
     }
     document.addEventListener('selectionchange', onSelChange)
     return () => document.removeEventListener('selectionchange', onSelChange)
-  }, [tool])
+  }, [])
 
   function sendSelectionToCanvas() {
     if (!textSel) return
     window.dispatchEvent(new CustomEvent('from:pdf-send-to-canvas', {
-      detail: { text: textSel.text, sourceNodeId: nodeId, filename },
+      detail: { text: textSel.text, sourceNodeId: nodeId, filename, page: textSel.page },
     }))
     window.getSelection()?.removeAllRanges()
     setTextSel(null)
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-  const cursorMap: Record<Tool,string> = { select:'text', pen:'crosshair', highlight:'crosshair', eraser:'cell', text:'text' }
+  // ── Abrir/descargar ───────────────────────────────────────────────────────
+  // `_resourceUrl` puede apuntar a un objeto R2 PRIVADO (el bucket no es público):
+  // abrirlo/descargarlo directo con <a href> daba error (403). En su lugar, si hay
+  // `resourceKey` se trae el contenido por el proxy autenticado del servidor (el
+  // mismo que usa el visor para cargar el PDF) y se abre/descarga como blob local.
+  const blobUrlRef = useRef<string | null>(null)
+  async function openFile() {
+    if (!resourceKey) { window.open(url, '_blank', 'noopener,noreferrer'); return }
+    try {
+      const bytes = await fetchFileContent(resourceKey)
+      const blob = new Blob([bytes], { type: 'application/pdf' })
+      if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current)
+      blobUrlRef.current = URL.createObjectURL(blob)
+      window.open(blobUrlRef.current, '_blank', 'noopener,noreferrer')
+    } catch (e) {
+      console.error('[PdfViewer] open error:', e)
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: tr('common.error'), type: 'warning' } }))
+    }
+  }
+  async function downloadFile() {
+    if (!resourceKey) { const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); return }
+    try {
+      const bytes = await fetchFileContent(resourceKey)
+      const blob = new Blob([bytes], { type: 'application/pdf' })
+      const objUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objUrl; a.download = filename.endsWith('.pdf') ? filename : `${filename}.pdf`
+      document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(objUrl), 4000)
+    } catch (e) {
+      console.error('[PdfViewer] download error:', e)
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: tr('common.error'), type: 'warning' } }))
+    }
+  }
+  useEffect(() => () => { if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current) }, [])
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="pdf-viewer-root">
-      {/* Barra de herramientas de anotación */}
       <div className="pdf-viewer-toolbar">
-        <div className="pdf-tb-group">
-          <button className={`pdf-tb-btn${tool==='select'?' pdf-tb-btn--active':''}`}
-            onClick={()=>setTool('select')} title={tr('tip.selectText')}>
-            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2l10 4.2-4 1.6-1.6 4z"/></svg>
-          </button>
-          {(['pen','highlight','text','eraser'] as Tool[]).map(t=>(
-            <button key={t} className={`pdf-tb-btn${tool===t?' pdf-tb-btn--active':''}`}
-              onClick={()=>setTool(t)}
-              title={t==='pen'?tr('tip.pen'):t==='highlight'?tr('tip.highlighter'):t==='text'?tr('tip.text'):tr('tip.eraser')}>
-              {t==='pen'?'✏️':t==='highlight'?'🖍':t==='text'?'T':'⌫'}
-            </button>
-          ))}
-        </div>
-        <div className="pdf-tb-group">
-          {COLORS.map(c=>(
-            <button key={c} className={`pdf-tb-color${color===c?' pdf-tb-color--active':''}`}
-              style={{background:c}} onClick={()=>setColor(c)} title={c} />
-          ))}
-        </div>
-        {(tool==='pen'||tool==='highlight') && (
-          <div className="pdf-tb-group">
-            {PEN_SIZES.map(s=>(
-              <button key={s} className={`pdf-tb-size${penSize===s?' pdf-tb-size--active':''}`}
-                onClick={()=>setPenSize(s)}>
-                <span style={{width:s*1.5,height:s*1.5,background:'#666',borderRadius:'50%',display:'block'}}/>
-              </button>
-            ))}
-          </div>
-        )}
         <div className="pdf-tb-group">
           <button className="pdf-tb-btn" onClick={()=>setScale(s=>Math.max(0.5,s-0.25))}>−</button>
           <span style={{fontSize:11,color:'var(--text-secondary)',padding:'0 4px'}}>{Math.round(scale*100)}%</span>
           <button className="pdf-tb-btn" onClick={()=>setScale(s=>Math.min(3,s+0.25))}>+</button>
         </div>
         <div style={{flex:1}}/>
-        {annotations.length>0 && (
-          <button className="pdf-tb-btn" onClick={handleUndo} title={tr('tip.undoLastAnnotation')}>↩</button>
-        )}
-        {annotations.length>0 && (
-          <button className="pdf-tb-btn" title={tr('tip.restoreClean')}
-            onClick={() => { if (confirm(tr('tip.confirmRestoreClean'))) onAnnotationsChange([]) }}>
-            ⟲ {tr('tip.restore')}
-          </button>
-        )}
-        {/* Indicador de guardado automático */}
-        {saveStatus==='saving' && <span style={{fontSize:11,color:'var(--text-tertiary)'}}>{tr('common.saving')}</span>}
-        {saveStatus==='saved'  && <span style={{fontSize:11,color:'var(--accent)'}}>✓ {tr('tip.saved')}</span>}
         {/* Acciones del archivo */}
         <div className="pdf-tb-group" style={{borderLeft:'1px solid var(--border)',paddingLeft:8,marginLeft:4,borderRight:'none'}}>
-          <a href={url} target="_blank" rel="noopener noreferrer" className="node-resource-pdf-open" title={tr('tip.openNewTab')} style={{textDecoration:'none'}}>
+          <button onClick={openFile} className="node-resource-pdf-open" title={tr('tip.openNewTab')} style={{background:'none',border:'none',cursor:'pointer'}}>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M7 3H3a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1V9"/><path d="M10 2h4v4"/><path d="M14 2L8 8"/></svg>
             {tr('tip.open')}
-          </a>
-          <a href={url} download={filename} className="node-resource-pdf-open" title={tr('tip.download')} style={{textDecoration:'none'}}>
+          </button>
+          <button onClick={downloadFile} className="node-resource-pdf-open" title={tr('tip.download')} style={{background:'none',border:'none',cursor:'pointer'}}>
             <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2v8m0 0-3-3m3 3 3-3"/><rect x="2" y="12" width="12" height="2" rx="1"/></svg>
-          </a>
+          </button>
         </div>
       </div>
 
@@ -452,35 +261,16 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
           const page = i+1
           const w = pageWidths[i]||0; const h = pageHeights[i]||0
           return (
-            <div key={page} className="pdf-viewer-page" style={{width:w,height:h}}>
+            <div key={page} className="pdf-viewer-page" data-page={page} style={{width:w,height:h}}>
               <canvas ref={el=>{if(el)canvasRefs.current.set(page,el)}}
                 style={{position:'absolute',top:0,left:0}}/>
+              {/* Capa de texto: SIEMPRE activa (única forma de interacción de este visor). */}
               <div ref={el=>{if(el)textLayerRefs.current.set(page,el)}}
                 className="pdf-text-layer"
-                style={{position:'absolute',top:0,left:0,pointerEvents:tool==='select'?'auto':'none'}}/>
+                style={{position:'absolute',top:0,left:0}}/>
+              {/* Anotaciones YA existentes (de sesiones anteriores) — solo lectura, sin captura de ratón. */}
               <svg ref={el=>{if(el){svgRefs.current.set(page,el);renderSvg(el,page,annotations)}}}
-                className="pdf-viewer-svg" style={{cursor:cursorMap[tool],pointerEvents:tool==='select'?'none':'auto'}}
-                onMouseDown={e=>handleMouseDown(e,page)}
-                onMouseMove={handleMouseMove}
-                onMouseUp={handleMouseUp}
-                onMouseLeave={handleMouseUp}
-              />
-              {/* Input texto flotante — posicionado en píxeles dentro de la página */}
-              {textInput?.page===page && (
-                <input
-                  ref={textInputRef}
-                  className="pdf-text-input"
-                  style={{left:textInput.pxX, top:textInput.pxY, color}}
-                  value={textValue}
-                  onChange={e=>setTextValue(e.target.value)}
-                  onKeyDown={e=>{
-                    if(e.key==='Enter'){e.preventDefault();confirmText()}
-                    if(e.key==='Escape'){setTextInput(null);setTextValue('')}
-                  }}
-                  onBlur={confirmText}
-                  placeholder={tr('ph.writeEllipsis')}
-                />
-              )}
+                className="pdf-viewer-svg" style={{pointerEvents:'none'}} />
               <div className="pdf-page-num">{tr('tip.pageLabel', { page, total: numPages })}</div>
             </div>
           )

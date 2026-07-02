@@ -1971,5 +1971,13 @@
   "tip.pageLabel": "Página {{page}} de {{total}}",
   "ph.writeEllipsis": "Escribe…",
   "tip.selectText": "Seleccionar texto",
-  "tip.sendToCanvas": "Enviar al lienzo"
+  "tip.sendToCanvas": "Enviar al lienzo",
+  "elements.title": "Elementos",
+  "elements.all": "Todos",
+  "elements.texts": "Textos",
+  "elements.selections": "Selecciones",
+  "elements.images": "Imágenes",
+  "elements.pdfs": "PDFs",
+  "elements.searchPlaceholder": "Buscar en el lienzo…",
+  "elements.empty": "Sin elementos todavía."
 }

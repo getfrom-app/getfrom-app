@@ -1141,6 +1141,17 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     clearSelection()
   }, [multiSel, selStrokes, parentId, duplicateNode, clearSelection])
 
+  // COPIAR un único nodo (menú clic-derecho, node aún no está en multiSel).
+  const copyNode = useCallback((id: string) => {
+    const n = store.getNode(id); if (!n) return
+    pizarraClipboard = {
+      strokes: [],
+      cards: [{ text: n.text || '', body: n.body ?? null, types: [...(n.types || [])], dx: 0, dy: 0, sc: readCardScale(n), w: readCardW(n) }],
+      text: n.text || '', ts: Date.now(),
+    }
+    try { void navigator.clipboard.writeText(n.text || '') } catch { /* sin permiso → solo portapapeles interno */ }
+  }, [])
+
   // COPIAR la selección (trazos + cards) «tal cual». La guarda en el portapapeles en
   // memoria del lienzo (para pegar en CUALQUIER pizarra) y, aparte, copia el TEXTO
   // plano al portapapeles del sistema (para pegar en un editor de texto). Coords
@@ -1447,9 +1458,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 
   // Heptabase Fase 2: seleccionar texto en el visor PDF (columna derecha) → botón
   // «Enviar al lienzo» → tarjeta `_doc` con la cita, anclada junto al PDF de origen.
+  // Se marca `_pdfSelection` (+ referencia al PDF y página) para que sea BUSCABLE y
+  // filtrable como «selección» en el panel de Elementos (igual que en Heptabase).
   useEffect(() => {
     const h = (e: Event) => {
-      const detail = (e as CustomEvent<{ text?: string; sourceNodeId?: string }>).detail
+      const detail = (e as CustomEvent<{ text?: string; sourceNodeId?: string; filename?: string; page?: number | null }>).detail
       const text = (detail?.text || '').trim()
       const sourceId = detail?.sourceNodeId
       if (!text || !sourceId) return
@@ -1458,7 +1471,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       const targetParent = src.parentId || parentId
       const pin = readPin(src) || { x: 0, y: 0 }
       const world = { x: pin.x + 380, y: pin.y }
-      const quoteNode = store.createNode({ text: '', parentId: targetParent, extraData: newTextExtra(world) })
+      const extra: Record<string, string> = { ...newTextExtra(world), _pdfSelection: '1', _pdfSourceId: sourceId }
+      if (detail?.page != null) extra._pdfPage = String(detail.page)
+      const quoteNode = store.createNode({ text: '', parentId: targetParent, extraData: extra })
       const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       store.updateNode(quoteNode.id, { body: `<blockquote><p>${escapeHtml(text)}</p></blockquote>` })
       setSelectedId(quoteNode.id)
@@ -1795,8 +1810,14 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           reparentByRegion(c.id, np)
         }
       } else if (t.kind === 'move') {
-        // Clic limpio (sin arrastrar) sobre un trazo → mini-menú duplicar/eliminar.
-        setMenuPos({ x: e.clientX, y: e.clientY })
+        // Clic limpio (sin arrastrar): si la selección es UN solo elemento (card), unificar
+        // con el menú completo del clic-derecho normal (Quitar/Copiar/Favorito/Duplicar/Eliminar).
+        // Si es selección múltiple o incluye trazos, mini-menú reducido (Copiar/Duplicar/Eliminar).
+        if (t.cards.length === 1 && t.ids.length === 0) {
+          setContextMenu({ nodeId: t.cards[0].id, x: e.clientX, y: e.clientY })
+        } else {
+          setMenuPos({ x: e.clientX, y: e.clientY })
+        }
       }
       setXf(null)
       return
@@ -2103,7 +2124,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
             boxShadow: '0 4px 24px rgba(0,0,0,0.10)', borderRadius: 4, overflow: 'hidden',
           }}
         >
-          <PdfCanvasPreview url={pdfBackground} width={PDF_BG_W} scale={cam.scale} />
+          <PdfCanvasPreview url={pdfBackground} width={PDF_BG_W} scale={cam.scale} allPages />
         </div>
       )}
 
@@ -2891,6 +2912,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         <button style={toolBtn} title={t('tip.saveViewAsNode')} onClick={() => setSaveModal(true)}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 3h10v14l-5-3-5 3V3z"/></svg>
         </button>
+        {/* Elementos: lista de textos/selecciones/imágenes/PDF del lienzo, filtrable (estilo Heptabase) */}
+        <button style={toolBtn} title={t('elements.title')}
+          onClick={() => window.dispatchEvent(new CustomEvent('from:open-elements-panel', { detail: { nodeId: parentId } }))}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>
+        </button>
         <div style={vSep} />
         {/* Seleccionar / mover */}
         <button style={tool === 'select' ? toolBtnActive : toolBtn} title={t('tip.toolSelect')} onClick={() => setTool('select')}>
@@ -3036,25 +3062,28 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                   <button onClick={() => { removeFromCanvas(contextMenu.nodeId); setContextMenu(null) }} style={ctxItem}>
                     {t('pizarra.removeFromCanvas')}
                   </button>
-                  <button onClick={() => { window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: contextMenu.nodeId } })); navigate(`/node/${contextMenu.nodeId}`); setContextMenu(null) }} style={ctxItem}>
-                    {t('pizarra.openNode')}
+                  <button onClick={() => { copyNode(contextMenu.nodeId); setContextMenu(null) }} style={ctxItem}>
+                    {t('common.copy')}
                   </button>
                   <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
-                  {/* Convertir en tarea (hoy) / Favorito */}
+                  {/* Convertir en tarea (hoy) / Favorito — no aplica a recursos (PDF/imagen/archivo) */}
                   {(() => {
                     const n = store.getNode(contextMenu.nodeId)
                     const isTask = n?.status != null
+                    const isResourceNode = !!(n && (n.isResource || readResource(n)))
                     return (
                       <>
-                        <button onClick={() => {
-                          if (isTask) {
-                            store.updateNode(contextMenu.nodeId, { status: null })
-                          } else {
-                            const today = new Date(); today.setHours(23, 59, 59, 0)
-                            store.updateNode(contextMenu.nodeId, { status: 'pending', due: today.toISOString() })
-                          }
-                          setContextMenu(null)
-                        }} style={ctxItem}>{isTask ? t('pizarra.removeTask') : t('pizarra.convertToTask')}</button>
+                        {!isResourceNode && (
+                          <button onClick={() => {
+                            if (isTask) {
+                              store.updateNode(contextMenu.nodeId, { status: null })
+                            } else {
+                              const today = new Date(); today.setHours(23, 59, 59, 0)
+                              store.updateNode(contextMenu.nodeId, { status: 'pending', due: today.toISOString() })
+                            }
+                            setContextMenu(null)
+                          }} style={ctxItem}>{isTask ? t('pizarra.removeTask') : t('pizarra.convertToTask')}</button>
+                        )}
                         <button onClick={() => { store.updateNode(contextMenu.nodeId, { isFavorite: !n?.isFavorite }); setContextMenu(null) }} style={ctxItem}>
                           {n?.isFavorite ? t('pizarra.removeFavorite') : t('pizarra.addFavorite')}
                         </button>

@@ -75,6 +75,7 @@ const ResourcesView = lazy(() => import('../views/ResourcesView'))
 import SearchPanel from '../panels/SearchPanel'
 import DocInspector from '../views/DocInspector'
 import PdfContainer from '../pdf/PdfContainer'
+import ElementsPanel from '../panels/ElementsPanel'
 import { isDocNode } from '../../utils/docNode'
 import { useHasActiveDocEditor } from '../../utils/docEditorStore'
 // Componentes pesados: lazy-loaded para reducir el bundle inicial
@@ -185,6 +186,7 @@ export default function MainLayout() {
     | 'task'
     | 'doc'
     | 'resource'
+    | 'elements'
     | 'porplanificar'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
   // (context/prompt/agent-list) y el planner salen del ciclo: contextos/prompts/
@@ -679,6 +681,14 @@ export default function MainLayout() {
       const flyDay = () => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: day.id } }))
       flyDay(); setTimeout(flyDay, 320); setTimeout(flyDay, 640)
     }
+    // Panel «Elementos» (Heptabase): lista textos/selecciones/imágenes/PDF del lienzo actual.
+    function onOpenElements(e: Event) {
+      const id = (e as CustomEvent).detail?.nodeId
+      if (!id) return
+      setRightCollapsed(false)
+      setDetailNodeId(id)
+      setRightPanel('elements')
+    }
     window.addEventListener('from:open-detail', onOpenDetail as EventListener)
     window.addEventListener('from:close-detail', onCloseDetail)
     window.addEventListener('from:set-day', onSetDay as EventListener)
@@ -688,10 +698,12 @@ export default function MainLayout() {
     window.addEventListener('from:open-planner', onOpenPlanner)
     window.addEventListener('from:open-day-panel', onOpenDay)
     window.addEventListener('from:close-day-panel', onCloseDay)
+    window.addEventListener('from:open-elements-panel', onOpenElements as EventListener)
     return () => {
       window.removeEventListener('from:open-detail', onOpenDetail as EventListener)
       window.removeEventListener('from:close-detail', onCloseDetail)
       window.removeEventListener('from:set-day', onSetDay as EventListener)
+      window.removeEventListener('from:open-elements-panel', onOpenElements as EventListener)
       window.removeEventListener('from:node-trashed', onTrashed)
       window.removeEventListener('from:node-restored', onRestored)
       window.removeEventListener('from:open-node', onOpenNode)
@@ -1368,6 +1380,9 @@ export default function MainLayout() {
               </div>
             )
           })()}
+          {rightPanel === 'elements' && detailNodeId && (
+            <ElementsPanel nodeId={detailNodeId} onBack={() => openPanel('filter')} />
+          )}
           {rightPanel === 'porplanificar' && (
             <PorPlanificarPanel />
           )}

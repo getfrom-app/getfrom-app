@@ -1970,5 +1970,13 @@
   "tip.pageLabel": "Página {{page}} de {{total}}",
   "ph.writeEllipsis": "Escreve…",
   "tip.selectText": "Selecionar texto",
-  "tip.sendToCanvas": "Enviar para a tela"
+  "tip.sendToCanvas": "Enviar para a tela",
+  "elements.title": "Elementos",
+  "elements.all": "Todos",
+  "elements.texts": "Textos",
+  "elements.selections": "Seleções",
+  "elements.images": "Imagens",
+  "elements.pdfs": "PDFs",
+  "elements.searchPlaceholder": "Pesquisar na tela…",
+  "elements.empty": "Ainda sem elementos."
 }

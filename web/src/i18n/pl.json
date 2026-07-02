@@ -1970,5 +1970,13 @@
   "tip.pageLabel": "Strona {{page}} z {{total}}",
   "ph.writeEllipsis": "Napisz…",
   "tip.selectText": "Zaznacz tekst",
-  "tip.sendToCanvas": "Wyślij na tablicę"
+  "tip.sendToCanvas": "Wyślij na tablicę",
+  "elements.title": "Elementy",
+  "elements.all": "Wszystkie",
+  "elements.texts": "Teksty",
+  "elements.selections": "Zaznaczenia",
+  "elements.images": "Obrazy",
+  "elements.pdfs": "PDF-y",
+  "elements.searchPlaceholder": "Szukaj na tablicy…",
+  "elements.empty": "Jeszcze brak elementów."
 }

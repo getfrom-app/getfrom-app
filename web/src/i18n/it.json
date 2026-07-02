@@ -1970,5 +1970,13 @@
   "tip.pageLabel": "Pagina {{page}} di {{total}}",
   "ph.writeEllipsis": "Scrivi…",
   "tip.selectText": "Seleziona testo",
-  "tip.sendToCanvas": "Invia alla lavagna"
+  "tip.sendToCanvas": "Invia alla lavagna",
+  "elements.title": "Elementi",
+  "elements.all": "Tutti",
+  "elements.texts": "Testi",
+  "elements.selections": "Selezioni",
+  "elements.images": "Immagini",
+  "elements.pdfs": "PDF",
+  "elements.searchPlaceholder": "Cerca nella lavagna…",
+  "elements.empty": "Ancora nessun elemento."
 }

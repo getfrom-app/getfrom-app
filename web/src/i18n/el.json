@@ -1970,5 +1970,13 @@
   "tip.pageLabel": "Σελίδα {{page}} από {{total}}",
   "ph.writeEllipsis": "Γράψε…",
   "tip.selectText": "Επιλογή κειμένου",
-  "tip.sendToCanvas": "Αποστολή στον καμβά"
+  "tip.sendToCanvas": "Αποστολή στον καμβά",
+  "elements.title": "Στοιχεία",
+  "elements.all": "Όλα",
+  "elements.texts": "Κείμενα",
+  "elements.selections": "Επιλογές",
+  "elements.images": "Εικόνες",
+  "elements.pdfs": "PDF",
+  "elements.searchPlaceholder": "Αναζήτηση στον καμβά…",
+  "elements.empty": "Δεν υπάρχουν ακόμη στοιχεία."
 }
