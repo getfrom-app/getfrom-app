@@ -826,6 +826,24 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     flyTo(rect.x + rect.w / 2, rect.y + rect.h / 2, scale)
   }, [flyTo, flyToNode])
 
+  // Volar al DÍA DE HOY (área de la agenda) + abrir su columna del día. Si el día acaba
+  // de crearse, la caja aparece tras el re-render del layout → reintento breve.
+  const flyToToday = useCallback(() => {
+    const day = ensureDayPath(new Date())
+    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: day.id } }))
+    flyToArea(day.id)
+    setTimeout(() => flyToArea(day.id), 90)
+  }, [flyToArea])
+
+  // Al ABRIR el lienzo: la cámara vuela al día de HOY y abre su columna (una sola vez).
+  const didFlyTodayRef = useRef(false)
+  useEffect(() => {
+    if (!globalCanvas || didFlyTodayRef.current || !nested) return
+    didFlyTodayRef.current = true
+    const h = setTimeout(() => flyToToday(), 120)
+    return () => clearTimeout(h)
+  }, [globalCanvas, nested, flyToToday])
+
   // Auto-reparentar una card según la REGIÓN donde cae su pin: si entra en un área →
   // pasa a ser su hija; si sale de toda área → vuelve a la nota. Mantiene viva la
   // jerarquía al arrastrar (las áreas viejas/marcadores no cuentan).
@@ -2742,6 +2760,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         {/* Ir a hoy */}
         <button style={toolBtn} title={t('tip.goToToday')}
           onClick={() => {
+            if (globalCanvas) { flyToToday(); return } // lienzo: vuela al área de hoy + columna
             const day = ensureDayPath(new Date())
             navigate(`/node/${day.id}`)
             setCam({ x: 60, y: 60, scale: 1 })
