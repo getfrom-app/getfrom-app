@@ -211,6 +211,15 @@ export default function WFTopBar({
         </svg>
       </button>
 
+      {/* Elementos: textos/selecciones/imágenes/PDF del lienzo, filtrable (estilo Heptabase) */}
+      <button
+        className={`wf-topbar-btn ${rightPanel === 'elements' ? 'active' : ''}`}
+        title={t('elements.title')}
+        onClick={() => window.dispatchEvent(new CustomEvent('from:open-elements-panel', { detail: { nodeId: ensureCanvasRoot().id } }))}
+      >
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>
+      </button>
+
       {/* Día (Hoy) — en el lienzo cambia la columna derecha a HOY, SIN navegar
           (lienzo único). Si estás fuera del lienzo, vuelve a él primero. */}
       <button

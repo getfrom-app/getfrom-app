@@ -5,11 +5,12 @@
 // autoguardados); el dot abre el editor completo.
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { fetchFileContent } from '../../api/client'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PdfDoc = any
 
-export default function PdfCanvasPreview({ url, width, scale = 1, title, allPages = false }: { url: string; width: number; scale?: number; title?: string; allPages?: boolean }) {
+export default function PdfCanvasPreview({ url, width, scale = 1, title, allPages = false, resourceKey }: { url: string; width: number; scale?: number; title?: string; allPages?: boolean; resourceKey?: string }) {
   const { t } = useTranslation()
   const docRef = useRef<PdfDoc | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
@@ -20,14 +21,19 @@ export default function PdfCanvasPreview({ url, width, scale = 1, title, allPage
   const [page, setPage] = useState(1)
   const [state, setState] = useState<'loading' | 'ok' | 'fail'>('loading')
 
-  // Cargar el documento una vez.
+  // Cargar el documento una vez. `_resourceUrl` suele apuntar a un objeto R2 PRIVADO
+  // (el bucket no es público): cargarlo directo con `pdfjs.getDocument({url})` daba 403
+  // silencioso → siempre caía a `state==='fail'` (icono genérico, nunca se veía el PDF real).
+  // Si hay `resourceKey`, se trae el contenido por el proxy autenticado del servidor (el
+  // mismo que ya usa el visor de la columna derecha).
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       try {
         const pdfjs = await import('pdfjs-dist')
         pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).href
-        const doc = await pdfjs.getDocument({ url }).promise
+        const source = resourceKey ? { data: new Uint8Array(await fetchFileContent(resourceKey)) } : { url }
+        const doc = await pdfjs.getDocument(source).promise
         if (cancelled) return
         docRef.current = doc
         renderedTargetRef.current = 0
@@ -35,12 +41,13 @@ export default function PdfCanvasPreview({ url, width, scale = 1, title, allPage
         setPages(doc.numPages)
         setPage(1)
         setState('ok')
-      } catch {
+      } catch (e) {
+        console.error('[PdfCanvasPreview] load error:', e)
         if (!cancelled) setState('fail')
       }
     })()
     return () => { cancelled = true; docRef.current = null }
-  }, [url])
+  }, [url, resourceKey])
 
   // Renderizar / re-renderizar la página actual a la resolución que toca para la escala en pantalla.
   useEffect(() => {

@@ -50,6 +50,8 @@ interface Props {
   // Si se pasa una URL de PDF, se renderiza como FONDO del lienzo (ancla mundo 0,0),
   // nítido al ampliar, detrás de trazos y tarjetas. Las herramientas marcan encima.
   pdfBackground?: string
+  // Clave R2 del PDF de fondo (bucket privado → carga por proxy autenticado si está).
+  pdfBackgroundKey?: string
   // Lienzo GLOBAL (home): al seleccionar un nodo se abre su columna derecha SIN
   // salir del lienzo (evento `from:open-detail`), en vez de navegar a él.
   globalCanvas?: boolean
@@ -172,7 +174,7 @@ function writeCardSize(node: Node, fields: { w?: number; scale?: number; pin?: W
 // pinta como tarjeta-embed y el dot lo abre en su página (NodeView ya renderiza el
 // recurso). Mismas claves que un recurso normal → cero divergencia con la lista.
 type ResourceKind = 'image' | 'pdf' | 'url' | 'file'
-interface ResourceMeta { url: string; type: ResourceKind }
+interface ResourceMeta { url: string; type: ResourceKind; key?: string }
 function readResource(node: Node): ResourceMeta | null {
   try {
     const ed = JSON.parse(node.extraData || '{}')
@@ -190,7 +192,9 @@ function readResource(node: Node): ResourceMeta | null {
       raw === 'image' || raw.startsWith('image/') || /\.(jpe?g|png|gif|webp|svg|heic)$/i.test(url) ? 'image' :
       raw === 'pdf' || raw === 'application/pdf' || /\.pdf$/i.test(url) ? 'pdf' :
       raw === 'url' ? 'url' : 'file'
-    return { url, type }
+    // Clave R2 (para cargar el PDF por el proxy autenticado — el bucket no es público).
+    const key = (ed._resourceKey as string | undefined) || undefined
+    return { url, type, key }
   } catch { return null }
 }
 
@@ -343,7 +347,7 @@ function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
   return false
 }
 
-export default function PizarraView({ parentId, flowUnpositioned, pdfBackground, globalCanvas }: Props) {
+export default function PizarraView({ parentId, flowUnpositioned, pdfBackground, pdfBackgroundKey, globalCanvas }: Props) {
   const { t } = useTranslation()
   const nodesVersion = useStore(st => st.nodesVersion) // re-render + memoizar por versión
   const navigate = useNavigate()
@@ -2145,7 +2149,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
             boxShadow: '0 4px 24px rgba(0,0,0,0.10)', borderRadius: 4, overflow: 'hidden',
           }}
         >
-          <PdfCanvasPreview url={pdfBackground} width={PDF_BG_W} scale={cam.scale} allPages />
+          <PdfCanvasPreview url={pdfBackground} width={PDF_BG_W} scale={cam.scale} allPages resourceKey={pdfBackgroundKey} />
         </div>
       )}
 
@@ -2767,7 +2771,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 ) : res.type === 'pdf' ? (
                   // El lienzo carga el PROPIO PDF (1ª página, nítido al ampliar). El
                   // dot lo abre en su página para marcarlo/editarlo.
-                  <PdfCanvasPreview url={res.url} width={cardW} scale={cam.scale * cardScale} title={node.text} />
+                  <PdfCanvasPreview url={res.url} width={cardW} scale={cam.scale * cardScale} title={node.text} resourceKey={res.key} />
                 ) : res.type === 'url' ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 16px' }}>
                     <span style={{ fontSize: 22, lineHeight: 1 }}>🔗</span>
@@ -2932,11 +2936,6 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         {/* Guardar esta vista (posición+zoom) como nodo */}
         <button style={toolBtn} title={t('tip.saveViewAsNode')} onClick={() => setSaveModal(true)}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 3h10v14l-5-3-5 3V3z"/></svg>
-        </button>
-        {/* Elementos: lista de textos/selecciones/imágenes/PDF del lienzo, filtrable (estilo Heptabase) */}
-        <button style={toolBtn} title={t('elements.title')}
-          onClick={() => window.dispatchEvent(new CustomEvent('from:open-elements-panel', { detail: { nodeId: parentId } }))}>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>
         </button>
         <div style={vSep} />
         {/* Seleccionar / mover */}

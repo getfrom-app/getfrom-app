@@ -58,7 +58,12 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
       } else { pdfSource = { url } }
       const doc = await pdfjsLib.getDocument(pdfSource).promise
       if (cancelled) return
-      pdfDocRef.current = doc; setNumPages(doc.numPages)
+      pdfDocRef.current = doc
+      // OJO: `numPages`/`scale`/`pageWidths`/`pageHeights` se aplican TODOS JUNTOS al final
+      // (un solo batch de setState). Antes `setNumPages` iba suelto aquí, con `scale` aún al
+      // valor viejo — un render intermedio podía disparar el efecto de «Renderizar páginas»
+      // con `numPages` ya listo pero `scale`/anchos todavía desfasados, dejando la página 1
+      // (la primera en montar su ref) pintada con el tamaño equivocado.
 
       // Calcular scale para ajustar al ancho del contenedor (igual que el iframe del navegador)
       // Solo en el primer load — si el usuario ya ajustó el zoom, no sobreescribir
@@ -69,10 +74,12 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         // Ancho disponible: el propio contenedor (ref, no querySelector global — evita medir
         // un ancho ajeno cuando el visor vive en la columna derecha, mucho más estrecha que
         // el fallback de 780px, lo que hacía que el PDF se renderizara más ancho y se cortara).
+        // SIN suelo de 0.5: en columnas muy estrechas un suelo alto forzaba un ancho mayor que
+        // el hueco disponible → recorte. Mejor una escala fiel al ancho real (con un mínimo
+        // ínfimo solo para evitar 0/negativo, no para imponer un tamaño "legible" a la fuerza).
         const containerW = pagesRootRef.current?.clientWidth || 780
-        const fitScale = Math.max(0.5, Math.min(2.5, (containerW - 48) / vpAt1.width))
+        const fitScale = Math.max(0.15, Math.min(2.5, (containerW - 48) / vpAt1.width))
         effectiveScale = Math.round(fitScale * 4) / 4  // snap a 0.25
-        setScale(effectiveScale)
         scaleInitialized.current = true
       }
 
@@ -82,6 +89,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         ws.push(vp.width); hs.push(vp.height)
       }
       if (cancelled) return
+      setScale(effectiveScale); setNumPages(doc.numPages)
       setPageWidths(ws); setPageHeights(hs); setLoading(false)
     }
     load().catch(console.error)
@@ -263,16 +271,18 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
           const page = i+1
           const w = pageWidths[i]||0; const h = pageHeights[i]||0
           return (
-            <div key={page} className="pdf-viewer-page" data-page={page} style={{width:w,maxWidth:'100%',aspectRatio:`${w} / ${h}`,overflow:'hidden'}}>
-              {/* `maxWidth:100%` + `aspectRatio` son la garantía DURA de que la página nunca se
-                  sale del contenedor, pase lo que pase con el cálculo de escala en JS (que solo
-                  decide la RESOLUCIÓN de render, no el layout final). */}
+            <div key={page} className="pdf-viewer-page" data-page={page} style={{width:w,height:h,maxWidth:'100%',overflow:'hidden'}}>
+              {/* `maxWidth:100%` es un cinturón de seguridad (por si el cálculo de escala en JS
+                  fallara); con el suelo de escala quitado, `w`/`h` YA encajan de verdad, así que
+                  canvas y capa de texto se dimensionan en PÍXELES EXACTOS (no % del contenedor)
+                  — % rompía el posicionamiento interno de la capa de texto y la selección dejaba
+                  de funcionar. */}
               <canvas ref={el=>{if(el)canvasRefs.current.set(page,el)}}
-                style={{position:'absolute',top:0,left:0,width:'100%',height:'100%'}}/>
+                style={{position:'absolute',top:0,left:0}}/>
               {/* Capa de texto: SIEMPRE activa (única forma de interacción de este visor). */}
               <div ref={el=>{if(el)textLayerRefs.current.set(page,el)}}
                 className="pdf-text-layer"
-                style={{position:'absolute',top:0,left:0,width:'100%',height:'100%'}}/>
+                style={{position:'absolute',top:0,left:0,width:w,height:h}}/>
               {/* Anotaciones YA existentes (de sesiones anteriores) — solo lectura, sin captura de ratón. */}
               <svg ref={el=>{if(el){svgRefs.current.set(page,el);renderSvg(el,page,annotations)}}}
                 className="pdf-viewer-svg" style={{pointerEvents:'none'}} />

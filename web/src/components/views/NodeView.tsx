@@ -1413,6 +1413,7 @@ export default function NodeView() {
       return {
         url: (freshResourceUrl || ed._resourceUrl || node.resourceUrl) as string | undefined,
         type: (ed._resourceType || node.resourceType) as string | undefined,
+        key: ed._resourceKey as string | undefined,
       }
     } catch { return null }
   })()
@@ -2414,7 +2415,7 @@ export default function NodeView() {
                  herramientas del lienzo para marcarlo. El dot/edición vive en el
                  propio lienzo; el marcaje son trazos en el body (autoguardado). ── */}
           {nodeResourceMeta?.url && (nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url)) && !isAgendaRoot ? (
-            <PizarraView parentId={node.id} flowUnpositioned pdfBackground={nodeResourceMeta.url} />
+            <PizarraView parentId={node.id} flowUnpositioned pdfBackground={nodeResourceMeta.url} pdfBackgroundKey={nodeResourceMeta.key} />
           ) : null}
 
           {/* ── Recurso principal (imagen / URL) ── */}
