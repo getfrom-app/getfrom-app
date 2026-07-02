@@ -16,11 +16,12 @@ import { findContextRoot } from './rootLookup'
 
 export interface NRect { x: number; y: number; w: number; h: number }
 export interface NestedLayout {
-  boxes: Map<string, NRect>
-  items: Map<string, NRect>
+  boxes: Map<string, NRect>      // marcos de CONTEXTO (se dibujan como rectángulo)
+  items: Map<string, NRect>      // contenido (tarjetas): de contextos y de días
+  dayCells: Map<string, NRect>   // zona de cada DÍA (NO se dibuja marco) — solo posición
   contextIds: Set<string>
   contentIds: Set<string>
-  todayId: string | null   // id del día de HOY (para volar la cámara), si existe
+  todayId: string | null         // id del día de HOY (para volar la cámara), si existe
 }
 
 export const CONTENT_W = 600
@@ -35,6 +36,10 @@ const SUB_GAP = 120       // aire generoso entre subcontextos
 const CONTENT_SUB_GAP = 140 // aire entre el texto y los subcontextos
 const REGION_GAP = 900    // separación entre la región de contextos y la de agenda
 const TOP_GAP = 500       // separación entre cajas de contexto de nivel superior
+const DAY_W = 760        // ancho de la ZONA de un día (columna = día de la semana)
+const DAY_H = 620        // alto de la zona de un día (fila = semana; bajan hacia abajo)
+const EPOCH_MON = Date.UTC(2024, 0, 1) // lunes de referencia (determinista)
+const DAY_MS = 86400000
 const BASE_H = 1300       // alto MÍNIMO de un contexto (aunque tenga poco) → grande
 const EMPTY_RIGHT = 1400  // espacio libre a la derecha del contenido dentro de la caja
 const EMPTY_BOTTOM = 1000 // espacio libre bajo el contenido dentro de la caja
@@ -84,13 +89,6 @@ function freePos(n: Node | null | undefined): { x: number; y: number } | null {
 // ── Predicados de CAJA (sub-área) por región ─────────────────────────────────
 /** Contextos: una caja es un contexto marcado (`_ctx='1'`). */
 function isContextBox(n: Node): boolean { return isMarkedContext(n) }
-/** Agenda: Año/Mes/Día son cajas. Día = `isDiaryEntry`; Mes = tiene día; Año = tiene mes. */
-function isAgendaBox(n: Node): boolean {
-  if (n.isDiaryEntry) return true
-  const kids = store.children(n.id).filter(c => !c.deletedAt)
-  if (kids.some(c => c.isDiaryEntry)) return true
-  return kids.some(c => store.children(c.id).some(g => !g.deletedAt && g.isDiaryEntry))
-}
 
 /** ¿Es CONTENIDO (fila) y no una sub-caja? Excluye conocimiento, capturas y logs. */
 function isContent(n: Node, isBox: (n: Node) => boolean): boolean {
@@ -185,37 +183,67 @@ function placeRegion(rootId: string, aspect: number, isBox: (n: Node) => boolean
   return x
 }
 
+/** AGENDA como CALENDARIO ESPACIAL (sin marcos): cada día ocupa una celda cuya posición
+ *  viene de su FECHA — columna = día de la semana (lun→dom), fila = semana (las semanas
+ *  bajan; los meses y años emergen solos). El contenido del día se coloca dentro de su
+ *  celda. NO se dibuja ningún rectángulo: solo posiciones que Fromly reutiliza siempre. */
+function computeAgendaGrid(agendaRootId: string, originX: number, out: { items: Map<string, NRect>; dayCells: Map<string, NRect> }): void {
+  const days: Node[] = []
+  const walk = (id: string) => {
+    for (const c of store.children(id)) {
+      if (c.deletedAt) continue
+      if (c.isDiaryEntry) days.push(c)
+      else walk(c.id)
+    }
+  }
+  walk(agendaRootId)
+  const noBox = () => false
+  for (const day of days) {
+    if (!day.diaryDate) continue
+    const d = new Date(day.diaryDate)
+    if (isNaN(d.getTime())) continue
+    const col = (d.getDay() + 6) % 7 // lunes=0 … domingo=6
+    const dayStart = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
+    const weekIndex = Math.floor((dayStart - EPOCH_MON) / (7 * DAY_MS))
+    const x = originX + col * DAY_W
+    const y = weekIndex * DAY_H
+    out.dayCells.set(day.id, { x, y, w: DAY_W, h: DAY_H })
+    const content = layoutContent(day.id, noBox)
+    const ox = x + PAD, oy = y + HEADER + PAD
+    for (const r of content.rows) out.items.set(r.id, { x: ox + r.x, y: oy + r.y, w: CONTENT_W, h: r.h })
+  }
+}
+
 /**
- * Layout anidado de TODO el lienzo: región de CONTEXTOS (izquierda) + región de AGENDA
- * (derecha). `aspect` = ancho/alto del viewport (cajas con forma de pantalla).
+ * Layout del lienzo: región de CONTEXTOS (cajas, izquierda) + AGENDA como calendario
+ * espacial (días por fecha, sin marcos, derecha). `aspect` = ancho/alto del viewport.
  */
 export function computeNestedLayout(rootId: string, aspect = DEFAULT_ASPECT): NestedLayout {
   const asp = aspect > 0.2 && aspect < 6 ? aspect : DEFAULT_ASPECT
   const meta = new Map<string, Plan>()
   const boxes = new Map<string, NRect>()
   const items = new Map<string, NRect>()
+  const dayCells = new Map<string, NRect>()
 
-  // Región de CONTEXTOS.
+  // Región de CONTEXTOS (cajas anidadas).
   const ctxRoot = findContextRoot()?.id ?? rootId
   const afterCtx = placeRegion(ctxRoot, asp, isContextBox, 0, meta, { boxes, items })
 
-  // Región de AGENDA (a la derecha).
+  // Región de AGENDA (calendario espacial, a la derecha).
   const agenda = findAgendaRoot()
-  if (agenda) placeRegion(agenda.id, asp, isAgendaBox, afterCtx + REGION_GAP, meta, { boxes, items })
+  if (agenda) computeAgendaGrid(agenda.id, afterCtx + REGION_GAP, { items, dayCells })
 
   // Id del día de HOY (para volar la cámara al abrir / pulsar «hoy»).
   let todayId: string | null = null
-  const today = (() => { try { return new Date() } catch { return null } })()
-  if (today) {
-    const y = today.getFullYear(), m = today.getMonth(), d = today.getDate()
-    for (const id of boxes.keys()) {
-      const n = store.getNode(id)
-      if (n?.isDiaryEntry && n.diaryDate) {
-        const dd = new Date(n.diaryDate)
-        if (dd.getFullYear() === y && dd.getMonth() === m && dd.getDate() === d) { todayId = id; break }
-      }
+  const t = new Date()
+  const ty = t.getFullYear(), tm = t.getMonth(), td = t.getDate()
+  for (const id of dayCells.keys()) {
+    const n = store.getNode(id)
+    if (n?.diaryDate) {
+      const dd = new Date(n.diaryDate)
+      if (dd.getFullYear() === ty && dd.getMonth() === tm && dd.getDate() === td) { todayId = id; break }
     }
   }
 
-  return { boxes, items, contextIds: new Set(boxes.keys()), contentIds: new Set(items.keys()), todayId }
+  return { boxes, items, dayCells, contextIds: new Set(boxes.keys()), contentIds: new Set(items.keys()), todayId }
 }

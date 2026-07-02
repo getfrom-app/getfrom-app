@@ -824,8 +824,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // guardado si lo tiene; si no, encaja la región en el viewport).
   const flyToArea = useCallback((id: string) => {
     const a = store.getNode(id); if (!a) return
-    // Área explícita (`_area`) o caja anidada auto-calculada del contexto.
-    const rect = readAreaRect(a) ?? nestedRef.current?.boxes.get(id) ?? null
+    // Área explícita (`_area`), caja de contexto o ZONA de día (agenda-calendario).
+    const rect = readAreaRect(a) ?? nestedRef.current?.boxes.get(id) ?? nestedRef.current?.dayCells.get(id) ?? null
     if (!rect) { flyToNode(a); return }
     const vp = viewportRef.current
     let ed: Record<string, unknown> = {}; try { ed = JSON.parse(a.extraData || '{}') } catch { /* vacío */ }
@@ -2139,6 +2139,21 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 }}
                 style={{ position: 'absolute', right: -11, bottom: -11, width: 24, height: 24, background: 'transparent', cursor: 'nwse-resize', pointerEvents: 'auto', touchAction: 'none', zIndex: 3 }} />
             )}
+          </div>
+        )
+      })}
+
+      {/* AGENDA: etiqueta SUTIL de cada día (fecha), SIN marco. Solo orienta; escala con
+          el zoom (de lejos desaparece, no ensucia). Clic → abre la columna del día + vuela. */}
+      {globalCanvas && nested && Array.from(nested.dayCells.entries()).map(([id, r]) => {
+        const n = store.getNode(id); if (!n) return null
+        const sx = cam.x + r.x * cam.scale, sy = cam.y + r.y * cam.scale
+        if (sx + r.w * cam.scale < -50 || sx > viewport.w + 50 || sy + r.h * cam.scale < -50 || sy > viewport.h + 50) return null
+        return (
+          <div key={`day-${id}`} data-node-id={id}
+            onPointerDown={(e) => { e.stopPropagation(); setSelectedId(id) }}
+            style={{ position: 'absolute', left: sx, top: sy, transform: `scale(${cam.scale})`, transformOrigin: '0 0', pointerEvents: 'auto', cursor: 'pointer', zIndex: 2, padding: '8px 10px' }}>
+            <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.3px', textTransform: 'uppercase', color: 'var(--text-tertiary, #b5b5bd)', whiteSpace: 'nowrap' }}>{n.text || ''}</span>
           </div>
         )
       })}
