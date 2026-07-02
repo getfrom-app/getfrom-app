@@ -7489,6 +7489,14 @@ textarea:focus-visible,
 .doc-editor .ProseMirror s { text-decoration: line-through; }
 .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--text-tertiary, #aaa); float: left; pointer-events: none; height: 0; }
 .doc-title::placeholder { color: var(--text-tertiary, #bbb); }
+/* Casillas de tarea dentro del texto (TaskList/TaskItem de TipTap). */
+.doc-editor .ProseMirror ul[data-type="taskList"] { list-style: none; padding-left: 0; margin: 0.45em 0; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li { display: flex; align-items: flex-start; gap: 8px; margin: 0.15em 0; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li > label { flex-shrink: 0; margin-top: 0.28em; user-select: none; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent, #6c5ce7); }
+.doc-editor .ProseMirror ul[data-type="taskList"] li > div { flex: 1; min-width: 0; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li > div > p { margin: 0; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--text-tertiary, #999); text-decoration: line-through; }
 
 /* En el lienzo (compact) el editor debe calcar al preview estático .pizarra-text
    para que al pasar a edición el texto NO se desplace ni reflowee. */

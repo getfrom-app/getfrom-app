@@ -14,6 +14,8 @@ import Placeholder from '@tiptap/extension-placeholder'
 import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
 import Image from '@tiptap/extension-image'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
 import { store, useStore } from '../../store/nodeStore'
 import { firstLineTitle } from '../../utils/docNode'
 import { uploadFile } from '../../api/client'
@@ -43,6 +45,11 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
       Underline,
       TextStyle,
       Color,
+      // Casillas de tarea DENTRO del texto: «[] » al inicio de línea las crea (input rule
+      // nativo de TaskList). Paso 1 = casilla WYSIWYG marcable. Paso 2 (pendiente) = cada
+      // casilla se enlazará a una tarea-From real (agenda) por su nodo hijo.
+      TaskList,
+      TaskItem.configure({ nested: true }),
       Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener nofollow' } }),
       Placeholder.configure({ placeholder: 'Escribe tu documento…' }),
       Image.configure({ inline: false, allowBase64: false }),
@@ -125,6 +132,7 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
                 <button className="ft-btn" title="Código" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleCode().run() }}><span style={{ fontFamily: 'monospace', fontSize: 10 }}>{'<>'}</span></button>
                 <button className="ft-btn" title="Enlace" onMouseDown={e => { e.preventDefault(); const prev = editor.getAttributes('link').href; const url = window.prompt('URL', prev || 'https://'); if (url === null) return; if (url === '') editor.chain().focus().unsetLink().run(); else editor.chain().focus().setLink({ href: url }).run() }}><span style={{ fontSize: 12 }}>🔗</span></button>
                 <div className="ft-sep" />
+                <button className="ft-btn" title="Tarea (casilla)" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleTaskList().run() }}><span style={{ fontSize: 12 }}>☑</span></button>
                 <button className="ft-btn" title="Color" onMouseDown={e => { e.preventDefault(); setShowColors(true) }}><span style={{ fontWeight: 700, fontSize: 13, borderBottom: '2.5px solid #ef4444', lineHeight: 1 }}>A</span></button>
               </>
             ) : (
