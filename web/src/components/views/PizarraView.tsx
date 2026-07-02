@@ -2766,12 +2766,6 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: plainHasKids ? '2px solid var(--accent-soft,#e9e6ff)' : '2px solid var(--bg,#fff)', boxShadow: plainHasKids ? '0 0 0 2px var(--accent,#6c5ce7)' : '0 0 0 1px var(--border,#d8d8d8)' }} />
               </div>
             )}
-            {/* Tirador de ancho MÍNIMO (cuadradito): SOLO en hover. El hueco entre el texto
-                y el tirador (padding derecho) es zona de arrastre del nodo. */}
-            {isPlainText && hovered && !dragPos && (
-              <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
-                style={{ position: 'absolute', right: 6, top: 13, width: 8, height: 8, marginTop: -4, background: 'var(--bg,#fff)', border: '1.5px solid var(--text-tertiary,#bbb)', borderRadius: 2, cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
-            )}
             {/* Tirador de ANCHO del texto: visible en hover, selección y también EN EDICIÓN. */}
             {isText && (hovered || selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
               <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
