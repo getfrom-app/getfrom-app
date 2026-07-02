@@ -1981,5 +1981,8 @@
   "elements.empty": "Пока нет элементов.",
   "tip.saveSelection": "Сохранить",
   "elements.savedToast": "Выделение сохранено",
-  "elements.loadMore": "Загрузить ещё {{n}}"
+  "elements.loadMore": "Загрузить ещё {{n}}",
+  "export.markdown": "Экспорт в Markdown",
+  "export.html": "Экспорт в HTML",
+  "export.pdf": "Экспорт в PDF"
 }

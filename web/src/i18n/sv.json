@@ -1981,5 +1981,8 @@
   "elements.empty": "Inga element än.",
   "tip.saveSelection": "Spara",
   "elements.savedToast": "Markering sparad",
-  "elements.loadMore": "Ladda {{n}} till"
+  "elements.loadMore": "Ladda {{n}} till",
+  "export.markdown": "Exportera Markdown",
+  "export.html": "Exportera HTML",
+  "export.pdf": "Exportera PDF"
 }

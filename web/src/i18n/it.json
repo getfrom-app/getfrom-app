@@ -1981,5 +1981,8 @@
   "elements.empty": "Ancora nessun elemento.",
   "tip.saveSelection": "Salva",
   "elements.savedToast": "Selezione salvata",
-  "elements.loadMore": "Carica altri {{n}}"
+  "elements.loadMore": "Carica altri {{n}}",
+  "export.markdown": "Esporta Markdown",
+  "export.html": "Esporta HTML",
+  "export.pdf": "Esporta PDF"
 }

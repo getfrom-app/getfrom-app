@@ -1981,5 +1981,8 @@
   "elements.empty": "Δεν υπάρχουν ακόμη στοιχεία.",
   "tip.saveSelection": "Αποθήκευση",
   "elements.savedToast": "Η επιλογή αποθηκεύτηκε",
-  "elements.loadMore": "Φόρτωση {{n}} ακόμη"
+  "elements.loadMore": "Φόρτωση {{n}} ακόμη",
+  "export.markdown": "Εξαγωγή Markdown",
+  "export.html": "Εξαγωγή HTML",
+  "export.pdf": "Εξαγωγή PDF"
 }

@@ -1981,5 +1981,8 @@
   "elements.empty": "Jeszcze brak elementów.",
   "tip.saveSelection": "Zapisz",
   "elements.savedToast": "Zaznaczenie zapisane",
-  "elements.loadMore": "Wczytaj {{n}} więcej"
+  "elements.loadMore": "Wczytaj {{n}} więcej",
+  "export.markdown": "Eksportuj Markdown",
+  "export.html": "Eksportuj HTML",
+  "export.pdf": "Eksportuj PDF"
 }

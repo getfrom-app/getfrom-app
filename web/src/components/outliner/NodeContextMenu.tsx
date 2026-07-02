@@ -23,8 +23,7 @@ import { isProtectedSystemRoot } from '../../utils/rootLookup'
 import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { learningsStore, buildLearningText } from '../../store/learningsStore'
-import { isDocNode } from '../../utils/docNode'
-import { htmlToMarkdown, docStandaloneHtml } from '../../utils/htmlMarkdown'
+import { copyNodeAsMarkdown, copyNodeAsRich, exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -222,84 +221,26 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     window.dispatchEvent(new CustomEvent('from:open-task-props', { detail: { nodeId: node.id } }))
   }
 
-  // ── Copiar / Exportar (contenido = jerarquía de hijos, recursivo) ──────────
-  const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-  function buildMd(parentId: string, depth: number): string {
-    return store.children(parentId).filter(n => !n.deletedAt).map(n => {
-      const prefix = n.status === 'done' ? '- [x] ' : n.status === 'pending' ? '- [ ] ' : '- '
-      return '  '.repeat(depth) + prefix + n.text + '\n' + buildMd(n.id, depth + 1)
-    }).join('')
-  }
-  // Documento: el contenido es HTML en el body (no hijos). Markdown = conversión.
-  const isDoc = isDocNode(node)
-  function fullMd(): string {
-    if (isDoc) return htmlToMarkdown(node.body || '')
-    return `# ${node.text || 'Nota'}\n\n${node.body ? node.body + '\n\n' : ''}${buildMd(node.id, 0)}`.trim()
-  }
-  function buildHtml(parentId: string): string {
-    const kids = store.children(parentId).filter(n => !n.deletedAt)
-    if (!kids.length) return ''
-    return '<ul>' + kids.map(n => `<li>${escapeHtml(n.text || '')}${buildHtml(n.id)}</li>`).join('') + '</ul>'
-  }
+  // ── Copiar / Exportar (extraído a utils/nodeExport.ts — reutilizado también por el
+  // panel de documento del lienzo) ────────────────────────────────────────────
   const toast = (message: string) => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type: 'success' } }))
 
   function copyMarkdown() {
-    navigator.clipboard.writeText(fullMd()).then(() => toast(t('context.toastMarkdownCopied'))).catch(() => {})
+    copyNodeAsMarkdown(node).then(() => toast(t('context.toastMarkdownCopied'))).catch(() => {})
   }
   function copyRich() {
-    const html = isDoc
-      ? (node.body || '')
-      : `<h1>${escapeHtml(node.text || '')}</h1>${node.body ? `<p>${escapeHtml(node.body)}</p>` : ''}${buildHtml(node.id)}`
-    try {
-      navigator.clipboard.write([new ClipboardItem({
-        'text/html': new Blob([html], { type: 'text/html' }),
-        'text/plain': new Blob([fullMd()], { type: 'text/plain' }),
-      })]).then(() => toast(t('context.toastCopiedFormatted'))).catch(() => navigator.clipboard.writeText(fullMd()))
-    } catch { navigator.clipboard.writeText(fullMd()) }
+    copyNodeAsRich(node).then(() => toast(t('context.toastCopiedFormatted'))).catch(() => {})
   }
   function exportMarkdown() {
-    const blob = new Blob([fullMd()], { type: 'text/markdown' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = (node.text || 'nota').slice(0, 40).replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '').trim() + '.md'
-    a.click()
-    URL.revokeObjectURL(url)
+    exportNodeMarkdown(node)
     toast(t('context.toastExportedMarkdown'))
   }
-  // Documento HTML autónomo (para exportar HTML y para el PDF limpio).
-  function standaloneHtml(): string {
-    if (isDoc) return docStandaloneHtml(node.text || 'Documento', node.body || '')
-    const safeTitle = escapeHtml(node.text || 'Nota')
-    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>${safeTitle}</title>
-<style>
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:16px;line-height:1.6;color:#1a1a1a;max-width:720px;margin:40px auto;padding:0 24px;}
-  h1{font-size:1.9rem;margin:0 0 1rem;color:#111;}
-  ul{padding-left:1.3em;} li{margin:.25em 0;}
-  p{margin:.7em 0;} footer{margin-top:48px;padding-top:16px;border-top:1px solid #e5e5e5;font-size:.8rem;color:#aaa;}
-</style></head>
-<body><h1>${safeTitle}</h1>${node.body ? `<p>${escapeHtml(node.body)}</p>` : ''}${buildHtml(node.id)}
-<footer>Generado con Fromly</footer></body></html>`
-  }
   function exportHtml() {
-    const blob = new Blob([standaloneHtml()], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = (node.text || 'nota').slice(0, 40).replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s-]/g, '').trim() + '.html'
-    a.click()
-    URL.revokeObjectURL(url)
+    exportNodeHtml(node)
     toast(t('context.toastExportedHtml'))
   }
   function exportPdf() {
-    // PDF limpio: ventana nueva con SOLO la nota → imprimir (sin el chrome de la app).
-    const w = window.open('', '_blank')
-    if (!w) { window.print(); return }
-    w.document.write(standaloneHtml())
-    w.document.close()
-    w.focus()
-    setTimeout(() => w.print(), 300)
+    exportNodePdf(node)
   }
 
   function copyInternalLink() {

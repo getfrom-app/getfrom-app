@@ -76,6 +76,7 @@ import SearchPanel from '../panels/SearchPanel'
 import DocInspector from '../views/DocInspector'
 import PdfContainer from '../pdf/PdfContainer'
 import ElementsPanel from '../panels/ElementsPanel'
+import LienzoDocPanel from '../panels/LienzoDocPanel'
 import { isDocNode } from '../../utils/docNode'
 import { useHasActiveDocEditor } from '../../utils/docEditorStore'
 // Componentes pesados: lazy-loaded para reducir el bundle inicial
@@ -187,6 +188,7 @@ export default function MainLayout() {
     | 'doc'
     | 'resource'
     | 'elements'
+    | 'lienzo-doc'
     | 'porplanificar'
   // Ciclo de la columna derecha: filtro (default) → magic → grabador. Las listas
   // (context/prompt/agent-list) y el planner salen del ciclo: contextos/prompts/
@@ -642,14 +644,16 @@ export default function MainLayout() {
       if (!onCanvas) { navigate(`/node/${id}`); return }
       setRightCollapsed(false)
       setDetailNodeId(id)
-      // Nota: un `_doc` del LIENZO (texto libre) NO abre el inspector de documento — su
-      // formato va en la barra flotante. Cae abajo → columna de su contexto/tarea/día,
-      // igual que cualquier otro nodo. (El inspector solo aparece en la página /node del doc.)
       // RECURSO (PDF / imagen / archivo) → se abre GRANDE en la columna derecha para leerlo,
       // anotarlo y (PDF) dibujar/resaltar. La tarjeta sigue en el lienzo. (Estilo Heptabase.)
       if (n.isResource || (() => { try { return !!JSON.parse(n.extraData || '{}')._resourceUrl } catch { return false } })()) {
         setRightPanel('resource'); return
       }
+      // TEXTO del lienzo (`_doc`) → panel de documento COMPLETO en la columna derecha (editor
+      // + exportar a Markdown/HTML/PDF), igual que un recurso — para leer/editar cómodo sin
+      // salir del lienzo. Mismo nodo, sin copia; la tarjeta sigue en el lienzo tal cual.
+      // Decisión de Alberto: SIEMPRE (no solo si es largo) — una nota corta puede crecer.
+      if (isDocNode(n)) { setRightPanel('lienzo-doc'); return }
       // TAREA/evento → columna de TAREA (fecha, repetición, prioridad), en el lienzo.
       if (n.status != null || n.isEvent) { setRightPanel('task'); return }
       // Contexto/prompt/agente/plantilla por ubicación en el árbol; ADEMÁS, cualquier
@@ -1382,6 +1386,9 @@ export default function MainLayout() {
           })()}
           {rightPanel === 'elements' && detailNodeId && (
             <ElementsPanel nodeId={detailNodeId} />
+          )}
+          {rightPanel === 'lienzo-doc' && detailNodeId && (
+            <LienzoDocPanel nodeId={detailNodeId} />
           )}
           {rightPanel === 'porplanificar' && (
             <PorPlanificarPanel />

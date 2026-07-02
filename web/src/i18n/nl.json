@@ -1981,5 +1981,8 @@
   "elements.empty": "Nog geen elementen.",
   "tip.saveSelection": "Opslaan",
   "elements.savedToast": "Selectie opgeslagen",
-  "elements.loadMore": "Nog {{n}} laden"
+  "elements.loadMore": "Nog {{n}} laden",
+  "export.markdown": "Markdown exporteren",
+  "export.html": "HTML exporteren",
+  "export.pdf": "PDF exporteren"
 }

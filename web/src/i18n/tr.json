@@ -1981,5 +1981,8 @@
   "elements.empty": "Henüz öğe yok.",
   "tip.saveSelection": "Kaydet",
   "elements.savedToast": "Seçim kaydedildi",
-  "elements.loadMore": "{{n}} tane daha yükle"
+  "elements.loadMore": "{{n}} tane daha yükle",
+  "export.markdown": "Markdown olarak dışa aktar",
+  "export.html": "HTML olarak dışa aktar",
+  "export.pdf": "PDF olarak dışa aktar"
 }
