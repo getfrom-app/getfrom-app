@@ -1374,13 +1374,18 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     // El nodo guarda el ZOOM actual del lienzo (_pinScale) → al pulsarlo después,
     // la cámara vuela a su posición con ese zoom (estilo iPad). Si se pasa
     // `parentOverride`, el texto NACE dentro de ese contexto (pertenece a él).
+    // El texto se crea SIEMPRE a tamaño NORMAL (legible) sea cual sea el zoom actual:
+    // `_cardScale = 1/zoom` compensa el zoom del lienzo → en pantalla se ve a tamaño 1.
+    // Queda anclado a ese zoom: al acercar se ve más grande, al alejar más pequeño.
+    const cs = camRef.current.scale
     const node = store.createNode({
       text: '',
       parentId: parentOverride || parentId,
       extraData: {
         [PIN_X]: String(Math.round(world.x)),
         [PIN_Y]: String(Math.round(world.y)),
-        [PIN_SCALE]: String(Number(camRef.current.scale.toFixed(4))),
+        [PIN_SCALE]: String(Number(cs.toFixed(4))),
+        _cardScale: String(Number((1 / cs).toFixed(3))),
       },
     })
     // Tras crear, el nodo queda enfocado (cursor parpadeando) listo para escribir.
@@ -2204,6 +2209,10 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 .pizarra-card-body{padding:4px 6px 8px}
 .pizarra-node--sel{box-shadow:0 0 0 1.5px var(--border,#d8d8d8);border-radius:8px}
 .pizarra-node--hover{box-shadow:0 0 0 1px var(--border-subtle,#e6e6e6);border-radius:8px}
+/* TEXTO LIMPIO del lienzo (nodo plano): sin bullet/marcador, sin caja ni sombra al
+   seleccionar/hover — absolutamente limpio, solo el texto. (Al ser tarea muestra su check.) */
+.pizarra-node--cleantext .node-bullet-slot{display:none!important}
+.pizarra-node--cleantext.pizarra-node--sel,.pizarra-node--cleantext.pizarra-node--hover{box-shadow:none!important}
 .pizarra-node--text.pizarra-node--hover,.pizarra-node--text.pizarra-node--editing{box-shadow:none}
 .pizarra-node--text.pizarra-node--sel:not(.pizarra-node--editing){box-shadow:0 0 0 1.5px var(--accent,#6c5ce7);border-radius:8px}
 .pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:6px}
