@@ -1392,13 +1392,29 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     [PIN_X]: String(Math.round(world.x)), [PIN_Y]: String(Math.round(world.y)), [PIN_SCALE]: '1',
   })
 
-  const createTextAt = useCallback((world: WorldPos) => {
-    const node = store.createNode({ text: '', parentId, extraData: newTextExtra(world) })
-    // La 1ª línea es el TÍTULO → arranca como H1 (se ve como tal en lienzo y doc).
-    store.updateNode(node.id, { body: '<h1></h1>' })
+  const createTextAt = useCallback((world: WorldPos, parentOverride?: string) => {
+    // Texto libre (DocEditor/TipTap): entra directo en EDICIÓN → cursor parpadeando y
+    // barra flotante de estilos. Nace dentro del contexto donde se hace clic (si hay).
+    const node = store.createNode({ text: '', parentId: parentOverride || parentId, extraData: newTextExtra(world) })
+    store.updateNode(node.id, { body: '<p></p>' })
     setTool('select')
     setEditText(node.id)
   }, [parentId])
+
+  // Al SALIR de la edición de un texto: si quedó VACÍO (no se escribió nada), se borra
+  // → no deja nodos «Sin título» sueltos por clics accidentales.
+  const prevEditRef = useRef<string | null>(null)
+  useEffect(() => {
+    const prev = prevEditRef.current
+    prevEditRef.current = editText
+    if (prev && prev !== editText) {
+      const n = store.getNode(prev)
+      if (n && isDocNode(n)) {
+        const body = (n.body || '').replace(/<[^>]*>/g, '').trim()
+        if (!body && !(n.text || '').trim()) store.deleteNode(prev)
+      }
+    }
+  }, [editText])
 
   const deleteText = useCallback((id: string) => {
     store.deleteNode(id)
@@ -1575,27 +1591,6 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     panRef.current = { startX: e.clientX, startY: e.clientY, camX: cam.x, camY: cam.y, moved: false }
   }, [cam, screenToWorld, eraseAt, createTextAt, clearSelection, arrowAnchor, editText])
 
-  // ── Doble clic en el fondo → crear nodo ahí ─────────────────────────────────
-  const onBackgroundDoubleClick = useCallback((e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).dataset.bg !== '1') return
-    const rect = containerRef.current!.getBoundingClientRect()
-    const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-    // El texto nace DENTRO del contexto más interno donde cae (así pertenece a él);
-    // si cae fuera de todo contexto, cuelga del lienzo.
-    let parent: string | undefined
-    if (globalCanvas) {
-      let bestArea = Infinity
-      for (const a of children) {
-        if (!zoneIds.has(a.id)) continue
-        const r = readAreaRect(a) ?? nestedRef.current?.boxes.get(a.id) ?? null; if (!r) continue
-        if (world.x >= r.x && world.x <= r.x + r.w && world.y >= r.y && world.y <= r.y + r.h) {
-          const sz = r.w * r.h
-          if (sz < bestArea) { bestArea = sz; parent = a.id }
-        }
-      }
-    }
-    createNodeAt(world, parent)
-  }, [createNodeAt, screenToWorld, globalCanvas, children, zoneIds])
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     // Conectando con la flecha: seguir el cursor para previsualizar la línea.
@@ -2017,26 +2012,25 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       } : undefined}
       onClick={(e) => {
         if ((e.target as HTMLElement).dataset.bg !== '1') return
-        if (e.detail >= 2) return // 2º clic de un doble-clic → lo gestiona onDoubleClick (crear texto)
+        if (toolRef.current !== 'select') return // con herramienta de dibujo activa, no crear texto
         const rect = containerRef.current!.getBoundingClientRect()
         const world = screenToWorld(e.clientX - rect.left, e.clientY - rect.top)
-        // LIENZO: clic SIMPLE en zona vacía dentro de un área (contexto) → abre su
-        // columna derecha (el área MÁS INTERNA que contiene el punto). Para ESCRIBIR
-        // texto libre se usa el DOBLE CLIC (onBackgroundDoubleClick).
+        // LIENZO: UN CLIC en zona vacía → crea TEXTO LIBRE ahí (cursor + barra de estilos),
+        // dentro del contexto más interno que contiene el punto (para que le pertenezca).
         if (globalCanvas) {
-          let best: { id: string; area: number } | null = null
+          let parent: string | undefined
+          let bestArea = Infinity
           for (const a of children) {
             if (!zoneIds.has(a.id)) continue
             const r = readAreaRect(a) ?? nested?.boxes.get(a.id) ?? null; if (!r) continue
             if (world.x >= r.x && world.x <= r.x + r.w && world.y >= r.y && world.y <= r.y + r.h) {
-              const areaSize = r.w * r.h
-              if (!best || areaSize < best.area) best = { id: a.id, area: areaSize }
+              const sz = r.w * r.h
+              if (sz < bestArea) { bestArea = sz; parent = a.id }
             }
           }
-          if (best) setSelectedId(best.id)
+          createTextAt(world, parent)
         }
       }}
-      onDoubleClick={onBackgroundDoubleClick}
       onContextMenu={(e) => {
         // Con una herramienta activa (no «seleccionar»), el clic derecho vuelve a
         // Seleccionar/mover (atajo rápido), sin abrir el menú.
