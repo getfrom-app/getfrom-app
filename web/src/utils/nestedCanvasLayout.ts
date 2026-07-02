@@ -31,11 +31,13 @@ const TEXT_W = CONTENT_W - 60
 const TEXT_FONT = '15px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
 const HEADER = 46
 const PAD = 36
-const SUB_GAP = 44
-const CONTENT_SUB_GAP = 50
-const REGION_GAP = 400   // separación entre la región de contextos y la de agenda
-const TOP_GAP = 220
-const BASE_H = 820   // alto nominal de "pantalla" grande → cajas amplias, el texto respira
+const SUB_GAP = 120       // aire generoso entre subcontextos
+const CONTENT_SUB_GAP = 140 // aire entre el texto y los subcontextos
+const REGION_GAP = 900    // separación entre la región de contextos y la de agenda
+const TOP_GAP = 500       // separación entre cajas de contexto de nivel superior
+const BASE_H = 1300       // alto MÍNIMO de un contexto (aunque tenga poco) → grande
+const EMPTY_RIGHT = 1400  // espacio libre a la derecha del contenido dentro de la caja
+const EMPTY_BOTTOM = 1000 // espacio libre bajo el contenido dentro de la caja
 const DEFAULT_ASPECT = 1.6
 
 let _ctx: CanvasRenderingContext2D | null = null
@@ -119,9 +121,15 @@ function measureBox(boxId: string, aspect: number, isBox: (n: Node) => boolean, 
     if (s.w > subW) subW = s.w
   }
   const subBottom = subBoxes.length ? sy - SUB_GAP : subTop
-  const innerW = Math.max(screenW, content.w, subW)
+  const innerW = Math.max(content.w, subW)
   const innerH = Math.max(content.h, subBottom)
-  const box = { w: innerW + PAD * 2, h: Math.max(BASE_H, HEADER + PAD + innerH + PAD) }
+  // La caja es MUCHO más grande que su contenido: el texto ocupa un ~5-10% del área,
+  // anclado arriba-izquierda, y queda MUCHÍSIMO espacio libre dentro para navegar,
+  // escribir y dibujar más adelante. (El lienzo es infinito → el zoom lo ajusta.)
+  const box = {
+    w: Math.max(screenW, innerW + EMPTY_RIGHT),
+    h: Math.max(BASE_H, HEADER + PAD + innerH + PAD + EMPTY_BOTTOM),
+  }
   meta.set(boxId, { box, content: content.rows, subs })
   return box
 }
