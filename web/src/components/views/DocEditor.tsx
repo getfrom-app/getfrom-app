@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useEditor, EditorContent, BubbleMenu } from '@tiptap/react'
+import { useEditor, EditorContent, BubbleMenu, ReactNodeViewRenderer } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
@@ -23,6 +23,7 @@ import { extractDateFromEnd } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { uploadFile } from '../../api/client'
 import { setDocEditor, notifyDocEditor } from '../../utils/docEditorStore'
+import TaskItemChip from './TaskItemChip'
 
 // Paleta de la barra flotante (misma que FormatToolbar del outliner).
 const DOC_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#a16207', '#6b7280']
@@ -36,6 +37,8 @@ const BUBBLE_MENU_ENABLED = true
 // nodo-tarea de From real. Es la clave anti-duplicación: el sync reconcilia por este id
 // (actualiza si existe, crea solo si falta y le escribe el id de vuelta). Se persiste en
 // el HTML del body, así sobrevive a recargas.
+// NodeView de React (`TaskItemChip`) para poder añadir, junto al checkbox nativo, un
+// chip clicable con la fecha/prioridad que abre el modal de propiedades — ver ese archivo.
 const TaskItemLinked = TaskItem.extend({
   addAttributes() {
     return {
@@ -46,6 +49,9 @@ const TaskItemLinked = TaskItem.extend({
         renderHTML: (attrs: { dataNodeId?: string | null }) => (attrs.dataNodeId ? { 'data-node-id': attrs.dataNodeId } : {}),
       },
     }
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(TaskItemChip)
   },
 })
 
