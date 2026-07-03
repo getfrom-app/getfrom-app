@@ -1307,6 +1307,8 @@
   "pizarra.file": "Datei",
   "pizarra.area": "Bereich",
   "pizarra.areaElementCount": "{{count}} Elemente",
+  "pizarra.aiMemoryCount": "{{count}} Erinnerungen",
+  "pizarra.aiMemoryHint": "KI-Erinnerungen (auf der Leinwand ausgeblendet)",
   "pizarra.saveViewTitle": "Diese Ansicht als Knoten speichern",
   "pizarra.saveViewHint": "Tippe, um einen bestehenden Kontext zu finden oder einen neuen zu erstellen.",
   "tip.copyLink": "Link kopieren",

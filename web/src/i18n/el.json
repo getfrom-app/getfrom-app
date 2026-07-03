@@ -1307,6 +1307,8 @@
   "pizarra.file": "Αρχείο",
   "pizarra.area": "Περιοχή",
   "pizarra.areaElementCount": "{{count}} στοιχεία",
+  "pizarra.aiMemoryCount": "{{count}} αναμνήσεις",
+  "pizarra.aiMemoryHint": "Αναμνήσεις IA (κρυμμένες από τον καμβά)",
   "pizarra.saveViewTitle": "Αποθήκευση αυτής της προβολής ως κόμβο",
   "pizarra.saveViewHint": "Πληκτρολόγησε για να βρεις ένα υπάρχον πλαίσιο ή να δημιουργήσεις νέο.",
   "tip.copyLink": "Αντιγραφή συνδέσμου",

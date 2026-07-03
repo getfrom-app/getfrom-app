@@ -1307,6 +1307,8 @@
   "pizarra.file": "Fichier",
   "pizarra.area": "Zone",
   "pizarra.areaElementCount": "{{count}} éléments",
+  "pizarra.aiMemoryCount": "{{count}} souvenirs",
+  "pizarra.aiMemoryHint": "Souvenirs de l'IA (masqués de la toile)",
   "pizarra.saveViewTitle": "Enregistrer cette vue comme nœud",
   "pizarra.saveViewHint": "Écris pour trouver un contexte existant ou en créer un nouveau.",
   "tip.copyLink": "Copier le lien",

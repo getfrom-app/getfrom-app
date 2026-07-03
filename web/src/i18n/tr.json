@@ -1307,6 +1307,8 @@
   "pizarra.file": "Dosya",
   "pizarra.area": "Alan",
   "pizarra.areaElementCount": "{{count}} öğe",
+  "pizarra.aiMemoryCount": "{{count}} anı",
+  "pizarra.aiMemoryHint": "Yapay zekâ anıları (tuvalden gizli)",
   "pizarra.saveViewTitle": "Bu görünümü düğüm olarak kaydet",
   "pizarra.saveViewHint": "Mevcut bir bağlam bulmak veya yeni bir tane oluşturmak için yaz.",
   "tip.copyLink": "Bağlantıyı kopyala",

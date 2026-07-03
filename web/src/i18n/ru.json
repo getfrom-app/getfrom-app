@@ -1307,6 +1307,8 @@
   "pizarra.file": "Файл",
   "pizarra.area": "Область",
   "pizarra.areaElementCount": "{{count}} элементов",
+  "pizarra.aiMemoryCount": "{{count}} воспоминаний",
+  "pizarra.aiMemoryHint": "Память ИИ (скрыта на холсте)",
   "pizarra.saveViewTitle": "Сохранить этот вид как узел",
   "pizarra.saveViewHint": "Введите, чтобы найти существующий контекст или создать новый.",
   "tip.copyLink": "Копировать ссылку",

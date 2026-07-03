@@ -117,20 +117,21 @@ function isHiddenPin(node: Node): boolean {
   try { const e = JSON.parse(node.extraData || '{}'); return e[PIN_HIDDEN] === '1' || !!e._absorbedBy } catch { return false }
 }
 
-// Nº de cosas que hay DENTRO de un contexto/área — para el badge de la etiqueta y el resumen
-// al alejar (que la caja nunca parezca vacía si sí tiene contenido). Cuenta TODO lo que hay
-// dentro (notas, tareas, memoria IA…), no solo lo que se pinta: así comunica «aquí hay N
-// cosas» aunque las líneas de memoria estén ocultas por limpieza. Excluye solo sub-áreas,
-// pines ocultos/absorbidos y capturas del log. Barato (hijos directos).
-function countAreaContent(id: string): number {
-  let n = 0
+// Cuenta lo que hay DENTRO de un contexto/área, SEPARANDO contenido REAL (notas, tareas,
+// textos…) de la MEMORIA IA (`_tagDefinition`, oculta del lienzo). Sirve para el badge de la
+// etiqueta y el resumen al alejar: que la caja nunca parezca vacía si tiene contenido, y que
+// se distinga lo tuyo de los recuerdos de la IA. Excluye sub-áreas, pines ocultos y capturas.
+// Barato (hijos directos).
+function countAreaContent(id: string): { real: number; mem: number } {
+  let real = 0, mem = 0
   for (const c of store.children(id)) {
     if (c.deletedAt || isArea(c) || isHiddenPin(c)) continue
     let e: Record<string, unknown> = {}; try { e = JSON.parse(c.extraData || '{}') } catch { /* vacío */ }
     if (e._capture === '1' || e._logAt) continue
-    n++
+    if (e._tagDefinition != null) mem++
+    else real++
   }
-  return n
+  return { real, mem }
 }
 
 // ── ÁREAS: región rectangular del lienzo (contenedora). El área es un nodo
@@ -2266,7 +2267,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       {children.filter(n => zoneIds.has(n.id)).map(a => {
         const rect = readAreaRect(a) ?? (nested ? nested.boxes.get(a.id) ?? null : null); if (!rect) return null
         const col = (() => { const cx = firstContextOf(a) ?? (isMarkedContext(a) ? a : null); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()
-        const contentN = countAreaContent(a.id)
+        const cnt = countAreaContent(a.id)
         // Preview en vivo del redimensionado manual (tirador esquina).
         const pw = areaRz?.id === a.id ? areaRz.w : rect.w
         const ph = areaRz?.id === a.id ? areaRz.h : rect.h
@@ -2328,13 +2329,17 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); setAreaMenu({ id: a.id, x: e.clientX, y: e.clientY }) }}
               style={{ position: 'absolute', top: -10, left: 12, pointerEvents: 'auto', cursor: 'grab', display: 'inline-flex', alignItems: 'center', gap: 6, padding: '2px 9px', borderRadius: 3, background: 'var(--bg-elevated, #fff)', color: 'var(--text-secondary, #52525b)', fontSize: 11, fontWeight: 600, letterSpacing: '0.4px', textTransform: 'uppercase', whiteSpace: 'nowrap', border: '1px solid var(--border, #e0e0e4)', touchAction: 'none' }}
               title={t('tip.dragAreaMove')}
-            ><span style={{ width: 6, height: 6, borderRadius: '50%', background: col, flexShrink: 0 }} />{a.text || t('pizarra.area')}{contentN > 0 && <span style={{ opacity: 0.5, fontWeight: 500, marginLeft: 2 }}>· {contentN}</span>}</div>
-            {/* Resumen al ALEJAR: cuando el contenido ya no es legible (LOD), la caja mostraba
-                vacío y parecía sin contenido. Mostramos «N elementos» centrado para que se vea
-                que SÍ hay trabajo dentro. Se desvanece al acercarte (el contenido real vuelve). */}
-            {contentN > 0 && cam.scale < 0.28 && (
-              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', color: 'var(--text-tertiary, #9ca3af)', fontSize: Math.max(12, Math.min(22, sh * 0.1)), fontWeight: 500, opacity: cam.scale < 0.18 ? 0.9 : 0.5, transition: 'opacity 0.15s' }}>
-                {t('pizarra.areaElementCount', { count: contentN, defaultValue: '{{count}} elementos' })}
+            ><span style={{ width: 6, height: 6, borderRadius: '50%', background: col, flexShrink: 0 }} />{a.text || t('pizarra.area')}
+              {cnt.real > 0 && <span style={{ opacity: 0.5, fontWeight: 500, marginLeft: 2 }}>· {cnt.real}</span>}
+              {cnt.mem > 0 && <span title={t('pizarra.aiMemoryHint', 'Recuerdos de la IA (ocultos)')} style={{ opacity: 0.4, fontWeight: 500, marginLeft: 4 }}>🧠 {cnt.mem}</span>}
+            </div>
+            {/* Resumen al ALEJAR: cuando el contenido ya no es legible (LOD), la caja parecía
+                vacía. Mostramos el recuento centrado (contenido real y, aparte, memoria IA) para
+                que se vea que SÍ hay trabajo dentro. Se desvanece al acercarte. */}
+            {(cnt.real > 0 || cnt.mem > 0) && cam.scale < 0.28 && (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, pointerEvents: 'none', color: 'var(--text-tertiary, #9ca3af)', fontSize: Math.max(12, Math.min(22, sh * 0.1)), fontWeight: 500, opacity: cam.scale < 0.18 ? 0.9 : 0.5, transition: 'opacity 0.15s' }}>
+                {cnt.real > 0 && <span>{t('pizarra.areaElementCount', { count: cnt.real, defaultValue: '{{count}} elementos' })}</span>}
+                {cnt.mem > 0 && <span style={{ fontSize: '0.78em', opacity: 0.75 }}>🧠 {t('pizarra.aiMemoryCount', { count: cnt.mem, defaultValue: '{{count}} recuerdos' })}</span>}
               </div>
             )}
             {/* Tirador de REDIMENSIONADO (esquina inferior derecha) — solo en el lienzo.

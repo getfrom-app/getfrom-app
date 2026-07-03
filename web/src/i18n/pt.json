@@ -1307,6 +1307,8 @@
   "pizarra.file": "Ficheiro",
   "pizarra.area": "Área",
   "pizarra.areaElementCount": "{{count}} itens",
+  "pizarra.aiMemoryCount": "{{count}} memórias",
+  "pizarra.aiMemoryHint": "Memórias da IA (ocultas da tela)",
   "pizarra.saveViewTitle": "Guardar esta vista como nó",
   "pizarra.saveViewHint": "Escreve para encontrar um contexto existente ou criar um novo.",
   "tip.copyLink": "Copiar ligação",

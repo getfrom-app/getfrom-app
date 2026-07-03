@@ -1307,6 +1307,8 @@
   "pizarra.file": "Bestand",
   "pizarra.area": "Gebied",
   "pizarra.areaElementCount": "{{count}} items",
+  "pizarra.aiMemoryCount": "{{count}} herinneringen",
+  "pizarra.aiMemoryHint": "AI-herinneringen (verborgen op canvas)",
   "pizarra.saveViewTitle": "Deze weergave als node opslaan",
   "pizarra.saveViewHint": "Typ om een bestaande context te vinden of een nieuwe te maken.",
   "tip.copyLink": "Link kopiëren",

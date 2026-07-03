@@ -1307,6 +1307,8 @@
   "pizarra.file": "Plik",
   "pizarra.area": "Obszar",
   "pizarra.areaElementCount": "{{count}} elementów",
+  "pizarra.aiMemoryCount": "{{count}} wspomnień",
+  "pizarra.aiMemoryHint": "Wspomnienia SI (ukryte na płótnie)",
   "pizarra.saveViewTitle": "Zapisz ten widok jako węzeł",
   "pizarra.saveViewHint": "Wpisz, aby znaleźć istniejący kontekst lub utworzyć nowy.",
   "tip.copyLink": "Kopiuj link",
