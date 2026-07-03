@@ -128,8 +128,8 @@ function countAreaContent(id: string): { real: number; mem: number } {
     if (c.deletedAt || isArea(c) || isHiddenPin(c)) continue
     let e: Record<string, unknown> = {}; try { e = JSON.parse(c.extraData || '{}') } catch { /* vacío */ }
     if (e._capture === '1' || e._logAt) continue
-    if (e._tagDefinition != null) mem++
-    else real++
+    if (e._tagDefinition != null && e._aiVisible !== '1') mem++ // memoria IA antigua (oculta)
+    else real++ // contenido normal + memoria NUEVA visible (_aiVisible)
   }
   return { real, mem }
 }
