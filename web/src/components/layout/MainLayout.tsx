@@ -638,9 +638,14 @@ export default function MainLayout() {
       const n = id ? store.getNode(id) : null
       if (!n) return
       // `openNodeDetail` es la ÚNICA primitiva para "abrir un nodo". En el LIENZO se abre
-      // EN SITIO (columna derecha + vuelo). FUERA del lienzo (página /node) se navega a él,
-      // como siempre. Así el mismo `openNodeDetail(id)` hace lo correcto en cada contexto.
-      const onCanvas = window.location.pathname.replace(/^\/app\/?/, '').replace(/^\/+|\/+$/g, '') === ''
+      // EN SITIO (columna derecha + vuelo). FUERA del lienzo se navega a él, como siempre.
+      // «Ya no hay páginas de nota»: CUALQUIER contenido puede renderizarse como pizarra
+      // (viewKind==='pizarra' en NodeView, no solo la raíz `/`) — navegar dentro de un
+      // contexto vía breadcrumb sigue siendo lienzo. Antes esto solo miraba si la ruta era
+      // literalmente la raíz, así que abrir un recurso/tarea/documento desde DENTRO de un
+      // contexto navegaba fuera en vez de abrir en sitio. Señal fiable: si hay una
+      // PizarraView realmente montada en pantalla ahora mismo (`.pizarra-view`).
+      const onCanvas = !!document.querySelector('.pizarra-view')
       if (!onCanvas) { navigate(`/node/${id}`); return }
       setRightCollapsed(false)
       setDetailNodeId(id)
