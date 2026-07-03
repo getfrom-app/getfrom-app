@@ -44,7 +44,7 @@ const TaskItemLinked = TaskItem.extend({
   },
 })
 
-export default function DocEditor({ node, compact, registerActive }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean; registerActive?: boolean }) {
+export default function DocEditor({ node, compact, registerActive, autofocus }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean; registerActive?: boolean; autofocus?: boolean }) {
   useStore()
   const navigate = useNavigate()
   const saveTimer = useRef<number | null>(null)
@@ -173,7 +173,10 @@ export default function DocEditor({ node, compact, registerActive }: { node: { i
       Image.configure({ inline: false, allowBase64: false }),
     ],
     content: node.body || '',
-    autofocus: compact ? 'end' : false,
+    // Por defecto: compact (tarjeta del lienzo) autoenfoca al montar; NO-compact (página en
+    // solitario) no. `autofocus={false}` explícito lo desactiva SIEMPRE — lo usa
+    // `LienzoDocPanel` para no robarle el foco a la tarjeta si esta también está editando.
+    autofocus: autofocus === false ? false : (compact ? 'end' : false),
     onUpdate: ({ editor }) => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
       const html = editor.getHTML()

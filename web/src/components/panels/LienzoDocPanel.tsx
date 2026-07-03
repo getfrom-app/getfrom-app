@@ -46,7 +46,11 @@ export default function LienzoDocPanel({ nodeId }: { nodeId: string }) {
         <DocInspector />
       </div>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 20px 88px' }}>
-        <DocEditor node={node} compact registerActive />
+        {/* `autofocus={false}`: la tarjeta del lienzo TAMBIÉN puede estar editando este mismo
+            nodo a la vez (doble clic ahí escribe directo) — si el panel también autoenfocara,
+            se robarían el foco entre sí y el teclado saltaría de un sitio a otro a media
+            palabra. El panel es una vista cómoda complementaria; para escribir en él, un clic. */}
+        <DocEditor node={node} compact registerActive autofocus={false} />
       </div>
     </div>
   )

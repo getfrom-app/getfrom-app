@@ -2714,13 +2714,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               // Elemento-texto = el MISMO nodo que el documento. Editando → editor
               // TipTap completo (DocEditor compact); en reposo → body estático (ligero).
               // Colapsado → solo el título + chevron (el usuario despliega para leer).
-              // EXCEPCIÓN en el lienzo GLOBAL: editar aquí ADEMÁS montaría el editor del
-              // panel de documento (columna derecha, LienzoDocPanel — se abre solo al
-              // seleccionar) → DOS editores TipTap vivos para el MISMO nodo peleándose por
-              // el foco/teclado. En el lienzo global la tarjeta se queda en modo lectura
-              // reactiva (refleja `node.body` en cuanto el panel guarda, ~500ms) y el ÚNICO
-              // editor vivo es el del panel — un solo sitio donde escribir, como Heptabase.
-              editing && !globalCanvas ? (
+              // (Intento anterior de que el lienzo global NUNCA montara aquí su propio editor
+              // — para que el panel de la derecha fuera el único — rompió por completo poder
+              // escribir: crear texto nuevo con doble clic NO selecciona el nodo, así que el
+              // panel no llega a abrirse y no había NINGÚN editor donde escribir. Revertido:
+              // la tarjeta SIEMPRE edita aquí; el robo de foco del panel se corta en
+              // `LienzoDocPanel` con `autofocus={false}`, no quitando el editor de la tarjeta.)
+              editing ? (
                 <DocEditor node={node} compact />
               ) : globalCanvas ? (
                 // LIENZO: TEXTO PURO — sin gutter, sin chevron, sin dot, sin accesorios.
