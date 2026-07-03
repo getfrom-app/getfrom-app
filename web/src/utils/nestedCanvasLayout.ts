@@ -118,6 +118,7 @@ function isContent(n: Node, isBox: (n: Node) => boolean): boolean {
   const e = ed(n)
   if (e._capture === '1' || e._logAt) return false
   if (e._absorbedBy) return false // línea ABSORBIDA en un bloque _doc → no se pinta suelta
+  if (e._tagDefinition != null) return false // nodo de MEMORIA/CONOCIMIENTO IA → no ensucia el lienzo
   return true
 }
 function contentChildren(id: string, isBox: (n: Node) => boolean): Node[] {
