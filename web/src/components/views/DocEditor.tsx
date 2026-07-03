@@ -195,7 +195,12 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       // muestra las propiedades de ESA tarea (fecha/repetición/prioridad). Fuera de una
       // casilla → vuelve a la columna del propio texto (contexto/día). Solo al cambiar el
       // objetivo (no en cada tecla) para no spamear.
-      if (!compact) return
+      // SOLO el editor REGISTRADO (el del panel, `registerActive`) gestiona esto — la tarjeta
+      // (compact sin registerActive) NO debe disparar `from:open-detail`: abrir el nodo YA lo
+      // hace `PizarraView` (efecto de `selectedId`) al seleccionar la tarjeta. Si la tarjeta
+      // también dispara, `isDocNode` abre el panel para SÍ MISMA → nace un SEGUNDO editor
+      // TipTap vivo para el mismo nodo → bucle de renders (React #185) al escribir.
+      if (!compact || !registerActive) return
       const { $from } = editor.state.selection
       let taskId: string | null = null
       for (let d = $from.depth; d > 0; d--) {
