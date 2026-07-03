@@ -1306,6 +1306,7 @@
   "pizarra.view": "Vue",
   "pizarra.file": "Fichier",
   "pizarra.area": "Zone",
+  "pizarra.areaElementCount": "{{count}} éléments",
   "pizarra.saveViewTitle": "Enregistrer cette vue comme nœud",
   "pizarra.saveViewHint": "Écris pour trouver un contexte existant ou en créer un nouveau.",
   "tip.copyLink": "Copier le lien",

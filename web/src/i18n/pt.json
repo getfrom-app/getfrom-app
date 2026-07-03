@@ -1306,6 +1306,7 @@
   "pizarra.view": "Vista",
   "pizarra.file": "Ficheiro",
   "pizarra.area": "Área",
+  "pizarra.areaElementCount": "{{count}} itens",
   "pizarra.saveViewTitle": "Guardar esta vista como nó",
   "pizarra.saveViewHint": "Escreve para encontrar um contexto existente ou criar um novo.",
   "tip.copyLink": "Copiar ligação",

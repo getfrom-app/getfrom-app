@@ -1306,6 +1306,7 @@
   "pizarra.view": "Vy",
   "pizarra.file": "Fil",
   "pizarra.area": "Område",
+  "pizarra.areaElementCount": "{{count}} objekt",
   "pizarra.saveViewTitle": "Spara den här vyn som en nod",
   "pizarra.saveViewHint": "Skriv för att hitta en befintlig kontext eller skapa en ny.",
   "tip.copyLink": "Kopiera länk",

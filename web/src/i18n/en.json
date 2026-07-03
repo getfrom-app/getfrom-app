@@ -1306,6 +1306,7 @@
   "pizarra.view": "View",
   "pizarra.file": "File",
   "pizarra.area": "Area",
+  "pizarra.areaElementCount": "{{count}} items",
   "pizarra.saveViewTitle": "Save this view as a node",
   "pizarra.saveViewHint": "Type to find an existing context or create a new one.",
   "tip.copyLink": "Copy link",

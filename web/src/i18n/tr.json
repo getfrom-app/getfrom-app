@@ -1306,6 +1306,7 @@
   "pizarra.view": "Görünüm",
   "pizarra.file": "Dosya",
   "pizarra.area": "Alan",
+  "pizarra.areaElementCount": "{{count}} öğe",
   "pizarra.saveViewTitle": "Bu görünümü düğüm olarak kaydet",
   "pizarra.saveViewHint": "Mevcut bir bağlam bulmak veya yeni bir tane oluşturmak için yaz.",
   "tip.copyLink": "Bağlantıyı kopyala",

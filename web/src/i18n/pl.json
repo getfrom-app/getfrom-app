@@ -1306,6 +1306,7 @@
   "pizarra.view": "Widok",
   "pizarra.file": "Plik",
   "pizarra.area": "Obszar",
+  "pizarra.areaElementCount": "{{count}} elementów",
   "pizarra.saveViewTitle": "Zapisz ten widok jako węzeł",
   "pizarra.saveViewHint": "Wpisz, aby znaleźć istniejący kontekst lub utworzyć nowy.",
   "tip.copyLink": "Kopiuj link",

@@ -1306,6 +1306,7 @@
   "pizarra.view": "Προβολή",
   "pizarra.file": "Αρχείο",
   "pizarra.area": "Περιοχή",
+  "pizarra.areaElementCount": "{{count}} στοιχεία",
   "pizarra.saveViewTitle": "Αποθήκευση αυτής της προβολής ως κόμβο",
   "pizarra.saveViewHint": "Πληκτρολόγησε για να βρεις ένα υπάρχον πλαίσιο ή να δημιουργήσεις νέο.",
   "tip.copyLink": "Αντιγραφή συνδέσμου",
