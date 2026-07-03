@@ -24,6 +24,9 @@ import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { uploadFile } from '../../api/client'
 import { setDocEditor, notifyDocEditor } from '../../utils/docEditorStore'
 import TaskItemChip from './TaskItemChip'
+import { MagicTaskGhost } from './MagicTaskGhost'
+import type { MagicPrediction } from './MagicTaskGhost'
+import { useTranslation } from 'react-i18next'
 
 // Paleta de la barra flotante (misma que FormatToolbar del outliner).
 const DOC_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#a16207', '#6b7280']
@@ -58,9 +61,14 @@ const TaskItemLinked = TaskItem.extend({
 export default function DocEditor({ node, compact, registerActive, autofocus }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean; registerActive?: boolean; autofocus?: boolean }) {
   useStore()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const saveTimer = useRef<number | null>(null)
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
   const [showColors, setShowColors] = useState(false)
+  // Fechas pendientes de aplicar a la próxima tarea creada por el magic (clave = texto limpio
+  // en minúsculas). El ghost quita la fecha del título al aceptar; aquí la recuperamos cuando
+  // `syncTasksToNodes` crea el nodo-tarea, para ponerle el `due` correcto.
+  const pendingDueRef = useRef<Map<string, { due: string; isEvent: boolean }>>(new Map())
 
   // Sube una imagen a R2 y la inserta en el cursor.
   const insertImage = async (file: File) => {
@@ -100,17 +108,25 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         } else {
           const created = store.createNode({ text, parentId: node.id, extraData: { _taskEmbed: '1' } })
           const updates: Record<string, unknown> = { status }
-          // Magic de FECHA: si el texto lleva una fecha natural («… mañana», «… el viernes»),
-          // la tarea coge ese `due` y entra en la agenda del día correcto. Solo al CREAR (no
-          // se re-machaca luego: si el usuario ajusta la fecha en la columna, se respeta).
-          try {
-            const dt = extractDateFromEnd(text)
-            if (dt?.parsed?.date) {
-              const d = new Date(dt.parsed.date); d.setHours(0, 0, 0, 0)
-              if (dt.timeStr) { const [h, m] = dt.timeStr.split(':').map(Number); updates.due = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m).toISOString() }
-              else updates.due = d.toISOString()
-            }
-          } catch { /* sin fecha */ }
+          // Fecha del magic (ghost): el título ya viene limpio, la fecha se guardó aparte.
+          const pend = pendingDueRef.current.get(text.toLowerCase())
+          if (pend) {
+            updates.due = pend.due
+            if (pend.isEvent) { updates.isEvent = true; updates.status = null }
+            pendingDueRef.current.delete(text.toLowerCase())
+          } else {
+            // Magic de FECHA en línea: si el texto lleva una fecha natural («… mañana», «… el
+            // viernes»), la tarea coge ese `due` y entra en la agenda del día correcto. Solo al
+            // CREAR (no se re-machaca luego: si ajustas la fecha en la columna, se respeta).
+            try {
+              const dt = extractDateFromEnd(text)
+              if (dt?.parsed?.date) {
+                const d = new Date(dt.parsed.date); d.setHours(0, 0, 0, 0)
+                if (dt.timeStr) { const [h, m] = dt.timeStr.split(':').map(Number); updates.due = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m).toISOString() }
+                else updates.due = d.toISOString()
+              }
+            } catch { /* sin fecha */ }
+          }
           store.updateNode(created.id, updates)
           // Hereda el contexto del `_doc` (si lo tiene) → la tarea aparece en su columna.
           for (const ref of parentRefs) assignContext(created.id, ref)
@@ -168,12 +184,34 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     }
   }
 
+  // Aceptar el ghost del magic: guarda la fecha detectada (para el nodo que creará el sync)
+  // y crea la tarea YA. Ref estable → la extensión (creada una vez) nunca queda desfasada.
+  const magicAcceptRef = useRef<(pred: MagicPrediction) => void>(() => {})
+  magicAcceptRef.current = (pred: MagicPrediction) => {
+    if (pred.date?.parsed?.date) {
+      const d = new Date(pred.date.parsed.date); d.setHours(0, 0, 0, 0)
+      let due: string
+      if (pred.date.timeStr) { const [h, m] = pred.date.timeStr.split(':').map(Number); due = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m).toISOString() }
+      else due = d.toISOString()
+      const isEvent = !!pred.date.isEvent || !!pred.date.timeStr
+      pendingDueRef.current.set(pred.date.cleanText.trim().toLowerCase(), { due, isEvent })
+    }
+    // Crear el nodo-tarea inmediatamente (no esperar al debounce de 500 ms) → aparece ya en
+    // su columna/agenda. El sync es idempotente, así que adelantar la llamada es seguro.
+    syncTasksToNodes()
+    const dl = pred.date?.parsed?.label
+    const msg = dl ? `☐ ${t('outliner.taskLower', 'tarea')} · 📅 ${dl}${pred.date?.timeStr ? ` ${pred.date.timeStr}` : ''}` : `☐ ${t('outliner.taskLower', 'tarea')}`
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: msg, type: 'success' } }))
+  }
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       Underline,
       TextStyle,
       Color,
+      // Magic «verbo → tarea» con ghost-text (misma que el outliner). Ver MagicTaskGhost.ts.
+      MagicTaskGhost.configure({ taskWord: t('outliner.taskLower', 'tarea'), onAccept: (p) => magicAcceptRef.current(p) }),
       // Casillas de tarea DENTRO del texto: «[] » al inicio de línea las crea (input rule
       // nativo de TaskList). Paso 1 = casilla WYSIWYG marcable. Paso 2 (pendiente) = cada
       // casilla se enlazará a una tarea-From real (agenda) por su nodo hijo.
@@ -200,28 +238,14 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         syncTasksToNodes()
       }, 500)
     },
-    onSelectionUpdate: ({ editor }) => {
+    onSelectionUpdate: () => {
       notifyDocEditor()
-      // En el LIENZO: si el cursor está DENTRO de una casilla enlazada, la columna derecha
-      // muestra las propiedades de ESA tarea (fecha/repetición/prioridad). Fuera de una
-      // casilla → vuelve a la columna del propio texto (contexto/día). Solo al cambiar el
-      // objetivo (no en cada tecla) para no spamear.
-      // SOLO el editor REGISTRADO (el del panel, `registerActive`) gestiona esto — la tarjeta
-      // (compact sin registerActive) NO debe disparar `from:open-detail`: abrir el nodo YA lo
-      // hace `PizarraView` (efecto de `selectedId`) al seleccionar la tarjeta. Si la tarjeta
-      // también dispara, `isDocNode` abre el panel para SÍ MISMA → nace un SEGUNDO editor
-      // TipTap vivo para el mismo nodo → bucle de renders (React #185) al escribir.
-      if (!compact || !registerActive) return
-      const { $from } = editor.state.selection
-      let taskId: string | null = null
-      for (let d = $from.depth; d > 0; d--) {
-        if ($from.node(d).type.name === 'taskItem') { taskId = ($from.node(d).attrs.dataNodeId as string | null) ?? null; break }
-      }
-      const linked = taskId && store.getNode(taskId) && !store.getNode(taskId)!.deletedAt ? taskId : node.id
-      if (linked !== lastDetailRef.current) {
-        lastDetailRef.current = linked
-        window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: linked } }))
-      }
+      // NOTA: al poner el cursor dentro de una casilla-tarea NO cambiamos la columna derecha.
+      // Antes disparábamos `from:open-detail` → la columna saltaba a las PROPIEDADES DE LA TAREA
+      // y se salía del texto que estabas editando. Ahora la columna se queda en el TEXTO y las
+      // propiedades de la tarea (fecha/recurrencia/prioridad) se abren en el MODAL global al
+      // pulsar el chip de la casilla (`from:open-task-props` en TaskItemChip). Igual en tarjeta
+      // del lienzo y en el panel derecho — consistencia total.
     },
     onTransaction: () => notifyDocEditor(),
     editorProps: {
