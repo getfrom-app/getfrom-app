@@ -282,9 +282,6 @@ interface WBData { version: number; strokes: WBStroke[]; texts?: WBText[]; tasks
 type PizClipCard = { text: string; body: string | null; types: string[]; dx: number; dy: number; sc: number; w: number }
 type PizClip = { strokes: WBStroke[]; cards: PizClipCard[]; text: string; ts: number }
 let pizarraClipboard: PizClip | null = null
-// Al abrir/recargar Fromly, volar UNA VEZ al día de hoy (nivel de módulo: sobrevive a
-// remontajes de PizarraView dentro de la misma sesión, solo se resetea con una recarga real).
-let hasFlownToTodayOnLoad = false
 
 function parsePizarra(body: string | null | undefined): WBData {
   const def: WBData = { version: 1, strokes: [], texts: [], tasks: [] }
@@ -890,17 +887,12 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     setTimeout(() => flyToArea(day.id), 90)
   }, [flyToArea])
 
-  // Al ABRIR/RECARGAR la app, aterrizar en el día de hoy — no donde quedó la cámara guardada
-  // la última vez. Es la MISMA función que el botón «Ir a hoy»: también dispara
-  // `from:open-detail` → el breadcrumb refleja la jerarquía (Agenda › hoy) dentro del ÚNICO
-  // lienzo, no una «página» aparte. Solo una vez por carga real (ver `hasFlownToTodayOnLoad`),
-  // para no interrumpir la navegación normal dentro de la misma sesión.
-  useEffect(() => {
-    if (!globalCanvas || hasFlownToTodayOnLoad) return
-    hasFlownToTodayOnLoad = true
-    flyToToday()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [globalCanvas])
+  // ⚠️ REVERTIDO en v9.6.677: un useEffect de montaje que llamaba flyToToday() (con
+  // ensureDayPath → store.createNode) nada más entrar al lienzo global causaba un error al
+  // escribir poco después de cargar. Sospecha: se disparaba ANTES de que el store terminase de
+  // hidratarse/sincronizar desde el servidor, creando un día "local" que luego colisionaba con
+  // el que llega por sync. Antes de reintentar «abrir siempre en hoy», hace falta enganchar el
+  // trigger a una señal real de «datos ya cargados», no al montaje del componente.
 
   // Color de acento de un contexto (`_tagColor`) — desde el menú de clic derecho.
   const setContextAccentColor = useCallback((id: string, color: string) => {
