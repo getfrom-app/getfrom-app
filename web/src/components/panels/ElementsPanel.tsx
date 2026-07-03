@@ -1,28 +1,39 @@
 /**
- * ElementsPanel — «Elementos» del lienzo actual (estilo Heptabase): lista todos los
- * textos, selecciones de PDF, imágenes y PDFs del lienzo, filtrables por tipo y
- * buscables por texto. Clic en una fila → vuela a esa tarjeta en el lienzo.
- * Pensado para escalar a cientos/miles de elementos: orden por recencia, límite con
- * «cargar más» y agrupación por documento de origen para las selecciones de PDF.
+ * ElementsPanel — el BUSCADOR universal del lienzo (estilo Heptabase). Lista TODOS los
+ * elementos del lienzo (globalmente, no solo el lienzo actual): textos, tareas, eventos,
+ * enlaces, PDFs, imágenes y contextos. Buscador de texto + filtro por TIPO. Clic en una
+ * fila → vuela a ese elemento en el lienzo y abre su panel derecho.
+ * Pensado para escalar a miles: orden por recencia, límite con «cargar más».
  */
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { isDocNode, firstLineTitle } from '../../utils/docNode'
+import { isMarkedContext } from '../../utils/cajones'
+import { openNodeDetail } from '../../utils/canvasNav'
 
-type ElemKind = 'text' | 'selection' | 'image' | 'pdf'
+type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context'
 
-interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; sourceId?: string }
+interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string }
 
+const ed = (n: Node): Record<string, unknown> => { try { return JSON.parse(n.extraData || '{}') } catch { return {} } }
+
+/** Clasifica un nodo en un tipo de elemento del lienzo, o null si no es buscable
+ *  (línea suelta, nodo de sistema, o ya absorbido dentro de una tarjeta). */
 function classify(n: Node): ElemKind | null {
-  let ed: Record<string, unknown> = {}
-  try { ed = JSON.parse(n.extraData || '{}') } catch { /* vacío */ }
-  if (ed._pdfSelection === '1') return 'selection'
-  const rType = ed._resourceType as string | undefined
-  if (rType === 'image') return 'image'
-  if (rType === 'pdf') return 'pdf'
-  if (isDocNode(n)) return 'text'
+  if (n.deletedAt) return null
+  const e = ed(n)
+  if (e._absorbedBy != null) return null       // oculto dentro de un bloque → no es elemento suelto
+  if (isMarkedContext(n)) return 'context'
+  if (n.status != null) return 'task'
+  if (n.isEvent) return 'event'
+  const rt = e._resourceType as string | undefined
+  if (rt === 'image' || e._imageUrl) return 'image'
+  if (rt === 'pdf') return 'pdf'
+  if (n.isResource || e._resourceUrl || e._resource) return 'link'
+  if (e._pdfSelection === '1') return 'text'    // selección de PDF = fragmento de texto
+  if (isDocNode(n) || store.isNote(n)) return 'text'
   return null
 }
 
@@ -30,93 +41,54 @@ function stripHtml(html?: string | null): string {
   return (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', selection: '✂️', image: '🖼', pdf: '📄' }
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁' }
 const PAGE_SIZE = 150
 
-export default function ElementsPanel({ nodeId }: { nodeId: string }) {
+export default function ElementsPanel() {
   const { t } = useTranslation()
-  useStore()
+  const s = useStore()
   const [filter, setFilter] = useState<ElemKind | 'all'>('all')
   const [q, setQ] = useState('')
   const [limit, setLimit] = useState(PAGE_SIZE)
 
+  // TODOS los elementos del lienzo (globalmente), más recientes primero.
   const rows = useMemo(() => {
+    void s.nodesVersion
     const out: ElemRow[] = []
-    const seen = new Set<string>()
-    function walk(id: string) {
-      if (seen.has(id)) return
-      seen.add(id)
-      for (const c of store.children(id)) {
-        if (c.deletedAt) continue
-        const kind = classify(c)
-        if (kind) {
-          const snippet = stripHtml(c.body)
-          const title = (c.text || firstLineTitle(c.body) || snippet.slice(0, 60) || t('common.noTitle'))
-          let sourceId: string | undefined
-          if (kind === 'selection') {
-            try { sourceId = (JSON.parse(c.extraData || '{}')._pdfSourceId as string) || undefined } catch { /* vacío */ }
-          }
-          out.push({ id: c.id, kind, title, snippet, updatedAt: c.updatedAt, sourceId })
-        }
-        walk(c.id)
-      }
+    for (const n of store.allActive()) {
+      const kind = classify(n); if (!kind) continue
+      const snippet = (n.body || '').trimStart().startsWith('```from-pizarra') ? '' : stripHtml(n.body)
+      const title = (n.text || firstLineTitle(n.body) || snippet.slice(0, 60) || t('common.noTitle'))
+      out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '' })
     }
-    walk(nodeId)
-    // Más recientes primero — con cientos/miles de elementos es lo más útil por defecto.
-    out.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
+    out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     return out
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nodeId, t, store.getNode(nodeId)])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [s.nodesVersion, t])
 
+  const nq = q.trim().toLowerCase()
   const filtered = rows.filter(r => {
     if (filter !== 'all' && r.kind !== filter) return false
-    if (!q.trim()) return true
-    const needle = q.trim().toLowerCase()
-    return r.title.toLowerCase().includes(needle) || r.snippet.toLowerCase().includes(needle)
+    if (!nq) return true
+    return r.title.toLowerCase().includes(nq) || r.snippet.toLowerCase().includes(nq)
   })
   const shown = filtered.slice(0, limit)
-
   const counts = rows.reduce((acc, r) => { acc[r.kind] = (acc[r.kind] || 0) + 1; return acc }, {} as Record<ElemKind, number>)
 
   const CHIPS: { key: ElemKind | 'all'; label: string }[] = [
-    { key: 'all', label: t('elements.all') },
-    { key: 'text', label: t('elements.texts') },
-    { key: 'selection', label: t('elements.selections') },
-    { key: 'image', label: t('elements.images') },
-    { key: 'pdf', label: t('elements.pdfs') },
+    { key: 'all',     label: t('elements.all') },
+    { key: 'text',    label: t('elements.texts') },
+    { key: 'task',    label: t('elements.tasks') },
+    { key: 'event',   label: t('elements.events') },
+    { key: 'link',    label: t('elements.links') },
+    { key: 'pdf',     label: t('elements.pdfs') },
+    { key: 'image',   label: t('elements.images') },
+    { key: 'context', label: t('elements.contexts') },
   ]
 
-  // Agrupar SELECCIONES por documento de origen (estilo Heptabase: los highlights se
-  // navegan por el PDF del que vienen) — muy útil en cuanto hay más de un puñado.
-  const groupBySource = filter === 'selection'
-  const groups: { key: string; title: string; rows: ElemRow[] }[] = groupBySource
-    ? (() => {
-        const m = new Map<string, ElemRow[]>()
-        for (const r of shown) {
-          const key = r.sourceId || '__none__'
-          if (!m.has(key)) m.set(key, [])
-          m.get(key)!.push(r)
-        }
-        return [...m.entries()].map(([key, rs]) => ({
-          key, rows: rs,
-          title: key === '__none__' ? t('common.noTitle') : (store.getNode(key)?.text || t('common.noTitle')),
-        }))
-      })()
-    : [{ key: 'all', title: '', rows: shown }]
-
-  function Row({ r }: { r: ElemRow }) {
-    return (
-      <div key={r.id} className="dc-row" style={{ cursor: 'pointer' }}
-        onClick={() => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: r.id } }))}>
-        <span style={{ fontSize: 15, flexShrink: 0 }}>{KIND_ICON[r.kind]}</span>
-        <div style={{ minWidth: 0, flex: 1 }}>
-          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text,#222)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
-          {r.snippet && r.snippet !== r.title && (
-            <div style={{ fontSize: 11.5, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.snippet}</div>
-          )}
-        </div>
-      </div>
-    )
+  function open(id: string) {
+    openNodeDetail(id) // abre el panel derecho según el tipo (texto/tarea/evento/contexto…)
+    window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } })) // y vuela a él
   }
 
   return (
@@ -146,23 +118,23 @@ export default function ElementsPanel({ nodeId }: { nodeId: string }) {
         </div>
       ) : (
         <>
-          {groups.map(g => (
-            <div key={g.key} style={{ marginBottom: 10 }}>
-              {groupBySource && (
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary,#999)', textTransform: 'uppercase', letterSpacing: .3, padding: '4px 4px', cursor: g.key !== '__none__' ? 'pointer' : 'default' }}
-                  onClick={() => g.key !== '__none__' && window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: g.key } }))}>
-                  📄 {g.title} · {g.rows.length}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {shown.map(r => (
+              <div key={r.id} className="dc-row" style={{ cursor: 'pointer' }} onClick={() => open(r.id)}>
+                <span style={{ fontSize: 15, flexShrink: 0 }}>{KIND_ICON[r.kind]}</span>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text,#222)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
+                  {r.snippet && r.snippet !== r.title && (
+                    <div style={{ fontSize: 11.5, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.snippet}</div>
+                  )}
                 </div>
-              )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {g.rows.map(r => <Row key={r.id} r={r} />)}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
           {filtered.length > shown.length && (
             <button onClick={() => setLimit(l => l + PAGE_SIZE)}
               style={{ width: '100%', marginTop: 6, padding: '8px', fontSize: 12.5, borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: 'var(--bg,#fff)', color: 'var(--text-secondary,#666)', cursor: 'pointer' }}>
-              {t('elements.loadMore', { n: filtered.length - shown.length })}
+              {t('elements.loadMore', { n: filtered.length - shown.length, count: filtered.length - shown.length })}
             </button>
           )}
         </>

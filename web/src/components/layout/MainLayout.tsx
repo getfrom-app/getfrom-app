@@ -1417,8 +1417,8 @@ export default function MainLayout() {
               </div>
             )
           })()}
-          {rightPanel === 'elements' && detailNodeId && (
-            <ElementsPanel nodeId={detailNodeId} />
+          {rightPanel === 'elements' && (
+            <ElementsPanel />
           )}
           {rightPanel === 'lienzo-doc' && detailNodeId && (
             <LienzoDocPanel nodeId={detailNodeId} />

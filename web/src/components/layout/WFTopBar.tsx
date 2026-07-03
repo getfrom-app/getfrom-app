@@ -184,14 +184,14 @@ export default function WFTopBar({
         </svg>
       </button>
 
-      {/* Filtro / Buscar (F) */}
+      {/* Favoritos + Recientes (F) — antes «Buscar»; la búsqueda vive ahora en Elementos */}
       <button
         className={`wf-topbar-btn ${rightPanel === 'filter' ? 'active' : ''}`}
         onClick={onToggleSearch}
-        title={`${t('common.search')} (F)`}
+        title={`${t('searchPanel.favorites')} (F)`}
       >
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/>
         </svg>
       </button>
 
@@ -211,13 +211,15 @@ export default function WFTopBar({
         </svg>
       </button>
 
-      {/* Elementos: textos/selecciones/imágenes/PDF del lienzo, filtrable (estilo Heptabase) */}
+      {/* Buscar (Elementos): el buscador universal del lienzo, filtrable por tipo (Heptabase) */}
       <button
         className={`wf-topbar-btn ${rightPanel === 'elements' ? 'active' : ''}`}
-        title={t('elements.title')}
+        title={t('common.search')}
         onClick={() => window.dispatchEvent(new CustomEvent('from:open-elements-panel', { detail: { nodeId: ensureCanvasRoot().id } }))}
       >
-        <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="11" y="3" width="6" height="6" rx="1"/><rect x="3" y="11" width="6" height="6" rx="1"/><rect x="11" y="11" width="6" height="6" rx="1"/></svg>
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+        </svg>
       </button>
 
       {/* Día (Hoy) — en el lienzo cambia la columna derecha a HOY, SIN navegar
