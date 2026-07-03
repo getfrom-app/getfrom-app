@@ -2348,13 +2348,18 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 .pizarra-node--sel{box-shadow:0 0 0 1.5px var(--border,#d8d8d8);border-radius:8px}
 .pizarra-node--hover{box-shadow:0 0 0 1px var(--border-subtle,#e6e6e6);border-radius:8px}
 .pizarra-node--text.pizarra-node--hover{box-shadow:none}
-.pizarra-node--text.pizarra-node--sel{box-shadow:0 0 0 1.5px var(--accent,#6c5ce7);border-radius:8px}
+/* Selección minimalista igual que dibujos/PDF: rectángulo de línea DISCONTINUA con margen
+   (outline-offset da aire alrededor del texto), sin el borde sólido morado pegado. */
+.pizarra-node--text.pizarra-node--sel{box-shadow:none;outline:1px dashed var(--accent,#6c5ce7);outline-offset:6px;border-radius:3px}
 .pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:6px}
 .pizarra-card-body .node-row{align-items:flex-start!important}
 /* Cursor: el texto editable mantiene el de texto; el resto, "agarrar". */
 .pizarra-card-body .node-text{cursor:text}
 /* Texto SUELTO del lienzo: sin caja, fondo transparente, WYSIWYG. */
 .pizarra-text{caret-color:var(--accent,#6c5ce7)}
+/* Aire lateral en las tarjetas de texto del lienzo, tanto en lectura como en edición, para
+   que el texto no quede pegado al borde/selección. El panel derecho tiene su propio padding. */
+.pizarra-node--text .pizarra-text,.pizarra-node--text .doc-editor--compact .ProseMirror{padding-left:8px;padding-right:8px}
 .pizarra-text:empty::before{content:'Texto…';opacity:.4;pointer-events:none}
 .pizarra-text h1{font-size:1.7em;font-weight:700;margin:.15em 0;line-height:1.25}
 .pizarra-text h2{font-size:1.35em;font-weight:700;margin:.15em 0;line-height:1.3}
