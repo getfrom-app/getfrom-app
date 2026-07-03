@@ -2362,15 +2362,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               title={t('tip.dragAreaMove')}
             ><span style={{ width: 6, height: 6, borderRadius: '50%', background: col, flexShrink: 0 }} />{a.text || t('pizarra.area')}
               {cnt.real > 0 && <span style={{ opacity: 0.5, fontWeight: 500, marginLeft: 2 }}>· {cnt.real}</span>}
-              {cnt.mem > 0 && <span title={t('pizarra.aiMemoryHint', 'Recuerdos de la IA (ocultos)')} style={{ opacity: 0.4, fontWeight: 500, marginLeft: 4 }}>🧠 {cnt.mem}</span>}
             </div>
             {/* Resumen al ALEJAR: cuando el contenido ya no es legible (LOD), la caja parecía
-                vacía. Mostramos el recuento centrado (contenido real y, aparte, memoria IA) para
-                que se vea que SÍ hay trabajo dentro. Se desvanece al acercarte. */}
-            {(cnt.real > 0 || cnt.mem > 0) && cam.scale < 0.28 && (
+                vacía. Mostramos el recuento centrado del contenido real para que se vea que SÍ
+                hay trabajo dentro. Se desvanece al acercarte. */}
+            {cnt.real > 0 && cam.scale < 0.28 && (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, pointerEvents: 'none', color: 'var(--text-tertiary, #9ca3af)', fontSize: Math.max(12, Math.min(22, sh * 0.1)), fontWeight: 500, opacity: cam.scale < 0.18 ? 0.9 : 0.5, transition: 'opacity 0.15s' }}>
-                {cnt.real > 0 && <span>{t('pizarra.areaElementCount', { count: cnt.real, defaultValue: '{{count}} elementos' })}</span>}
-                {cnt.mem > 0 && <span style={{ fontSize: '0.78em', opacity: 0.75 }}>🧠 {t('pizarra.aiMemoryCount', { count: cnt.mem, defaultValue: '{{count}} recuerdos' })}</span>}
+                <span>{t('pizarra.areaElementCount', { count: cnt.real, defaultValue: '{{count}} elementos' })}</span>
               </div>
             )}
             {/* Tirador de REDIMENSIONADO (esquina inferior derecha) — solo en el lienzo.
