@@ -9,6 +9,7 @@
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import DocEditor from '../views/DocEditor'
+import DocInspector from '../views/DocInspector'
 import { exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
 
 export default function LienzoDocPanel({ nodeId }: { nodeId: string }) {
@@ -38,8 +39,14 @@ export default function LienzoDocPanel({ nodeId }: { nodeId: string }) {
           PDF
         </button>
       </div>
+      {/* Barra de formato PERSISTENTE (reutiliza DocInspector, la misma barra de la página en
+          solitario de un documento) — antes el panel solo tenía la barra flotante al
+          seleccionar texto; Alberto pidió una barra fija, más cómoda para trabajar seguido. */}
+      <div style={{ maxHeight: '38%', overflowY: 'auto', borderBottom: '1px solid var(--border-subtle,#eee)', flexShrink: 0 }}>
+        <DocInspector />
+      </div>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 20px 88px' }}>
-        <DocEditor node={node} compact />
+        <DocEditor node={node} compact registerActive />
       </div>
     </div>
   )

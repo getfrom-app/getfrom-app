@@ -44,7 +44,7 @@ const TaskItemLinked = TaskItem.extend({
   },
 })
 
-export default function DocEditor({ node, compact }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean }) {
+export default function DocEditor({ node, compact, registerActive }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean; registerActive?: boolean }) {
   useStore()
   const navigate = useNavigate()
   const saveTimer = useRef<number | null>(null)
@@ -237,14 +237,17 @@ export default function DocEditor({ node, compact }: { node: { id: string; body?
   }, [editor, node.id])
 
   // Registrar el editor activo para la barra de formato de PÁGINA (DocInspector, columna
-  // derecha). En el LIENZO (compact) NO se registra: el formato va en la barra flotante y
-  // la columna derecha debe seguir siendo la del contexto/tarea, no el inspector de doc.
+  // derecha). En el LIENZO (compact) normalmente NO se registra: el formato va en la barra
+  // flotante y la columna derecha es la del contexto/tarea. EXCEPCIÓN: `registerActive` (lo usa
+  // `LienzoDocPanel`, el panel de documento del lienzo) SÍ registra aunque sea compact — así
+  // conserva el autofocus + la barra flotante al seleccionar, Y ADEMÁS obtiene la barra de
+  // formato persistente de `DocInspector` arriba, reutilizada tal cual.
   useEffect(() => {
-    if (!editor || compact) return
+    if (!editor || (compact && !registerActive)) return
     setDocEditor(editor, insertImage)
     return () => setDocEditor(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, compact])
+  }, [editor, compact, registerActive])
 
   if (!editor) return null
 
