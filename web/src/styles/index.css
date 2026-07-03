@@ -7479,6 +7479,10 @@ textarea:focus-visible,
 
 /* ── Editor de DOCUMENTO (TipTap) ── */
 .doc-editor .ProseMirror { outline: none; font-size: 16px; line-height: 1.72; color: var(--text, #1a1a1a); min-height: 320px; }
+/* En el LIENZO (tarjeta compacta) NO hay altura mínima: una tarjeta de texto recién creada
+   (doble clic → una línea vacía) no debe reservar 320px — hacía que el cursor pareciera
+   nacer lejos del punto exacto donde se hizo clic. La página en solitario sí la conserva. */
+.doc-editor--compact .ProseMirror { min-height: 0; }
 .doc-editor .ProseMirror p { margin: 0.45em 0; }
 .doc-editor .ProseMirror h1 { font-size: 1.8em; font-weight: 700; margin: 0.6em 0 0.2em; line-height: 1.25; }
 .doc-editor .ProseMirror h2 { font-size: 1.4em; font-weight: 700; margin: 0.6em 0 0.2em; line-height: 1.3; }

@@ -169,7 +169,10 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       TaskList,
       TaskItemLinked.configure({ nested: true }),
       Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { rel: 'noopener nofollow' } }),
-      Placeholder.configure({ placeholder: 'Escribe tu documento…' }),
+      // Sin placeholder en el lienzo (compact): al crear un texto con doble clic, el
+      // «Escribe tu documento…» centrado quedaba raro sobre una tarjeta recién nacida.
+      // En la página en solitario de un documento sí ayuda, se mantiene.
+      Placeholder.configure({ placeholder: compact ? '' : 'Escribe tu documento…' }),
       Image.configure({ inline: false, allowBase64: false }),
     ],
     content: node.body || '',

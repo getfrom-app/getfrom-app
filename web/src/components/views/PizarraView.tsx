@@ -282,6 +282,9 @@ interface WBData { version: number; strokes: WBStroke[]; texts?: WBText[]; tasks
 type PizClipCard = { text: string; body: string | null; types: string[]; dx: number; dy: number; sc: number; w: number }
 type PizClip = { strokes: WBStroke[]; cards: PizClipCard[]; text: string; ts: number }
 let pizarraClipboard: PizClip | null = null
+// Al abrir/recargar Fromly, volar UNA VEZ al día de hoy (nivel de módulo: sobrevive a
+// remontajes de PizarraView dentro de la misma sesión, solo se resetea con una recarga real).
+let hasFlownToTodayOnLoad = false
 
 function parsePizarra(body: string | null | undefined): WBData {
   const def: WBData = { version: 1, strokes: [], texts: [], tasks: [] }
@@ -886,6 +889,18 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     flyToArea(day.id)
     setTimeout(() => flyToArea(day.id), 90)
   }, [flyToArea])
+
+  // Al ABRIR/RECARGAR la app, aterrizar en el día de hoy — no donde quedó la cámara guardada
+  // la última vez. Es la MISMA función que el botón «Ir a hoy»: también dispara
+  // `from:open-detail` → el breadcrumb refleja la jerarquía (Agenda › hoy) dentro del ÚNICO
+  // lienzo, no una «página» aparte. Solo una vez por carga real (ver `hasFlownToTodayOnLoad`),
+  // para no interrumpir la navegación normal dentro de la misma sesión.
+  useEffect(() => {
+    if (!globalCanvas || hasFlownToTodayOnLoad) return
+    hasFlownToTodayOnLoad = true
+    flyToToday()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalCanvas])
 
   // Color de acento de un contexto (`_tagColor`) — desde el menú de clic derecho.
   const setContextAccentColor = useCallback((id: string, color: string) => {
