@@ -2,12 +2,15 @@
  * SearchPanel — Panel de búsqueda lateral derecho
  * Reemplaza el buscador expandible del topbar con un panel tipo MagicChat
  */
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
+import type { Node } from '../../types'
 import { createFilterShortcut, getAtajosNode, getShortcutData } from '../../utils/atajosHelper'
 import { findContextRoot } from '../../utils/rootLookup'
+import { isDocNode, firstLineTitle } from '../../utils/docNode'
+import { isMarkedContext } from '../../utils/cajones'
 
 interface Props {
   filterText: string
@@ -21,38 +24,79 @@ interface Props {
 /** Constante del filtro especial "Sin clasificar" (debe coincidir con ContextListPanel). */
 const UNCLASSIFIED_FILTER_ID = '__unclassified__'
 
-const TYPE_CHIPS = [
-  { labelKey: 'search.chipNote',     query: 'nota' },
-  { labelKey: 'search.chipTask',     query: 'tarea' },
-  { labelKey: 'search.chipEvent',    query: 'evento' },
-  { labelKey: 'search.chipDocument', query: 'documento' },
-  { labelKey: 'search.chipPdf',      query: 'pdf' },
-  { labelKey: 'search.chipImage',    query: 'imagen' },
-  { labelKey: 'search.chipLink',     query: 'enlace' },
-  { labelKey: 'search.chipFile',     query: 'archivo' },
+// ── Taxonomía canvas-first: los tipos REALES de elementos del lienzo ──────────
+// (Fusiona nota+documento en «texto»; fuera «cajón». Todo es un elemento del lienzo.)
+type ElemKind = 'text' | 'task' | 'event' | 'pdf' | 'image' | 'link' | 'context'
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', pdf: '📄', image: '🖼', link: '🔗', context: '📁' }
+const TYPE_CHIPS: { k: ElemKind; labelKey: string }[] = [
+  { k: 'text',    labelKey: 'search.chipText' },
+  { k: 'task',    labelKey: 'search.chipTask' },
+  { k: 'event',   labelKey: 'search.chipEvent' },
+  { k: 'pdf',     labelKey: 'search.chipPdf' },
+  { k: 'image',   labelKey: 'search.chipImage' },
+  { k: 'link',    labelKey: 'search.chipLink' },
+  { k: 'context', labelKey: 'search.chipContext' },
 ]
 const TIME_CHIPS = [
-  { labelKey: 'search.chipToday',     query: 'hoy' },
-  { labelKey: 'search.chipThisWeek',  query: 'semana' },
-  { labelKey: 'search.chipThisMonth', query: 'mes' },
-  { labelKey: 'search.chipPast',      query: 'pasado' },
-  { labelKey: 'search.chipFuture',    query: 'futuro' },
+  { q: 'hoy',     labelKey: 'search.chipToday' },
+  { q: 'semana',  labelKey: 'search.chipThisWeek' },
+  { q: 'mes',     labelKey: 'search.chipThisMonth' },
+  { q: 'pasado',  labelKey: 'search.chipPast' },
+  { q: 'futuro',  labelKey: 'search.chipFuture' },
 ]
 const STATUS_CHIPS = [
-  { labelKey: 'search.chipPending',  query: 'pendiente' },
-  { labelKey: 'search.chipDone',     query: 'hecho' },
-  { labelKey: 'search.chipNoDate',   query: 'sin-fecha' },
-]
-const BUCLE_CHIPS = [
-  { labelKey: 'search.chipCaptura', query: 'captura' },
-  { labelKey: 'search.chipCajon', query: 'cajon' },
+  { q: 'pendiente', labelKey: 'search.chipPending' },
+  { q: 'hecho',     labelKey: 'search.chipDone' },
+  { q: 'sin-fecha', labelKey: 'search.chipNoDate' },
 ]
 
-function cartesian(arrays: string[][]): string[][] {
-  return arrays.reduce<string[][]>(
-    (acc, arr) => acc.flatMap(combo => arr.map(item => [...combo, item])),
-    [[]]
-  )
+const ed = (n: Node): Record<string, unknown> => { try { return JSON.parse(n.extraData || '{}') } catch { return {} } }
+const stripHtml = (html?: string | null) => (html || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+
+/** Clasifica un nodo en un tipo de elemento del lienzo, o null si NO es un elemento buscable
+ *  (línea suelta, nodo de sistema, nodo ya absorbido dentro de una tarjeta…). */
+function classify(n: Node): ElemKind | null {
+  if (n.deletedAt) return null
+  const e = ed(n)
+  if (e._absorbedBy != null) return null        // oculto dentro de un bloque → no es elemento suelto
+  if (isMarkedContext(n)) return 'context'
+  if (n.status != null) return 'task'
+  if (n.isEvent) return 'event'
+  const rt = e._resourceType as string | undefined
+  if (rt === 'image' || e._imageUrl) return 'image'
+  if (rt === 'pdf') return 'pdf'
+  if (n.isResource || e._resourceUrl || e._resource) return 'link'
+  if (isDocNode(n) || store.isNote(n)) return 'text'
+  return null
+}
+
+/** ¿Pasa el filtro de TIEMPO (por `due`)? Sin fecha nunca pasa un filtro temporal. */
+function matchesTime(n: Node, times: Set<string>): boolean {
+  if (times.size === 0) return true
+  if (!n.due) return false
+  const d = new Date(n.due); const now = new Date()
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const day = 24 * 3600 * 1000
+  for (const t of times) {
+    if (t === 'hoy' && d >= startOfToday && d < new Date(startOfToday.getTime() + day)) return true
+    if (t === 'semana' && d >= startOfToday && d < new Date(startOfToday.getTime() + 7 * day)) return true
+    if (t === 'mes' && d >= startOfToday && d < new Date(startOfToday.getTime() + 31 * day)) return true
+    if (t === 'pasado' && d < startOfToday) return true
+    if (t === 'futuro' && d >= new Date(startOfToday.getTime() + day)) return true
+  }
+  return false
+}
+
+/** ¿Pasa el filtro de ESTADO (pendiente/hecho/sin-fecha)? */
+function matchesStatus(n: Node, statuses: Set<string>): boolean {
+  if (statuses.size === 0) return true
+  for (const s of statuses) {
+    if (s === 'pendiente' && n.status === 'pending') return true
+    if (s === 'hecho' && n.status === 'done') return true
+    if (s === 'sin-fecha' && !n.due) return true
+  }
+  return false
 }
 
 export default function SearchPanel({ filterText, onFilter, onClose, onSelectContext, activeContextId }: Props) {
@@ -60,107 +104,67 @@ export default function SearchPanel({ filterText, onFilter, onClose, onSelectCon
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const [chipTypes,    setChipTypes]    = useState<Set<string>>(new Set())
-  const [chipTimes,    setChipTimes]    = useState<Set<string>>(new Set())
-  const [chipStatuses, setChipStatuses] = useState<Set<string>>(new Set())
-  const [chipBucles,   setChipBucles]   = useState<Set<string>>(new Set())
-  const [chipContexts, setChipContexts] = useState<Set<string>>(new Set())
+  const [query, setQuery] = useState('')
+  const [types, setTypes] = useState<Set<ElemKind>>(new Set())
+  const [times, setTimes] = useState<Set<string>>(new Set())
+  const [statuses, setStatuses] = useState<Set<string>>(new Set())
+  const [limit, setLimit] = useState(60)
 
-  // Todos los contextos del nodo 🧠 Contexto (sin useMemo: s.nodes.size no detecta deletedAt)
+  // Contextos del nodo 🧠 Contexto → chip que VUELA a la zona del contexto en el lienzo.
   const contextRoot = findContextRoot()
   const contextChips = contextRoot
-    ? s.children(contextRoot.id)
-        .filter(n => !n.deletedAt && n.text?.trim())
-        .map(n => {
-          const slug = n.text.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '')
-          return { label: n.text, query: `@${slug}` }
-        })
+    ? s.children(contextRoot.id).filter(n => !n.deletedAt && n.text?.trim()).map(n => ({ id: n.id, label: n.text }))
     : []
 
-  // Focus on mount
+  // Al montar: enfocar + limpiar el filtro de RUTA (para que el lienzo quede visible; la
+  // búsqueda ahora vive DENTRO del panel y vuela a los elementos, no cambia la vista central).
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 50)
+    onFilter('')
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Close on Escape
   useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        handleClose()
-      }
-    }
+    function handleKey(e: KeyboardEvent) { if (e.key === 'Escape') onClose() }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [onClose])
 
-  function handleClose() {
-    onFilter('')
-    clearAllChips()
-    onClose()
-  }
+  const active = query.trim() !== '' || types.size > 0 || times.size > 0 || statuses.size > 0
 
-  function clearAllChips() {
-    setChipTypes(new Set())
-    setChipTimes(new Set())
-    setChipStatuses(new Set())
-    setChipBucles(new Set())
-    setChipContexts(new Set())
-  }
-
-  function toggleChip(query: string, group: 'type' | 'time' | 'status' | 'bucle' | 'context') {
-    const setter = { type: setChipTypes, time: setChipTimes, status: setChipStatuses, bucle: setChipBucles, context: setChipContexts }[group]
-    setter(prev => {
-      const next = new Set(prev)
-      next.has(query) ? next.delete(query) : next.add(query)
-      return next
-    })
-    window.dispatchEvent(new CustomEvent('from:filter-changed', { detail: { value: query } }))
-  }
-
-  function isChipSelected(query: string) {
-    return chipTypes.has(query) || chipTimes.has(query) || chipStatuses.has(query) || chipBucles.has(query) || chipContexts.has(query)
-  }
-
-  // Recalcular query cuando cambian los chips
-  useEffect(() => {
-    const types    = [...chipTypes]
-    const times    = [...chipTimes]
-    const statuses = [...chipStatuses]
-    const bucles   = [...chipBucles]
-    const contexts = [...chipContexts]
-
-    if (!types.length && !times.length && !statuses.length && !bucles.length && !contexts.length) {
-      onFilter('')
-      return
+  // Resultados: TODOS los elementos del lienzo que casan (texto/tarea/evento/pdf/imagen/
+  // enlace/contexto). Sin búsqueda → los más recientes. Clic → vuela al lienzo + abre panel.
+  const results = useMemo(() => {
+    void s.nodesVersion
+    const nq = norm(query.trim())
+    const out: { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string }[] = []
+    for (const n of store.allActive()) {
+      const kind = classify(n); if (!kind) continue
+      if (types.size && !types.has(kind)) continue
+      if ((times.size || statuses.size) && kind !== 'task' && kind !== 'event') continue // tiempo/estado = solo tareas/eventos
+      if (!matchesTime(n, times)) continue
+      if (!matchesStatus(n, statuses)) continue
+      // Cuerpos que NO son texto (trazos de pizarra) → sin snippet (mostrarían JSON feo).
+      const snippet = (n.body || '').trimStart().startsWith('```from-pizarra') ? '' : stripHtml(n.body)
+      const title = (n.text || firstLineTitle(n.body) || snippet.slice(0, 60) || t('common.noTitle'))
+      if (nq && !norm(title).includes(nq) && !norm(snippet).includes(nq)) continue
+      out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '' })
     }
-
-    const groups = [types, times, statuses, bucles, contexts].filter(g => g.length > 0)
-    const combos = cartesian(groups)
-    const query = combos.map(combo => combo.join(' y ')).join(' o ')
-    onFilter(query + ' ')
+    out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    return out
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chipTypes, chipTimes, chipStatuses, chipBucles, chipContexts])
+  }, [query, types, times, statuses, s.nodesVersion, t])
 
-  function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const val = e.target.value
-    onFilter(val)
-    if (val.trim().length > 0) {
-      window.dispatchEvent(new CustomEvent('from:filter-changed', { detail: { value: val } }))
-    }
-  }
+  const shown = results.slice(0, limit)
 
-  // Chip renderer — texto puro, sin caja, igual que el dropdown flotante anterior
-  function renderChip(c: { labelKey?: string; label?: string; query: string }, group: 'type' | 'time' | 'status' | 'bucle' | 'context') {
-    return (
-      <button
-        key={c.query}
-        className={`search-panel-chip ${isChipSelected(c.query) ? 'active' : ''}`}
-        onClick={() => toggleChip(c.query, group)}
-      >
-        {c.labelKey ? t(c.labelKey) : c.label}
-      </button>
-    )
+  function toggle<T>(set: Set<T>, setter: (s: Set<T>) => void, v: T) {
+    const next = new Set(set); next.has(v) ? next.delete(v) : next.add(v); setter(next); setLimit(60)
   }
+  function openResult(id: string) {
+    openNodeDetail(id) // abre el panel derecho según el tipo
+    window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } })) // y vuela a él
+  }
+  function clearAll() { setQuery(''); setTypes(new Set()); setTimes(new Set()); setStatuses(new Set()); setLimit(60) }
 
   return (
     <div
@@ -172,49 +176,87 @@ export default function SearchPanel({ filterText, onFilter, onClose, onSelectCon
         }
       }}
     >
-      {/* Input arriba — cursor visible */}
+      {/* Buscador */}
       <div className="search-panel-input-wrap">
         <input
           ref={inputRef}
           type="text"
           className="search-panel-input"
           placeholder={t('search.searchPlaceholder')}
-          value={filterText}
-          onChange={handleInputChange}
+          value={query}
+          onChange={e => { setQuery(e.target.value); setLimit(60) }}
         />
-        {filterText && (
-          <button className="search-panel-clear" onClick={() => { onFilter(''); clearAllChips() }}>×</button>
-        )}
+        {active && <button className="search-panel-clear" onClick={clearAll}>×</button>}
       </div>
 
-      {/* Chips debajo */}
+      {/* Chips de TIPO (reales) + tiempo/estado + contextos (vuelan) */}
       <div className="search-panel-chips">
-        <div className="search-panel-row">{TYPE_CHIPS.map(c => renderChip(c, 'type'))}</div>
-        <div className="search-panel-row">{TIME_CHIPS.map(c => renderChip(c, 'time'))}</div>
         <div className="search-panel-row">
-          {STATUS_CHIPS.map(c => renderChip(c, 'status'))}
-          {BUCLE_CHIPS.map(c => renderChip(c, 'bucle'))}
+          {TYPE_CHIPS.map(c => (
+            <button key={c.k} className={`search-panel-chip ${types.has(c.k) ? 'active' : ''}`} onClick={() => toggle(types, setTypes, c.k)}>{t(c.labelKey)}</button>
+          ))}
         </div>
-        {(contextChips.length > 0 || onSelectContext) && (
+        <div className="search-panel-row">
+          {TIME_CHIPS.map(c => (
+            <button key={c.q} className={`search-panel-chip ${times.has(c.q) ? 'active' : ''}`} onClick={() => toggle(times, setTimes, c.q)}>{t(c.labelKey)}</button>
+          ))}
+        </div>
+        <div className="search-panel-row">
+          {STATUS_CHIPS.map(c => (
+            <button key={c.q} className={`search-panel-chip ${statuses.has(c.q) ? 'active' : ''}`} onClick={() => toggle(statuses, setStatuses, c.q)}>{t(c.labelKey)}</button>
+          ))}
+          {onSelectContext && (
+            <button
+              className={`search-panel-chip ${activeContextId === UNCLASSIFIED_FILTER_ID ? 'active' : ''}`}
+              onClick={() => onSelectContext(UNCLASSIFIED_FILTER_ID)}
+            >
+              {t('autoCtx.unclassifiedFilter')}
+            </button>
+          )}
+        </div>
+        {contextChips.length > 0 && (
           <div className="search-panel-row">
-            {contextChips.map(c => renderChip(c, 'context'))}
-            {/* Filtro especial: nodos de la Agenda sin contexto asignado */}
-            {onSelectContext && (
-              <button
-                className={`search-panel-chip ${activeContextId === UNCLASSIFIED_FILTER_ID ? 'active' : ''}`}
-                onClick={() => onSelectContext(UNCLASSIFIED_FILTER_ID)}
-              >
-                {t('autoCtx.unclassifiedFilter')}
-              </button>
-            )}
+            {contextChips.map(c => (
+              <button key={c.id} className="search-panel-chip" title={t('search.jumpToContext', 'Ir al contexto')} onClick={() => openResult(c.id)}>{c.label}</button>
+            ))}
           </div>
         )}
       </div>
 
-      {/* Lista de paneles guardados + nodo vacío para crear nuevo */}
-      <SavedPanelsList onApply={(q) => onFilter(q)} activeQuery={filterText} />
+      {/* Resultados — todos los elementos del lienzo que casan; clic vuela + abre panel */}
+      <div className="rc-section-label" style={{ marginTop: 4 }}>
+        {active ? t('search.resultsCount', { count: results.length, defaultValue: '{{count}} resultados' }) : t('search.recentElements', 'Recientes')}
+      </div>
+      {shown.length === 0 ? (
+        <div style={{ padding: '8px 12px', fontSize: 13, color: 'var(--text-tertiary)' }}>{t('search.noResults', 'Sin resultados')}</div>
+      ) : shown.map(r => (
+        <div
+          key={r.id}
+          onClick={() => openResult(r.id)}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 8px 5px 12px', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)', borderRadius: 6 }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+        >
+          <span style={{ fontSize: 14, flexShrink: 0 }}>{KIND_ICON[r.kind]}</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--text,#222)' }}>{r.title}</div>
+            {r.snippet && r.snippet !== r.title && (
+              <div style={{ fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.snippet}</div>
+            )}
+          </div>
+        </div>
+      ))}
+      {results.length > limit && (
+        <button
+          onClick={() => setLimit(l => l + 60)}
+          style={{ display: 'block', width: '100%', padding: '6px', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--accent)' }}
+        >
+          {t('elements.loadMore', { count: results.length - limit, defaultValue: 'Ver más ({{count}})' })}
+        </button>
+      )}
 
-      {/* Favoritos — siempre a mano, independientemente de los filtros */}
+      {/* Filtros guardados (listas inteligentes) + Favoritos — siempre accesibles */}
+      <SavedPanelsList onApply={(q) => onFilter(q)} activeQuery={filterText} />
       <FavoritesSection />
     </div>
   )
