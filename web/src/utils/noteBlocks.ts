@@ -39,27 +39,51 @@ function isBlockingKind(n: Node): boolean {
   if (isDocNode(n) && !isFromNoteBlock(n)) return true // _doc propio = blocking; _fromNote = aplanable
   if (n.isResource || n.isEvent || n.isDiaryEntry) return true
   const e = ed(n)
-  if (e._resource || e.viewBlock || e._agentDef === '1' || e._promptDef === '1' || e._tagDefinition || e._perfilIA === '1' || e.temporalType) return true
+  // `viewBlock:'lista'` NO bloquea: es una NOTA mostrada como lista/outline (se convierte a
+  // texto). Las demás vistas (kanban/tabla/pizarra/calendario/documento) sí son estructuras.
+  if (e._resource || (e.viewBlock && e.viewBlock !== 'lista') || e._agentDef === '1' || e._promptDef === '1' || e._tagDefinition || e._perfilIA === '1' || e.temporalType) return true
   return false
 }
 
-/** ¿Todo el subárbol de `n` es texto/tareas (nada «blocking»)? → aplanable en un bloque. */
-function subtreeConvertible(n: Node): boolean {
-  if (isBlockingKind(n)) return false
-  for (const k of activeChildren(n.id)) if (!subtreeConvertible(k)) return false
-  return true
+/** Elementos que NO son texto pero SÍ se conservan como su PROPIA tarjeta/elemento del lienzo
+ *  cuando aparecen dentro de una nota: evento, recurso (PDF/imagen/archivo), vista (kanban/
+ *  tabla/lista/pizarra) y sub-documento PROPIO del usuario. Al convertir la nota, estos se
+ *  EXTRAEN (se reparentan como hermanos de la tarjeta), no se aplanan → no se pierden.
+ *  Un contexto/diaria/agente/prompt/tag/perfil/temporal NO es extraíble → su nota madre no se
+ *  convierte (son estructura especial, no se tocan). */
+function isExtractable(n: Node): boolean {
+  if (isMarkedContext(n) || n.isDiaryEntry) return false
+  const e = ed(n)
+  if (e._agentDef === '1' || e._promptDef === '1' || e._tagDefinition || e._perfilIA === '1' || e.temporalType) return false
+  if (e.viewBlock === 'lista') return false // vista de lista = nota → se aplana, no se extrae
+  if (n.isResource || n.isEvent || e._resource || e._resourceUrl || e.viewBlock) return true
+  if (isDocNode(n)) return !isFromNoteBlock(n) // sub-doc PROPIO → aparte; `_fromNote` → se aplana
+  return false
 }
 
-/** ¿Es una nota convertible de ALTO NIVEL? Tiene contenido, todo su subárbol es texto/tareas,
- *  y su padre NO es a su vez una nota convertible (para no partir la jerarquía). */
+/** ¿El subárbol contiene un bloqueante que NO sabemos extraer (contexto/diaria/agente/…)?
+ *  Si lo tiene, la nota NO se convierte: se deja intacta (demasiado especial para tocarla). */
+function hasUnhandledBlocker(n: Node): boolean {
+  for (const k of activeChildren(n.id)) {
+    if (isBlockingKind(k) && !isExtractable(k)) return true
+    if (hasUnhandledBlocker(k)) return true
+  }
+  return false
+}
+
+/** ¿Es una nota convertible de ALTO NIVEL? Tiene hijos, no es ella misma un tipo especial,
+ *  no contiene bloqueantes no-extraíbles, y su padre NO es a su vez una nota convertible
+ *  (para no partir la jerarquía: la sub-sección se aplana dentro del padre, sus elementos no
+ *  texto se extraen). */
 function isTopConvertible(n: Node): boolean {
   if (isDocNode(n)) return false // YA es un bloque (aunque sea `_fromNote`): no se re-convierte
+  if (ed(n)._absorbedBy != null) return false // ya está OCULTO dentro de un bloque → no es nota suelta
   if (isBlockingKind(n)) return false
   const kids = activeChildren(n.id)
   if (kids.length === 0) return false            // hoja: no es nota
-  if (!kids.every(subtreeConvertible)) return false
+  if (hasUnhandledBlocker(n)) return false
   const parent = n.parentId ? store.getNode(n.parentId) : null
-  if (parent && !parent.deletedAt && !isBlockingKind(parent) && activeChildren(parent.id).length > 0 && activeChildren(parent.id).every(subtreeConvertible)) {
+  if (parent && !parent.deletedAt && !isDocNode(parent) && !isBlockingKind(parent) && !hasUnhandledBlocker(parent) && activeChildren(parent.id).length > 0) {
     return false // el padre se convertirá y aplanará esta sub-sección dentro
   }
   return true
@@ -96,8 +120,10 @@ function kindOf(n: Node): string {
   return 'texto'
 }
 function findBlockingDescendant(n: Node): Node | null {
+  // Solo bloqueantes NO extraíbles (contexto/diaria/agente/…): esos son los que impiden
+  // convertir. Eventos/recursos/vistas/sub-docs YA no bloquean (se extraen).
   for (const k of activeChildren(n.id)) {
-    if (isBlockingKind(k)) return k
+    if (isBlockingKind(k) && !isExtractable(k)) return k
     const deep = findBlockingDescendant(k)
     if (deep) return deep
   }
@@ -116,8 +142,8 @@ export function diagnoseNotes(): { convertible: number; reasons: Record<string, 
     else if (isBlockingKind(n)) reason = 'la-nota-es-' + kindOf(n)
     else {
       const parent = n.parentId ? store.getNode(n.parentId) : null
-      if (parent && !parent.deletedAt && !isBlockingKind(parent) && activeChildren(parent.id).length > 0 && activeChildren(parent.id).every(subtreeConvertible)) reason = 'es-subseccion (se aplana en su nota padre)'
-      else { const b = findBlockingDescendant(n); reason = b ? 'contiene-' + kindOf(b) : 'otro' }
+      if (parent && !parent.deletedAt && !isDocNode(parent) && !isBlockingKind(parent) && !hasUnhandledBlocker(parent) && activeChildren(parent.id).length > 0) reason = 'es-subseccion (se aplana en su nota padre)'
+      else { const b = findBlockingDescendant(n); reason = b ? 'contiene-no-extraible-' + kindOf(b) : 'otro' }
     }
     reasons[reason] = (reasons[reason] || 0) + 1
     if (examples.length < 10 && !reason.startsWith('es-subseccion')) examples.push(`${(n.text || '(sin título)').slice(0, 32)} → ${reason}`)
@@ -169,25 +195,28 @@ function taskToHtml(k: Node): string {
 
 /** Recorre el subárbol construyendo el body y recogiendo qué nodos ocultar (líneas) o
  *  enlazar como tarea (`_taskEmbed`). */
-function walkSubtree(id: string, depth: number, parts: string[], absorb: string[], tasks: string[], undoc: string[]): void {
+function walkSubtree(id: string, depth: number, parts: string[], absorb: string[], tasks: string[], undoc: string[], extract: string[]): void {
   for (const k of activeChildren(id)) {
+    // Elemento NO texto (evento/recurso/vista/sub-doc propio) → se EXTRAE como elemento
+    // aparte del lienzo; no se aplana ni se recorre (se conserva íntegro con su subárbol).
+    if (isExtractable(k)) { extract.push(k.id); continue }
     const isTask = k.status !== null
     const kids = activeChildren(k.id)
     if (isTask) {
       parts.push(taskToHtml(k))
       tasks.push(k.id)
-      if (kids.length) walkSubtree(k.id, depth + 1, parts, absorb, tasks, undoc)
+      if (kids.length) walkSubtree(k.id, depth + 1, parts, absorb, tasks, undoc, extract)
     } else if (isFromNoteBlock(k)) {
       // Sub-bloque YA convertido (de una nota): título = encabezado, se DES-CONVIERTE y su
       // contenido (líneas ya absorbidas) se re-aplana dentro de esta nota madre.
       parts.push(headingHtml(k.text || '', depth))
       undoc.push(k.id)
-      walkSubtree(k.id, depth + 1, parts, absorb, tasks, undoc)
+      walkSubtree(k.id, depth + 1, parts, absorb, tasks, undoc, extract)
     } else if (kids.length) {
       // Sub-sección: su título = encabezado, y su contenido se aplana debajo.
       parts.push(headingHtml(k.text || '', depth))
       absorb.push(k.id)
-      walkSubtree(k.id, depth + 1, parts, absorb, tasks, undoc)
+      walkSubtree(k.id, depth + 1, parts, absorb, tasks, undoc, extract)
     } else {
       parts.push(lineToHtml(k.text || ''))
       absorb.push(k.id)
@@ -204,14 +233,19 @@ export function convertNoteToBlock(id: string): boolean {
   const absorb: string[] = []
   const tasks: string[] = []
   const undoc: string[] = []
+  const extract: string[] = []
   if ((n.text || '').trim()) parts.push(`<h2>${renderInlineToHtml((n.text || '').trim())}</h2>`)
-  walkSubtree(id, 0, parts, absorb, tasks, undoc)
+  walkSubtree(id, 0, parts, absorb, tasks, undoc, extract)
   const body = parts.join('') || '<p></p>'
 
   store.beginBatch?.()
   try {
     const e = ed(n)
     e[DOC] = '1'; e[CTEXT] = '1'; e._fromNote = '1'
+    if (e.viewBlock === 'lista') { e._prevViewBlock = 'lista'; delete e.viewBlock } // deja de ser vista de lista
+    // Si la nota YA tenía un body (p. ej. trazos de pizarra en una nota-lista), lo guardamos
+    // antes de sobrescribirlo con el texto aplanado → NADA se pierde (revert lo restaura).
+    if ((n.body || '').trim()) e._prevBody = n.body
     if (e._pinW == null) e._pinW = '360'
     store.updateNode(id, { body, extraData: JSON.stringify(e) })
     for (const lid of absorb) {
@@ -230,6 +264,16 @@ export function convertNoteToBlock(id: string): boolean {
       const te = (() => { const x = store.getNode(tid); return x ? ed(x) : {} })()
       te._taskEmbed = '1'; te._absorbedBy = id // oculta la tarea suelta; el body la muestra como casilla
       store.updateNode(tid, { extraData: JSON.stringify(te) })
+    }
+    // Elementos NO texto (evento/recurso/vista/sub-doc): se EXTRAEN como HERMANOS de la
+    // tarjeta (mismo padre que la nota) para que sigan siendo su propio elemento del lienzo
+    // y no se pierdan. `_extractedFrom`+`_prevParent` = reversible.
+    for (const xid of extract) {
+      const x = store.getNode(xid); if (!x) continue
+      const xe = ed(x)
+      xe._extractedFrom = id
+      xe._prevParent = x.parentId ?? ''
+      store.updateNode(xid, { parentId: n.parentId ?? null, extraData: JSON.stringify(xe) })
     }
   } finally {
     store.endBatch?.()
@@ -313,6 +357,19 @@ export function convertAllNotesToBlocks(): number {
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   ;(window as unknown as Record<string, unknown>).__noteBlocks = {
     findConvertibleNotes, diagnoseNotes, convertNoteToBlock, convertAllNotesToBlocks, revertAllNoteBlocks, inspectUnabsorbed,
+    why(id: string) {
+      const n = store.getNode(id)
+      if (!n) return { err: 'no node' }
+      const kids = activeChildren(n.id)
+      const parent = n.parentId ? store.getNode(n.parentId) : null
+      return {
+        isNote: store.isNote(n), isDoc: isDocNode(n), isBlocking: isBlockingKind(n),
+        kids: kids.length, hasUnhandledBlocker: hasUnhandledBlocker(n),
+        parentTitle: (parent?.text || '').slice(0, 24), parentBlocking: parent ? isBlockingKind(parent) : null,
+        parentIsDoc: parent ? isDocNode(parent) : null,
+        top: isTopConvertible(n),
+      }
+    },
   }
 }
 
@@ -333,13 +390,23 @@ export function revertAllNoteBlocks(): number {
   }
   store.beginBatch?.()
   try {
+    // 1) Restaurar los elementos EXTRAÍDOS a su padre original (reparentar de vuelta).
     for (const node of store.allActive()) {
-      // Revierte TODO bloque venido de una nota: los marcados `_fromNote` Y los antiguos
-      // (convertidos antes de la marca), reconocidos por tener líneas absorbidas.
+      const e = ed(node)
+      if (e._extractedFrom == null) continue
+      const prev = typeof e._prevParent === 'string' ? e._prevParent : ''
+      delete e._extractedFrom; delete e._prevParent
+      store.updateNode(node.id, { parentId: prev || null, extraData: JSON.stringify(e) })
+    }
+    // 2) Des-convertir los bloques de nota: `_fromNote` Y los antiguos (con líneas absorbidas).
+    for (const node of store.allActive()) {
       if (!isFromNoteBlock(node)) continue
       const e = ed(node)
       delete e[DOC]; delete e[CTEXT]; delete e._fromNote
-      store.updateNode(node.id, { extraData: JSON.stringify(e), body: null })
+      if (e._prevViewBlock) { e.viewBlock = e._prevViewBlock; delete e._prevViewBlock } // restaurar vista de lista
+      const restoreBody = typeof e._prevBody === 'string' ? e._prevBody : null // restaurar body previo (pizarra…)
+      delete e._prevBody
+      store.updateNode(node.id, { extraData: JSON.stringify(e), body: restoreBody })
       clearSubtree(node.id)
       n++
     }

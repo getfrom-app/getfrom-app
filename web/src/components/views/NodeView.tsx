@@ -117,6 +117,15 @@ export default function NodeView() {
         }, 30)
         return
       }
+      // TEXTO DEL LIENZO (`_doc`): ya no se abre como página/outliner. Se abre en el LIENZO
+      // (home) con su panel de documento en la columna derecha (leer/editar + favorito,
+      // publicar, eliminar…). Igual que seleccionar la tarjeta. Así favoritos/búsqueda de una
+      // nota convertida llevan al lienzo, no al outliner antiguo.
+      if (ed._doc === '1') {
+        navigate('/', { replace: true })
+        setTimeout(() => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: node.id } })), 40)
+        return
+      }
     } catch { /* nodo normal, continuar */ }
   }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
