@@ -188,7 +188,7 @@ export default function WFTopBar({
       <button
         className={`wf-topbar-btn ${rightPanel === 'filter' ? 'active' : ''}`}
         onClick={onToggleSearch}
-        title={`${t('searchPanel.favorites')} (F)`}
+        title={t('searchPanel.favorites')}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/>
@@ -214,7 +214,7 @@ export default function WFTopBar({
       {/* Buscar (Elementos): el buscador universal del lienzo, filtrable por tipo (Heptabase) */}
       <button
         className={`wf-topbar-btn ${rightPanel === 'elements' ? 'active' : ''}`}
-        title={t('common.search')}
+        title={`${t('common.search')} (F)`}
         onClick={() => window.dispatchEvent(new CustomEvent('from:open-elements-panel', { detail: { nodeId: ensureCanvasRoot().id } }))}
       >
         <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">

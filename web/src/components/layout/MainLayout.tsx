@@ -975,10 +975,12 @@ export default function MainLayout() {
         e.preventDefault()
         togglePanel('magic')
       }
-      // ⌘F → toggle filtro/búsqueda (configurable)
+      // ⌘F → BUSCAR: abre la columna Elementos (el buscador universal del lienzo). Toggle:
+      // si ya está abierta, vuelve a la columna por defecto (Favoritos+Recientes).
       if (e.key === getHotkeyKey('toggle-filter') && (e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey) {
         e.preventDefault()
-        togglePanel('filter')
+        if (rightPanel === 'elements') setRightPanel('filter')
+        else window.dispatchEvent(new CustomEvent('from:open-elements-panel', { detail: { nodeId: ensureCanvasRoot().id } }))
       }
       // ←/→ → ciclar entre paneles (orden = iconos del topbar, sin modificador, sin input activo)
       if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey) {
