@@ -77,6 +77,7 @@ import DocInspector from '../views/DocInspector'
 import PdfContainer from '../pdf/PdfContainer'
 import ElementsPanel from '../panels/ElementsPanel'
 import LienzoDocPanel from '../panels/LienzoDocPanel'
+import PublishButton from '../PublishButton'
 import { isDocNode } from '../../utils/docNode'
 import { useHasActiveDocEditor } from '../../utils/docEditorStore'
 // Componentes pesados: lazy-loaded para reducir el bundle inicial
@@ -1383,17 +1384,36 @@ export default function MainLayout() {
             const type = (ed._resourceType as string) || ''
             const key = ed._resourceKey as string | undefined
             if (!url) return <div style={{ padding: 16, color: 'var(--text-tertiary)' }}>{t('common.noContent', 'Sin contenido')}</div>
-            if (type === 'pdf') return <div style={{ height: '100%', overflow: 'hidden' }}><PdfContainer url={url} nodeId={detailNodeId} filename={n.text || 'PDF'} resourceKey={key} /></div>
+            // Cabecera con el botón 🌐 de publicar — misma función que en el panel de
+            // documento del lienzo, reutilizada aquí para recursos (PDF/imagen/archivo).
+            const publishHeader = (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '10px 14px', borderBottom: '1px solid var(--border-subtle,#eee)', flexShrink: 0 }}>
+                <span className="rc-section-label" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {n.text || t('common.noTitle')}
+                </span>
+                <PublishButton node={n} />
+              </div>
+            )
+            if (type === 'pdf') return (
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                {publishHeader}
+                <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}><PdfContainer url={url} nodeId={detailNodeId} filename={n.text || 'PDF'} resourceKey={key} /></div>
+              </div>
+            )
             if (type === 'image') return (
-              <div style={{ height: '100%', overflowY: 'auto', padding: 16 }}>
-                <div className="rc-section-label" style={{ marginBottom: 10 }}>{n.text || 'Imagen'}</div>
-                <img src={url} alt={n.text || ''} style={{ maxWidth: '100%', height: 'auto', borderRadius: 8, display: 'block' }} />
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                {publishHeader}
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 16 }}>
+                  <img src={url} alt={n.text || ''} style={{ maxWidth: '100%', height: 'auto', borderRadius: 8, display: 'block' }} />
+                </div>
               </div>
             )
             return (
-              <div style={{ padding: 16 }}>
-                <div className="rc-section-label" style={{ marginBottom: 10 }}>{n.text || 'Archivo'}</div>
-                <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>{t('common.open', 'Abrir')}</a>
+              <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                {publishHeader}
+                <div style={{ padding: 16 }}>
+                  <a href={url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent)' }}>{t('common.open', 'Abrir')}</a>
+                </div>
               </div>
             )
           })()}

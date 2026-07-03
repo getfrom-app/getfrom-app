@@ -5,6 +5,7 @@ import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { isDocNode } from './docNode'
 import { htmlToMarkdown, docStandaloneHtml } from './htmlMarkdown'
+import { publishNote, unpublishNote } from '../api/client'
 
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -78,6 +79,24 @@ export function exportNodePdf(node: Node) {
   w.document.close()
   w.focus()
   setTimeout(() => w.print(), 300)
+}
+
+// Publicar/despublicar un nodo — MISMA lógica que la 🌐 de NodeView.tsx (nota clásica),
+// reaprovechada aquí para el panel del lienzo (texto) y, donde tenga sentido, recursos
+// (PDF/imagen). El contenido se serializa igual que MD/HTML: `nodeAsMarkdown`.
+export async function publishNodePublicly(node: Node): Promise<string> {
+  const content = nodeAsMarkdown(node) || node.text || ''
+  const existingSlug = node.publicSlug || undefined
+  const result = await publishNote(node.text || 'Nota', content, existingSlug)
+  const url = `https://fromly.app/p/${result.slug}`
+  if (node.publicSlug !== result.slug) store.updateNode(node.id, { publicSlug: result.slug })
+  return url
+}
+
+export async function unpublishNodePublicly(node: Node): Promise<void> {
+  if (!node.publicSlug) return
+  await unpublishNote(node.publicSlug)
+  store.updateNode(node.id, { publicSlug: null })
 }
 
 export function copyNodeAsMarkdown(node: Node): Promise<void> {

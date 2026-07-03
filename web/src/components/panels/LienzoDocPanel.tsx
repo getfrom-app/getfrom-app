@@ -11,6 +11,7 @@ import { store, useStore } from '../../store/nodeStore'
 import DocEditor from '../views/DocEditor'
 import DocEditorBoundary from '../DocEditorBoundary'
 import DocInspector from '../views/DocInspector'
+import PublishButton from '../PublishButton'
 import { exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
 
 export default function LienzoDocPanel({ nodeId }: { nodeId: string }) {
@@ -39,6 +40,7 @@ export default function LienzoDocPanel({ nodeId }: { nodeId: string }) {
           style={{ background: 'none', border: '1px solid var(--border,#e2e2e2)', borderRadius: 6, cursor: 'pointer', fontSize: 11, padding: '4px 7px', color: 'var(--text-secondary,#666)' }}>
           PDF
         </button>
+        <PublishButton node={node} />
       </div>
       {/* Barra de formato PERSISTENTE, COMPACTA (una sola fila, mismo estilo que la barra
           flotante del lienzo) — la rejilla completa de `DocInspector` ocupaba media columna;

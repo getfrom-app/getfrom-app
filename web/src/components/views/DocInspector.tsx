@@ -29,6 +29,20 @@ export default function DocInspector({ compact }: { compact?: boolean } = {}) {
     else editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
   }
 
+  // Crear tarea en el punto del cursor — si está al PRINCIPIO de línea, esa línea se
+  // convierte en la casilla (nace ahí mismo); si no, se abre una línea VACÍA nueva
+  // debajo (al FINAL de la actual, no partiéndola por el cursor) y ES ESA la que se
+  // convierte, sin tocar ni una letra de lo que ya había escrito.
+  const insertTask = () => {
+    const { $from } = editor.state.selection
+    if ($from.parentOffset === 0) {
+      editor.chain().focus().toggleTaskList().run()
+      return
+    }
+    const endOfLine = $from.end($from.depth)
+    editor.chain().focus().setTextSelection(endOfLine).splitBlock().toggleTaskList().run()
+  }
+
   if (compact) {
     return (
       <div className="wf-format-toolbar" style={{ position: 'static', width: 'auto' }} onMouseDown={e => e.preventDefault()}>
@@ -47,6 +61,7 @@ export default function DocInspector({ compact }: { compact?: boolean } = {}) {
             <button className="ft-btn" title={t('tip.orderedList')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run() }}><span style={{ fontSize: 11 }}>1.</span></button>
             <button className="ft-btn" title={t('format.quote')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run() }}><span style={{ fontSize: 13 }}>❝</span></button>
             <button className="ft-btn" title={t('tip.codeBlock')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleCodeBlock().run() }}><span style={{ fontFamily: 'monospace', fontSize: 10 }}>{'<>'}</span></button>
+            <button className="ft-btn" title={t('tip.newTask')} onMouseDown={e => { e.preventDefault(); insertTask() }}><span style={{ fontSize: 13 }}>☑</span></button>
             <div className="ft-sep" />
             <button className="ft-btn" title={t('format.link')} onMouseDown={e => { e.preventDefault(); setLink() }}><span style={{ fontSize: 12 }}>🔗</span></button>
             <button className="ft-btn" title={t('tip.image')} onMouseDown={e => { e.preventDefault(); fileRef.current?.click() }}><span style={{ fontSize: 12 }}>🖼</span></button>
@@ -134,6 +149,7 @@ export default function DocInspector({ compact }: { compact?: boolean } = {}) {
         <Cell title={t('tip.orderedList')} on={editor.isActive('orderedList')} act={() => editor.chain().focus().toggleOrderedList().run()}>1.</Cell>
         <Cell title={t('format.quote')} on={editor.isActive('blockquote')} act={() => editor.chain().focus().toggleBlockquote().run()}>❝</Cell>
         <Cell title={t('tip.codeBlock')} on={editor.isActive('codeBlock')} act={() => editor.chain().focus().toggleCodeBlock().run()}>{'</>'}</Cell>
+        <Cell title={t('tip.newTask')} act={insertTask} wide>☑ {t('tip.newTask')}</Cell>
       </div>
 
       <Label>{t('tip.insert')}</Label>
