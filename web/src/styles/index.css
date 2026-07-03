@@ -7567,9 +7567,12 @@ textarea:focus-visible,
   overflow-wrap: anywhere;
 }
 .pizarra-node--text { border: none !important; background: none !important; padding: 0; }
+/* Sin selección → sin borde. Con selección (editando o no) → SÍ borde — Alberto quiere ver
+   el rectángulo de selección también mientras escribe, para poder redimensionar como con
+   imágenes/PDF (antes `.pizarra-node--editing` forzaba `box-shadow:none` incluso estando
+   seleccionado, tapando el borde justo cuando más se necesita verlo). */
 .pizarra-node--text:not(.pizarra-node--sel),
-.pizarra-node--text.pizarra-node--hover,
-.pizarra-node--text.pizarra-node--editing { box-shadow: none !important; }
+.pizarra-node--text.pizarra-node--hover:not(.pizarra-node--sel) { box-shadow: none !important; }
 
 /* Elemento de VISTA (tabla/kanban/calendario) embebido en el lienzo. */
 .pizarra-node--el { border: 1px solid var(--border, #e2e2e2); border-radius: 10px; background: var(--bg, #fff); overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }

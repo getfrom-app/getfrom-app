@@ -2272,8 +2272,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 .pizarra-card-body{padding:4px 6px 8px}
 .pizarra-node--sel{box-shadow:0 0 0 1.5px var(--border,#d8d8d8);border-radius:8px}
 .pizarra-node--hover{box-shadow:0 0 0 1px var(--border-subtle,#e6e6e6);border-radius:8px}
-.pizarra-node--text.pizarra-node--hover,.pizarra-node--text.pizarra-node--editing{box-shadow:none}
-.pizarra-node--text.pizarra-node--sel:not(.pizarra-node--editing){box-shadow:0 0 0 1.5px var(--accent,#6c5ce7);border-radius:8px}
+.pizarra-node--text.pizarra-node--hover{box-shadow:none}
+.pizarra-node--text.pizarra-node--sel{box-shadow:0 0 0 1.5px var(--accent,#6c5ce7);border-radius:8px}
 .pizarra-node--grouped{outline:1px dashed rgba(108,92,231,0.5);outline-offset:3px;border-radius:6px}
 .pizarra-card-body .node-row{align-items:flex-start!important}
 /* Cursor: el texto editable mantiene el de texto; el resto, "agarrar". */
@@ -2735,21 +2735,15 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               // Elemento-texto = el MISMO nodo que el documento. Editando → editor
               // TipTap completo (DocEditor compact); en reposo → body estático (ligero).
               // Colapsado → solo el título + chevron (el usuario despliega para leer).
-              // (Intento anterior de que el lienzo global NUNCA montara aquí su propio editor
-              // — para que el panel de la derecha fuera el único — rompió por completo poder
-              // escribir: crear texto nuevo con doble clic NO selecciona el nodo (solo
-              // `editText`, no `selectedId`), así que el panel no llega a abrirse y no había
-              // NINGÚN editor donde escribir. La tarjeta SIGUE editando aquí en ese caso
-              // (creación) — pero en cuanto el nodo también está SELECCIONADO (`selectedId`,
-              // tras seleccionar un texto ya existente), la tarjeta CEDE y pasa a modo lectura
-              // EN EL MISMO RENDER (sin esperar a que el panel se monte y se registre como
-              // `activeDocNodeId` un tick después — esa ventana, aunque breve, bastaba para que
-              // coexistieran dos editores TipTap con su propio BubbleMenu sobre el MISMO nodo
-              // → bucle de renders, React #185. Reproducido y verificado con Claude in Chrome
-              // en local — v9.6.681. `activeDocNodeId` se mantiene como cinturón de seguridad
-              // adicional para otros casos donde el panel muestre un nodo sin pasar por
-              // `selectedId`.)
-              (editing && selectedId !== node.id && activeDocNodeId !== node.id) ? (
+              // La tarjeta SIEMPRE edita aquí directamente (doble clic al crear, clic al
+              // reeditar) — decisión explícita de Alberto: quiere poder escribir en el propio
+              // lienzo como siempre, CON su barra flotante y borde de selección, ADEMÁS del
+              // panel cómodo de la derecha para lectura/edición con más espacio. La causa real
+              // del bucle de renders (React #185) que motivó la regla «nunca dos editores» NO
+              // era la coexistencia en sí — era un bug en `MainLayout` (`showDocInspector`)
+              // ajeno a esto, ya arreglado (v9.6.681). `activeDocNodeId` se conserva en
+              // `docEditorStore` para otros usos, pero ya no bloquea la edición de la tarjeta.
+              editing ? (
                 <DocEditorBoundary compact>
                   <DocEditor node={node} compact />
                 </DocEditorBoundary>

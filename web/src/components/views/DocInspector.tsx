@@ -2,17 +2,23 @@
 // el editor TipTap ACTIVO (docEditorStore): el documento en solitario (NodeView) o
 // el elemento de texto que se edita en el lienzo (PizarraView). Solo hay un editor
 // activo a la vez; si no hay ninguno, no pinta nada.
+//
+// `compact`: barra ÚNICA de una fila (mismo estilo que la barra flotante `BubbleMenu`
+// del lienzo — clases `wf-format-toolbar`/`ft-btn`), para no ocupar media columna
+// derecha. La usa `LienzoDocPanel`. Sin `compact`: la rejilla completa de siempre,
+// para la página en solitario de un documento.
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useActiveDocEditor, getDocImageInsert } from '../../utils/docEditorStore'
 
 const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5', '#868e96']
 
-export default function DocInspector() {
+export default function DocInspector({ compact }: { compact?: boolean } = {}) {
   const { t } = useTranslation()
   const editor = useActiveDocEditor()
   const fileRef = useRef<HTMLInputElement | null>(null)
+  const [showColors, setShowColors] = useState(false)
   if (!editor) return null
 
   const setLink = () => {
@@ -21,6 +27,56 @@ export default function DocInspector() {
     if (url === null) return
     if (url === '') editor.chain().focus().unsetLink().run()
     else editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run()
+  }
+
+  if (compact) {
+    return (
+      <div className="wf-format-toolbar" style={{ position: 'static', width: 'auto' }} onMouseDown={e => e.preventDefault()}>
+        {!showColors ? (
+          <>
+            <button className="ft-btn" title="H1" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 1 }).run() }}><span style={{ fontWeight: 800, fontSize: 10 }}>H1</span></button>
+            <button className="ft-btn" title="H2" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 2 }).run() }}><span style={{ fontWeight: 800, fontSize: 10 }}>H2</span></button>
+            <button className="ft-btn" title="H3" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 3 }).run() }}><span style={{ fontWeight: 800, fontSize: 10 }}>H3</span></button>
+            <div className="ft-sep" />
+            <button className="ft-btn" title={t('tip.bold')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleBold().run() }}><strong style={{ fontSize: 13 }}>B</strong></button>
+            <button className="ft-btn" title={t('tip.italic')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleItalic().run() }}><em style={{ fontSize: 13 }}>I</em></button>
+            <button className="ft-btn" title={t('tip.underline')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleUnderline().run() }}><u style={{ fontSize: 13 }}>U</u></button>
+            <button className="ft-btn" title={t('format.strikethrough')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleStrike().run() }}><s style={{ fontSize: 13 }}>S</s></button>
+            <div className="ft-sep" />
+            <button className="ft-btn" title={t('tip.bulletList')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleBulletList().run() }}><span style={{ fontSize: 13 }}>•</span></button>
+            <button className="ft-btn" title={t('tip.orderedList')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run() }}><span style={{ fontSize: 11 }}>1.</span></button>
+            <button className="ft-btn" title={t('format.quote')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run() }}><span style={{ fontSize: 13 }}>❝</span></button>
+            <button className="ft-btn" title={t('tip.codeBlock')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleCodeBlock().run() }}><span style={{ fontFamily: 'monospace', fontSize: 10 }}>{'<>'}</span></button>
+            <div className="ft-sep" />
+            <button className="ft-btn" title={t('format.link')} onMouseDown={e => { e.preventDefault(); setLink() }}><span style={{ fontSize: 12 }}>🔗</span></button>
+            <button className="ft-btn" title={t('tip.image')} onMouseDown={e => { e.preventDefault(); fileRef.current?.click() }}><span style={{ fontSize: 12 }}>🖼</span></button>
+            <button className="ft-btn" title={t('tip.color')} onMouseDown={e => { e.preventDefault(); setShowColors(true) }}><span style={{ fontWeight: 700, fontSize: 13, borderBottom: '2.5px solid #ef4444', lineHeight: 1 }}>A</span></button>
+            <div className="ft-sep" />
+            <button className="ft-btn" title={t('tip.undo')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().undo().run() }}><span style={{ fontSize: 13 }}>↶</span></button>
+            <button className="ft-btn" title={t('tip.redo')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().redo().run() }}><span style={{ fontSize: 13 }}>↷</span></button>
+          </>
+        ) : (
+          <div className="ft-color-panel">
+            <div className="ft-color-row">
+              <span className="ft-color-label">{t('tip.color')}</span>
+              <button className="ft-btn ft-erase-btn" title={t('tip.noColor')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().unsetColor().run(); setShowColors(false) }}>
+                <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><line x1="2" y1="10" x2="10" y2="2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+              </button>
+              {COLORS.map(c => (
+                <button key={c} className="ft-color-swatch" title={c} onMouseDown={e => { e.preventDefault(); editor.chain().focus().setColor(c).run(); setShowColors(false) }}>
+                  <span style={{ color: c, fontWeight: 700, fontSize: 13 }}>A</span>
+                </button>
+              ))}
+            </div>
+            <div className="ft-color-footer">
+              <button className="ft-back-btn" onMouseDown={e => { e.preventDefault(); setShowColors(false) }}>‹ {t('common.back', 'Volver')}</button>
+            </div>
+          </div>
+        )}
+        <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+          onChange={e => { const f = e.target.files?.[0]; const ins = getDocImageInsert(); if (f && ins) ins(f); e.target.value = '' }} />
+      </div>
+    )
   }
 
   // Botón cuadrado de la rejilla.

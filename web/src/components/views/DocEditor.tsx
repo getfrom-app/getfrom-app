@@ -243,6 +243,22 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     if (t && t !== node.text) store.updateNode(node.id, { text: t })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, node.id])
+
+  // Sincronizar con cambios EXTERNOS: la tarjeta y el panel son dos editores TipTap
+  // independientes sobre el MISMO nodo (decisión de Alberto: escribir en ambos sitios).
+  // TipTap es «no controlado» — solo lee `content` al crearse, nunca vuelve a mirar el
+  // prop — así que si escribes en uno, el otro se queda con el HTML viejo hasta que algo
+  // fuerce un refresco. Aquí: si `node.body` cambia por FUERA de este editor (viene de la
+  // store, no de `onUpdate`) y este editor NO tiene el foco ahora mismo, se resincroniza
+  // su contenido. `emitUpdate:false` para no disparar `onUpdate`→otro `store.updateNode`
+  // (evita el eco). Si SÍ tiene el foco, no se toca — nunca pisar lo que se está tecleando.
+  useEffect(() => {
+    if (!editor) return
+    if (editor.isFocused) return
+    if (editor.getHTML() === (node.body || '')) return
+    editor.commands.setContent(node.body || '', false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, node.body])
   useEffect(() => () => {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     if (editor) {

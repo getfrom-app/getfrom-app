@@ -40,20 +40,20 @@ export default function LienzoDocPanel({ nodeId }: { nodeId: string }) {
           PDF
         </button>
       </div>
-      {/* Barra de formato PERSISTENTE (reutiliza DocInspector, la misma barra de la página en
-          solitario de un documento) — antes el panel solo tenía la barra flotante al
-          seleccionar texto; Alberto pidió una barra fija, más cómoda para trabajar seguido. */}
-      <div style={{ maxHeight: '38%', overflowY: 'auto', borderBottom: '1px solid var(--border-subtle,#eee)', flexShrink: 0 }}>
-        <DocInspector />
+      {/* Barra de formato PERSISTENTE, COMPACTA (una sola fila, mismo estilo que la barra
+          flotante del lienzo) — la rejilla completa de `DocInspector` ocupaba media columna;
+          Alberto pidió algo del tamaño de la barra flotante, fijo arriba. */}
+      <div style={{ padding: '6px 10px', borderBottom: '1px solid var(--border-subtle,#eee)', flexShrink: 0, display: 'flex', flexWrap: 'wrap' }}>
+        <DocInspector compact />
       </div>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 20px 88px' }}>
-        {/* Antes se forzaba `autofocus={false}` para que la tarjeta del lienzo (que podía
-            editar el MISMO nodo a la vez) no se pelease el foco con el panel. Ya no hace
-            falta: la tarjeta CEDE en el mismo render en cuanto el nodo está seleccionado
-            (`PizarraView`, `selectedId`) — nunca coexisten dos editores para el mismo nodo,
-            así que el panel puede autoenfocar con normalidad (por defecto en modo compact). */}
+        {/* `autofocus={false}`: la tarjeta del lienzo TAMBIÉN edita este mismo nodo (decisión
+            de Alberto — escribir en el propio lienzo, con su barra flotante, sigue siendo el
+            camino principal). Si el panel también autoenfocara al abrirse, se robarían el foco
+            entre sí y el teclado saltaría de un sitio a otro a media palabra. El panel es la
+            vista cómoda complementaria; para escribir en él, un clic. */}
         <DocEditorBoundary compact>
-          <DocEditor node={node} compact registerActive />
+          <DocEditor node={node} compact registerActive autofocus={false} />
         </DocEditorBoundary>
       </div>
     </div>
