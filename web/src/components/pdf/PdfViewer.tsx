@@ -110,16 +110,27 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         canvas.width = vp.width; canvas.height = vp.height
         await page.render({ canvasContext: canvas.getContext('2d')!, viewport: vp }).promise
         // Capa de texto invisible (seleccionable) para poder copiar/enviar fragmentos al lienzo.
-        // Tamaño: SIEMPRE 100%/100% del contenedor por CSS (JSX) — NO se fuerza en px aquí, para
-        // que siga fielmente el tamaño real (posiblemente reducido por `maxWidth`/`aspectRatio`
-        // del `.pdf-viewer-page`) en vez de imponer el ancho "ideal" sin recortar del cálculo JS.
         const textLayerDiv = textLayerRefs.current.get(i)
         if (textLayerDiv) {
           textLayerDiv.replaceChildren()
           textLayerDiv.style.setProperty('--total-scale-factor', String(scale))
           try {
+            // OJO — causa raíz de que la selección de texto llevara MESES rota: el propio
+            // constructor de `TextLayer` llama a `setLayerDimensions(container, viewport)`
+            // internamente, que fija `width`/`height` con la fórmula CSS
+            // `round(down, var(--total-scale-factor) * Npx, var(--scale-round-x))`. Como
+            // `--scale-round-x`/`--scale-round-y` NUNCA se definen (son del `pdf_viewer.css`
+            // oficial completo, que no se importa aquí), esa fórmula es un valor CSS INVÁLIDO
+            // → `width`/`height` caen a `auto` → con hijos todos `position:absolute`, el
+            // contenedor colapsa a 0×0 → nada es clicable/seleccionable, aunque los <span>
+            // internamente tengan las posiciones correctas. SOBREESCRIBIR el tamaño en px
+            // DESPUÉS de crear/renderizar el TextLayer, para que gane sobre su propio cálculo.
             const tl = new pdfjsLib.TextLayer({ textContentSource: page.streamTextContent(), container: textLayerDiv, viewport: vp })
+            textLayerDiv.style.width = `${vp.width}px`
+            textLayerDiv.style.height = `${vp.height}px`
             await tl.render()
+            textLayerDiv.style.width = `${vp.width}px`
+            textLayerDiv.style.height = `${vp.height}px`
           } catch (e) { console.error('[PdfViewer] text layer error:', e) }
         }
       }

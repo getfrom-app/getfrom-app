@@ -2,7 +2,7 @@
 // único. Renderiza SIEMPRE como pizarra (globalCanvas) de forma fiable (a diferencia
 // de las raíces estructurales, que tienen render especial de lista). La cámara y los
 // trazos viven en su body. El CONTENIDO que se pinta es tu árbol de contextos
-// (ver PizarraView global + utils/canvasLayout), no los hijos de este nodo.
+// (ver PizarraView global), no los hijos de este nodo.
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { parseExtraData } from './papeleraHelper'

@@ -31,7 +31,6 @@ export default defineConfig({
           // Modales y panels grandes
           'panels': [
             './src/components/panels/DiaryRightPanel.tsx',
-            './src/components/panels/NodeRightPanel.tsx',
             './src/components/panels/CalendarSidePanel.tsx',
           ],
         },
