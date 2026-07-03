@@ -171,6 +171,25 @@ function writeCardSize(node: Node, fields: { w?: number; scale?: number; pin?: W
   store.updateNode(node.id, { extraData: JSON.stringify(ed) })
 }
 
+// ── HEPTABASE FASE 3: anotaciones ENCIMA de una tarjeta (texto/PDF/imagen) ──
+// Trazos en coordenadas PORCENTUALES (0-100) relativas a la propia tarjeta — se
+// pintan con un `viewBox="0 0 100 100"`, así que el trazo se mueve/escala CON la
+// tarjeta automáticamente (vive dentro de su mismo div transformado), sin depender
+// en absoluto del ancho/alto real en píxeles ni de la cámara del lienzo.
+interface CardAnno { id: string; pts: number[]; c: string; w: number }
+function readCardAnnos(node: Node): CardAnno[] {
+  try {
+    const a = JSON.parse(node.extraData || '{}')._cardAnnotations
+    return Array.isArray(a) ? a : []
+  } catch { return [] }
+}
+function writeCardAnnos(node: Node, annos: CardAnno[]) {
+  let ed: Record<string, unknown> = {}
+  try { ed = JSON.parse(node.extraData || '{}') } catch { /* vacío */ }
+  ed._cardAnnotations = annos
+  store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+}
+
 // ── Recursos (PDF / imagen / enlace / archivo) embebidos en el lienzo ──
 // Un nodo-recurso lleva `extraData._resourceUrl` + `_resourceType`; el lienzo lo
 // pinta como tarjeta-embed y el dot lo abre en su página (NodeView ya renderiza el
@@ -312,6 +331,12 @@ function bodyWithPizarra(body: string | null | undefined, data: WBData): string 
 function rid(): string {
   // id corto único (no hace falta UUID v4 estricto para trazos).
   return 'w' + Math.abs(Math.floor((performance.now() % 1) * 1e9)).toString(36) + (performance.now() | 0).toString(36)
+}
+// [x0,y0,x1,y1,...] → «M x0 y0 L x1 y1 L ...» (path SVG de un trazo a mano alzada).
+function pathFromPts(pts: number[]): string {
+  let d = ''
+  for (let i = 0; i < pts.length; i += 2) d += (i === 0 ? 'M' : 'L') + pts[i] + ' ' + pts[i + 1] + ' '
+  return d
 }
 // ¿Algún punto del trazo está a ≤ r (mundo) de (x,y)? (borrador, v1 por puntos).
 // Distancia² de un punto al segmento (a,b).
@@ -505,6 +530,23 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   const [penWidth, setPenWidth] = useState<number>(2.5)
   const penWidthRef = useRef(penWidth); penWidthRef.current = penWidth
   const [paletteOpen, setPaletteOpen] = useState(false)
+  // ── HEPTABASE FASE 3: pintar/anotar ENCIMA de una tarjeta concreta (texto, PDF,
+  // imagen) — el dibujo se guarda en `node.extraData._cardAnnotations`, en coordenadas
+  // PORCENTUALES (0-100) relativas a la propia tarjeta, así que se mueve y escala CON
+  // ella automáticamente (el overlay SVG vive dentro del mismo div ya transformado por
+  // `scale(cam.scale*cardScale)`) — a diferencia de la tinta del lienzo (`wbData.strokes`,
+  // global, en coordenadas de MUNDO, independiente de cualquier tarjeta). Reutiliza
+  // `penColor`/`penWidth` de la tinta del lienzo para no duplicar la paleta.
+  const [annotatingId, setAnnotatingId] = useState<string | null>(null)
+  const annoDraftRef = useRef<{ pts: number[]; rect: DOMRect } | null>(null)
+  const [annoDraftPts, setAnnoDraftPts] = useState<number[] | null>(null)
+  // Escape sale del modo «anotar esta tarjeta» (sin tocar el resto de atajos globales).
+  useEffect(() => {
+    if (!annotatingId) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setAnnotatingId(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [annotatingId])
   // ── Conectores (flechas entre elementos) ──
   // Primer elemento clicado con la herramienta flecha (ancla el inicio).
   const [arrowAnchor, setArrowAnchor] = useState<string | null>(null)
@@ -2004,6 +2046,39 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     setNodeRz({ id: node.id, w: startW, scale: readCardScale(node), pin })
   }, [screenToWorld])
 
+  // ── HEPTABASE FASE 3: dibujar ENCIMA de una tarjeta concreta ──────────────────
+  // Mientras `annotatingId === node.id`, un overlay SVG (viewBox 0 0 100 100) cubre
+  // TODA la tarjeta y captura el puntero. Los puntos se normalizan a 0-100 dividiendo
+  // por el `getBoundingClientRect()` del propio overlay — así el trazo queda anclado
+  // a la tarjeta (se mueve/escala con ella) sin tocar para nada las coordenadas de
+  // mundo ni la cámara del lienzo.
+  const onAnnoPointerDown = useCallback((e: React.PointerEvent) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width) * 100
+    const y = ((e.clientY - rect.top) / rect.height) * 100
+    annoDraftRef.current = { pts: [x, y], rect }
+    setAnnoDraftPts([x, y]);
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  }, [])
+  const onAnnoPointerMove = useCallback((e: React.PointerEvent) => {
+    const draft = annoDraftRef.current
+    if (!draft) return
+    const x = ((e.clientX - draft.rect.left) / draft.rect.width) * 100
+    const y = ((e.clientY - draft.rect.top) / draft.rect.height) * 100
+    draft.pts.push(x, y)
+    setAnnoDraftPts([...draft.pts])
+  }, [])
+  const onAnnoPointerUp = useCallback((node: Node) => {
+    const draft = annoDraftRef.current
+    annoDraftRef.current = null
+    setAnnoDraftPts(null)
+    if (!draft || draft.pts.length < 4) return // un solo punto (clic sin arrastrar): descartar
+    const stroke: CardAnno = { id: rid(), pts: draft.pts.map(n => Math.round(n * 100) / 100), c: penColorRef.current, w: penWidthRef.current }
+    writeCardAnnos(node, [...readCardAnnos(node), stroke])
+  }, [])
+
   // ── Render ──────────────────────────────────────────────────────────────────
   // Mide la altura real de las tarjetas montadas (en unidades de mundo) tras cada
   // render. Si cambia, fuerza el recálculo del culling (heightsV).
@@ -2878,6 +2953,68 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                   style={{ position: 'absolute', right: -6, bottom: -6, width: 16, height: 16, background: 'transparent', cursor: 'nwse-resize', touchAction: 'none' }} />
               </>
             ))}
+            {/* HEPTABASE FASE 3: overlay de anotación — SIEMPRE presente si ya hay trazos
+                guardados (para pintarlos), y con el puntero activo SOLO mientras se está
+                anotando ESTA tarjeta (si no, `pointerEvents:none` deja pasar los clics
+                normales de la tarjeta por debajo). */}
+            {(() => {
+              const annos = readCardAnnos(node)
+              const isAnnotating = annotatingId === node.id
+              if (!annos.length && !isAnnotating) return null
+              return (
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 30, pointerEvents: isAnnotating ? 'auto' : 'none', cursor: isAnnotating ? 'crosshair' : undefined, touchAction: 'none', borderRadius: 8 }}
+                  onPointerDown={isAnnotating ? onAnnoPointerDown : undefined}
+                  onPointerMove={isAnnotating ? onAnnoPointerMove : undefined}
+                  onPointerUp={isAnnotating ? () => onAnnoPointerUp(node) : undefined}
+                  onPointerCancel={isAnnotating ? () => onAnnoPointerUp(node) : undefined}
+                >
+                  {annos.map(a => (
+                    <path key={a.id} d={pathFromPts(a.pts)} fill="none" stroke={a.c} strokeWidth={a.w} strokeLinecap="round" strokeLinejoin="round" />
+                  ))}
+                  {isAnnotating && annoDraftPts && annoDraftPts.length >= 4 && (
+                    <path d={pathFromPts(annoDraftPts)} fill="none" stroke={penColor} strokeWidth={penWidth} strokeLinecap="round" strokeLinejoin="round" />
+                  )}
+                </svg>
+              )
+            })()}
+            {/* Botón «✏️ Anotar» — visible en hover/selección (o siempre mientras se anota
+                esta misma tarjeta). Solo para texto/PDF/imagen: son las tarjetas «de
+                contenido» donde tiene sentido pintar encima, como en Heptabase. */}
+            {/* `showHandles` excluye `editing` (para no chocar con los tiradores de la
+                tarjeta) — el botón de anotar SÍ debe verse aunque el texto esté en edición,
+                que es justo cuando estás sobre él, así que se comprueba aparte. Mientras se
+                anota (`✓`), aparecen además Deshacer (último trazo) y Borrar todo. */}
+            {(isText || res) && (showHandles || hovered || selectedId === node.id || annotatingId === node.id) && !dragPos && (
+              <div style={{ position: 'absolute', left: 4, top: -30, zIndex: 31, display: 'flex', gap: 4 }}
+                onPointerDown={e => { e.stopPropagation(); e.preventDefault() }}>
+                <button
+                  title={annotatingId === node.id ? t('tip.doneAnnotating') : t('tip.annotateCard')}
+                  onClick={e => { e.stopPropagation(); setAnnotatingId(id => id === node.id ? null : node.id) }}
+                  style={{
+                    width: 24, height: 24, borderRadius: 6, border: '1px solid var(--border,#e2e2e2)', cursor: 'pointer',
+                    fontSize: 12, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: annotatingId === node.id ? 'var(--accent,#6c5ce7)' : 'var(--bg-elevated,#fff)',
+                    color: annotatingId === node.id ? '#fff' : 'var(--text-secondary,#666)',
+                  }}>
+                  {annotatingId === node.id ? '✓' : '✏️'}
+                </button>
+                {annotatingId === node.id && readCardAnnos(node).length > 0 && (
+                  <>
+                    <button title={t('tip.undo')}
+                      onClick={e => { e.stopPropagation(); const a = readCardAnnos(node); writeCardAnnos(node, a.slice(0, -1)) }}
+                      style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid var(--border,#e2e2e2)', cursor: 'pointer', fontSize: 13, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-elevated,#fff)', color: 'var(--text-secondary,#666)' }}>
+                      ↶
+                    </button>
+                    <button title={t('tip.clearAll')}
+                      onClick={e => { e.stopPropagation(); writeCardAnnos(node, []) }}
+                      style={{ width: 24, height: 24, borderRadius: 6, border: '1px solid var(--border,#e2e2e2)', cursor: 'pointer', fontSize: 12, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-elevated,#fff)', color: 'var(--danger,#e03131)' }}>
+                      🗑
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )
       })}
