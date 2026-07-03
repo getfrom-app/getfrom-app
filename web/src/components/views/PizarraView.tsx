@@ -33,6 +33,7 @@ import { computeNestedLayout, CONTENT_W, type NestedLayout } from '../../utils/n
 import type { CanvasViewKind } from '../../utils/docNode'
 import { mergeNodesToBlock } from '../../utils/noteBlocks'
 import DocEditor from './DocEditor'
+import DocEditorBoundary from '../DocEditorBoundary'
 import { useActiveDocNodeId } from '../../utils/docEditorStore'
 import OutlinerNode from '../outliner/OutlinerNode'
 import ContextPicker from '../panels/ContextPicker'
@@ -2736,15 +2737,22 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               // Colapsado → solo el título + chevron (el usuario despliega para leer).
               // (Intento anterior de que el lienzo global NUNCA montara aquí su propio editor
               // — para que el panel de la derecha fuera el único — rompió por completo poder
-              // escribir: crear texto nuevo con doble clic NO selecciona el nodo, así que el
-              // panel no llega a abrirse y no había NINGÚN editor donde escribir. La tarjeta
-              // SIGUE editando aquí en ese caso (creación) — pero en cuanto el panel de la
-              // derecha se registra como activo PARA ESTE MISMO NODO (`activeDocNodeId`,
-              // tras seleccionar un texto ya existente), la tarjeta CEDE y pasa a modo lectura:
-              // nunca dos editores TipTap vivos sobre el mismo nodo — causaba un bucle de
-              // renders al seleccionar texto, React #185 — v9.6.680.)
-              (editing && activeDocNodeId !== node.id) ? (
-                <DocEditor node={node} compact />
+              // escribir: crear texto nuevo con doble clic NO selecciona el nodo (solo
+              // `editText`, no `selectedId`), así que el panel no llega a abrirse y no había
+              // NINGÚN editor donde escribir. La tarjeta SIGUE editando aquí en ese caso
+              // (creación) — pero en cuanto el nodo también está SELECCIONADO (`selectedId`,
+              // tras seleccionar un texto ya existente), la tarjeta CEDE y pasa a modo lectura
+              // EN EL MISMO RENDER (sin esperar a que el panel se monte y se registre como
+              // `activeDocNodeId` un tick después — esa ventana, aunque breve, bastaba para que
+              // coexistieran dos editores TipTap con su propio BubbleMenu sobre el MISMO nodo
+              // → bucle de renders, React #185. Reproducido y verificado con Claude in Chrome
+              // en local — v9.6.681. `activeDocNodeId` se mantiene como cinturón de seguridad
+              // adicional para otros casos donde el panel muestre un nodo sin pasar por
+              // `selectedId`.)
+              (editing && selectedId !== node.id && activeDocNodeId !== node.id) ? (
+                <DocEditorBoundary compact>
+                  <DocEditor node={node} compact />
+                </DocEditorBoundary>
               ) : globalCanvas ? (
                 // LIENZO: TEXTO PURO — sin gutter, sin chevron, sin dot, sin accesorios.
                 // Solo el cuerpo del documento renderizado. (El formato va en la barra

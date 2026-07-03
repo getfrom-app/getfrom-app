@@ -27,6 +27,11 @@ import { setDocEditor, notifyDocEditor } from '../../utils/docEditorStore'
 // Paleta de la barra flotante (misma que FormatToolbar del outliner).
 const DOC_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#a16207', '#6b7280']
 
+// CONSTANTE de módulo (no objeto literal inline en el JSX): evita que `BubbleMenu` de TipTap
+// reciba un `tippyOptions` distinto en cada render.
+const BUBBLE_MENU_TIPPY_OPTIONS = { duration: 100, maxWidth: 'none' } as const
+const BUBBLE_MENU_ENABLED = true
+
 // TaskItem con un id ESTABLE (`data-node-id`) que enlaza cada casilla del texto con su
 // nodo-tarea de From real. Es la clave anti-duplicación: el sync reconcilia por este id
 // (actualiza si existe, crea solo si falta y le escribe el id de vuelta). Se persiste en
@@ -276,8 +281,8 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
           ENCIMA de la selección — la columna derecha sigue siendo la del contexto/tarea.
           Mismo diseño que la FormatToolbar del outliner (clases wf-format-toolbar/ft-*).
           Al ser TipTap, el formato es WYSIWYG: negrita se ve negrita, el color se aplica. */}
-      {compact && (
-        <BubbleMenu editor={editor} tippyOptions={{ duration: 100, maxWidth: 'none' }}>
+      {BUBBLE_MENU_ENABLED && compact && (
+        <BubbleMenu editor={editor} tippyOptions={BUBBLE_MENU_TIPPY_OPTIONS}>
           <div className="wf-format-toolbar" style={{ position: 'static', width: 'auto' }} onMouseDown={e => e.preventDefault()}>
             {!showColors ? (
               <>

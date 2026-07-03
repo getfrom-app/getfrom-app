@@ -9,6 +9,7 @@
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import DocEditor from '../views/DocEditor'
+import DocEditorBoundary from '../DocEditorBoundary'
 import DocInspector from '../views/DocInspector'
 import { exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
 
@@ -46,11 +47,14 @@ export default function LienzoDocPanel({ nodeId }: { nodeId: string }) {
         <DocInspector />
       </div>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '18px 20px 88px' }}>
-        {/* `autofocus={false}`: la tarjeta del lienzo TAMBIÉN puede estar editando este mismo
-            nodo a la vez (doble clic ahí escribe directo) — si el panel también autoenfocara,
-            se robarían el foco entre sí y el teclado saltaría de un sitio a otro a media
-            palabra. El panel es una vista cómoda complementaria; para escribir en él, un clic. */}
-        <DocEditor node={node} compact registerActive autofocus={false} />
+        {/* Antes se forzaba `autofocus={false}` para que la tarjeta del lienzo (que podía
+            editar el MISMO nodo a la vez) no se pelease el foco con el panel. Ya no hace
+            falta: la tarjeta CEDE en el mismo render en cuanto el nodo está seleccionado
+            (`PizarraView`, `selectedId`) — nunca coexisten dos editores para el mismo nodo,
+            así que el panel puede autoenfocar con normalidad (por defecto en modo compact). */}
+        <DocEditorBoundary compact>
+          <DocEditor node={node} compact registerActive />
+        </DocEditorBoundary>
       </div>
     </div>
   )

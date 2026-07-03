@@ -378,7 +378,15 @@ export default function MainLayout() {
   // Cuando lo hay, la columna derecha SE CONVIERTE en el panel de formato (en lugar de
   // superponerse). Igual que en la vista de documento; sin overlay flotante.
   const activeDocEditor = useHasActiveDocEditor()
-  const showDocInspector = rightPanel === 'doc' || activeDocEditor
+  // ⚠️ CAUSA RAÍZ del bucle de renders (React #185) al seleccionar texto en el lienzo —
+  // v9.6.681, encontrada con el stack real en modo dev (build minificado no lo mostraba):
+  // `LienzoDocPanel` (rightPanel === 'lienzo-doc') TAMBIÉN registra un editor `registerActive`
+  // (para su barra de formato persistente) — su sola presencia hacía `activeDocEditor` true,
+  // lo que aquí abajo SUSTITUÍA a `LienzoDocPanel` por este `<DocInspector/>` suelto. Al
+  // desmontarse `LienzoDocPanel`, su editor se desregistraba → `activeDocEditor` volvía a
+  // false → `LienzoDocPanel` volvía a montarse → volvía a registrar → ping-pong infinito.
+  // Excluir 'lienzo-doc': ese panel YA renderiza su propio `DocInspector` internamente.
+  const showDocInspector = rightPanel === 'doc' || (activeDocEditor && rightPanel !== 'lienzo-doc')
   // Nodo de la columna del día: el seleccionado (nota/tarea) o, EN EL LIENZO, el día
   // activo (mini-calendario / «hoy») por METADATO — sin navegar. `ensureDiaryForDate`
   // solo asegura el nodo-día interno que alimenta la columna; el lienzo no se mueve.
