@@ -22,12 +22,34 @@ export default function LienzoDocPanel({ nodeId }: { nodeId: string }) {
 
   const toast = (message: string) => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type: 'success' } }))
 
+  const iconBtn = { background: 'none', border: '1px solid var(--border,#e2e2e2)', borderRadius: 6, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px 6px', color: 'var(--text-secondary,#666)' } as const
+
+  const toggleFavorite = () => {
+    const next = !node.isFavorite
+    store.updateNode(node.id, { isFavorite: next })
+    toast(next ? t('tip.addFavorite') : t('tip.removeFavorite'))
+  }
+  const deleteCard = () => {
+    // Borrado SUAVE (va a la Papelera, reversible) — coherente con el resto de From.
+    store.deleteNode(node.id)
+    toast(t('context.toastMovedToTrash', 'Movido a la papelera'))
+    // Cerrar el panel: el nodo ya no existe en el lienzo.
+    window.dispatchEvent(new Event('from:close-detail'))
+  }
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '12px 14px 10px', borderBottom: '1px solid var(--border-subtle,#eee)', flexShrink: 0 }}>
         <span className="rc-section-label" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {node.text || t('common.noTitle')}
         </span>
+        {/* ⭐ Favorito */}
+        <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite}
+          style={{ ...iconBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/>
+          </svg>
+        </button>
         <button title={t('export.markdown')} onClick={() => { exportNodeMarkdown(node); toast(t('context.toastExportedMarkdown')) }}
           style={{ background: 'none', border: '1px solid var(--border,#e2e2e2)', borderRadius: 6, cursor: 'pointer', fontSize: 11, padding: '4px 7px', color: 'var(--text-secondary,#666)' }}>
           MD
@@ -41,6 +63,13 @@ export default function LienzoDocPanel({ nodeId }: { nodeId: string }) {
           PDF
         </button>
         <PublishButton node={node} />
+        {/* 🗑 Eliminar (a la papelera, reversible) */}
+        <button title={t('tip.delete', 'Eliminar')} onClick={deleteCard}
+          style={{ ...iconBtn, color: 'var(--text-tertiary,#999)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+          </svg>
+        </button>
       </div>
       {/* Barra de formato PERSISTENTE, COMPACTA (una sola fila, mismo estilo que la barra
           flotante del lienzo) — la rejilla completa de `DocInspector` ocupaba media columna;

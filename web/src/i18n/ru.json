@@ -1315,6 +1315,8 @@
   "tip.changeIcon": "Сменить иконку",
   "tip.applyTemplate": "Применить шаблон",
   "tip.addFavorite": "Добавить в избранное",
+  "tip.delete": "Удалить",
+  "context.toastMovedToTrash": "Перемещено в корзину",
   "tip.removeFavorite": "Убрать из избранного",
   "tip.convertToContext": "Преобразовать в контекст",
   "tip.publishedCopyLink": "Опубликовано — копировать ссылку",

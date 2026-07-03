@@ -308,6 +308,14 @@ export function convertAllNotesToBlocks(): number {
   return total
 }
 
+// DEV-only: exponer el motor en `window.__noteBlocks` para inspección/pruebas en el navegador
+// (dry-run, convertir una nota, deshacer). NO se incluye en producción (`import.meta.env.DEV`).
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  ;(window as unknown as Record<string, unknown>).__noteBlocks = {
+    findConvertibleNotes, diagnoseNotes, convertNoteToBlock, convertAllNotesToBlocks, revertAllNoteBlocks, inspectUnabsorbed,
+  }
+}
+
 /** DESHACER: revierte todos los bloques venidos de notas (`_fromNote`). Recorre TODO el
  *  subárbol quitando `_absorbedBy`/`_taskEmbed` → vuelven las líneas y tareas. Nada se pierde. */
 export function revertAllNoteBlocks(): number {

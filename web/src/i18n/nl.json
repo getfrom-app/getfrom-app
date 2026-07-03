@@ -1315,6 +1315,8 @@
   "tip.changeIcon": "Pictogram wijzigen",
   "tip.applyTemplate": "Sjabloon toepassen",
   "tip.addFavorite": "Toevoegen aan favorieten",
+  "tip.delete": "Verwijderen",
+  "context.toastMovedToTrash": "Naar prullenbak verplaatst",
   "tip.removeFavorite": "Uit favorieten verwijderen",
   "tip.convertToContext": "Omzetten in context",
   "tip.publishedCopyLink": "Gepubliceerd — link kopiëren",

@@ -1315,6 +1315,8 @@
   "tip.changeIcon": "Αλλαγή εικονιδίου",
   "tip.applyTemplate": "Εφαρμογή προτύπου",
   "tip.addFavorite": "Προσθήκη στα αγαπημένα",
+  "tip.delete": "Διαγραφή",
+  "context.toastMovedToTrash": "Μετακινήθηκε στον κάδο",
   "tip.removeFavorite": "Αφαίρεση από τα αγαπημένα",
   "tip.convertToContext": "Μετατροπή σε πλαίσιο",
   "tip.publishedCopyLink": "Δημοσιευμένη — αντιγραφή συνδέσμου",

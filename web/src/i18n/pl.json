@@ -1315,6 +1315,8 @@
   "tip.changeIcon": "Zmień ikonę",
   "tip.applyTemplate": "Zastosuj szablon",
   "tip.addFavorite": "Dodaj do ulubionych",
+  "tip.delete": "Usuń",
+  "context.toastMovedToTrash": "Przeniesiono do kosza",
   "tip.removeFavorite": "Usuń z ulubionych",
   "tip.convertToContext": "Konwertuj na kontekst",
   "tip.publishedCopyLink": "Opublikowana — kopiuj link",

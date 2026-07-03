@@ -1315,6 +1315,8 @@
   "tip.changeIcon": "Simgeyi değiştir",
   "tip.applyTemplate": "Şablon uygula",
   "tip.addFavorite": "Favorilere ekle",
+  "tip.delete": "Sil",
+  "context.toastMovedToTrash": "Çöp kutusuna taşındı",
   "tip.removeFavorite": "Favorilerden kaldır",
   "tip.convertToContext": "Bağlama dönüştür",
   "tip.publishedCopyLink": "Yayınlandı — bağlantıyı kopyala",

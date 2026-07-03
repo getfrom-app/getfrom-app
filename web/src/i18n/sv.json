@@ -1315,6 +1315,8 @@
   "tip.changeIcon": "Byt ikon",
   "tip.applyTemplate": "Tillämpa mall",
   "tip.addFavorite": "Lägg till i favoriter",
+  "tip.delete": "Ta bort",
+  "context.toastMovedToTrash": "Flyttad till papperskorgen",
   "tip.removeFavorite": "Ta bort från favoriter",
   "tip.convertToContext": "Konvertera till kontext",
   "tip.publishedCopyLink": "Publicerad — kopiera länk",
