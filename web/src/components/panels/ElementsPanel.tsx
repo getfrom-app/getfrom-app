@@ -12,7 +12,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { isDocNode, firstLineTitle } from '../../utils/docNode'
-import { isMarkedContext } from '../../utils/cajones'
+import { isMarkedContext, listMarkedContexts, contextColor, assignContext } from '../../utils/cajones'
 import { openNodeDetail } from '../../utils/canvasNav'
 
 type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory'
@@ -128,6 +128,37 @@ export default function ElementsPanel() {
     window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
   }
 
+  // ── Acciones de organización por fila (clic-derecho + botón ···) ──────────────
+  const [menu, setMenu] = useState<{ id: string; x: number; y: number; ctx: boolean } | null>(null)
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const [renameVal, setRenameVal] = useState('')
+  const renameRef = useRef<HTMLInputElement>(null)
+
+  function openMenu(id: string, x: number, y: number) {
+    // Encima abajo si no cabe; el menú mide ~aprox, lo clampeamos.
+    setMenu({ id, x: Math.min(x, window.innerWidth - 230), y: Math.min(y, window.innerHeight - 320), ctx: false })
+  }
+  function startRename(id: string) {
+    const n = store.getNode(id); setRenaming(id); setRenameVal(n?.text || ''); setMenu(null)
+    setTimeout(() => { renameRef.current?.focus(); renameRef.current?.select() }, 20)
+  }
+  function commitRename() {
+    if (renaming && renameVal.trim()) store.updateNode(renaming, { text: renameVal.trim() })
+    setRenaming(null); setRenameVal('')
+  }
+  function toggleFav(id: string) { const n = store.getNode(id); if (n) store.updateNode(id, { isFavorite: !n.isFavorite }); setMenu(null) }
+  function del(id: string) { store.deleteNode(id); setMenu(null) }
+  function moveToContext(id: string, ctxId: string) {
+    // Mover a otro contexto: asignación lógica (_ctxRefs) + si NO está fijado con pin, lo
+    // reparentamos para que fluya dentro de la caja del contexto en el lienzo.
+    assignContext(id, ctxId)
+    const n = store.getNode(id)
+    let pinned = false; try { const e = JSON.parse(n?.extraData || '{}'); pinned = e._pinX != null || e._gx != null } catch { /* ignore */ }
+    if (n && !pinned && !isMarkedContext(n)) store.updateNode(id, { parentId: ctxId })
+    setMenu(null)
+  }
+  const contexts = useMemo(() => { void s.nodesVersion; return listMarkedContexts().filter(c => (c.text || '').trim()) }, [s.nodesVersion])
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{ padding: '16px 16px 8px', flexShrink: 0 }}>
@@ -177,26 +208,92 @@ export default function ElementsPanel() {
           <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
             {virtualizer.getVirtualItems().map(vi => {
               const r = filtered[vi.index]
+              const isRenaming = renaming === r.id
               return (
                 <div
                   key={r.id}
-                  className="dc-row"
-                  onClick={() => open(r.id)}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_H, transform: `translateY(${vi.start}px)`, display: 'flex', alignItems: 'center', gap: 8, padding: '0 6px', cursor: 'pointer', boxSizing: 'border-box' }}
+                  className="dc-row el-row"
+                  onClick={() => { if (!isRenaming) open(r.id) }}
+                  onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openMenu(r.id, e.clientX, e.clientY) }}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_H, transform: `translateY(${vi.start}px)`, display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 0 6px', cursor: 'pointer', boxSizing: 'border-box' }}
                 >
                   <span style={{ fontSize: 15, flexShrink: 0 }}>{KIND_ICON[r.kind]}</span>
                   <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text,#222)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
-                    {r.snippet && r.snippet !== r.title && (
-                      <div style={{ fontSize: 11.5, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.snippet}</div>
-                    )}
+                    {isRenaming ? (
+                      <input
+                        ref={renameRef}
+                        value={renameVal}
+                        onClick={e => e.stopPropagation()}
+                        onChange={e => setRenameVal(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitRename() } if (e.key === 'Escape') { setRenaming(null) } }}
+                        onBlur={commitRename}
+                        style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--accent,#6c5ce7)', borderRadius: 5, padding: '2px 6px', fontSize: 13, background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontFamily: 'inherit' }}
+                      />
+                    ) : (<>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text,#222)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
+                      {r.snippet && r.snippet !== r.title && (
+                        <div style={{ fontSize: 11.5, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.snippet}</div>
+                      )}
+                    </>)}
                   </div>
+                  {!isRenaming && (
+                    <button
+                      className="el-more"
+                      title={t('elements.actions', 'Acciones')}
+                      onClick={(e) => { e.stopPropagation(); const rc = (e.currentTarget as HTMLElement).getBoundingClientRect(); openMenu(r.id, rc.right - 200, rc.bottom + 2) }}
+                      style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 16, lineHeight: 1, padding: '2px 6px', borderRadius: 4 }}
+                    >⋯</button>
+                  )}
                 </div>
               )
             })}
           </div>
         </div>
       )}
+
+      {/* Menú de acciones (clic-derecho / ···) — organizar cualquier elemento */}
+      {menu && (() => {
+        const n = store.getNode(menu.id)
+        return (
+          <>
+            <div onClick={() => setMenu(null)} onContextMenu={e => { e.preventDefault(); setMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1000 }} />
+            <div style={{ position: 'fixed', left: menu.x, top: menu.y, zIndex: 1001, minWidth: 200, maxHeight: 300, overflowY: 'auto', background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 8, boxShadow: '0 6px 24px rgba(0,0,0,0.14)', padding: 4, fontSize: 13 }}>
+              {!menu.ctx ? (
+                <>
+                  <ElMenuItem label={t('elements.open', 'Abrir')} onClick={() => { open(menu.id); setMenu(null) }} />
+                  <ElMenuItem label={t('common.rename', 'Renombrar')} onClick={() => startRename(menu.id)} />
+                  <ElMenuItem label={n?.isFavorite ? t('tip.removeFavorite', 'Quitar favorito') : t('tip.addFavorite', 'Favorito')} onClick={() => toggleFav(menu.id)} />
+                  <ElMenuItem label={t('elements.moveToContext', 'Mover a contexto') + ' ▸'} onClick={() => setMenu(m => m && { ...m, ctx: true })} />
+                  <div style={{ height: 1, background: 'var(--border-subtle,#eee)', margin: '4px 0' }} />
+                  <ElMenuItem label={t('tip.delete', 'Eliminar')} danger onClick={() => del(menu.id)} />
+                </>
+              ) : (
+                <>
+                  <ElMenuItem label={'‹ ' + t('common.back', 'Atrás')} onClick={() => setMenu(m => m && { ...m, ctx: false })} />
+                  {contexts.length === 0 && <div style={{ padding: '6px 10px', color: 'var(--text-tertiary,#999)' }}>{t('elements.noContexts', 'Sin contextos')}</div>}
+                  {contexts.map(c => (
+                    <ElMenuItem key={c.id} label={c.text} dot={contextColor(c.id)} onClick={() => moveToContext(menu.id, c.id)} />
+                  ))}
+                </>
+              )}
+            </div>
+          </>
+        )
+      })()}
     </div>
+  )
+}
+
+function ElMenuItem({ label, onClick, danger, dot }: { label: string; onClick: () => void; danger?: boolean; dot?: string }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 10px', borderRadius: 5, fontSize: 13, color: danger ? 'var(--color-error,#e53e3e)' : 'var(--text,#222)', fontFamily: 'inherit', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover,#f4f4f5)')}
+      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+    >
+      {dot && <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flexShrink: 0 }} />}
+      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</span>
+    </button>
   )
 }
