@@ -392,7 +392,7 @@ function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
 }
 
 export default function PizarraView({ parentId, flowUnpositioned, pdfBackground, pdfBackgroundKey, globalCanvas }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const nodesVersion = useStore(st => st.nodesVersion) // re-render + memoizar por versión
   const navigate = useNavigate()
   // Id del nodo cuyo editor está registrado como «activo» (el panel de documento,
@@ -2264,6 +2264,37 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           En el lienzo global también se dibujan (el contexto sin área NO se pinta;
           con área SÍ, como marco). Clic en la etiqueta → abre su columna de contexto
           (nunca navega ni hace zoom-in). */}
+      {/* ── CELDAS DE DÍA (hoja AGENDA, Option A) ──
+          Los días de la agenda tenían posición pero no se dibujaban → la agenda parecía
+          vacía. Aquí pintamos cada día como una celda sutil del calendario (número + día de
+          la semana), hoy con acento. Clic = entrar en su celda (zoom). Solo en región agenda. */}
+      {nested && [...nested.dayCells.entries()].map(([id, rect]) => {
+        const node = store.getNode(id); if (!node) return null
+        const sx = cam.x + rect.x * cam.scale, sy = cam.y + rect.y * cam.scale
+        const sw = rect.w * cam.scale, sh = rect.h * cam.scale
+        if (sx + sw < -50 || sx > viewport.w + 50 || sy + sh < -50 || sy > viewport.h + 50) return null
+        const d = node.diaryDate ? new Date(node.diaryDate) : null
+        const now = new Date()
+        const isToday = d != null && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
+        const dayNum = d ? d.getDate() : ''
+        const wd = d ? d.toLocaleDateString(i18n.language || undefined, { weekday: 'short' }).replace('.', '') : ''
+        const accent = 'var(--accent, #6c5ce7)'
+        const lab = Math.max(9, Math.min(16, 12 * cam.scale))
+        return (
+          <div key={'day-' + id} data-day-cell={id}
+            onPointerUp={(e) => { if (e.button !== 0) return; e.stopPropagation(); flyToArea(id); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: id } })) }}
+            style={{ position: 'absolute', left: sx, top: sy, width: sw, height: sh, zIndex: 1, pointerEvents: 'auto', cursor: 'pointer', borderRadius: 12,
+              border: isToday ? `1.5px solid ${accent}` : '1px solid var(--border-subtle, #ececf0)',
+              background: isToday ? 'color-mix(in srgb, var(--accent, #6c5ce7) 5%, transparent)' : 'transparent',
+              transition: 'border-color .15s, background .15s' }}>
+            <div style={{ position: 'absolute', top: 6, left: 10, display: 'flex', alignItems: 'baseline', gap: 5, pointerEvents: 'none',
+              color: isToday ? accent : 'var(--text-tertiary, #9ca3af)', fontWeight: isToday ? 700 : 600, letterSpacing: '.2px' }}>
+              <span style={{ fontSize: lab * 1.35 }}>{dayNum}</span>
+              <span style={{ fontSize: lab * 0.82, textTransform: 'capitalize', opacity: 0.7 }}>{wd}</span>
+            </div>
+          </div>
+        )
+      })}
       {children.filter(n => zoneIds.has(n.id)).map(a => {
         const rect = readAreaRect(a) ?? (nested ? nested.boxes.get(a.id) ?? null : null); if (!rect) return null
         const col = (() => { const cx = firstContextOf(a) ?? (isMarkedContext(a) ? a : null); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()
