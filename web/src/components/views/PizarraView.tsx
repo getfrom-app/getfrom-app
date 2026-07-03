@@ -2698,8 +2698,15 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               (isText && !lod) ? (e: React.PointerEvent) => {
                 if (e.button !== 0) return
                 const t = e.target as HTMLElement
-                if (t.closest('button, a, input, textarea, select, [contenteditable="true"], .ProseMirror')) return
-                if (editing) return
+                // Clic DENTRO del editor ya activo (colocar cursor, arrastrar para
+                // seleccionar texto, casilla de tarea…): dejar que TipTap lo gestione,
+                // pero SIEMPRE cortar la propagación — si no, el pointerdown sigue
+                // subiendo hasta el fondo del lienzo (`onBackgroundPointerDown`), que
+                // limpia la selección (`setSelectedId(null)`) EN MITAD del gesto de
+                // seleccionar texto → desmonta el editor del panel a mitad de una
+                // transacción de ProseMirror → crash (React #185).
+                if (t.closest('button, a, input, textarea, select, [contenteditable="true"], .ProseMirror')) { e.stopPropagation(); return }
+                if (editing) { e.stopPropagation(); return }
                 e.stopPropagation()
                 setSelectedId(node.id); setEditText(node.id)
               } : (e: React.PointerEvent) => onCardAreaPointerDown(e, node)
