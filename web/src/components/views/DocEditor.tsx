@@ -255,10 +255,10 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // formato persistente de `DocInspector` arriba, reutilizada tal cual.
   useEffect(() => {
     if (!editor || (compact && !registerActive)) return
-    setDocEditor(editor, insertImage)
+    setDocEditor(editor, insertImage, node.id)
     return () => setDocEditor(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor, compact, registerActive])
+  }, [editor, compact, registerActive, node.id])
 
   if (!editor) return null
 

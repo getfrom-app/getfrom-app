@@ -33,6 +33,7 @@ import { computeNestedLayout, CONTENT_W, type NestedLayout } from '../../utils/n
 import type { CanvasViewKind } from '../../utils/docNode'
 import { mergeNodesToBlock } from '../../utils/noteBlocks'
 import DocEditor from './DocEditor'
+import { useActiveDocNodeId } from '../../utils/docEditorStore'
 import OutlinerNode from '../outliner/OutlinerNode'
 import ContextPicker from '../panels/ContextPicker'
 import PdfCanvasPreview from './PdfCanvasPreview'
@@ -351,6 +352,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   const { t } = useTranslation()
   const nodesVersion = useStore(st => st.nodesVersion) // re-render + memoizar por versión
   const navigate = useNavigate()
+  // Id del nodo cuyo editor está registrado como «activo» (el panel de documento,
+  // `LienzoDocPanel`). Si coincide con la tarjeta que se está pintando, la tarjeta CEDE la
+  // edición y se muestra en modo lectura — nunca dos editores TipTap vivos sobre el MISMO
+  // nodo a la vez (causaba un bucle de renders al seleccionar texto — v9.6.680).
+  const activeDocNodeId = useActiveDocNodeId()
   const containerRef = useRef<HTMLDivElement>(null)
   // Cámara: se PERSISTE en el body (camX/Y/Scale, el mismo campo que el iPad) para
   // volver a donde lo dejaste. Init perezoso + restauración al cambiar de nodo.
@@ -2731,10 +2737,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
               // (Intento anterior de que el lienzo global NUNCA montara aquí su propio editor
               // — para que el panel de la derecha fuera el único — rompió por completo poder
               // escribir: crear texto nuevo con doble clic NO selecciona el nodo, así que el
-              // panel no llega a abrirse y no había NINGÚN editor donde escribir. Revertido:
-              // la tarjeta SIEMPRE edita aquí; el robo de foco del panel se corta en
-              // `LienzoDocPanel` con `autofocus={false}`, no quitando el editor de la tarjeta.)
-              editing ? (
+              // panel no llega a abrirse y no había NINGÚN editor donde escribir. La tarjeta
+              // SIGUE editando aquí en ese caso (creación) — pero en cuanto el panel de la
+              // derecha se registra como activo PARA ESTE MISMO NODO (`activeDocNodeId`,
+              // tras seleccionar un texto ya existente), la tarjeta CEDE y pasa a modo lectura:
+              // nunca dos editores TipTap vivos sobre el mismo nodo — causaba un bucle de
+              // renders al seleccionar texto, React #185 — v9.6.680.)
+              (editing && activeDocNodeId !== node.id) ? (
                 <DocEditor node={node} compact />
               ) : globalCanvas ? (
                 // LIENZO: TEXTO PURO — sin gutter, sin chevron, sin dot, sin accesorios.
