@@ -15,7 +15,7 @@ import { isDocNode, firstLineTitle } from '../../utils/docNode'
 import { isMarkedContext } from '../../utils/cajones'
 import { openNodeDetail } from '../../utils/canvasNav'
 
-type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context'
+type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; due?: string | null; status?: string | null }
@@ -34,6 +34,8 @@ function classify(n: Node): ElemKind | null {
   if (rt === 'pdf') return 'pdf'
   if (n.isResource || e._resourceUrl || e._resource) return 'link'
   if (isDocNode(n) || store.isNote(n)) return 'text'
+  // Memoria IA ANTIGUA (oculta del lienzo pero BUSCABLE aquí): línea de conocimiento con texto.
+  if (e._tagDefinition != null && (n.text || '').trim()) return 'memory'
   return null
 }
 
@@ -56,7 +58,7 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
   return true
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁' }
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠' }
 const ROW_H = 46
 
 export default function ElementsPanel() {
@@ -85,6 +87,7 @@ export default function ElementsPanel() {
   const nq = q.trim().toLowerCase()
   const showTaskSub = filter === 'task' || filter === 'event'
   const filtered = useMemo(() => rows.filter(r => {
+    if (filter === 'all' && r.kind === 'memory') return false // memoria IA solo con su propio chip (no ensucia «Todos»)
     if (filter !== 'all' && r.kind !== filter) return false
     if (showTaskSub && !matchesTaskSub(r, taskSub)) return false
     if (!nq) return true
@@ -109,6 +112,7 @@ export default function ElementsPanel() {
     { key: 'pdf',     label: t('elements.pdfs') },
     { key: 'image',   label: t('elements.images') },
     { key: 'context', label: t('elements.contexts') },
+    { key: 'memory',  label: t('elements.memory', 'Memoria') },
   ]
   const SUB_CHIPS: { key: TaskSub; label: string }[] = [
     { key: 'all',    label: t('elements.subAll', 'Todas') },
@@ -142,7 +146,7 @@ export default function ElementsPanel() {
                 background: filter === c.key ? 'var(--accent,#6c5ce7)' : 'var(--bg,#fff)',
                 color: filter === c.key ? '#fff' : 'var(--text-secondary,#666)',
               }}>
-              {c.label}{c.key !== 'all' ? ` (${counts[c.key] || 0})` : ` (${rows.length})`}
+              {c.label}{c.key !== 'all' ? ` (${counts[c.key] || 0})` : ` (${rows.length - (counts.memory || 0)})`}
             </button>
           ))}
         </div>
