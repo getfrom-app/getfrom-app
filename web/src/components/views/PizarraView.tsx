@@ -2361,9 +2361,17 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
    que el texto no quede pegado al borde/selección. El panel derecho tiene su propio padding. */
 .pizarra-node--text .pizarra-text,.pizarra-node--text .doc-editor--compact .ProseMirror{padding-left:8px;padding-right:8px}
 .pizarra-text:empty::before{content:'Texto…';opacity:.4;pointer-events:none}
-.pizarra-text h1{font-size:1.7em;font-weight:700;margin:.15em 0;line-height:1.25}
-.pizarra-text h2{font-size:1.35em;font-weight:700;margin:.15em 0;line-height:1.3}
-.pizarra-text ul,.pizarra-text ol{margin:.2em 0;padding-left:1.4em}
+/* El preview estático (lectura) DEBE calcar EXACTAMENTE al editor compacto (edición): mismos
+   tamaños y márgenes de encabezados/párrafos/listas. Si difieren, al seleccionar el texto se
+   «amplía» un poco (glitch). Valores idénticos a los del editor compacto (index.css). */
+.pizarra-text p{margin:.3em 0}
+.pizarra-text h1{font-size:1.8em;font-weight:700;margin:0 0 .2em;line-height:1.25}
+.pizarra-text h2{font-size:1.4em;font-weight:700;margin:.4em 0 .15em;line-height:1.3}
+.pizarra-text h3{font-size:1.18em;font-weight:700;margin:.35em 0 .1em}
+.pizarra-text ul,.pizarra-text ol{margin:.3em 0;padding-left:1.4em}
+.pizarra-text li{margin:.15em 0}
+.pizarra-text blockquote{border-left:3px solid var(--border,#ddd);margin:.4em 0;padding:.1em 0 .1em .8em;color:var(--text-secondary,#666)}
+.pizarra-text code{background:var(--bg-subtle,#f3f3f3);padding:.1em .35em;border-radius:4px;font-size:.9em}
 .pizarra-text:focus{outline:none}
 /* ── Texto LIMPIO del lienzo (nodo-tarea con Magic) ──────────────────────────
    Al crear con la herramienta Texto: SOLO el cursor. Nada de bullet, chip de
@@ -2929,40 +2937,31 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 <span style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--text-secondary,#888)', border: plainHasKids ? '2px solid var(--accent-soft,#e9e6ff)' : '2px solid var(--bg,#fff)', boxShadow: plainHasKids ? '0 0 0 2px var(--accent,#6c5ce7)' : '0 0 0 1px var(--border,#d8d8d8)' }} />
               </div>
             )}
-            {/* Redimensionar SIN tiradores visibles: pinchar y arrastrar directamente desde el
-                borde/esquina de la propia tarjeta (zona invisible pero interactiva, cursor
-                ew-resize/nwse-resize da la pista). Mismo criterio para texto/imagen/PDF/vista. */}
-            {isText && (selectedId === node.id || multiSel.has(node.id) || editing) && !dragPos && (
+            {/* Redimensionar — MISMOS tiradores para TODOS los elementos de contenido del
+                lienzo (texto, PDF, imagen, vistas): zona invisible en los DOS lados (ancho) y
+                en la esquina inferior derecha (proporcional). Se puede arrastrar desde
+                cualquier lado; el cursor (ew-resize/nwse-resize) da la pista. Consistencia
+                total: en el texto el ancho reajusta el salto de línea; en imagen/PDF/vista
+                cambia el tamaño manteniendo su proporción. */}
+            {(isText || elView || res) && (hovered || selectedId === node.id || multiSel.has(node.id) || (isText && editing)) && !dragPos && (
               <>
+                {/* Lado izquierdo — ancho (el borde derecho queda fijo). */}
+                <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
+                  style={{ position: 'absolute', left: -5, top: 0, bottom: 0, width: 10, background: 'transparent', cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
+                {/* Lado derecho — ancho (el borde izquierdo queda fijo). */}
                 <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
                   style={{ position: 'absolute', right: -5, top: 0, bottom: 0, width: 10, background: 'transparent', cursor: 'ew-resize', touchAction: 'none', zIndex: 21 }} />
+                {/* Esquina inferior derecha — escala proporcional desde arriba-izquierda. */}
                 <div title={t('tip.scale')} onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
                   style={{ position: 'absolute', right: -6, bottom: -6, width: 16, height: 16, background: 'transparent', cursor: 'nwse-resize', touchAction: 'none', zIndex: 21 }} />
               </>
             )}
-            {showHandles && !isText && !isClean && ((elView || res) ? (
-              // Vista o entidad embebida: borde derecho + esquina inferior derecha.
-              <>
-                <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'widthR')}
-                  style={{ position: 'absolute', right: -5, top: 0, bottom: 0, width: 10, background: 'transparent', cursor: 'ew-resize', touchAction: 'none' }} />
-                <div title={t('tip.scale')} onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
-                  style={{ position: 'absolute', right: -6, bottom: -6, width: 16, height: 16, background: 'transparent', cursor: 'nwse-resize', touchAction: 'none' }} />
-              </>
-            ) : (
-              <>
-                {/* Borde izquierdo — arrastra → reajusta ancho y salto de línea. */}
-                <div title={t('tip.width')} onPointerDown={(e) => onNodeResizeDown(e, node, 'width')}
-                  style={{ position: 'absolute', left: -5, top: 0, bottom: 0, width: 10, background: 'transparent', cursor: 'ew-resize', touchAction: 'none' }} />
-                {/* Esquina inferior derecha — escala uniforme desde arriba-izquierda. */}
-                <div title={t('tip.scale')} onPointerDown={(e) => onNodeResizeDown(e, node, 'scale')}
-                  style={{ position: 'absolute', right: -6, bottom: -6, width: 16, height: 16, background: 'transparent', cursor: 'nwse-resize', touchAction: 'none' }} />
-              </>
-            ))}
             {/* HEPTABASE FASE 3: overlay de anotación — SIEMPRE presente si ya hay trazos
                 guardados (para pintarlos), y con el puntero activo SOLO mientras se está
                 anotando ESTA tarjeta (si no, `pointerEvents:none` deja pasar los clics
                 normales de la tarjeta por debajo). */}
             {(() => {
+              if (!res) return null // anotación SOLO en PDF/imagen (el texto se edita, no se pinta)
               const annos = readCardAnnos(node)
               const isAnnotating = annotatingId === node.id
               if (!annos.length && !isAnnotating) return null
@@ -2983,14 +2982,12 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 </svg>
               )
             })()}
-            {/* Botón «✏️ Anotar» — visible en hover/selección (o siempre mientras se anota
-                esta misma tarjeta). Solo para texto/PDF/imagen: son las tarjetas «de
-                contenido» donde tiene sentido pintar encima, como en Heptabase. */}
-            {/* `showHandles` excluye `editing` (para no chocar con los tiradores de la
-                tarjeta) — el botón de anotar SÍ debe verse aunque el texto esté en edición,
-                que es justo cuando estás sobre él, así que se comprueba aparte. Mientras se
-                anota (`✓`), aparecen además Deshacer (último trazo) y Borrar todo. */}
-            {(isText || res) && (showHandles || hovered || selectedId === node.id || annotatingId === node.id) && !dragPos && (
+            {/* Botón «✏️ Anotar» — SOLO en PDF/imagen (`res`): ahí no puedes «editar» el
+                contenido, así que pintar encima es el valor (como marcar un PDF en Heptabase).
+                En el TEXTO NO va: el texto se edita seleccionándolo (o desde el panel derecho),
+                sin botón — el lápiz creaba fricción y no aportaba (Alberto). Mientras se anota
+                (`✓`), aparecen además Deshacer (último trazo) y Borrar todo. */}
+            {res && (showHandles || hovered || selectedId === node.id || annotatingId === node.id) && !dragPos && (
               <div style={{ position: 'absolute', left: 4, top: -30, zIndex: 31, display: 'flex', gap: 4 }}
                 onPointerDown={e => { e.stopPropagation(); e.preventDefault() }}>
                 <button

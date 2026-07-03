@@ -7513,8 +7513,13 @@ textarea:focus-visible,
 .pizarra-text ul[data-type="taskList"] li > label { flex-shrink: 0; margin: 0.16em 0 0; user-select: none; display: flex; }
 .doc-editor .ProseMirror ul[data-type="taskList"] li > div,
 .pizarra-text ul[data-type="taskList"] li > div { flex: 1; min-width: 0; }
-.doc-editor .ProseMirror ul[data-type="taskList"] li > div > p,
-.pizarra-text ul[data-type="taskList"] li > div > p { margin: 0; }
+/* Párrafo dentro de una casilla → SIN margen, a cualquier profundidad de anidación. En el
+   EDITOR, el NodeView del chip mete un `div` extra (li > div > div > p), así que el selector
+   `li > div > p` no llegaba y el párrafo conservaba su margen (0.3em) → el ítem de tarea se
+   volvía ~9px más alto en edición que en el preview estático (salto de altura al seleccionar).
+   Con descendiente (`li p`) aplica en ambos, alturas idénticas. */
+.doc-editor .ProseMirror ul[data-type="taskList"] li p,
+.pizarra-text ul[data-type="taskList"] li p { margin: 0; }
 /* Checkbox estilo From (rect redondeado 1.5px). Pending = amarillo, done = verde + check. */
 .doc-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"],
 .pizarra-text ul[data-type="taskList"] li > label input[type="checkbox"] {
@@ -7587,7 +7592,11 @@ textarea:focus-visible,
 
 /* Elemento de VISTA (tabla/kanban/calendario) embebido en el lienzo. */
 .pizarra-node--el { border: 1px solid var(--border, #e2e2e2); border-radius: 10px; background: var(--bg, #fff); overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-.pizarra-node--el.pizarra-node--hover, .pizarra-node--el.pizarra-node--sel { border-color: var(--text-tertiary, #bbb); }
+/* Selección IDÉNTICA a la del texto y a la de dibujos: rectángulo de línea DISCONTINUA con
+   margen (outline-offset), mismo color de acento. TODOS los elementos del lienzo (texto, PDF,
+   imagen, vistas, dibujos) comparten exactamente este mismo indicador de selección. El marco
+   sólido de la tarjeta ya no se oscurece al seleccionar (esa era la incoherencia). */
+.pizarra-node--el.pizarra-node--sel { outline: 1px dashed var(--accent, #6c5ce7); outline-offset: 6px; }
 .pizarra-el-head { display: flex; align-items: center; gap: 7px; padding: 7px 11px; border-bottom: 1px solid var(--border-subtle, #eee); background: var(--bg-subtle, #fafafa); user-select: none; }
 
 .pizarra-el-title { font-size: 13px; font-weight: 600; color: var(--text-secondary, #666); }
