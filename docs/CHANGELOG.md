@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.704 — 3 julio 2026 · Tus días, en el lienzo
+
+Los días de tu agenda ya **se ven** en el lienzo, no son un hueco vacío.
+
+- **Días como celdas del calendario**: cada día aparece como una celda sutil con su número y día de la semana. El **día de hoy** va resaltado. Haz clic en un día para volar hasta él y abrir su columna.
+- **Siempre sabes qué día es**: al abrir Fromly, arriba a la izquierda verás el **día de hoy**; púlsalo para ir directo a su columna.
+- **Cajas de contexto más limpias**: quitamos el contador de «recuerdos» que aparecía dentro de los contextos. Ahora solo ves el número de elementos reales.
+- En camino: la vista de **mes completo** estilo calendario (año → meses → días).
+
+---
+
 ## Web v9.6.570 · Mac v9.5.77 — 1 julio 2026 · Traducción completa, hasta el último rincón
 
 Rematamos la internacionalización: **todos los textos de la interfaz** están ahora en tu idioma, no solo los tooltips.

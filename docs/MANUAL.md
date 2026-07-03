@@ -55,6 +55,8 @@ Cuando entras en Fromly por primera vez encuentras:
 
 Para empezar: haz clic en el año actual para ver tus notas del mes, o pulsa `H` para ir directamente al día de hoy.
 
+En el lienzo, tus días aparecen como **celdas del calendario** (con su número y día de la semana; hoy resaltado): haz clic en un día para volar hasta él. Y al abrir Fromly, arriba a la izquierda verás siempre **el día de hoy** — púlsalo para abrir su columna.
+
 ---
 
 ## 3. El árbol — cómo funciona Fromly
