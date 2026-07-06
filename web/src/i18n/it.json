@@ -2049,5 +2049,6 @@
   "dayNav.today": "Oggi",
   "dayNav.calendar": "Calendario",
   "dayNav.asList": "Mostra come elenco",
-  "dayNav.asCanvas": "Mostra come lavagna"
+  "dayNav.asCanvas": "Mostra come lavagna",
+  "dayNav.canvas": "Tela dei contesti"
 }

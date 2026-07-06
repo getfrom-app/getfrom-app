@@ -2049,5 +2049,6 @@
   "dayNav.today": "Idag",
   "dayNav.calendar": "Kalender",
   "dayNav.asList": "Visa som lista",
-  "dayNav.asCanvas": "Visa som arbetsyta"
+  "dayNav.asCanvas": "Visa som arbetsyta",
+  "dayNav.canvas": "Kontextarbetsyta"
 }

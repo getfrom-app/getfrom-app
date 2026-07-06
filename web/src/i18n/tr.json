@@ -2049,5 +2049,6 @@
   "dayNav.today": "Bugün",
   "dayNav.calendar": "Takvim",
   "dayNav.asList": "Liste olarak görüntüle",
-  "dayNav.asCanvas": "Tuval olarak görüntüle"
+  "dayNav.asCanvas": "Tuval olarak görüntüle",
+  "dayNav.canvas": "Bağlam tuvali"
 }

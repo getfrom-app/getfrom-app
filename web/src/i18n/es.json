@@ -2050,5 +2050,6 @@
   "dayNav.today": "Hoy",
   "dayNav.calendar": "Calendario",
   "dayNav.asList": "Ver como lista",
-  "dayNav.asCanvas": "Ver como lienzo"
+  "dayNav.asCanvas": "Ver como lienzo",
+  "dayNav.canvas": "Lienzo de contextos"
 }

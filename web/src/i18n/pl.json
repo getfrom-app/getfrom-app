@@ -2049,5 +2049,6 @@
   "dayNav.today": "Dziś",
   "dayNav.calendar": "Kalendarz",
   "dayNav.asList": "Pokaż jako listę",
-  "dayNav.asCanvas": "Pokaż jako tablicę"
+  "dayNav.asCanvas": "Pokaż jako tablicę",
+  "dayNav.canvas": "Płótno kontekstów"
 }

@@ -2049,5 +2049,6 @@
   "dayNav.today": "Σήμερα",
   "dayNav.calendar": "Ημερολόγιο",
   "dayNav.asList": "Προβολή ως λίστα",
-  "dayNav.asCanvas": "Προβολή ως καμβάς"
+  "dayNav.asCanvas": "Προβολή ως καμβάς",
+  "dayNav.canvas": "Καμβάς πλαισίων"
 }

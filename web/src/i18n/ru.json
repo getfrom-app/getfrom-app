@@ -2049,5 +2049,6 @@
   "dayNav.today": "Сегодня",
   "dayNav.calendar": "Календарь",
   "dayNav.asList": "Показать списком",
-  "dayNav.asCanvas": "Показать холстом"
+  "dayNav.asCanvas": "Показать холстом",
+  "dayNav.canvas": "Холст контекстов"
 }
