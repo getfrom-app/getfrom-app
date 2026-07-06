@@ -9944,6 +9944,27 @@ textarea:focus-visible,
   transition: color 0.1s, background 0.1s;
 }
 .wf-topbar-crumb-home:hover { color: var(--accent); background: var(--bg-hover); }
+/* Breadcrumb del DÍA DE HOY en el lienzo (icono + fecha): ancho AUTO, no la caja
+   cuadrada de 26px de crumb-home (que recortaba el texto centrándolo). */
+.wf-topbar-crumb-today {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 8px;
+  max-width: 100%;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 5px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: color 0.1s, background 0.1s;
+}
+.wf-topbar-crumb-today:hover { color: var(--accent); background: var(--bg-hover); }
 .wf-topbar-crumb-segment {
   display: flex;
   align-items: center;

@@ -138,12 +138,11 @@ export default function WFTopBar({
             Pulsar abre la columna de hoy y vuela a su celda del calendario. */}
         {onCanvas && !current && (
           <button
-            className="wf-topbar-crumb-home"
+            className="wf-topbar-crumb-today"
             onClick={() => { navigate('/'); window.dispatchEvent(new CustomEvent('from:set-day')) }}
             title={t('topbar.goToToday')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--text-tertiary)', fontSize: 13, fontWeight: 500, whiteSpace: 'nowrap' }}
           >
-            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" style={{ opacity: 0.7 }}>
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" style={{ opacity: 0.7, flexShrink: 0 }}>
               <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
             </svg>
             <span style={{ textTransform: 'capitalize' }}>{todayLabel}</span>
