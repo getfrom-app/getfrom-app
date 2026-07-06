@@ -1,7 +1,7 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-06 (Web v9.6.709)
+> Última actualización: 2026-07-06 (Web v9.6.716)
 
 ---
 
@@ -11,23 +11,31 @@
 Motivo: mezclar el zoom CONTINUO del lienzo con la rejilla DISCRETA del calendario hacía que un texto
 escrito con zoom alejado abarcase varios días y que las celdas creciesen con el contenido.
 
-- **Dos superficies separadas.** (1) Lienzo de contextos = plano infinito único, libre, sin
-  calendario. (2) Calendario = superficie discreta aparte: `TemporalCanvasView` (raíz 📅 Agenda),
-  niveles `roots→years→months(3×4)→days`, celdas uniformes.
+Fue una sesión iterativa (v9.6.705→716); el DISEÑO FINAL (v9.6.716) es:
+
+- **Dos superficies separadas.** (1) **Lienzo de contextos** = plano infinito único de contextos/
+  ideas (ruta `/`), sin calendario. (2) **Días** = cada día es su propio lienzo.
 - **Cada día = su propio lienzo.** `NodeView.viewKind`: una nota diaria abre como **pizarra** por
   defecto (`viewBlock` vacío → pizarra para `isDiaryEntry`; `viewBlock==='lista'` explícito fuerza
   lista). `PizarraView.readSavedCam`: para diarias, **escala SIEMPRE 1** al entrar (conserva pan,
   nunca la escala) → tamaños consistentes entre días.
-- **Navegación al día.** «Ir a hoy» (`flyToToday`) y el mini-calendario (`onSetDay` en MainLayout)
-  **navegan** al nodo del día (`/node/dayId`) en vez de «volar» a una zona del lienzo (que ya no
-  existe). Cabecera del día en `DayPanel`: `‹ ayer/mañana ›` + chip «Hoy», botón **Calendario**
-  (`setTemporalFocus` level 'days' → Agenda), mini-calendario y **toggle lista↔lienzo** (persiste
-  `viewBlock`).
-- **Limpieza.** Fuera de `nestedCanvasLayout.ts`: `computeAgendaGrid`, constantes `DAY_*`/`REGION_GAP`,
-  y los campos `dayCells`/`dayContentIds`/`todayId` de `NestedLayout` (el layout solo coloca
-  contextos). Fuera de `PizarraView`: estado `region` y el render de celdas de día.
-- +6 claves i18n `dayNav.*` ×12 idiomas. Verificado en Chrome (prod, datos reales). Web v9.6.704 →
-  **v9.6.709**. Detalle: `logs/2026-07-06-calendario-fuera-lienzo-dia-lienzo.md`.
+- **Barra superior con 3 botones de superficie** (`WFTopBar`, siempre visibles): 🌍 **Lienzo**
+  (`navigate('/')`, `active` en el lienzo de contextos) · 📆 **Hoy** (`from:set-day` → lienzo del
+  día de hoy) · 📅 **Calendario** (toggle `from:toggle-yearcal`).
+- **Calendario ANUAL en la columna derecha** (`YearCalendarPanel`, `rightPanel:'yearcal'`): 12
+  mini-meses en grid 3×4, días pequeños, puntos en días con contenido, navegación de año (‹ ›).
+  Clic en un día → `from:set-day` → viaja a ese día (vuelve la columna del día + el lienzo).
+- **Página mensual ELIMINADA.** `TemporalCanvasView` ya no se usa: abrir la raíz 📅 Agenda o un
+  nodo Año/Mes REDIRIGE al lienzo de hoy (useEffect en `NodeView`, antes del early-return para no
+  romper el orden de hooks). Se quitó el «dive» zoom-out diaria→agenda de `PizarraView`.
+- **Limpieza.** Fuera de `nestedCanvasLayout.ts`: `computeAgendaGrid`, constantes `DAY_*`/
+  `REGION_GAP`, campos `dayCells/dayContentIds/todayId`. Fuera de `PizarraView`: estado `region` y
+  el render de celdas de día. Eliminado `DayTimeline` (fase intermedia). Quedan HUÉRFANOS (sin uso,
+  no borrados): `TemporalCanvasView.tsx`, `MiniCalendar.tsx`.
+- **Breadcrumb del lienzo vacío** (sin «Hoy·fecha»); en la Agenda se ocultan las acciones de nota
+  (favorito/contexto/publicar/···) y el header (`isAgendaRoot||temporalCalendar` en `.node-title-row`).
+- +11 claves i18n `dayNav.*` ×12 idiomas. Verificado en Chrome (prod, datos reales). Web v9.6.704 →
+  **v9.6.716**. Detalle: `logs/2026-07-06-calendario-fuera-lienzo-dia-lienzo.md`.
 
 ---
 

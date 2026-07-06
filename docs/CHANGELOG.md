@@ -4,16 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.6.709 — 6 julio 2026 · Cada día, su propio lienzo
+## Web v9.6.716 — 6 julio 2026 · Cada día, su propio lienzo (+ calendario del año)
 
-Cambiamos cómo funciona el calendario para que escribir en un día sea fluido. Antes los días vivían dentro del lienzo infinito y, al alejar el zoom, un texto podía abarcar varios días y los tamaños se descuadraban. Ahora:
+Rediseñamos cómo funcionan los días y el calendario para que escribir sea fluido. Antes los días vivían dentro del lienzo infinito y, al alejar el zoom, un texto podía abarcar varios días y los tamaños se descuadraban. Ahora hay dos superficies claras y una barra de navegación fija:
 
-- **Cada día es su propia pizarra**: entras en un día y escribes/dibujas ahí; todo lo que pongas es contenido de ese día.
-- **Mismo zoom siempre**: cada día abre al 100%, así los textos y dibujos de todos los días guardan la misma escala.
-- **Navegación de día**: en la columna del día tienes **‹ / ›** para ir a ayer/mañana, un botón **«Hoy»**, el **mini-calendario** para saltar a cualquier fecha y un botón de **Calendario** (mes/año) para verlo todo de un vistazo.
-- **Lista o lienzo**: si prefieres un día como lista, un toggle lo cambia (se recuerda por día).
-- **«Ir a hoy»** (o `⌘D`) te lleva directo al lienzo de hoy.
-- El **calendario** (año → meses → días) es ahora una superficie propia, limpia y uniforme, separada del lienzo de ideas.
+- **Cada día es su propia pizarra**: entras en un día y escribes/dibujas ahí; todo lo que pongas es contenido de ese día. Abre **siempre al 100%**, así los textos y dibujos de todos los días guardan la misma escala.
+- **Barra superior con tres botones siempre visibles**: **🌍 Lienzo** (tu lienzo de contextos e ideas, el plano infinito) · **📆 Hoy** (entra al lienzo de hoy) · **📅 Calendario**.
+- **Calendario del año en la columna derecha**: pulsa 📅 y ves los **12 meses de un vistazo** (mini-calendarios); cambia de año y pulsa cualquier día para viajar a él — vuelven la columna y el lienzo de ese día. Los días con contenido llevan un puntito.
+- El lienzo de contextos y el calendario son **superficies separadas**: se acabó el texto que se estiraba por varios días.
 
 ---
 
