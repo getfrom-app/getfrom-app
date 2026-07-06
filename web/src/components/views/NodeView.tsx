@@ -313,6 +313,8 @@ export default function NodeView() {
     else if (viewBlock === 'kanban') kind = 'kanban'
     else if (viewBlock === 'calendario') kind = 'calendar'
     else if (viewBlock === 'pizarra') kind = 'pizarra'
+    // 'lista' EXPLÍCITO fuerza lista aunque sea diaria (toggle de la columna del día).
+    else if (viewBlock === 'lista') kind = 'list'
     // Un DÍA (nota diaria) abre como LIENZO por defecto: cada día es su propia pizarra
     // (escribir/dibujar ahí = contenido de ese día). Antes abría como lista.
     else kind = node.isDiaryEntry ? 'pizarra' : 'list'
