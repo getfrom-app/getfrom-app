@@ -10,8 +10,6 @@ import { ensureCanvasRoot, isCanvasRoot } from '../../utils/canvasRoot'
 import { getAgentesNode } from '../../utils/agentesHelper'
 import { getPapeleraNode } from '../../utils/papeleraHelper'
 import { findRootByKey } from '../../utils/rootLookup'
-import { getOrCreateAgendaRoot } from '../../utils/agendaHelper'
-import { setTemporalFocus } from '../../utils/pizarraNav'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
@@ -241,7 +239,8 @@ export default function WFTopBar({
           <path d="M7 9.5a2.5 2.5 0 100 5c1.5 0 2.4-1.3 3-2.5.6-1.2 1.5-2.5 3-2.5a2.5 2.5 0 110 5c-1.5 0-2.4-1.3-3-2.5-.6-1.2-1.5-2.5-3-2.5z" />
         </svg>
       </button>
-      {/* 📆 Hoy — entra en el lienzo del día de hoy. */}
+      {/* 📆 Hoy — entra en el lienzo del día de hoy (+ su columna). Para viajar a otros
+          días se usa el TIMELINE de la columna diaria (no una página mensual aparte). */}
       <button
         className="wf-topbar-btn"
         title={t('topbar.goToToday')}
@@ -249,20 +248,6 @@ export default function WFTopBar({
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><rect x="7" y="13" width="4" height="4" rx="1" fill="currentColor" stroke="none" />
-        </svg>
-      </button>
-      {/* 📅 Calendario mes/año (superficie discreta, TemporalCanvasView). */}
-      <button
-        className="wf-topbar-btn"
-        title={t('dayNav.calendar', 'Calendario')}
-        onClick={() => {
-          const agenda = getOrCreateAgendaRoot()
-          setTemporalFocus({ date: Date.now(), level: 'days' })
-          navigate(`/node/${agenda.id}`)
-        }}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
         </svg>
       </button>
       <div className="wf-topbar-sep" />
