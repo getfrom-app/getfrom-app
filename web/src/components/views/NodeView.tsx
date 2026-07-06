@@ -336,6 +336,19 @@ export default function NodeView() {
     return findRootByKey('agenda')?.id === node.id
   }, [node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // La PÁGINA MENSUAL se eliminó (v9.6.714): abrir la raíz 📅 Agenda o un nodo Año/Mes ya no
+  // muestra un calendario-página → REDIRIGE al lienzo del día de hoy. Los días se navegan con
+  // el timeline de la columna diaria. (Este hook va ANTES del early-return `if (!node)` de más
+  // abajo — el orden de hooks debe ser estable en cada render.)
+  useEffect(() => {
+    if (!node) return
+    let temporal = false
+    try { const tt = JSON.parse(node.extraData || '{}').temporalType; temporal = tt === 'year' || tt === 'month' } catch { /* noop */ }
+    if (isAgendaRoot || temporal) {
+      navigate(`/node/${ensureDiaryForDate(new Date()).id}`, { replace: true })
+    }
+  }, [isAgendaRoot, node?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Panel del día (como iPad): al ver CUALQUIER nota diaria, abrir la pestaña
   // «Día» del panel derecho. En pizarra muestra «Tu día» + nodos del día; en
   // lista muestra «Tu día» (los nodos siguen inline en el centro). Al salir de
@@ -1026,16 +1039,6 @@ export default function NodeView() {
     return null
   })()
   const temporalCalendar = temporalCalendarFocus !== null
-
-  // La PÁGINA MENSUAL se eliminó (v9.6.714): abrir la raíz 📅 Agenda o un nodo Año/Mes
-  // ya no muestra un calendario-página, sino que REDIRIGE al lienzo del día de hoy. Los días
-  // se navegan con el timeline de la columna diaria.
-  useEffect(() => {
-    if (isAgendaRoot || temporalCalendar) {
-      const d = ensureDiaryForDate(new Date())
-      navigate(`/node/${d.id}`, { replace: true })
-    }
-  }, [isAgendaRoot, temporalCalendar]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Crumbs temporales: Año / Mes / Semana (a partir del ancestro diario)
   const diaryTemporalCrumbs: { label: string; type: 'year' | 'month' | 'week' }[] = []
