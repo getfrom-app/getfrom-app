@@ -31,7 +31,7 @@ import { maybeICloudBackup } from '../../utils/icloudBackup'
 import WFHomeView from '../views/WFHomeView'
 import { ensureCanvasRoot } from '../../utils/canvasRoot'
 import { revertContextReferenceOnce } from '../../utils/migrateContextReference'
-import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts } from '../../utils/agendaHelper'
+import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts, findAgendaRoot } from '../../utils/agendaHelper'
 import { createNodeFromText, labelForType } from '../../utils/captureHelper'
 
 // Redirige /followup → /node/{diario de hoy} (ruta legacy).
@@ -398,6 +398,12 @@ export default function MainLayout() {
     if (_onCanvasRoot) setRightPanel(p => (p === 'filter' ? 'day' : p))
   }, [_onCanvasRoot])
   const dayPanelNodeId = useMemo(() => {
+    // En la AGENDA (calendario) la columna derecha muestra HOY, no la nota «Agenda»
+    // (contexto/movidos no tienen sentido ahí). Cubre todos los niveles año/mes/día
+    // porque el calendario los recorre SIN navegar (mismo nodo raíz Agenda).
+    if (currentNodeIdFromRoute && currentNodeIdFromRoute === findAgendaRoot()?.id) {
+      return ensureDiaryForDate(new Date()).id
+    }
     if (detailNodeId) return detailNodeId
     if (_onCanvasRoot) return ensureDiaryForDate(selectedDay ?? new Date()).id
     return currentNodeIdFromRoute

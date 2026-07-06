@@ -51,10 +51,7 @@ export default function WFTopBar({
   const location = useLocation()
   const s = useStore()
   const { theme, setTheme } = useTheme()
-  const { t, i18n } = useTranslation()
-  // Etiqueta de HOY para el breadcrumb del lienzo cuando no hay nada seleccionado
-  // («al abrir Fromly, breadcrumb del día actual»). Pulsar = abrir la columna de hoy.
-  const todayLabel = new Date().toLocaleDateString(i18n.language || undefined, { weekday: 'long', day: 'numeric', month: 'short' })
+  const { t } = useTranslation()
   // ¿Estamos en el LIENZO DE CONTEXTOS (ruta raíz)? → el botón Lienzo se marca activo.
   const onContextsCanvas = location.pathname.replace(/^\/app\/?/, '').replace(/^\/+|\/+$/g, '') === ''
 
@@ -138,20 +135,9 @@ export default function WFTopBar({
       {/* ── Breadcrumb integrado con casa. En el LIENZO se oculta pero el div queda
              como hueco flex:1 → los botones de acción siguen a la DERECHA. ── */}
       <div className="wf-topbar-breadcrumb" style={onCanvas && !current ? { flex: 1 } : undefined}>
-        {/* Lienzo sin selección → breadcrumb del DÍA DE HOY (pista de ubicación al abrir).
-            Pulsar abre la columna de hoy y vuela a su celda del calendario. */}
-        {onCanvas && !current && (
-          <button
-            className="wf-topbar-crumb-today"
-            onClick={() => window.dispatchEvent(new CustomEvent('from:set-day'))}
-            title={t('topbar.goToToday')}
-          >
-            <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" style={{ opacity: 0.7, flexShrink: 0 }}>
-              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-            </svg>
-            <span style={{ textTransform: 'capitalize' }}>{todayLabel}</span>
-          </button>
-        )}
+        {/* En el LIENZO DE CONTEXTOS sin selección, el breadcrumb queda VACÍO: no estás en un
+            día, así que mostrar «Hoy · fecha» confundía (el botón 🌍 Lienzo de la barra ya
+            marca dónde estás). El breadcrumb solo aparece al seleccionar algo o entrar a un nodo. */}
         {(!onCanvas || current) && (<>
         {/* Casa — en el lienzo deselecciona (vuelve a la columna del día); fuera, va al raíz */}
         <button className="wf-topbar-crumb-home" onClick={onCanvas ? () => window.dispatchEvent(new CustomEvent('from:close-detail')) : goHome} title={t('common.home')}>
