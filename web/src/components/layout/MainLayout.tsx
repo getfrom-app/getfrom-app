@@ -683,21 +683,17 @@ export default function MainLayout() {
       if (kind === 'context') window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
     }
     function onCloseDetail() { setDetailNodeId(null); setRightPanel('day') }
-    // Mini-calendario / «hoy»: cambia el DÍA (sin navegar). El día ELEGIDO queda como
-    // detalle activo → el breadcrumb sigue visible y apunta a ese día; y el lienzo vuela
-    // a su zona (agenda-calendario).
+    // Mini-calendario / «hoy»: ENTRA en el lienzo del día elegido (cada día es su propia
+    // pizarra, a escala fija). Antes «volaba» a la zona del día dentro del lienzo global,
+    // pero el calendario ya no vive ahí → ese vuelo quedaba muerto (el lienzo no se movía).
     function onSetDay(e: Event) {
       const iso = (e as CustomEvent).detail?.date
       const date = iso ? new Date(iso) : new Date()
       setSelectedDay(iso ? new Date(iso) : null)
       const day = ensureDiaryForDate(date)
-      setDetailNodeId(day.id)
+      setDetailNodeId(null) // que la columna del día resuelva al día ROUTEADO, no a una selección previa
       setRightCollapsed(false)
-      setRightPanel('day')
-      // Volar a la ZONA del día. Si el día se acaba de crear, su celda aparece tras el
-      // recálculo (debounced) del layout → reintentos para no perder el vuelo.
-      const flyDay = () => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: day.id } }))
-      flyDay(); setTimeout(flyDay, 320); setTimeout(flyDay, 640)
+      navigate(`/node/${day.id}`) // NodeView abre el día como pizarra + su columna del día
     }
     // Panel «Elementos» (Heptabase): lista textos/selecciones/imágenes/PDF del lienzo actual.
     function onOpenElements(e: Event) {

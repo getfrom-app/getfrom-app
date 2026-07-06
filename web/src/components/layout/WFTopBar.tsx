@@ -139,7 +139,7 @@ export default function WFTopBar({
         {onCanvas && !current && (
           <button
             className="wf-topbar-crumb-today"
-            onClick={() => { navigate('/'); window.dispatchEvent(new CustomEvent('from:set-day')) }}
+            onClick={() => window.dispatchEvent(new CustomEvent('from:set-day'))}
             title={t('topbar.goToToday')}
           >
             <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" style={{ opacity: 0.7, flexShrink: 0 }}>

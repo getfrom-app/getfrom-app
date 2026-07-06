@@ -313,7 +313,9 @@ export default function NodeView() {
     else if (viewBlock === 'kanban') kind = 'kanban'
     else if (viewBlock === 'calendario') kind = 'calendar'
     else if (viewBlock === 'pizarra') kind = 'pizarra'
-    else kind = 'list'
+    // Un DÍA (nota diaria) abre como LIENZO por defecto: cada día es su propia pizarra
+    // (escribir/dibujar ahí = contenido de ese día). Antes abría como lista.
+    else kind = node.isDiaryEntry ? 'pizarra' : 'list'
     // Arreglo seguro: una NOTA normal en modo pizarra pero SIN hijos que colocar
     // se vería como lienzo en blanco (p. ej. una tarjeta capturada del lienzo de
     // un día cuyos elementos quedaron bajo el día). En ese caso, abrir en lista.

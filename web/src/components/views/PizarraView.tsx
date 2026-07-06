@@ -404,7 +404,12 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // Cámara: se PERSISTE en el body (camX/Y/Scale, el mismo campo que el iPad) para
   // volver a donde lo dejaste. Init perezoso + restauración al cambiar de nodo.
   const readSavedCam = useCallback((pid: string): Cam => {
-    const d = parsePizarra(store.getNode(pid)?.body)
+    const n = store.getNode(pid)
+    const d = parsePizarra(n?.body)
+    // DÍA (nota diaria): zoom SIEMPRE fijo (escala 1) al entrar → los textos y dibujos de
+    // todos los días guardan la misma relación de tamaño y se pueden comparar. Se conserva
+    // el pan (x/y) para volver a donde estabas, pero nunca la escala.
+    if (n?.isDiaryEntry) return { x: d.camX ?? 60, y: d.camY ?? 60, scale: 1 }
     if (d.camScale != null && d.camX != null) return { x: d.camX, y: d.camY ?? 60, scale: d.camScale }
     return { x: 60, y: 60, scale: 1 }
   }, [])
@@ -937,18 +942,13 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     flyTo(rect.x + rect.w / 2, rect.y + rect.h / 2, scale)
   }, [flyTo, flyToNode])
 
-  // «Ir a hoy» desde el lienzo global: el calendario ya no vive en el plano infinito, así que
-  // abrimos la superficie DISCRETA (raíz 📅 Agenda → `TemporalCanvasView`) enfocada en el mes
-  // de hoy, nivel 'days'. Ahí la rejilla es uniforme y un clic en el día entra a su espacio.
+  // «Ir a hoy»: entra DENTRO del lienzo del día de hoy (su propia pizarra, a escala fija 1).
+  // Ahí escribes/dibujas y todo es contenido de hoy. Para navegar entre días se usa el
+  // mini-calendario de la columna derecha; para el calendario mes/año, zoom-out (dive).
   const flyToToday = useCallback(() => {
-    const agenda = findRootByKey('agenda')
-    if (!agenda) { // sin raíz de agenda aún → abrir directamente el día de hoy
-      const day = ensureDayPath(new Date())
-      navigate(`/node/${day.id}`)
-      return
-    }
-    setTemporalFocus({ date: Date.now(), level: 'days' })
-    navigate(`/node/${agenda.id}`)
+    const day = ensureDayPath(new Date())
+    navigate(`/node/${day.id}`)
+    window.dispatchEvent(new CustomEvent('from:open-day-panel'))
   }, [navigate])
 
   // ⚠️ REVERTIDO en v9.6.677: un useEffect de montaje que llamaba flyToToday() (con
