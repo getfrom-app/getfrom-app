@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.709 — 6 julio 2026 · Cada día, su propio lienzo
+
+Cambiamos cómo funciona el calendario para que escribir en un día sea fluido. Antes los días vivían dentro del lienzo infinito y, al alejar el zoom, un texto podía abarcar varios días y los tamaños se descuadraban. Ahora:
+
+- **Cada día es su propia pizarra**: entras en un día y escribes/dibujas ahí; todo lo que pongas es contenido de ese día.
+- **Mismo zoom siempre**: cada día abre al 100%, así los textos y dibujos de todos los días guardan la misma escala.
+- **Navegación de día**: en la columna del día tienes **‹ / ›** para ir a ayer/mañana, un botón **«Hoy»**, el **mini-calendario** para saltar a cualquier fecha y un botón de **Calendario** (mes/año) para verlo todo de un vistazo.
+- **Lista o lienzo**: si prefieres un día como lista, un toggle lo cambia (se recuerda por día).
+- **«Ir a hoy»** (o `⌘D`) te lleva directo al lienzo de hoy.
+- El **calendario** (año → meses → días) es ahora una superficie propia, limpia y uniforme, separada del lienzo de ideas.
+
+---
+
 ## Web v9.6.704 — 3 julio 2026 · Tus días, en el lienzo
 
 Los días de tu agenda ya **se ven** en el lienzo, no son un hueco vacío.

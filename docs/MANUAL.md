@@ -53,9 +53,17 @@ Cuando entras en Fromly por primera vez encuentras:
 - **La barra superior**: breadcrumb de navegación y controles de vista y panel derecho.
 - **El panel derecho**: se abre con Magic (IA), Filtro, Planificador o el contenido de un Contexto seleccionado.
 
-Para empezar: haz clic en el año actual para ver tus notas del mes, o pulsa `H` para ir directamente al día de hoy.
+Para empezar: pulsa **«Ir a hoy»** (o `⌘D`) para entrar directamente en el lienzo del día de hoy.
 
-En el lienzo, tus días aparecen como **celdas del calendario** (con su número y día de la semana; hoy resaltado): haz clic en un día para volar hasta él. Y al abrir Fromly, arriba a la izquierda verás siempre **el día de hoy** — púlsalo para abrir su columna.
+**Cada día es su propio lienzo.** Al entrar en un día tienes una pizarra en blanco donde escribes y dibujas: todo lo que pongas ahí es contenido de ese día. El día abre **siempre al mismo zoom (100%)**, así los textos y dibujos de todos los días guardan la misma escala y se pueden comparar. La **columna del día** (eventos, tareas, seguimiento) sigue a la derecha.
+
+Para moverte entre días, usa la cabecera de esa columna:
+- **‹ / ›** — día anterior / siguiente (y un botón **«Hoy»** cuando no estás en el día actual).
+- **📅 Calendario** — abre el calendario mes/año (año → meses → días) para saltar a cualquier día de un vistazo; haz clic en un día para entrar en él.
+- **Mini-calendario** — un salto rápido a cualquier fecha sin salir.
+- **Lista / Lienzo** — si prefieres ver un día concreto como lista en vez de pizarra, el toggle lo cambia (se recuerda por día).
+
+Y al abrir Fromly, arriba a la izquierda verás siempre **el día de hoy** en el breadcrumb.
 
 ---
 
