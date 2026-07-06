@@ -57,13 +57,12 @@ Para empezar: pulsa **«Ir a hoy»** (o `⌘D`) para entrar directamente en el l
 
 **Cada día es su propio lienzo.** Al entrar en un día tienes una pizarra en blanco donde escribes y dibujas: todo lo que pongas ahí es contenido de ese día. El día abre **siempre al mismo zoom (100%)**, así los textos y dibujos de todos los días guardan la misma escala y se pueden comparar. La **columna del día** (eventos, tareas, seguimiento) sigue a la derecha.
 
-La cabecera de esa columna es un **conmutador de superficies** — te lleva entre las tres vistas de Fromly y está siempre presente:
-- **🌍 Lienzo** — el **lienzo de contextos** (el plano infinito de ideas). Aparece resaltado cuando ya estás en él.
+En la **barra superior** tienes tres botones que están **siempre visibles, en el mismo sitio** — son el conmutador entre las tres superficies de Fromly:
+- **🌍 Lienzo** — el **lienzo de contextos** (el plano infinito de ideas). Aparece resaltado cuando ya estás en él, y te devuelve a él desde cualquier sitio.
+- **📆 Hoy** — entra en el lienzo del **día de hoy**.
 - **📅 Calendario** — el calendario mes/año (año → meses → días); haz clic en un día para entrar en él.
-- **📆 Día** — entra en el lienzo del **día de hoy**.
-- **Lista / Lienzo** — dentro de un día, cambia entre ver ese día como pizarra o como lista (se recuerda por día).
 
-Y dentro de un día tienes además las flechas **‹ / ›** para ir al día anterior o siguiente (con un botón **«Hoy»** para volver). Al abrir Fromly, arriba a la izquierda verás siempre **el día de hoy** en el breadcrumb.
+Al abrir Fromly, arriba a la izquierda verás siempre **el día de hoy** en el breadcrumb.
 
 ---
 
