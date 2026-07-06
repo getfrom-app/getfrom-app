@@ -10,6 +10,8 @@ import { ensureCanvasRoot, isCanvasRoot } from '../../utils/canvasRoot'
 import { getAgentesNode } from '../../utils/agentesHelper'
 import { getPapeleraNode } from '../../utils/papeleraHelper'
 import { findRootByKey } from '../../utils/rootLookup'
+import { getOrCreateAgendaRoot } from '../../utils/agendaHelper'
+import { setTemporalFocus } from '../../utils/pizarraNav'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
@@ -53,6 +55,8 @@ export default function WFTopBar({
   // Etiqueta de HOY para el breadcrumb del lienzo cuando no hay nada seleccionado
   // («al abrir Fromly, breadcrumb del día actual»). Pulsar = abrir la columna de hoy.
   const todayLabel = new Date().toLocaleDateString(i18n.language || undefined, { weekday: 'long', day: 'numeric', month: 'short' })
+  // ¿Estamos en el LIENZO DE CONTEXTOS (ruta raíz)? → el botón Lienzo se marca activo.
+  const onContextsCanvas = location.pathname.replace(/^\/app\/?/, '').replace(/^\/+|\/+$/g, '') === ''
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -239,20 +243,43 @@ export default function WFTopBar({
         </svg>
       </button>
 
-      {/* Día (Hoy) — en el lienzo cambia la columna derecha a HOY, SIN navegar
-          (lienzo único). Si estás fuera del lienzo, vuelve a él primero. */}
+      {/* ── Conmutador de SUPERFICIES (siempre visible, mismo sitio): Lienzo · Hoy · Calendario ── */}
+      <div className="wf-topbar-sep" />
+      {/* 🌍 Lienzo de contextos (plano infinito). Activo si ya estás en él. */}
+      <button
+        className={`wf-topbar-btn ${onContextsCanvas ? 'active' : ''}`}
+        title={t('dayNav.canvas', 'Lienzo de contextos')}
+        onClick={() => navigate('/')}
+      >
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M7 9.5a2.5 2.5 0 100 5c1.5 0 2.4-1.3 3-2.5.6-1.2 1.5-2.5 3-2.5a2.5 2.5 0 110 5c-1.5 0-2.4-1.3-3-2.5-.6-1.2-1.5-2.5-3-2.5z" />
+        </svg>
+      </button>
+      {/* 📆 Hoy — entra en el lienzo del día de hoy. */}
       <button
         className="wf-topbar-btn"
         title={t('topbar.goToToday')}
-        onClick={() => {
-          if (!location.pathname.includes(`/node/${ensureCanvasRoot().id}`)) navigate('/')
-          window.dispatchEvent(new CustomEvent('from:set-day')) // sin date = hoy
-        }}
+        onClick={() => window.dispatchEvent(new CustomEvent('from:set-day'))} // sin date = hoy
       >
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><rect x="7" y="13" width="4" height="4" rx="1" fill="currentColor" stroke="none" />
         </svg>
       </button>
+      {/* 📅 Calendario mes/año (superficie discreta, TemporalCanvasView). */}
+      <button
+        className="wf-topbar-btn"
+        title={t('dayNav.calendar', 'Calendario')}
+        onClick={() => {
+          const agenda = getOrCreateAgendaRoot()
+          setTemporalFocus({ date: Date.now(), level: 'days' })
+          navigate(`/node/${agenda.id}`)
+        }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+        </svg>
+      </button>
+      <div className="wf-topbar-sep" />
 
       {/* Modo claro/oscuro */}
       <button

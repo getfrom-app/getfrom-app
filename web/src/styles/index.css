@@ -9913,6 +9913,13 @@ textarea:focus-visible,
 .wf-topbar-cmd-btn:hover {
   color: var(--accent) !important;
 }
+.wf-topbar-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--border);
+  margin: 0 3px;
+  flex-shrink: 0;
+}
 .wf-topbar-home {
   color: var(--text-tertiary);
 }
