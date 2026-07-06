@@ -20,8 +20,7 @@ import { useNavigate } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { uploadFile } from '../../api/client'
 import { ensureDayPath } from '../../utils/agendaHelper'
-import { findRootByKey, findContextRoot } from '../../utils/rootLookup'
-import { setTemporalFocus } from '../../utils/pizarraNav'
+import { findContextRoot } from '../../utils/rootLookup'
 import { deleteGcalEventForNode, getGcalEventId } from '../../utils/gcalNodesSync'
 import { getDayColumnData, isMovedNode } from '../../utils/dayColumn'
 import { isCanvasText, isDocNode, canvasViewKind, firstLineTitle, DOC, CTEXT } from '../../utils/docNode'
@@ -745,8 +744,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   }, [children, flowUnpositioned, parentId, globalCanvas])
 
   // ── Buceo (dive) entre lienzos al cruzar umbrales de zoom con la rueda ──────
-  // Zoom-out fuerte → SUBE: si es la diaria → Agenda (calendario centrado en su
-  // mes); si no → al nodo padre. Zoom-in fuerte sobre la tarjeta centrada → ENTRA.
+  // Zoom-out fuerte → SUBE al nodo padre. Zoom-in fuerte sobre la tarjeta centrada → ENTRA.
+  // (La diaria ya NO sube a una «página mensual»: los días se navegan con el timeline de la
+  // columna diaria — el calendario mensual como página aparte se eliminó, v9.6.714.)
   tryDiveRef.current = (nextScale: number, prevScale: number) => {
     if (divingRef.current) return
     const node = store.getNode(parentId)
@@ -755,17 +755,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     const zoomingIn = nextScale > prevScale
     // SUBIR — solo al ALEJAR y cruzar el umbral (no por estar ya por debajo).
     if (zoomingOut && nextScale <= DIVE_OUT_SCALE) {
-      if (node.isDiaryEntry && node.diaryDate) {
-        const agenda = findRootByKey('agenda')
-        if (agenda) {
-          divingRef.current = true
-          setTemporalFocus({ date: new Date(node.diaryDate).getTime(), level: 'months' }) // calendario anual 3×4
-          navigate(`/node/${agenda.id}`)
-        }
-        return
-      }
-      // Nodo normal → su padre (si no es raíz de sistema/estructura).
-      if (node.parentId) {
+      // La diaria NO sube a ningún sitio (no hay página mensual). Un nodo normal → su padre.
+      if (!node.isDiaryEntry && node.parentId) {
         divingRef.current = true
         navigate(`/node/${node.parentId}`)
       }

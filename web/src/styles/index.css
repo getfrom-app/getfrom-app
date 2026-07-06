@@ -9922,12 +9922,56 @@ textarea:focus-visible,
 }
 
 /* ── Timeline horizontal de días (arriba de la columna diaria) ── */
+.day-timeline-wrap { margin-bottom: 8px; }
 .day-timeline {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 8px;
 }
+.day-timeline-calbtn {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 44px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.day-timeline-calbtn:hover { background: var(--bg-hover); }
+.day-timeline-calbtn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* Calendario desplegable inline (hacia abajo, no popover → no se corta) */
+.day-timeline-cal {
+  margin-top: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 9px 9px;
+  background: var(--bg-secondary);
+}
+.dtc-head { display: flex; align-items: center; gap: 2px; margin-bottom: 6px; }
+.dtc-head button {
+  width: 24px; height: 24px; border: none; background: transparent;
+  color: var(--text-secondary); cursor: pointer; border-radius: 6px; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.dtc-head button:hover { background: var(--bg-hover); color: var(--text-primary); }
+.dtc-title { flex: 1; text-align: center; font-size: 13px; font-weight: 600; text-transform: capitalize; color: var(--text-primary); }
+.dtc-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.dtc-wd { text-align: center; font-size: 10px; color: var(--text-tertiary); padding-bottom: 2px; }
+.dtc-day {
+  position: relative; aspect-ratio: 1; border: none; border-radius: 7px; background: transparent;
+  color: var(--text-secondary); cursor: pointer; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.dtc-day:hover { background: var(--bg-hover); }
+.dtc-day--today { color: var(--accent); font-weight: 700; }
+.dtc-day--current { background: var(--accent); color: #fff; }
+.dtc-dot { position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); width: 3px; height: 3px; border-radius: 50%; background: var(--accent); }
 .day-timeline-strip {
   display: flex;
   gap: 4px;

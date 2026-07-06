@@ -2050,5 +2050,9 @@
   "dayNav.calendar": "Kalender",
   "dayNav.asList": "Als lijst weergeven",
   "dayNav.asCanvas": "Als canvas weergeven",
-  "dayNav.canvas": "Contexten-canvas"
+  "dayNav.canvas": "Contexten-canvas",
+  "dayNav.prevMonth": "Vorige maand",
+  "dayNav.nextMonth": "Volgende maand",
+  "dayNav.prevYear": "Vorig jaar",
+  "dayNav.nextYear": "Volgend jaar"
 }

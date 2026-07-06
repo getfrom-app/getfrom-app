@@ -2051,5 +2051,9 @@
   "dayNav.calendar": "Calendar",
   "dayNav.asList": "View as list",
   "dayNav.asCanvas": "View as canvas",
-  "dayNav.canvas": "Contexts canvas"
+  "dayNav.canvas": "Contexts canvas",
+  "dayNav.prevMonth": "Previous month",
+  "dayNav.nextMonth": "Next month",
+  "dayNav.prevYear": "Previous year",
+  "dayNav.nextYear": "Next year"
 }

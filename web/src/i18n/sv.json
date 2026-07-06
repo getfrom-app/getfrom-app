@@ -2050,5 +2050,9 @@
   "dayNav.calendar": "Kalender",
   "dayNav.asList": "Visa som lista",
   "dayNav.asCanvas": "Visa som arbetsyta",
-  "dayNav.canvas": "Kontextarbetsyta"
+  "dayNav.canvas": "Kontextarbetsyta",
+  "dayNav.prevMonth": "Föregående månad",
+  "dayNav.nextMonth": "Nästa månad",
+  "dayNav.prevYear": "Föregående år",
+  "dayNav.nextYear": "Nästa år"
 }

@@ -25,8 +25,8 @@ import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
 import PizarraView from './PizarraView'
-import TemporalCanvasView from './TemporalCanvasView'
 import WFTemporalView from './WFTemporalView'
+import { ensureDiaryForDate } from '../../utils/diaryNav'
 import NodeViewTabs from './NodeViewTabs'
 import TemporalChildrenBlock from './TemporalChildrenBlock'
 import NodeSpecialControls from './NodeSpecialControls'
@@ -330,7 +330,7 @@ export default function NodeView() {
     return kind
   }, [node?.id, node?.extraData, activeViewId, viewBlock])
 
-  // ¿Es la raíz 📅 Agenda? → se muestra como CALENDARIO-LIENZO (zoom temporal LOD).
+  // ¿Es la raíz 📅 Agenda? (ya no hay página mensual; solo sirve para redirigir a hoy).
   const isAgendaRoot = useMemo(() => {
     if (!node) return false
     return findRootByKey('agenda')?.id === node.id
@@ -1026,6 +1026,16 @@ export default function NodeView() {
     return null
   })()
   const temporalCalendar = temporalCalendarFocus !== null
+
+  // La PÁGINA MENSUAL se eliminó (v9.6.714): abrir la raíz 📅 Agenda o un nodo Año/Mes
+  // ya no muestra un calendario-página, sino que REDIRIGE al lienzo del día de hoy. Los días
+  // se navegan con el timeline de la columna diaria.
+  useEffect(() => {
+    if (isAgendaRoot || temporalCalendar) {
+      const d = ensureDiaryForDate(new Date())
+      navigate(`/node/${d.id}`, { replace: true })
+    }
+  }, [isAgendaRoot, temporalCalendar]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Crumbs temporales: Año / Mes / Semana (a partir del ancestro diario)
   const diaryTemporalCrumbs: { label: string; type: 'year' | 'month' | 'week' }[] = []
@@ -2875,18 +2885,9 @@ export default function NodeView() {
                        libre — como en iPad. En notas normales ocupa todo. ── */}
                 {viewKind === 'pizarra' && !isAgendaRoot && !isDoc && !temporalCalendar && !(nodeResourceMeta?.url && (nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url))) && <PizarraView parentId={node.id} flowUnpositioned globalCanvas={isCanvasRoot(node)} />}
 
-                {/* ── Agenda = calendario-lienzo con zoom temporal (LOD años→meses→días) ── */}
-                {isAgendaRoot && <TemporalCanvasView />}
-
-                {/* ── Nodo Año/Mes abierto directamente = mismo calendario-lienzo,
-                       enfocado en ese año (meses 3 col) o mes (rejilla de días). ── */}
-                {temporalCalendarFocus && (
-                  <TemporalCanvasView
-                    focusLevel={temporalCalendarFocus.focusLevel}
-                    focusYear={temporalCalendarFocus.focusYear}
-                    focusMonth={temporalCalendarFocus.focusMonth}
-                  />
-                )}
+                {/* ── Agenda / Año / Mes: la PÁGINA MENSUAL se eliminó (v9.6.714). Los días se
+                       navegan con el timeline de la columna diaria. Abrir la Agenda o un nodo
+                       Año/Mes REDIRIGE al lienzo de hoy (ver useEffect de redirección). ── */}
 
                 {/* ── Outliner: visible en lista/temporal; oculto en tabla/kanban/calendario/pizarra/agenda ── */}
                 {/* También oculto cuando el diary muestra DiaryTimeline (vista calendario) */}

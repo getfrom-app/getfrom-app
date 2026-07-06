@@ -2050,5 +2050,9 @@
   "dayNav.calendar": "Календарь",
   "dayNav.asList": "Показать списком",
   "dayNav.asCanvas": "Показать холстом",
-  "dayNav.canvas": "Холст контекстов"
+  "dayNav.canvas": "Холст контекстов",
+  "dayNav.prevMonth": "Предыдущий месяц",
+  "dayNav.nextMonth": "Следующий месяц",
+  "dayNav.prevYear": "Предыдущий год",
+  "dayNav.nextYear": "Следующий год"
 }

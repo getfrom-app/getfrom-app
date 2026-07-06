@@ -2051,5 +2051,9 @@
   "dayNav.calendar": "Calendario",
   "dayNav.asList": "Ver como lista",
   "dayNav.asCanvas": "Ver como lienzo",
-  "dayNav.canvas": "Lienzo de contextos"
+  "dayNav.canvas": "Lienzo de contextos",
+  "dayNav.prevMonth": "Mes anterior",
+  "dayNav.nextMonth": "Mes siguiente",
+  "dayNav.prevYear": "Año anterior",
+  "dayNav.nextYear": "Año siguiente"
 }

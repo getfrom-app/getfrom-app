@@ -2050,5 +2050,9 @@
   "dayNav.calendar": "Takvim",
   "dayNav.asList": "Liste olarak görüntüle",
   "dayNav.asCanvas": "Tuval olarak görüntüle",
-  "dayNav.canvas": "Bağlam tuvali"
+  "dayNav.canvas": "Bağlam tuvali",
+  "dayNav.prevMonth": "Önceki ay",
+  "dayNav.nextMonth": "Sonraki ay",
+  "dayNav.prevYear": "Önceki yıl",
+  "dayNav.nextYear": "Sonraki yıl"
 }

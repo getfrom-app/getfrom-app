@@ -2050,5 +2050,9 @@
   "dayNav.calendar": "Ημερολόγιο",
   "dayNav.asList": "Προβολή ως λίστα",
   "dayNav.asCanvas": "Προβολή ως καμβάς",
-  "dayNav.canvas": "Καμβάς πλαισίων"
+  "dayNav.canvas": "Καμβάς πλαισίων",
+  "dayNav.prevMonth": "Προηγούμενος μήνας",
+  "dayNav.nextMonth": "Επόμενος μήνας",
+  "dayNav.prevYear": "Προηγούμενο έτος",
+  "dayNav.nextYear": "Επόμενο έτος"
 }
