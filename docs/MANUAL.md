@@ -61,7 +61,7 @@ En la **barra superior** tienes dos botones siempre visibles, en el mismo sitio:
 - **🌍 Lienzo** — el **lienzo de contextos** (el plano infinito de ideas). Aparece resaltado cuando ya estás en él, y te devuelve a él desde cualquier sitio.
 - **📆 Hoy** — entra en el lienzo del **día de hoy**.
 
-Para **viajar entre días**, dentro de un día tienes arriba de la columna diaria un **timeline horizontal**: desplázalo para ir a días anteriores o posteriores y pulsa uno para entrar en él (el día actual va resaltado). El **icono de calendario** del timeline abre un mini-calendario para saltar a cualquier fecha. Así navegas por los días como lo que son —un lienzo por día—, sin salir a una página de calendario aparte.
+Para **viajar entre días**, dentro de un día tienes arriba de la columna diaria un **timeline horizontal**: desplázalo para ir a días anteriores o posteriores y pulsa uno para entrar en él (el día actual va resaltado). El **icono de calendario** del timeline **despliega hacia abajo** un mes completo (con navegación de mes «‹ ›» y de año «« »»); pulsa cualquier día y entras en él, y el calendario se colapsa solo. Así navegas por los días como lo que son —un lienzo por día—, sin salir a una página de calendario aparte.
 
 ---
 
