@@ -392,7 +392,7 @@ function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
 }
 
 export default function PizarraView({ parentId, flowUnpositioned, pdfBackground, pdfBackgroundKey, globalCanvas }: Props) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const nodesVersion = useStore(st => st.nodesVersion) // re-render + memoizar por versión
   const navigate = useNavigate()
   // Id del nodo cuyo editor está registrado como «activo» (el panel de documento,
@@ -587,10 +587,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   const [contextMenu, setContextMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
   // Menú de clic derecho sobre un CONTEXTO (área): eliminar + color de acento.
   const [areaMenu, setAreaMenu] = useState<{ id: string; x: number; y: number } | null>(null)
-  // REGIÓN visible del lienzo: 'contexts' (contextos) o 'agenda' (calendario de días).
-  // Son como DOS hojas del mismo plano infinito: solo se ve/pana una a la vez; se cambia
-  // volando (calendario/día → agenda; contexto → contextos). No te tropiezas con la otra.
-  const [region, setRegion] = useState<'contexts' | 'agenda'>('contexts')
+  // El lienzo global tiene UNA sola hoja: CONTEXTOS. El calendario ya no vive aquí (es una
+  // superficie discreta aparte, `TemporalCanvasView`) → se eliminó la antigua región 'agenda'
+  // que duplicaba los días en el plano infinito (v9.6.705).
 
   // Drag de tarjeta (en curso): id + posición de mundo provisional + guías.
   const dragRef = useRef<{ id: string; startWorld: WorldPos; origin: WorldPos; moved: boolean } | null>(null)
@@ -650,14 +649,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         const n = store.getNode(id)
         if (n && !n.deletedAt) { seen.add(id); out.push(n) }
       }
-      if (region === 'agenda') {
-        // Hoja AGENDA: solo el contenido de los DÍAS (calendario). Los contextos no se ven.
-        for (const id of nested.dayContentIds) add(id)
-        return out
-      }
-      // Hoja CONTEXTOS: contextos (marcos) + su contenido (excluyendo el de días).
+      // Hoja CONTEXTOS (única): contextos (marcos) + su contenido.
       for (const id of nested.contextIds) add(id)
-      for (const id of nested.contentIds) if (!nested.dayContentIds.has(id)) add(id)
+      for (const id of nested.contentIds) add(id)
       // Áreas EXPLÍCITAS (`_area`, movidas a mano o legacy) → seguir pintándolas.
       for (const n of store.allActive()) {
         if (n.deletedAt || seen.has(n.id) || !isArea(n)) continue
@@ -675,7 +669,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     const out = [...directChildren]
     for (const n of directChildren) if (isArea(n)) out.push(...store.children(n.id).filter(c => !c.deletedAt))
     return out
-  }, [parentId, globalCanvas, nodesVersion, nested, region]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [parentId, globalCanvas, nodesVersion, nested]) // eslint-disable-line react-hooks/exhaustive-deps
   // Referencias (espejos) de este lienzo — nodos de la columna arrastrados aquí.
   const refIds = readRefs(parentId)
   const refsKey = refIds.join(',')
@@ -930,8 +924,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
   // guardado si lo tiene; si no, encaja la región en el viewport).
   const flyToArea = useCallback((id: string) => {
     const a = store.getNode(id); if (!a) return
-    // Área explícita (`_area`), caja de contexto o ZONA de día (agenda-calendario).
-    const rect = readAreaRect(a) ?? nestedRef.current?.boxes.get(id) ?? nestedRef.current?.dayCells.get(id) ?? null
+    // Área explícita (`_area`) o caja de contexto.
+    const rect = readAreaRect(a) ?? nestedRef.current?.boxes.get(id) ?? null
     if (!rect) { flyToNode(a); return }
     const vp = viewportRef.current
     let ed: Record<string, unknown> = {}; try { ed = JSON.parse(a.extraData || '{}') } catch { /* vacío */ }
@@ -943,15 +937,19 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     flyTo(rect.x + rect.w / 2, rect.y + rect.h / 2, scale)
   }, [flyTo, flyToNode])
 
-  // Volar al DÍA DE HOY (área de la agenda) + abrir su columna del día. Si el día acaba
-  // de crearse, la caja aparece tras el re-render del layout → reintento breve.
+  // «Ir a hoy» desde el lienzo global: el calendario ya no vive en el plano infinito, así que
+  // abrimos la superficie DISCRETA (raíz 📅 Agenda → `TemporalCanvasView`) enfocada en el mes
+  // de hoy, nivel 'days'. Ahí la rejilla es uniforme y un clic en el día entra a su espacio.
   const flyToToday = useCallback(() => {
-    const day = ensureDayPath(new Date())
-    setRegion('agenda') // entrar en la hoja de la agenda
-    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: day.id } }))
-    flyToArea(day.id)
-    setTimeout(() => flyToArea(day.id), 90)
-  }, [flyToArea])
+    const agenda = findRootByKey('agenda')
+    if (!agenda) { // sin raíz de agenda aún → abrir directamente el día de hoy
+      const day = ensureDayPath(new Date())
+      navigate(`/node/${day.id}`)
+      return
+    }
+    setTemporalFocus({ date: Date.now(), level: 'days' })
+    navigate(`/node/${agenda.id}`)
+  }, [navigate])
 
   // ⚠️ REVERTIDO en v9.6.677: un useEffect de montaje que llamaba flyToToday() (con
   // ensureDayPath → store.createNode) nada más entrar al lienzo global causaba un error al
@@ -1448,9 +1446,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
       if (!id) return
       const n = store.getNode(id)
       if (!n) return
-      // DÍA (celda de agenda) → cambia a la HOJA agenda y vuela. Contexto/área → hoja contextos.
-      if (nestedRef.current?.dayCells.has(id)) { setRegion('agenda'); flyToArea(id); return }
-      if (isArea(n) || nestedRef.current?.boxes.has(id)) { setRegion('contexts'); flyToArea(id); return }
+      // Contexto/área → vuela a su caja. (Los días ya no están en el lienzo.)
+      if (isArea(n) || nestedRef.current?.boxes.has(id)) { flyToArea(id); return }
       if (store.children(parentId).some(c => c.id === id)) flyToNode(n)
     }
     window.addEventListener('from:pizarra-flyto', h)
@@ -2264,37 +2261,8 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           En el lienzo global también se dibujan (el contexto sin área NO se pinta;
           con área SÍ, como marco). Clic en la etiqueta → abre su columna de contexto
           (nunca navega ni hace zoom-in). */}
-      {/* ── CELDAS DE DÍA (hoja AGENDA, Option A) ──
-          Los días de la agenda tenían posición pero no se dibujaban → la agenda parecía
-          vacía. Aquí pintamos cada día como una celda sutil del calendario (número + día de
-          la semana), hoy con acento. Clic = entrar en su celda (zoom). Solo en región agenda. */}
-      {nested && [...nested.dayCells.entries()].map(([id, rect]) => {
-        const node = store.getNode(id); if (!node) return null
-        const sx = cam.x + rect.x * cam.scale, sy = cam.y + rect.y * cam.scale
-        const sw = rect.w * cam.scale, sh = rect.h * cam.scale
-        if (sx + sw < -50 || sx > viewport.w + 50 || sy + sh < -50 || sy > viewport.h + 50) return null
-        const d = node.diaryDate ? new Date(node.diaryDate) : null
-        const now = new Date()
-        const isToday = d != null && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate()
-        const dayNum = d ? d.getDate() : ''
-        const wd = d ? d.toLocaleDateString(i18n.language || undefined, { weekday: 'short' }).replace('.', '') : ''
-        const accent = 'var(--accent, #6c5ce7)'
-        const lab = Math.max(9, Math.min(16, 12 * cam.scale))
-        return (
-          <div key={'day-' + id} data-day-cell={id}
-            onPointerUp={(e) => { if (e.button !== 0) return; e.stopPropagation(); flyToArea(id); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: id } })) }}
-            style={{ position: 'absolute', left: sx, top: sy, width: sw, height: sh, zIndex: 1, pointerEvents: 'auto', cursor: 'pointer', borderRadius: 12,
-              border: isToday ? `1.5px solid ${accent}` : '1px solid var(--border-subtle, #ececf0)',
-              background: isToday ? 'color-mix(in srgb, var(--accent, #6c5ce7) 5%, transparent)' : 'transparent',
-              transition: 'border-color .15s, background .15s' }}>
-            <div style={{ position: 'absolute', top: 6, left: 10, display: 'flex', alignItems: 'baseline', gap: 5, pointerEvents: 'none',
-              color: isToday ? accent : 'var(--text-tertiary, #9ca3af)', fontWeight: isToday ? 700 : 600, letterSpacing: '.2px' }}>
-              <span style={{ fontSize: lab * 1.35 }}>{dayNum}</span>
-              <span style={{ fontSize: lab * 0.82, textTransform: 'capitalize', opacity: 0.7 }}>{wd}</span>
-            </div>
-          </div>
-        )
-      })}
+      {/* (Las celdas de día se retiraron del lienzo en v9.6.705: el calendario es ahora una
+          superficie discreta aparte, `TemporalCanvasView`.) */}
       {children.filter(n => zoneIds.has(n.id)).map(a => {
         const rect = readAreaRect(a) ?? (nested ? nested.boxes.get(a.id) ?? null : null); if (!rect) return null
         const col = (() => { const cx = firstContextOf(a) ?? (isMarkedContext(a) ? a : null); return cx ? contextColor(cx.id) : 'var(--accent,#6c5ce7)' })()

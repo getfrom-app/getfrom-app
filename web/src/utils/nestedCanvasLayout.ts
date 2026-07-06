@@ -1,28 +1,30 @@
 // nestedCanvasLayout — layout ANIDADO y AUTO-CALCULADO del lienzo único.
 //
-// DOS regiones, ambas de cajas anidadas con forma de pantalla:
-//   · CONTEXTOS: 🧠 Contexto → contexto → subcontexto → … (caja = contexto marcado).
-//   · AGENDA:    📅 Agenda → Año → Mes → Día (caja = contenedor temporal; el día es
-//                `isDiaryEntry`). El contenido de cada día son sus notas/tareas (filas).
-// La agenda se coloca a la DERECHA de los contextos. El contenido de una caja se pinta
-// como esquema vertical con el texto COMPLETO (sin truncar). Todo en memoria (no escribe
-// nada). El `_area` propio de un nodo (movido a mano) manda sobre la caja calculada.
+// UNA sola región: CONTEXTOS (cajas anidadas con forma de pantalla):
+//   · 🧠 Contexto → contexto → subcontexto → … (caja = contexto marcado).
+// El calendario/AGENDA ya NO vive en este lienzo infinito: es una superficie DISCRETA
+// aparte (`TemporalCanvasView`, la raíz 📅 Agenda, con niveles año→mes→día y celdas
+// uniformes) donde cada día se abre como su propio espacio. Mezclar el zoom continuo del
+// lienzo con la rejilla discreta del calendario hacía que un texto escrito con zoom alejado
+// abarcase muchos días y que las celdas crecieran con el contenido → se separaron (v9.6.705).
+// El contenido de una caja se pinta como esquema vertical con el texto COMPLETO (sin truncar).
+// Todo en memoria (no escribe nada). El `_area` propio de un nodo (movido a mano) manda
+// sobre la caja calculada.
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { isMarkedContext } from './cajones'
 import { isContextKnowledge } from './knowledgeNodes'
-import { findAgendaRoot } from './agendaHelper'
 import { findContextRoot } from './rootLookup'
 
 export interface NRect { x: number; y: number; w: number; h: number }
 export interface NestedLayout {
   boxes: Map<string, NRect>      // marcos de CONTEXTO (se dibujan como rectángulo)
-  items: Map<string, NRect>      // contenido (tarjetas): de contextos y de días
-  dayCells: Map<string, NRect>   // zona de cada DÍA (NO se dibuja marco) — solo posición
+  items: Map<string, NRect>      // contenido (tarjetas) de los contextos
+  dayCells: Map<string, NRect>   // (obsoleto) el calendario ya no vive en el lienzo → SIEMPRE vacío
   contextIds: Set<string>
   contentIds: Set<string>
-  dayContentIds: Set<string>     // contenido que pertenece a DÍAS (región agenda)
-  todayId: string | null         // id del día de HOY (para volar la cámara), si existe
+  dayContentIds: Set<string>     // (obsoleto) SIEMPRE vacío
+  todayId: string | null         // (obsoleto) SIEMPRE null
 }
 
 export const CONTENT_W = 600
@@ -35,14 +37,7 @@ const HEADER = 46
 const PAD = 36
 const SUB_GAP = 120       // aire generoso entre subcontextos
 const CONTENT_SUB_GAP = 140 // aire entre el texto y los subcontextos
-const REGION_GAP = 8000   // separación GRANDE entre contextos y agenda (lienzo infinito)
 const TOP_GAP = 500       // separación entre cajas de contexto de nivel superior
-const DAY_W = 760        // ancho de la ZONA de un día (columna = día de la semana)
-const DAY_GAP = 340      // aire horizontal entre días de una misma semana
-const DAY_H_MIN = 620    // alto MÍNIMO de un día (un día vacío aún ocupa esto)
-const WEEK_GAP = 600     // aire vertical entre semanas (las semanas bajan)
-const EPOCH_MON = Date.UTC(2024, 0, 1) // lunes de referencia (determinista)
-const DAY_MS = 86400000
 const BASE_H = 1300       // alto MÍNIMO de un contexto (aunque tenga poco) → grande
 const EMPTY_RIGHT = 1400  // espacio libre a la derecha del contenido dentro de la caja
 const EMPTY_BOTTOM = 1000 // espacio libre bajo el contenido dentro de la caja
@@ -208,86 +203,25 @@ function placeRegion(rootId: string, aspect: number, isBox: (n: Node) => boolean
   return x
 }
 
-/** AGENDA como CALENDARIO ESPACIAL (sin marcos): cada día ocupa una celda cuya posición
- *  viene de su FECHA — columna = día de la semana (lun→dom), fila = semana (las semanas
- *  bajan; los meses y años emergen solos). El contenido del día se coloca dentro de su
- *  celda. NO se dibuja ningún rectángulo: solo posiciones que Fromly reutiliza siempre. */
-function computeAgendaGrid(agendaRootId: string, originX: number, out: { items: Map<string, NRect>; dayCells: Map<string, NRect>; dayContentIds: Set<string> }): void {
-  const days: Node[] = []
-  const walk = (id: string) => {
-    for (const c of store.children(id)) {
-      if (c.deletedAt) continue
-      if (c.isDiaryEntry) days.push(c)
-      else walk(c.id)
-    }
-  }
-  walk(agendaRootId)
-  const noBox = () => false
-  // 1) Agrupar por SEMANA y medir el contenido de cada día una sola vez.
-  interface DayInfo { day: Node; col: number; content: ReturnType<typeof layoutContent> }
-  const byWeek = new Map<number, DayInfo[]>()
-  for (const day of days) {
-    if (!day.diaryDate) continue
-    const d = new Date(day.diaryDate)
-    if (isNaN(d.getTime())) continue
-    const col = (d.getDay() + 6) % 7 // lunes=0 … domingo=6
-    const dayStart = Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
-    const weekIndex = Math.floor((dayStart - EPOCH_MON) / (7 * DAY_MS))
-    const info: DayInfo = { day, col, content: layoutContent(day.id, noBox) }
-    const arr = byWeek.get(weekIndex); if (arr) arr.push(info); else byWeek.set(weekIndex, [info])
-  }
-  // 2) Cada SEMANA es una fila tan ALTA como su día más largo (nada se desborda). Las
-  //    semanas bajan con aire entre ellas; los días llevan aire horizontal → nunca chocan.
-  const weeks = [...byWeek.keys()].sort((a, b) => a - b)
-  let y = 0
-  for (const wi of weeks) {
-    const infos = byWeek.get(wi)!
-    let rowH = DAY_H_MIN
-    for (const inf of infos) rowH = Math.max(rowH, HEADER + PAD + inf.content.h + PAD)
-    for (const inf of infos) {
-      const x = originX + inf.col * (DAY_W + DAY_GAP)
-      out.dayCells.set(inf.day.id, { x, y, w: DAY_W, h: rowH })
-      const ox = x + PAD, oy = y + HEADER + PAD
-      for (const r of inf.content.rows) { out.items.set(r.id, { x: ox + r.x, y: oy + r.y, w: CONTENT_W, h: r.h }); out.dayContentIds.add(r.id) }
-    }
-    y += rowH + WEEK_GAP
-  }
-}
-
 /**
- * Layout del lienzo: región de CONTEXTOS (cajas, izquierda) + AGENDA como calendario
- * espacial (días por fecha, sin marcos, derecha). `aspect` = ancho/alto del viewport.
+ * Layout del lienzo infinito: SOLO la región de CONTEXTOS (cajas anidadas). El calendario
+ * es una superficie discreta aparte (`TemporalCanvasView`), no vive aquí. `aspect` =
+ * ancho/alto del viewport. Los campos `dayCells`/`dayContentIds`/`todayId` se conservan
+ * vacíos por compatibilidad con quien aún los lea (siempre vacíos).
  */
 export function computeNestedLayout(rootId: string, aspect = DEFAULT_ASPECT): NestedLayout {
   const asp = aspect > 0.2 && aspect < 6 ? aspect : DEFAULT_ASPECT
   const meta = new Map<string, Plan>()
   const boxes = new Map<string, NRect>()
   const items = new Map<string, NRect>()
-  const dayCells = new Map<string, NRect>()
-  const dayContentIds = new Set<string>()
 
-  // Región de CONTEXTOS (cajas anidadas).
+  // Región de CONTEXTOS (cajas anidadas). Única región del lienzo.
   const ctxRoot = findContextRoot()?.id ?? rootId
   placeRegion(ctxRoot, asp, isContextBox, 0, meta, { boxes, items })
 
-  // Región de AGENDA (calendario espacial): MUY LEJOS a la derecha, tras el borde
-  // derecho de TODOS los contextos (incluidos los movidos a mano) → nunca se solapan.
-  let ctxRight = 0
-  for (const r of boxes.values()) ctxRight = Math.max(ctxRight, r.x + r.w)
-  const agenda = findAgendaRoot()
-  if (agenda) computeAgendaGrid(agenda.id, ctxRight + REGION_GAP, { items, dayCells, dayContentIds })
-
-  // Id del día de HOY (para volar la cámara al abrir / pulsar «hoy»).
-  let todayId: string | null = null
-  const t = new Date()
-  const ty = t.getFullYear(), tm = t.getMonth(), td = t.getDate()
-  for (const id of dayCells.keys()) {
-    const n = store.getNode(id)
-    if (n?.diaryDate) {
-      const dd = new Date(n.diaryDate)
-      if (dd.getFullYear() === ty && dd.getMonth() === tm && dd.getDate() === td) { todayId = id; break }
-    }
+  return {
+    boxes, items,
+    dayCells: new Map(), dayContentIds: new Set(), todayId: null, // agenda fuera del lienzo
+    contextIds: new Set(boxes.keys()), contentIds: new Set(items.keys()),
   }
-
-  return { boxes, items, dayCells, contextIds: new Set(boxes.keys()), contentIds: new Set(items.keys()), dayContentIds, todayId }
 }
