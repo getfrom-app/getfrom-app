@@ -2043,5 +2043,11 @@
   "export.textsOnlyLabel": "Eksportuj wszystkie teksty i notatki",
   "export.textsOnlyHint": "Jeden plik Markdown ze wszystkimi Twoimi notatkami i dokumentami, do przejrzenia i zachowania tego, co chcesz. NIE zawiera zadań ani kontekstów — te pozostają bez zmian.",
   "export.textsOnlyButton": "Eksportuj wszystkie teksty",
-  "export.textsOnlyDone": "Wyeksportowano {{count}} notatek/dokumentów."
+  "export.textsOnlyDone": "Wyeksportowano {{count}} notatek/dokumentów.",
+  "dayNav.prev": "Poprzedni dzień",
+  "dayNav.next": "Następny dzień",
+  "dayNav.today": "Dziś",
+  "dayNav.calendar": "Kalendarz",
+  "dayNav.asList": "Pokaż jako listę",
+  "dayNav.asCanvas": "Pokaż jako tablicę"
 }

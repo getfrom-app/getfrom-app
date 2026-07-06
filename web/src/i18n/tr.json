@@ -2043,5 +2043,11 @@
   "export.textsOnlyLabel": "Tüm metinlerini ve notlarını dışa aktar",
   "export.textsOnlyHint": "Tüm notlarını ve belgelerini içeren tek bir Markdown dosyası; gözden geçirip saklamak istediklerini seç. Görevleri veya bağlamları İÇERMEZ — onlar olduğu gibi kalır.",
   "export.textsOnlyButton": "Tüm metinleri dışa aktar",
-  "export.textsOnlyDone": "{{count}} not/belge dışa aktarıldı."
+  "export.textsOnlyDone": "{{count}} not/belge dışa aktarıldı.",
+  "dayNav.prev": "Önceki gün",
+  "dayNav.next": "Sonraki gün",
+  "dayNav.today": "Bugün",
+  "dayNav.calendar": "Takvim",
+  "dayNav.asList": "Liste olarak görüntüle",
+  "dayNav.asCanvas": "Tuval olarak görüntüle"
 }

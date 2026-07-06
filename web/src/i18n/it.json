@@ -2043,5 +2043,11 @@
   "export.textsOnlyLabel": "Esporta tutti i tuoi testi e note",
   "export.textsOnlyHint": "Un unico file Markdown con tutte le tue note e documenti, per rivedere e conservare ciò che vuoi. NON include attività né contesti — restano invariati.",
   "export.textsOnlyButton": "Esporta tutti i testi",
-  "export.textsOnlyDone": "{{count}} note/documenti esportati."
+  "export.textsOnlyDone": "{{count}} note/documenti esportati.",
+  "dayNav.prev": "Giorno precedente",
+  "dayNav.next": "Giorno successivo",
+  "dayNav.today": "Oggi",
+  "dayNav.calendar": "Calendario",
+  "dayNav.asList": "Mostra come elenco",
+  "dayNav.asCanvas": "Mostra come lavagna"
 }

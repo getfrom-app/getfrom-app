@@ -20,11 +20,8 @@ export interface NRect { x: number; y: number; w: number; h: number }
 export interface NestedLayout {
   boxes: Map<string, NRect>      // marcos de CONTEXTO (se dibujan como rectángulo)
   items: Map<string, NRect>      // contenido (tarjetas) de los contextos
-  dayCells: Map<string, NRect>   // (obsoleto) el calendario ya no vive en el lienzo → SIEMPRE vacío
   contextIds: Set<string>
   contentIds: Set<string>
-  dayContentIds: Set<string>     // (obsoleto) SIEMPRE vacío
-  todayId: string | null         // (obsoleto) SIEMPRE null
 }
 
 export const CONTENT_W = 600
@@ -206,8 +203,7 @@ function placeRegion(rootId: string, aspect: number, isBox: (n: Node) => boolean
 /**
  * Layout del lienzo infinito: SOLO la región de CONTEXTOS (cajas anidadas). El calendario
  * es una superficie discreta aparte (`TemporalCanvasView`), no vive aquí. `aspect` =
- * ancho/alto del viewport. Los campos `dayCells`/`dayContentIds`/`todayId` se conservan
- * vacíos por compatibilidad con quien aún los lea (siempre vacíos).
+ * ancho/alto del viewport.
  */
 export function computeNestedLayout(rootId: string, aspect = DEFAULT_ASPECT): NestedLayout {
   const asp = aspect > 0.2 && aspect < 6 ? aspect : DEFAULT_ASPECT
@@ -219,9 +215,5 @@ export function computeNestedLayout(rootId: string, aspect = DEFAULT_ASPECT): Ne
   const ctxRoot = findContextRoot()?.id ?? rootId
   placeRegion(ctxRoot, asp, isContextBox, 0, meta, { boxes, items })
 
-  return {
-    boxes, items,
-    dayCells: new Map(), dayContentIds: new Set(), todayId: null, // agenda fuera del lienzo
-    contextIds: new Set(boxes.keys()), contentIds: new Set(items.keys()),
-  }
+  return { boxes, items, contextIds: new Set(boxes.keys()), contentIds: new Set(items.keys()) }
 }

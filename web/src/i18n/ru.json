@@ -2043,5 +2043,11 @@
   "export.textsOnlyLabel": "Экспортировать все тексты и заметки",
   "export.textsOnlyHint": "Единый файл Markdown со всеми вашими заметками и документами — просмотрите и сохраните то, что нужно. НЕ включает задачи и контексты — они остаются как есть.",
   "export.textsOnlyButton": "Экспортировать все тексты",
-  "export.textsOnlyDone": "Экспортировано заметок/документов: {{count}}."
+  "export.textsOnlyDone": "Экспортировано заметок/документов: {{count}}.",
+  "dayNav.prev": "Предыдущий день",
+  "dayNav.next": "Следующий день",
+  "dayNav.today": "Сегодня",
+  "dayNav.calendar": "Календарь",
+  "dayNav.asList": "Показать списком",
+  "dayNav.asCanvas": "Показать холстом"
 }

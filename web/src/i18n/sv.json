@@ -2043,5 +2043,11 @@
   "export.textsOnlyLabel": "Exportera alla dina texter och anteckningar",
   "export.textsOnlyHint": "En enda Markdown-fil med alla dina anteckningar och dokument, för att granska och spara det du vill behålla. Innehåller INTE uppgifter eller kontexter — de förblir som de är.",
   "export.textsOnlyButton": "Exportera alla texter",
-  "export.textsOnlyDone": "{{count}} anteckningar/dokument exporterade."
+  "export.textsOnlyDone": "{{count}} anteckningar/dokument exporterade.",
+  "dayNav.prev": "Föregående dag",
+  "dayNav.next": "Nästa dag",
+  "dayNav.today": "Idag",
+  "dayNav.calendar": "Kalender",
+  "dayNav.asList": "Visa som lista",
+  "dayNav.asCanvas": "Visa som arbetsyta"
 }
