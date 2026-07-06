@@ -19,6 +19,7 @@ import AgentPropertiesPanel from '../panels/AgentPropertiesPanel'
 import RecorderPanel from '../panels/RecorderPanel'
 import AudioPanel from '../panels/AudioPanel'
 import DayPanel from '../panels/DayPanel'
+import YearCalendarPanel from '../panels/YearCalendarPanel'
 import PorPlanificarPanel from '../panels/PorPlanificarPanel'
 import RecFab from './RecFab'
 import SettingsListPanel from '../panels/SettingsListPanel'
@@ -177,7 +178,7 @@ export default function MainLayout() {
   // Columna derecha — siempre visible, nunca se cierra
   // Paneles de detalle ('context'/'prompt'/'agent') muestran las propiedades de un
   // nodo concreto (su contenido se abre en la ventana central). El resto son ciclables.
-  type RightPanel = 'magic' | 'filter' | 'planner' | 'recorder'
+  type RightPanel = 'magic' | 'filter' | 'planner' | 'recorder' | 'yearcal'
     | 'context-list' | 'context'
     | 'prompt-list'  | 'prompt'
     | 'agent-list'   | 'agent'
@@ -645,6 +646,8 @@ export default function MainLayout() {
     // Panel del día (pizarra): NodeView lo abre al ver la diaria como pizarra,
     // y pide revertir (a filtro) al salir de ese modo.
     function onOpenDay() { setRightPanel('day') }
+    // Calendario anual: el botón de la barra superior lo abre/cierra en la columna derecha.
+    function onToggleYearCal() { setRightCollapsed(false); setRightPanel(p => p === 'yearcal' ? 'day' : 'yearcal') }
     function onCloseDay() { setRightPanel(p => p === 'day' ? 'filter' : p) }
     // Lienzo global: seleccionar un nodo → SU columna derecha (la de siempre de ese
     // tipo), SIN salir del lienzo. Al deseleccionar → vuelve a la del día (hoy).
@@ -718,6 +721,7 @@ export default function MainLayout() {
     window.addEventListener('from:open-planner', onOpenPlanner)
     window.addEventListener('from:open-day-panel', onOpenDay)
     window.addEventListener('from:close-day-panel', onCloseDay)
+    window.addEventListener('from:toggle-yearcal', onToggleYearCal)
     window.addEventListener('from:open-elements-panel', onOpenElements as EventListener)
     return () => {
       window.removeEventListener('from:open-detail', onOpenDetail as EventListener)
@@ -730,6 +734,7 @@ export default function MainLayout() {
       window.removeEventListener('from:open-planner', onOpenPlanner)
       window.removeEventListener('from:open-day-panel', onOpenDay)
       window.removeEventListener('from:close-day-panel', onCloseDay)
+      window.removeEventListener('from:toggle-yearcal', onToggleYearCal)
     }
   }, [location.pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1372,6 +1377,9 @@ export default function MainLayout() {
           )}
           {rightPanel === 'day' && (
             <DayPanel nodeId={dayPanelNodeId} />
+          )}
+          {rightPanel === 'yearcal' && (
+            <YearCalendarPanel activeDate={(() => { const dd = store.getNode(dayPanelNodeId || '')?.diaryDate; return dd ? new Date(dd) : new Date() })()} />
           )}
           {rightPanel === 'task' && detailNodeId && (
             <div style={{ height: '100%', overflowY: 'auto', padding: '16px 16px 88px' }}>

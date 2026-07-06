@@ -239,8 +239,7 @@ export default function WFTopBar({
           <path d="M7 9.5a2.5 2.5 0 100 5c1.5 0 2.4-1.3 3-2.5.6-1.2 1.5-2.5 3-2.5a2.5 2.5 0 110 5c-1.5 0-2.4-1.3-3-2.5-.6-1.2-1.5-2.5-3-2.5z" />
         </svg>
       </button>
-      {/* 📆 Hoy — entra en el lienzo del día de hoy (+ su columna). Para viajar a otros
-          días se usa el TIMELINE de la columna diaria (no una página mensual aparte). */}
+      {/* 📆 Hoy — entra en el lienzo del día de hoy (+ su columna). */}
       <button
         className="wf-topbar-btn"
         title={t('topbar.goToToday')}
@@ -248,6 +247,17 @@ export default function WFTopBar({
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><rect x="7" y="13" width="4" height="4" rx="1" fill="currentColor" stroke="none" />
+        </svg>
+      </button>
+      {/* 📅 Calendario anual — abre/cierra el calendario del año en la columna derecha;
+          clic en un día viaja a ese día. */}
+      <button
+        className={`wf-topbar-btn ${rightPanel === 'yearcal' ? 'active' : ''}`}
+        title={t('dayNav.calendar', 'Calendario')}
+        onClick={() => window.dispatchEvent(new CustomEvent('from:toggle-yearcal'))}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
         </svg>
       </button>
       <div className="wf-topbar-sep" />

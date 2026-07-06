@@ -3,23 +3,16 @@
 // En pizarra el outliner inline del centro está desmontado, así que esta es la
 // ÚNICA instancia del outliner del día (sin duplicar).
 //
-// La navegación entre superficies (Lienzo de contextos · Hoy · Calendario) vive en la
-// BARRA SUPERIOR (WFTopBar), siempre visible y en el mismo sitio — no aquí (los botones
-// que aparecían/desaparecían en esta columna confundían).
+// La navegación (Lienzo · Hoy · Calendario anual) vive en la BARRA SUPERIOR (WFTopBar);
+// para viajar a otra fecha se usa el CALENDARIO ANUAL (columna derecha propia).
 
-import { useLocation } from 'react-router-dom'
 import { store, useStore } from '../../store/nodeStore'
 import DayColumn from './DayColumn'
 import NoteColumn from './NoteColumn'
-import DayTimeline from './DayTimeline'
 
 export default function DayPanel({ nodeId }: { nodeId?: string }) {
   useStore()
-  const location = useLocation()
   const node = nodeId ? store.getNode(nodeId) : undefined
-  // El timeline de días aparece SOLO cuando estás dentro de un día (no en el lienzo de
-  // contextos, donde la columna solo muestra «hoy» como referencia).
-  const onContextsCanvas = location.pathname.replace(/^\/app\/?/, '').replace(/^\/+|\/+$/g, '') === ''
 
   if (!node) {
     return (
@@ -46,13 +39,9 @@ export default function DayPanel({ nodeId }: { nodeId?: string }) {
   return (
     <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px 88px' }} onClick={onPanelClick}>
       {node.isDiaryEntry ? (
-        <>
-          {/* Timeline de días (scroll horizontal + mini-calendario) — solo dentro de un día. */}
-          {!onContextsCanvas && <DayTimeline date={node.diaryDate ? new Date(node.diaryDate) : new Date()} />}
-          {/* La columna del día persiste en pizarra Y en lista: eventos + atrasadas/hoy/bucles/
-              capturas. Los NODOS del día NO van aquí (includeNodes=false): viven en el lienzo. */}
-          <DayColumn node={node} includeNodes={false} />
-        </>
+        // La columna del día persiste en pizarra Y en lista: eventos + atrasadas/hoy/bucles/
+        // capturas. Los NODOS del día NO van aquí (includeNodes=false): viven en el lienzo.
+        <DayColumn node={node} includeNodes={false} />
       ) : (
         // Nota normal (no diaria) → columna «Movidos».
         <NoteColumn node={node} />
