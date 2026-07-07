@@ -1,4 +1,4 @@
-import { Component, ErrorInfo, ReactNode, useEffect, useRef, useState } from 'react'
+import { Component, ErrorInfo, ReactNode, Suspense, lazy, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { getToken, setTokens } from './api/client'
@@ -12,6 +12,9 @@ import ClaudeConnectPage from './components/auth/ClaudeConnectPage'
 import MainLayout from './components/layout/MainLayout'
 import PricingView from './components/views/PricingView'
 import CaptureWindow from './components/modals/CaptureWindow'
+
+// Fromly 2.0 — beta chat-first AISLADA (ruta /v2). Lazy para no cargar en la v1.
+const V2App = lazy(() => import('./v2/V2App'))
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null; didHardReload: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -218,6 +221,14 @@ function AppInner() {
       <Route path="/google-callback" element={<PrivateRoute><GoogleCallbackPage /></PrivateRoute>} />
       {/* Claude OAuth consent — maneja su propio estado de auth */}
       <Route path="/claude-connect" element={<ClaudeConnectPage />} />
+      {/* Fromly 2.0 — beta chat-first aislada. NO toca la v1 (MainLayout intacto). */}
+      <Route path="/v2/*" element={
+        <PrivateRoute>
+          <Suspense fallback={<div className="v2-loading">Cargando Fromly 2.0…</div>}>
+            <V2App />
+          </Suspense>
+        </PrivateRoute>
+      } />
       {/* Toda la app requiere cuenta */}
       <Route path="/*" element={<PrivateRoute><MainLayout /></PrivateRoute>} />
     </Routes>

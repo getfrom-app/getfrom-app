@@ -1,0 +1,161 @@
+// Chat central de Fromly 2.0 — el corazón de la app chat-first.
+// Reutiliza el motor REAL: aiChatStore.send() + streaming SSE + acciones.
+// currentNodeId = contexto seleccionado → buildPayload le inyecta ese contexto.
+import { useEffect, useRef, useState } from 'react'
+import { useAIChat, aiChatStore } from '../../store/aiChatStore'
+import type { ChatMessage } from '../../store/aiChatStore'
+import { useStore } from '../../store/nodeStore'
+
+interface Props {
+  currentNodeId: string | null
+  contextLabel: string
+  onFilesDropped: (files: File[]) => void
+}
+
+const SUGGESTIONS = [
+  { t: 'Resume mi día', d: 'Tareas y eventos de hoy', p: '¿Qué tengo para hoy? Resume mis tareas y eventos.' },
+  { t: 'Busca en mis notas', d: 'Pregunta a todo lo guardado', p: 'Busca en mis notas lo que sé sobre ' },
+  { t: 'Organiza esto', d: 'Ordena y prioriza', p: 'Ayúdame a organizar y priorizar mis tareas pendientes.' },
+  { t: 'Crea una tarea', d: 'Captura rápida', p: 'Crea una tarea: ' },
+]
+
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped }: Props) {
+  const chat = useAIChat()
+  useStore()
+  const [input, setInput] = useState('')
+  const [dragOver, setDragOver] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const taRef = useRef<HTMLTextAreaElement>(null)
+
+  const messages = chat.messages
+  const streaming = chat.isStreaming
+  const pending = chat.pendingActions
+
+  // Auto-scroll al fondo en cada mensaje/stream.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [messages, streaming])
+
+  // Auto-resize del textarea.
+  useEffect(() => {
+    const ta = taRef.current
+    if (!ta) return
+    ta.style.height = 'auto'
+    ta.style.height = Math.min(ta.scrollHeight, 200) + 'px'
+  }, [input])
+
+  const doSend = (text: string) => {
+    const trimmed = text.trim()
+    if (!trimmed || streaming) return
+    setInput('')
+    chat.send(trimmed, currentNodeId || undefined).catch(() => {})
+  }
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      doSend(input)
+    }
+  }
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOver(false)
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length) onFilesDropped(files)
+  }
+
+  const isEmpty = messages.length === 0
+
+  return (
+    <main
+      className="v2-col v2-center"
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={onDrop}
+      style={{ position: 'relative' }}
+    >
+      <div className="v2-center-head">
+        <span className="v2-center-title">{chat.sessionId ? contextLabel : 'Nueva conversación'}</span>
+        {!isEmpty && (
+          <button
+            className="v2-iconbtn"
+            style={{ marginLeft: 'auto' }}
+            title="Nueva conversación"
+            onClick={() => { aiChatStore.startNewSession() }}
+          >＋</button>
+        )}
+      </div>
+
+      <div className="v2-chat-scroll" ref={scrollRef}>
+        {isEmpty ? (
+          <div className="v2-empty">
+            <h1>Hola 👋</h1>
+            <p>Habla con Fromly. Pregúntale a todo lo que guardas, crea notas y tareas, o sube archivos arrastrándolos aquí.</p>
+            <div className="v2-suggest-grid">
+              {SUGGESTIONS.map((s, i) => (
+                <button key={i} className="v2-suggest" onClick={() => { setInput(s.p); taRef.current?.focus() }}>
+                  <div className="v2-suggest-t">{s.t}</div>
+                  <div className="v2-suggest-d">{s.d}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="v2-chat-inner">
+            {messages.map((m: ChatMessage) => (
+              <div key={m.id} className={`v2-msg ${m.role}`}>
+                <div className="v2-msg-avatar">{m.role === 'user' ? 'Tú' : '✦'}</div>
+                <div className="v2-msg-body">
+                  {m.content
+                    ? m.content.split('\n').map((line, i) => <p key={i}>{line || ' '}</p>)
+                    : streaming && <p style={{ color: 'var(--text-tertiary)' }}>…</p>}
+                  {m.chips && m.chips.length > 0 && (
+                    <div className="v2-el-filter" style={{ marginTop: 8 }}>
+                      {m.chips.map((c, i) => (
+                        <button key={i} className="v2-chip" onClick={() => doSend(c)}>{c}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Barra de acciones pendientes (confirmación de escrituras). */}
+      {pending && pending.length > 0 && (
+        <div className="v2-composer">
+          <div className="v2-composer-inner" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span className="v2-el-meta" style={{ flex: 1 }}>{pending.length} cambio(s) propuesto(s)</span>
+            <button className="v2-chip" onClick={() => aiChatStore.cancelActions()}>Descartar</button>
+            <button className="v2-chip active" onClick={() => aiChatStore.confirmActions().catch(() => {})}>Aplicar</button>
+          </div>
+        </div>
+      )}
+
+      <div className="v2-composer">
+        <div className="v2-composer-inner">
+          <div className="v2-composer-box">
+            <textarea
+              ref={taRef}
+              value={input}
+              rows={1}
+              placeholder={`Escribe a Fromly${contextLabel && contextLabel !== 'General' ? ` · ${contextLabel}` : ''}…`}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+            />
+            <button className="v2-send" disabled={!input.trim() || streaming} onClick={() => doSend(input)}>↑</button>
+          </div>
+          <div className="v2-composer-hint">
+            {streaming ? 'Fromly está pensando…' : 'Enter para enviar · Shift+Enter salto de línea · arrastra archivos aquí'}
+          </div>
+        </div>
+      </div>
+
+      {dragOver && <div className="v2-drop-overlay">Suelta para adjuntar al chat</div>}
+    </main>
+  )
+}
