@@ -34,7 +34,7 @@ function V2NoteBody({ node }: { node: Node }) {
       </div>
       <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: canvas ? 'hidden' : 'auto' }}>
         {canvas
-          ? <PizarraView parentId={node.id} flowUnpositioned globalCanvas={false} />
+          ? <PizarraView parentId={node.id} flowUnpositioned globalCanvas={false} embedded />
           : isDocNode(node)
             ? <LienzoDocPanel nodeId={node.id} />
             : <Outliner parentId={node.id} autoFocusEmpty placeholder="Escribe aquí…" />}

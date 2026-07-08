@@ -56,6 +56,10 @@ interface Props {
   // Lienzo GLOBAL (home): al seleccionar un nodo se abre su columna derecha SIN
   // salir del lienzo (evento `from:open-detail`), en vez de navegar a él.
   globalCanvas?: boolean
+  // Embebido en un panel estrecho (columna derecha de v2): la barra se ancla ARRIBA
+  // del contenedor (no fija al viewport), compacta, sin accesorios (ir-a-hoy, guardar
+  // vista) y con Formas y Vistas agrupadas en desplegables.
+  embedded?: boolean
 }
 
 // Ancho en unidades de mundo del PDF de fondo (alto se ajusta solo por página).
@@ -390,7 +394,7 @@ function strokeNear(s: WBStroke, x: number, y: number, r: number): boolean {
   return false
 }
 
-export default function PizarraView({ parentId, flowUnpositioned, pdfBackground, pdfBackgroundKey, globalCanvas }: Props) {
+export default function PizarraView({ parentId, flowUnpositioned, pdfBackground, pdfBackgroundKey, globalCanvas, embedded }: Props) {
   const { t } = useTranslation()
   const nodesVersion = useStore(st => st.nodesVersion) // re-render + memoizar por versión
   const navigate = useNavigate()
@@ -544,6 +548,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
   const [tool, setTool] = useState<CanvasTool>('select')
+  // Desplegables de la barra COMPACTA (embedded): formas y vistas agrupadas.
+  const [shapesOpen, setShapesOpen] = useState(false)
+  const [viewsOpen, setViewsOpen] = useState(false)
   // Herramienta Tarea: input flotante en el punto de clic (fecha por lenguaje natural).
   // Color y grosor de tinta (pluma/rotulador/subrayador) + paleta abierta.
   const [penColor, setPenColor] = useState<string>('#222222')
@@ -3096,9 +3103,126 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         </div>
       )}
 
+      {/* ── Barra COMPACTA (embedded): anclada ARRIBA del panel, sin accesorios,
+          con Formas y Vistas agrupadas. Envuelve si el panel es muy estrecho. ── */}
+      {embedded && (() => {
+        const menuBox = { position: 'absolute' as const, top: 40, left: '50%', transform: 'translateX(-50%)', zIndex: 71, padding: 6, background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.18)', display: 'flex', gap: 4 }
+        const overlay = { position: 'fixed' as const, inset: 0, zIndex: 70 }
+        return (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, zIndex: 60,
+          display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 2, padding: '6px 8px',
+          background: 'var(--bg-elevated, #fff)', borderBottom: '1px solid var(--border, #e2e2e2)',
+        }}>
+          {/* Seleccionar */}
+          <button style={tool === 'select' ? toolBtnActive : toolBtn} title={t('tip.toolSelect')} onClick={() => setTool('select')}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3l13 6-5 1.6L9.6 17 4 3z"/></svg>
+          </button>
+          {/* Lápiz / rotulador / subrayador */}
+          <button style={tool === 'pen' ? toolBtnActive : toolBtn} title={t('tip.toolPen')} onClick={() => setTool(tt => tt === 'pen' ? 'select' : 'pen')}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
+          </button>
+          <button style={tool === 'marker' ? toolBtnActive : toolBtn} title={t('tip.toolMarker')} onClick={() => setTool(tt => tt === 'marker' ? 'select' : 'marker')}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
+          </button>
+          <button style={tool === 'highlighter' ? toolBtnActive : toolBtn} title={t('tip.toolHighlighter')} onClick={() => setTool(tt => tt === 'highlighter' ? 'select' : 'highlighter')}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 13l6-6 4 4-6 6H5v-4z"/><path d="M3 18h14"/></svg>
+          </button>
+          {/* Color + grosor */}
+          <div style={{ position: 'relative' }}>
+            <button style={toolBtn} title={t('tip.color')} onClick={() => setPaletteOpen(o => !o)}>
+              <span style={{ width: 16, height: 16, borderRadius: '50%', background: penColor, border: '1.5px solid rgba(0,0,0,0.15)', display: 'inline-block' }} />
+            </button>
+            {paletteOpen && (<>
+              <div onPointerDown={() => setPaletteOpen(false)} style={overlay} />
+              <div style={{ ...menuBox, flexDirection: 'column' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6,1fr)', gap: 6 }}>
+                  {['#222222', '#868e96', '#e03131', '#f76707', '#f59f00', '#2f9e44', '#1098ad', '#1971c2', '#7048e8', '#9c36b5', '#e64980', '#ffffff'].map(c => (
+                    <button key={c} onClick={() => { setPenColor(c); if (!isInkTool(tool) && !isShapeTool(tool)) setTool('pen') }}
+                      style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: penColor === c ? '2px solid var(--accent,#6c5ce7)' : '1px solid rgba(0,0,0,0.12)', cursor: 'pointer' }} />
+                  ))}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--border-subtle,#eee)' }}>
+                  {[1.5, 2.5, 4, 7, 12, 20].map(wv => (
+                    <button key={wv} title={t('tip.thickness', { n: wv })} onClick={() => { setPenWidth(wv); if (!isInkTool(tool) && !isShapeTool(tool)) setTool('pen') }}
+                      style={{ width: 24, height: 24, borderRadius: 7, border: penWidth === wv ? '2px solid var(--accent,#6c5ce7)' : '1px solid var(--border,#e2e2e2)', background: 'transparent', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ width: Math.min(16, wv + 2), height: Math.min(16, wv + 2), borderRadius: '50%', background: penColor }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </>)}
+          </div>
+          {/* Borrador */}
+          <button style={tool === 'eraser' ? toolBtnActive : toolBtn} title={t('tip.toolEraser')} onClick={() => setTool(tt => tt === 'eraser' ? 'select' : 'eraser')}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 16h9M4 13l5-5 6 6-3 3H7l-3-3z"/></svg>
+          </button>
+          <div style={vSep} />
+          {/* Formas (agrupadas) */}
+          <div style={{ position: 'relative' }}>
+            <button style={isShapeTool(tool) ? toolBtnActive : toolBtn} title={t('tip.toolShapes', 'Formas')} onClick={() => { setShapesOpen(o => !o); setViewsOpen(false) }}>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3.5" y="6" width="9" height="8" rx="1"/><circle cx="14" cy="8" r="3.2"/></svg>
+            </button>
+            {shapesOpen && (<>
+              <div onPointerDown={() => setShapesOpen(false)} style={overlay} />
+              <div style={menuBox}>
+                <button style={tool === 'line' ? toolBtnActive : toolBtn} title={t('tip.toolLine')} onClick={() => { setTool('line'); setShapesOpen(false) }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"><path d="M4 16L16 4"/></svg>
+                </button>
+                <button style={tool === 'arrow' ? toolBtnActive : toolBtn} title={t('tip.toolArrow')} onClick={() => { setTool('arrow'); setShapesOpen(false) }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M4 16L16 4M9 4h7v7"/></svg>
+                </button>
+                <button style={tool === 'rect' ? toolBtnActive : toolBtn} title={t('tip.toolRect')} onClick={() => { setTool('rect'); setShapesOpen(false) }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><rect x="3.5" y="5" width="13" height="10" rx="1"/></svg>
+                </button>
+                <button style={tool === 'ellipse' ? toolBtnActive : toolBtn} title={t('tip.toolEllipse')} onClick={() => { setTool('ellipse'); setShapesOpen(false) }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><ellipse cx="10" cy="10" rx="7" ry="5.5"/></svg>
+                </button>
+              </div>
+            </>)}
+          </div>
+          {/* Vistas (Tabla / Kanban / Calendario, agrupadas) */}
+          <div style={{ position: 'relative' }}>
+            <button style={toolBtn} title={t('tip.insertView', 'Insertar vista')} onClick={() => { setViewsOpen(o => !o); setShapesOpen(false) }}>
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 8h14M9 4v12"/></svg>
+            </button>
+            {viewsOpen && (<>
+              <div onPointerDown={() => setViewsOpen(false)} style={overlay} />
+              <div style={menuBox}>
+                <button style={toolBtn} title={t('tip.toolTable')} onClick={() => { createViewElement('tabla'); setViewsOpen(false) }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="14" height="12" rx="1.5"/><path d="M3 8h14M3 12h14M9 4v12"/></svg>
+                </button>
+                <button style={toolBtn} title={t('tip.toolKanban')} onClick={() => { createViewElement('kanban'); setViewsOpen(false) }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="4" height="12" rx="1"/><rect x="8.5" y="4" width="4" height="8" rx="1"/><rect x="14" y="4" width="3" height="10" rx="1"/></svg>
+                </button>
+                <button style={toolBtn} title={t('tip.toolCalendar')} onClick={() => { createViewElement('calendario'); setViewsOpen(false) }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 3v3M13 3v3"/></svg>
+                </button>
+              </div>
+            </>)}
+          </div>
+          <div style={vSep} />
+          {/* Deshacer / rehacer */}
+          <button style={store.canUndo ? toolBtn : toolBtnDisabled} disabled={!store.canUndo} title={t('tip.undo')} onClick={() => store.undo()}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M7 7H13a4 4 0 010 8H8M7 7l3-3M7 7l3 3"/></svg>
+          </button>
+          <button style={store.canRedo ? toolBtn : toolBtnDisabled} disabled={!store.canRedo} title={t('tip.redo')} onClick={() => store.redo()}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M13 7H7a4 4 0 000 8h5M13 7l-3-3M13 7l-3 3"/></svg>
+          </button>
+          <div style={vSep} />
+          {/* Zoom */}
+          <button style={toolBtn} title={t('tip.zoomOut')} onClick={() => zoomAtCenter(1 / 1.2)}>−</button>
+          <span style={{ minWidth: 34, textAlign: 'center', fontSize: 11, color: 'var(--text-secondary, #888)' }}>{Math.round(cam.scale * 100)}%</span>
+          <button style={toolBtn} title={t('tip.zoomIn')} onClick={() => zoomAtCenter(1.2)}>+</button>
+          <button style={toolBtn} title={t('tip.center')} onClick={() => setCam({ x: 60, y: 60, scale: 1 })}>⌖</button>
+        </div>
+        )
+      })()}
+
       {/* ── Barra de herramientas (estilo iPad) — INFERIOR, horizontal ──
           position:fixed: el contenedor del lienzo desborda por debajo del viewport,
           así que anclamos la barra a la parte inferior de la PANTALLA (siempre visible). */}
+      {!embedded && (
       <div style={{
         position: 'fixed', left: '50%', bottom: 22, transform: 'translateX(-50%)', zIndex: 60,
         display: 'flex', alignItems: 'center', gap: 2, padding: 5,
@@ -3212,6 +3336,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         <button style={toolBtn} title={t('tip.center')}
           onClick={() => setCam({ x: 60, y: 60, scale: 1 })}>⌖</button>
       </div>
+      )}
 
 
       {/* Menú contextual de la pizarra. Si el nodo clicado forma parte de una
