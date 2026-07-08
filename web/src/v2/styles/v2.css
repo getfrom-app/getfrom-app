@@ -65,6 +65,22 @@
   color: var(--text-tertiary); padding: 2px 0 10px;
 }
 .v2-el-active > .v2-el-row { background: var(--accent-soft); }
+/* Toggle Nota ⇄ Lienzo en la vista de detalle. */
+.v2-view-toggle {
+  display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--border); flex: 0 0 auto;
+}
+.v2-view-toggle button {
+  font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
+}
+.v2-view-toggle button:hover { background: var(--bg-hover); }
+.v2-view-toggle button.active { background: var(--accent-soft); color: var(--text-accent); border-color: var(--accent); }
+/* Vista Agenda: cabecera con «volver al año». */
+.v2-agenda-back {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600;
+  color: var(--text-secondary); background: transparent; border: none; cursor: pointer; padding: 2px 0 8px;
+}
+.v2-agenda-back:hover { color: var(--text-accent); }
 .v2-ctx-row {
   display: flex; align-items: center; gap: 8px;
   padding: 7px 14px; cursor: pointer; font-size: 13px; color: var(--text-secondary);

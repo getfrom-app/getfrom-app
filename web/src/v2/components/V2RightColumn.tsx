@@ -15,11 +15,12 @@ import ElementsPanel from '../../components/panels/ElementsPanel'
 import V2ContextView from './V2ContextView'
 import V2ConversationView from './V2ConversationView'
 import V2DetailView from './V2DetailView'
+import V2AgendaView from './V2AgendaView'
 import V2ElementRow from './V2ElementRow'
 import { classifyElement } from '../elementKind'
 import type { Node } from '../../types'
 
-export type RightMode = 'contexto' | 'elementos' | 'historial' | 'hoy'
+export type RightMode = 'contexto' | 'elementos' | 'historial' | 'hoy' | 'agenda'
 
 interface Props {
   mode: RightMode
@@ -146,6 +147,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
     { id: 'elementos', label: 'Elementos' },
     { id: 'historial', label: 'Historial' },
     { id: 'hoy', label: 'Hoy' },
+    { id: 'agenda', label: 'Agenda' },
   ]
 
   // Arrastrar el borde izquierdo para ensanchar/estrechar la columna derecha.
@@ -261,6 +263,8 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
             ? <DayColumn node={today} includeNodes={false} />
             : <div className="v2-right-empty">Preparando la columna de hoy…</div>
         )}
+
+        {mode === 'agenda' && <V2AgendaView />}
       </div>
       )}
     </aside>
