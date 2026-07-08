@@ -39,7 +39,6 @@ export default function V2AgendaView() {
 
   return (
     <div>
-      <div className="v2-panel-title">Agenda</div>
       <YearCalendarPanel activeDate={null} />
     </div>
   )

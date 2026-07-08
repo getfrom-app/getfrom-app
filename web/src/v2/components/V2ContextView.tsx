@@ -63,40 +63,23 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
 
   return (
     <div>
-      <div className="v2-panel-title">Contexto</div>
-      {/* Cabecera: nombre + padre + archivar */}
-      <div className="v2-ctx-head">
-        <div className="v2-ctx-head-title">
-          <span className="v2-ctx-dot" style={{ background: contextColor(ctxId) }} />
-          <span className="v2-el-title" style={{ fontWeight: 700, fontSize: 15 }}>{node.text || 'Contexto'}</span>
-        </div>
-        <div className="v2-ctx-head-meta">
-          {parent
-            ? <button className="v2-ctx-parent" onClick={() => onSelectCtx(parent.id)}>en {parent.text}</button>
-            : <span className="v2-el-meta">Área</span>}
-          {closed && <span className="v2-ctx-badge-archived">Archivado</span>}
-        </div>
-        {canArchive && (
-          <button
-            className="v2-ctx-archive-btn"
-            onClick={() => setContextClosed(ctxId, !closed)}
-            title={closed ? 'Devolver al árbol de contextos' : 'Sacar del árbol (sigue buscable y en el RAG)'}
-          >
-            {closed ? '↩︎ Desarchivar' : '🗄 Archivar'}
-          </button>
-        )}
-      </div>
-
       {/* Migración: notas antiguas del contexto → un documento colgado del contexto. */}
       {legacyCount > 0 && (
         <button className="v2-ctx-migrate-btn" onClick={doMigrate}>
-          📄 Convertir {legacyCount} nota{legacyCount > 1 ? 's' : ''} antigua{legacyCount > 1 ? 's' : ''} en documento
+          Convertir {legacyCount} nota{legacyCount > 1 ? 's' : ''} antigua{legacyCount > 1 ? 's' : ''} en documento
         </button>
       )}
 
-      {/* Tareas del contexto — estilo Hoy (checkbox, chips fecha/hora/recurrencia,
-          hover calendario/eliminar, clic → abre su nota a la derecha). */}
-      <div className="v2-section-label" style={{ padding: '14px 0 4px' }}>Tareas</div>
+      {/* Tareas del contexto — estilo Hoy. La acción «archivar» queda discreta a la derecha. */}
+      <div className="v2-section-label" style={{ padding: '2px 0 6px' }}>
+        <span>Tareas</span>
+        {canArchive && (
+          <button className="v2-ctx-archive-link" onClick={() => setContextClosed(ctxId, !closed)}
+            title={closed ? 'Devolver al árbol de contextos' : 'Sacar del árbol (sigue buscable y en el RAG)'}>
+            {closed ? 'Desarchivar' : 'Archivar'}
+          </button>
+        )}
+      </div>
       <V2TaskList tasks={tasks} />
       <V2QuickAddTask parentId={ctxId} />
 

@@ -163,44 +163,47 @@ export default function ElementsPanel() {
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <div style={{ padding: '16px 16px 8px', flexShrink: 0 }}>
-        <div className="rc-section-label" style={{ marginBottom: 10 }}>{t('elements.title')}</div>
+      <div style={{ padding: '14px 14px 6px', flexShrink: 0 }}>
         <input
           value={q} onChange={e => setQ(e.target.value)}
-          placeholder={t('elements.searchPlaceholder')}
-          style={{ width: '100%', boxSizing: 'border-box', padding: '7px 10px', marginBottom: 10, borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontSize: 13 }}
+          placeholder={t('elements.searchShort', 'Buscar')}
+          style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', marginBottom: 10, borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontSize: 13, outline: 'none' }}
         />
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-          {CHIPS.map(c => (
-            <button key={c.key} onClick={() => { setFilter(c.key); if (c.key !== 'task' && c.key !== 'event') setTaskSub('all') }}
-              style={{
-                fontSize: 12, padding: '4px 10px', borderRadius: 14, cursor: 'pointer',
-                border: '1px solid ' + (filter === c.key ? 'var(--accent,#6c5ce7)' : 'var(--border,#e2e2e2)'),
-                background: filter === c.key ? 'var(--accent,#6c5ce7)' : 'var(--bg,#fff)',
-                color: filter === c.key ? '#fff' : 'var(--text-secondary,#666)',
-              }}>
-              {c.label}{c.key !== 'all' ? ` (${counts[c.key] || 0})` : ` (${rows.length - (counts.memory || 0)})`}
-            </button>
-          ))}
+        {/* Filtro por tipo — texto limpio en una fila, con scroll horizontal, subrayado activo. */}
+        <div className="el-filterbar">
+          {CHIPS.map(c => {
+            const active = filter === c.key
+            const n = c.key === 'all' ? (rows.length - (counts.memory || 0)) : (counts[c.key] || 0)
+            return (
+              <button key={c.key} onClick={() => { setFilter(c.key); if (c.key !== 'task' && c.key !== 'event') setTaskSub('all') }}
+                style={{
+                  flex: '0 0 auto', border: 'none', background: 'transparent', cursor: 'pointer', padding: '3px 0',
+                  fontSize: 12.5, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
+                  color: active ? 'var(--accent,#6c5ce7)' : 'var(--text-tertiary,#999)',
+                  borderBottom: '2px solid ' + (active ? 'var(--accent,#6c5ce7)' : 'transparent'),
+                }}>
+                {c.label} <span style={{ opacity: 0.55, fontWeight: 400 }}>{n}</span>
+              </button>
+            )
+          })}
         </div>
         {showTaskSub && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-            {SUB_CHIPS.map(c => (
-              <button key={c.key} onClick={() => setTaskSub(c.key)}
-                style={{
-                  fontSize: 11.5, padding: '3px 9px', borderRadius: 12, cursor: 'pointer',
-                  border: '1px solid ' + (taskSub === c.key ? 'var(--accent,#6c5ce7)' : 'transparent'),
-                  background: taskSub === c.key ? 'var(--bg-hover,#f0edfb)' : 'transparent',
-                  color: taskSub === c.key ? 'var(--accent,#6c5ce7)' : 'var(--text-tertiary,#999)',
-                }}>
-                {c.label}
-              </button>
-            ))}
+          <div className="el-filterbar" style={{ marginTop: 4 }}>
+            {SUB_CHIPS.map(c => {
+              const active = taskSub === c.key
+              return (
+                <button key={c.key} onClick={() => setTaskSub(c.key)}
+                  style={{
+                    flex: '0 0 auto', border: 'none', background: 'transparent', cursor: 'pointer', padding: '2px 0',
+                    fontSize: 11.5, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
+                    color: active ? 'var(--accent,#6c5ce7)' : 'var(--text-tertiary,#999)',
+                  }}>
+                  {c.label}
+                </button>
+              )
+            })}
           </div>
         )}
-        <div style={{ fontSize: 11, color: 'var(--text-tertiary,#999)', marginTop: 8 }}>
-          {t('elements.showing', { count: filtered.length, defaultValue: '{{count}} elementos' })}
-        </div>
       </div>
 
       {filtered.length === 0 ? (

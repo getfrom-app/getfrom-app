@@ -7801,6 +7801,9 @@ textarea:focus-visible,
   outline: none;
 }
 .node-ctx-sep { height: 1px; background: var(--border, #e2e2e2); margin: 4px 2px; }
+/* Barra de filtros de Elementos — fila con scroll horizontal, sin barra visible. */
+.el-filterbar { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; -ms-overflow-style: none; }
+.el-filterbar::-webkit-scrollbar { display: none; }
 .node-ctx-label { padding: 4px 10px 2px; font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; }
 
 /* Editable cell */

@@ -80,8 +80,6 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
 
   return (
     <div>
-      <div className="v2-panel-title">Contexto</div>
-
       {/* Añadir la conversación a un contexto (buscador con crear, como en v1). */}
       <div className="v2-section-label" style={{ padding: '0 0 6px' }}>Conversación</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
@@ -89,7 +87,7 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
           const c = store.getNode(id)
           if (!c) return null
           return (
-            <button key={id} className="v2-chip active" onClick={() => onSelectCtx(id)} style={{ background: contextColor(id), borderColor: contextColor(id) }}>
+            <button key={id} className="v2-chip" onClick={() => onSelectCtx(id)} style={{ ['--chip' as string]: contextColor(id) }}>
               {c.text}
             </button>
           )

@@ -259,8 +259,6 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
 
         {mode === 'historial' && (
           <div>
-            <div className="v2-panel-title">Historial</div>
-
             {/* Conversaciones (con sus elementos indentados) + elementos sueltos. */}
             {topLevel.map(it => (
               <div key={it.node.id} className={it.isChat && chat.sessionId === it.node.id ? 'v2-el-active' : undefined}>
