@@ -7794,6 +7794,12 @@ textarea:focus-visible,
 .node-ctx-item--type { padding: 5px 10px; font-size: 12.5px; }
 .node-ctx-item--type.active { color: var(--accent); font-weight: 600; }
 .node-ctx-item--danger { color: var(--danger, #e03131); }
+.node-ctx-rename {
+  display: block; width: 100%; box-sizing: border-box; margin: 1px 0;
+  padding: 6px 9px; border-radius: 7px; font-size: 13px; font-family: inherit;
+  border: 1px solid var(--accent, #6c5ce7); background: var(--bg, #fff); color: var(--text-primary);
+  outline: none;
+}
 .node-ctx-sep { height: 1px; background: var(--border, #e2e2e2); margin: 4px 2px; }
 .node-ctx-label { padding: 4px 10px 2px; font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.03em; }
 

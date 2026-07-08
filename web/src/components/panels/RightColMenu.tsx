@@ -17,6 +17,7 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
   const boxRef = useRef<HTMLDivElement>(null)
   const ctxBtnRef = useRef<HTMLButtonElement>(null)
   const [pos, setPos] = useState({ top: y, left: x })
+  const [renaming, setRenaming] = useState(false)
   // Flyout SEPARADO del selector de contexto (no inline, para no confundir).
   const [ctxFlyout, setCtxFlyout] = useState<{ top: number; left: number } | null>(null)
   // Reposiciona el menú dentro del viewport.
@@ -69,6 +70,21 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
       <div ref={boxRef} className="node-ctx-menu" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 3000, maxHeight: '70vh', overflowY: 'auto' }}
         onClick={e => e.stopPropagation()}>
         <button className="node-ctx-item" onClick={() => { openNodeDetail(nodeId); onClose() }}>{t('rightColMenu.open')}</button>
+        {renaming ? (
+          <input
+            autoFocus
+            defaultValue={node.text || ''}
+            className="node-ctx-rename"
+            onClick={e => e.stopPropagation()}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { const v = (e.target as HTMLInputElement).value.trim(); if (v) store.updateNode(nodeId, { text: v }); onClose() }
+              if (e.key === 'Escape') { e.stopPropagation(); setRenaming(false) }
+            }}
+            onBlur={e => { const v = e.target.value.trim(); if (v && v !== node.text) store.updateNode(nodeId, { text: v }); onClose() }}
+          />
+        ) : (
+          <button className="node-ctx-item" onClick={() => setRenaming(true)}>{t('rightColMenu.rename', 'Renombrar')}</button>
+        )}
         {!isEvent && (
           <button className="node-ctx-item" onClick={convertTask}>
             {isTask ? t('rightColMenu.removeTask') : t('rightColMenu.convertToTask')}

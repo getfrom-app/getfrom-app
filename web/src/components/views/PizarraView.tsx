@@ -548,9 +548,11 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
 
   // Herramienta activa: select (mover/editar), pen (dibujar), eraser (borrar trazos).
   const [tool, setTool] = useState<CanvasTool>('select')
-  // Desplegables de la barra COMPACTA (embedded): formas y vistas agrupadas.
+  // Desplegables de la barra COMPACTA (embedded): tinta, formas y vistas agrupadas.
   const [shapesOpen, setShapesOpen] = useState(false)
   const [viewsOpen, setViewsOpen] = useState(false)
+  const [inkOpen, setInkOpen] = useState(false)
+  const [inkTool, setInkTool] = useState<CanvasTool>('pen') // última tinta elegida (lápiz/rotulador/subrayador)
   // Herramienta Tarea: input flotante en el punto de clic (fecha por lenguaje natural).
   // Color y grosor de tinta (pluma/rotulador/subrayador) + paleta abierta.
   const [penColor, setPenColor] = useState<string>('#222222')
@@ -3118,16 +3120,32 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           <button style={tool === 'select' ? toolBtnActive : toolBtn} title={t('tip.toolSelect')} onClick={() => setTool('select')}>
             <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor"><path d="M4 3l13 6-5 1.6L9.6 17 4 3z"/></svg>
           </button>
-          {/* Lápiz / rotulador / subrayador */}
-          <button style={tool === 'pen' ? toolBtnActive : toolBtn} title={t('tip.toolPen')} onClick={() => setTool(tt => tt === 'pen' ? 'select' : 'pen')}>
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
-          </button>
-          <button style={tool === 'marker' ? toolBtnActive : toolBtn} title={t('tip.toolMarker')} onClick={() => setTool(tt => tt === 'marker' ? 'select' : 'marker')}>
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
-          </button>
-          <button style={tool === 'highlighter' ? toolBtnActive : toolBtn} title={t('tip.toolHighlighter')} onClick={() => setTool(tt => tt === 'highlighter' ? 'select' : 'highlighter')}>
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 13l6-6 4 4-6 6H5v-4z"/><path d="M3 18h14"/></svg>
-          </button>
+          {/* Tinta: lápiz (principal) con rotulador/subrayador agrupados en desplegable.
+              El botón activa/alterna la ÚLTIMA tinta elegida; el ▾ cambia de tinta. */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <button style={isInkTool(tool) ? toolBtnActive : toolBtn} title={t('tip.toolPen')} onClick={() => setTool(tt => isInkTool(tt) ? 'select' : inkTool)}>
+              {inkTool === 'marker'
+                ? <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
+                : inkTool === 'highlighter'
+                  ? <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 13l6-6 4 4-6 6H5v-4z"/><path d="M3 18h14"/></svg>
+                  : <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>}
+            </button>
+            <button style={{ ...toolBtn, width: 14, padding: 0, fontSize: 9 }} title={t('tip.toolMarker')} onClick={() => { setInkOpen(o => !o); setShapesOpen(false); setViewsOpen(false) }}>▾</button>
+            {inkOpen && (<>
+              <div onPointerDown={() => setInkOpen(false)} style={overlay} />
+              <div style={menuBox}>
+                <button style={tool === 'pen' ? toolBtnActive : toolBtn} title={t('tip.toolPen')} onClick={() => { setInkTool('pen'); setTool('pen'); setInkOpen(false) }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
+                </button>
+                <button style={tool === 'marker' ? toolBtnActive : toolBtn} title={t('tip.toolMarker')} onClick={() => { setInkTool('marker'); setTool('marker'); setInkOpen(false) }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M14 3l3 3-9 9-4 1 1-4 9-9z"/></svg>
+                </button>
+                <button style={tool === 'highlighter' ? toolBtnActive : toolBtn} title={t('tip.toolHighlighter')} onClick={() => { setInkTool('highlighter'); setTool('highlighter'); setInkOpen(false) }}>
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M5 13l6-6 4 4-6 6H5v-4z"/><path d="M3 18h14"/></svg>
+                </button>
+              </div>
+            </>)}
+          </div>
           {/* Color + grosor */}
           <div style={{ position: 'relative' }}>
             <button style={toolBtn} title={t('tip.color')} onClick={() => setPaletteOpen(o => !o)}>
