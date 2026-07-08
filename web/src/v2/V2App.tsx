@@ -18,6 +18,7 @@ export default function V2App() {
   useStore()
   const [ready, setReady] = useState(store.isLoaded)
   const [selectedCtxId, setSelectedCtxId] = useState<string | null>(null)
+  const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
   const [rightMode, setRightMode] = useState<RightMode>('hoy')
   const [droppedFiles, setDroppedFiles] = useState<File[]>([])
 
@@ -37,13 +38,22 @@ export default function V2App() {
       .catch(() => setReady(true)) // no bloquear el shell aunque falle la carga
   }, [])
 
-  // Al elegir un contexto, la columna derecha salta a su ficha.
+  // Al elegir un contexto, la columna derecha muestra sus conversaciones.
   const onSelectCtx = (id: string | null) => {
     setSelectedCtxId(id)
-    setRightMode('contexto')
+    setFocusNodeId(null)
+    setRightMode('historial')
   }
 
   const onNewChat = () => {
+    setFocusNodeId(null)
+    aiChatStore.startNewSession()
+  }
+
+  // «Empezar una conversación a partir de un contenido existente»: nueva sesión
+  // centrada en ese nodo (buildPayload le inyecta ese nodo como contexto).
+  const onStartAbout = (nodeId: string) => {
+    setFocusNodeId(nodeId)
     aiChatStore.startNewSession()
   }
 
@@ -57,8 +67,11 @@ export default function V2App() {
     window.open(`/app/node/${id}`, '_blank', 'noopener')
   }
 
+  // El chat se centra en el nodo enfocado (si hay) o en el contexto seleccionado.
+  const currentNodeId = focusNodeId || selectedCtxId
+  const focusNode = focusNodeId ? store.getNode(focusNodeId) : null
   const ctxNode = selectedCtxId ? store.getNode(selectedCtxId) : null
-  const contextLabel = ctxNode?.text || 'General'
+  const contextLabel = focusNode?.text || ctxNode?.text || 'General'
 
   if (!ready) {
     return <div className="v2-loading">Cargando Fromly 2.0…</div>
@@ -67,13 +80,14 @@ export default function V2App() {
   return (
     <div className="v2-root">
       <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} />
-      <V2Chat currentNodeId={selectedCtxId} contextLabel={contextLabel} onFilesDropped={onFilesDropped} />
+      <V2Chat currentNodeId={currentNodeId} contextLabel={contextLabel} onFilesDropped={onFilesDropped} />
       <V2RightColumn
         mode={rightMode}
         onMode={setRightMode}
         selectedCtxId={selectedCtxId}
         droppedFiles={droppedFiles}
         onOpenNode={onOpenNode}
+        onStartAbout={onStartAbout}
       />
       <div className="v2-beta-bar">Fromly {V2_VERSION} — beta<a href="/app/">volver a v1</a></div>
     </div>

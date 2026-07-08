@@ -21,6 +21,7 @@ interface Props {
   selectedCtxId: string | null
   droppedFiles: File[]
   onOpenNode: (id: string) => void
+  onStartAbout: (id: string) => void
 }
 
 // Clasificación ligera de un nodo → icono + etiqueta de tipo.
@@ -50,7 +51,7 @@ function fmtDate(iso?: string): string {
   try { return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' }) } catch { return '' }
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout }: Props) {
   useStore()
   const chat = useAIChat()
   const [query, setQuery] = useState('')
@@ -78,11 +79,35 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
   }, [query, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Historial (conversaciones) ──
+  // Conversaciones reales (nodos de sesión), globales o filtradas por contexto (_ctxRefs).
   const sessions = useMemo(() => {
-    const list = store.allActive().filter(n => parseExtraData(n.extraData)._aiSession === '1')
+    const list = store.allActive().filter(n => {
+      const ed = parseExtraData(n.extraData)
+      if (ed._aiSession !== '1') return false
+      if (selectedCtxId) {
+        const refs = Array.isArray(ed._ctxRefs) ? ed._ctxRefs : []
+        if (!refs.includes(selectedCtxId)) return false
+      }
+      return true
+    })
     list.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
     return list.slice(0, 100)
-  }, [store.nodesVersion, chat.sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [store.nodesVersion, chat.sessionId, selectedCtxId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Contenido existente del contexto presentado COMO conversaciones (semilla para empezar).
+  // No son chats reales; clic → inicia una conversación centrada en ese contenido.
+  const ctxSeeds = useMemo(() => {
+    if (!selectedCtxId) return [] as Node[]
+    return nodesInContext(selectedCtxId)
+      .filter(n => {
+        const ed = parseExtraData(n.extraData)
+        if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) return false
+        if (ed._ctx === '1') return false // no los subcontextos
+        return !!n.text
+      })
+      .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
+      .slice(0, 100)
+  }, [store.nodesVersion, selectedCtxId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Contexto ──
   const ctxKnowledge = selectedCtxId ? readContextKnowledge(selectedCtxId) : ''
@@ -175,11 +200,15 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
 
         {mode === 'historial' && (
           <div>
-            <div className="v2-el-meta" style={{ marginBottom: 8 }}>{sessions.length} conversación(es)</div>
             <div className="v2-el-row" onClick={() => aiChatStore.startNewSession()} style={{ color: 'var(--text-accent)', fontWeight: 600 }}>
               <span className="v2-el-icon">＋</span>
-              <span className="v2-el-main"><span className="v2-el-title">Nueva conversación</span></span>
+              <span className="v2-el-main"><span className="v2-el-title">Nueva conversación{selectedCtxId ? ' en este contexto' : ''}</span></span>
             </div>
+
+            {/* Conversaciones reales */}
+            {sessions.length > 0 && (
+              <div className="v2-section-label" style={{ padding: '12px 0 4px' }}>Conversaciones</div>
+            )}
             {sessions.map(s => (
               <div
                 className="v2-el-row"
@@ -194,7 +223,31 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
                 </span>
               </div>
             ))}
-            {sessions.length === 0 && <div className="v2-right-empty">Aún no hay conversaciones. Empieza a hablar con Fromly.</div>}
+
+            {/* Contenido existente como conversaciones (semilla para empezar) */}
+            {selectedCtxId && ctxSeeds.length > 0 && (
+              <>
+                <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>Empezar desde tu contenido</div>
+                {ctxSeeds.map(n => {
+                  const c = classify(n)
+                  return (
+                    <div className="v2-el-row" key={n.id} onClick={() => onStartAbout(n.id)} title="Empezar una conversación sobre esto">
+                      <span className="v2-el-icon">{c.icon}</span>
+                      <span className="v2-el-main">
+                        <span className="v2-el-title">{n.text}</span>
+                        <span className="v2-el-meta">{c.label} · abrir como conversación</span>
+                      </span>
+                    </div>
+                  )
+                })}
+              </>
+            )}
+
+            {sessions.length === 0 && ctxSeeds.length === 0 && (
+              <div className="v2-right-empty">
+                {selectedCtxId ? 'Este contexto no tiene conversaciones ni contenido todavía.' : 'Aún no hay conversaciones. Empieza a hablar con Fromly.'}
+              </div>
+            )}
           </div>
         )}
 
