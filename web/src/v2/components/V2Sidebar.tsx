@@ -2,10 +2,13 @@
 // Nivel raíz = ÁREAS (hijos directos de 🧠 Contexto) + General. Clic en un
 // contexto: lo selecciona (la app reacciona) Y hace zoom-in a sus subcontextos
 // en la misma columna, con botón de volver.
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { isRootContext, isMarkedContext, isContextClosed, contextColor } from '../../utils/cajones'
+import { useTheme } from '../../hooks/useTheme'
+import { clearTokens } from '../../api/client'
+import SettingsModal from '../../components/modals/SettingsModal'
 import type { Node } from '../../types'
 
 interface Props {
@@ -30,7 +33,18 @@ function subContextsOf(id: string): Node[] {
 export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx }: Props) {
   useStore()
   const user = useUserStore()
+  const { theme, setTheme } = useTheme()
   const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
+  const [userMenu, setUserMenu] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const userWrap = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!userMenu) return
+    const onDoc = (e: MouseEvent) => { if (userWrap.current && !userWrap.current.contains(e.target as HTMLElement)) setUserMenu(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [userMenu])
 
   const currentParent = stack.length ? stack[stack.length - 1] : null
 
@@ -121,15 +135,36 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         )}
       </div>
 
-      <div className="v2-sidebar-foot">
-        <div className="v2-userchip">
+      <div className="v2-sidebar-foot" ref={userWrap}>
+        {userMenu && (
+          <div className="v2-usermenu">
+            <button className="v2-usermenu-item" onClick={() => { setShowSettings(true); setUserMenu(false) }}>⚙︎ Ajustes</button>
+            <div className="v2-usermenu-sep" />
+            <div className="v2-usermenu-label">Tema</div>
+            <div className="v2-theme-seg">
+              {(['light', 'dark', 'system'] as const).map(tk => (
+                <button
+                  key={tk}
+                  className={`v2-theme-opt ${theme === tk ? 'active' : ''}`}
+                  onClick={() => setTheme(tk)}
+                >{tk === 'light' ? '☀︎ Claro' : tk === 'dark' ? '☾ Oscuro' : '⚙ Auto'}</button>
+              ))}
+            </div>
+            <div className="v2-usermenu-sep" />
+            <a className="v2-usermenu-item" href="/app/">↩︎ Volver a la v1</a>
+            <button className="v2-usermenu-item v2-usermenu-item--danger" onClick={() => { clearTokens(); window.location.href = '/login' }}>Cerrar sesión</button>
+          </div>
+        )}
+        <button className="v2-userchip" onClick={() => setUserMenu(o => !o)} title="Cuenta y ajustes">
           <span className="v2-avatar">{initial}</span>
           <span className="v2-el-main">
             <span className="v2-el-title">{user.user?.email || 'Invitado'}</span>
             <span className="v2-el-meta">{user.planLabel}</span>
           </span>
-        </div>
+          <span className="v2-userchip-caret">⌄</span>
+        </button>
       </div>
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </aside>
   )
 }

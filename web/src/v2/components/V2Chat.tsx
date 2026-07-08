@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useAIChat, aiChatStore } from '../../store/aiChatStore'
 import type { ChatMessage } from '../../store/aiChatStore'
 import { store, useStore } from '../../store/nodeStore'
+import NewTaskModal from '../../components/modals/NewTaskModal'
+import NewEventModal from '../../components/modals/NewEventModal'
 
 interface Props {
   currentNodeId: string | null
@@ -35,6 +37,8 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
   useStore()
   const [input, setInput] = useState('')
   const [dragOver, setDragOver] = useState(false)
+  const [showTask, setShowTask] = useState(false)
+  const [showEvent, setShowEvent] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
@@ -100,8 +104,10 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           {chat.sessionId ? (convTitle || 'Conversación') : 'Nueva conversación'}
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {/* Crear contenido sin pasar por el chat: documento o nota de voz. */}
+          {/* Crear contenido sin pasar por el chat: documento, tarea, evento o nota de voz. */}
           <button className="v2-head-action" title="Nuevo documento" onClick={onNewDocument}>＋ Documento</button>
+          <button className="v2-head-action" title="Nueva tarea" onClick={() => setShowTask(true)}>＋ Tarea</button>
+          <button className="v2-head-action" title="Nuevo evento" onClick={() => setShowEvent(true)}>＋ Evento</button>
           <button
             className={`v2-head-action ${recorder.recording ? 'recording' : ''}`}
             title={recorder.recording ? 'Detener y guardar' : 'Grabar audio (reunión o nota de voz)'}
@@ -189,6 +195,11 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
       </div>
 
       {dragOver && <div className="v2-drop-overlay">Suelta para adjuntar al chat</div>}
+
+      {/* Modales de creación rápida (mismos que la v1). Las tareas nacen en el
+          contexto activo (o el diario de hoy si no hay); los eventos, en el diario. */}
+      {showTask && <NewTaskModal parentId={currentNodeId ?? undefined} onClose={() => setShowTask(false)} />}
+      {showEvent && <NewEventModal onClose={() => setShowEvent(false)} />}
     </main>
   )
 }

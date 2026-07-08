@@ -15,6 +15,7 @@ import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2RightColumn, { RightMode } from './components/V2RightColumn'
 import RightColMenu from '../components/panels/RightColMenu'
+import UnifiedCapture from '../components/modals/UnifiedCapture'
 import { ToastProvider } from '../components/Toast'
 import './styles/v2.css'
 
@@ -200,6 +201,25 @@ export default function V2App() {
     return () => window.removeEventListener('from:open-rowmenu', h as EventListener)
   }, [])
 
+  // Quick capture (como en v1): BARRA ESPACIADORA lo lanza cuando no estás escribiendo
+  // en un campo. Abre el UnifiedCapture real (ghost text, @contextos, -t/-e/-n, voz).
+  const [showCapture, setShowCapture] = useState(false)
+  useEffect(() => {
+    const isTyping = (el: Element | null) => {
+      if (!el) return false
+      const tag = el.tagName
+      return tag === 'INPUT' || tag === 'TEXTAREA' || (el as HTMLElement).isContentEditable
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space' || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return
+      if (showCapture || isTyping(document.activeElement)) return
+      e.preventDefault()
+      setShowCapture(true)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showCapture])
+
   // El chat se centra en el nodo enfocado (si hay) o en el contexto seleccionado.
   const currentNodeId = focusNodeId || selectedCtxId
   const focusNode = focusNodeId ? store.getNode(focusNodeId) : null
@@ -237,6 +257,12 @@ export default function V2App() {
       />
       <div className="v2-beta-bar">Fromly {V2_VERSION} — beta<a href="/app/">volver a v1</a></div>
       {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
+      {showCapture && (
+        <UnifiedCapture
+          onClose={() => setShowCapture(false)}
+          onSelectContext={id => { onSelectCtx(id); setShowCapture(false) }}
+        />
+      )}
     </div>
     </ToastProvider>
   )
