@@ -118,6 +118,16 @@
 .v2-msg-body p { margin: 0 0 8px; }
 .v2-msg-role { font-size: 11px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
 
+/* Indicador «Creando…» animado (como Claude): el chat trabaja tras bambalinas. */
+.v2-creating {
+  display: inline-flex; align-items: baseline; gap: 2px; color: var(--text-accent);
+  font-size: 13.5px; font-weight: 500;
+  animation: v2-pulse 1.4s ease-in-out infinite;
+}
+.v2-creating-dots::after { content: '…'; animation: v2-dots 1.4s steps(4, end) infinite; }
+@keyframes v2-pulse { 0%,100% { opacity: 0.55 } 50% { opacity: 1 } }
+@keyframes v2-dots { 0% { content: '' } 25% { content: '.' } 50% { content: '..' } 75% { content: '…' } }
+
 /* Estado vacío del chat */
 .v2-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
 .v2-empty h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8px; }

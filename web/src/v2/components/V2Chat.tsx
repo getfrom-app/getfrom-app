@@ -14,6 +14,15 @@ interface Props {
   recorder: { recording: boolean; busy: boolean; start: () => void; stop: () => void }
 }
 
+// Oculta los bloques ```from-action``` (completos o el parcial que aún se está
+// escribiendo) para que el usuario NUNCA vea el JSON de la acción en el chat.
+function stripActions(s: string): string {
+  return s
+    .replace(/```from-action[\s\S]*?```/g, '')
+    .replace(/```from-action[\s\S]*$/, '')
+    .trim()
+}
+
 const SUGGESTIONS = [
   { t: 'Resume mi día', d: 'Tareas y eventos de hoy', p: '¿Qué tengo para hoy? Resume mis tareas y eventos.' },
   { t: 'Busca en mis notas', d: 'Pregunta a todo lo guardado', p: 'Busca en mis notas lo que sé sobre ' },
@@ -117,9 +126,14 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
               <div key={m.id} className={`v2-msg ${m.role}`}>
                 <div className="v2-msg-avatar">{m.role === 'user' ? 'Tú' : '✦'}</div>
                 <div className="v2-msg-body">
-                  {m.content
-                    ? m.content.split('\n').map((line, i) => <p key={i}>{line || ' '}</p>)
-                    : streaming && <p style={{ color: 'var(--text-tertiary)' }}>…</p>}
+                  {(() => {
+                    const disp = stripActions(m.content)
+                    if (disp) return disp.split('\n').map((line, i) => <p key={i}>{line || ' '}</p>)
+                    if (streaming && m.role === 'assistant') {
+                      return <span className="v2-creating">✨ Creando<span className="v2-creating-dots" /></span>
+                    }
+                    return null
+                  })()}
                   {m.chips && m.chips.length > 0 && (
                     <div className="v2-el-filter" style={{ marginTop: 8 }}>
                       {m.chips.map((c, i) => (

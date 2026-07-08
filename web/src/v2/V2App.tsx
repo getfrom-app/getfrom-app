@@ -13,7 +13,7 @@ import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2RightColumn, { RightMode } from './components/V2RightColumn'
-import V2DetailView from './components/V2DetailView'
+import { ToastProvider } from '../components/Toast'
 import './styles/v2.css'
 
 export const V2_VERSION = 'v2.0.0-beta.1'
@@ -144,6 +144,7 @@ export default function V2App() {
   }
 
   return (
+    <ToastProvider>
     <div className="v2-root">
       <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} />
       <V2Chat
@@ -153,18 +154,19 @@ export default function V2App() {
         onNewDocument={onNewDocument}
         recorder={recorder}
       />
-      {detailNodeId
-        ? <V2DetailView nodeId={detailNodeId} onClose={() => setDetailNodeId(null)} />
-        : <V2RightColumn
-            mode={rightMode}
-            onMode={setRightMode}
-            selectedCtxId={selectedCtxId}
-            droppedFiles={droppedFiles}
-            onOpenNode={onOpenNode}
-            onStartAbout={onStartAbout}
-            onSelectCtx={onSelectCtx}
-          />}
+      <V2RightColumn
+        mode={rightMode}
+        onMode={setRightMode}
+        selectedCtxId={selectedCtxId}
+        droppedFiles={droppedFiles}
+        onOpenNode={onOpenNode}
+        onStartAbout={onStartAbout}
+        onSelectCtx={onSelectCtx}
+        detailNodeId={detailNodeId}
+        onCloseDetail={() => setDetailNodeId(null)}
+      />
       <div className="v2-beta-bar">Fromly {V2_VERSION} — beta<a href="/app/">volver a v1</a></div>
     </div>
+    </ToastProvider>
   )
 }

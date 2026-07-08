@@ -13,6 +13,7 @@ import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import DayColumn from '../../components/panels/DayColumn'
 import ElementsPanel from '../../components/panels/ElementsPanel'
 import V2ContextView from './V2ContextView'
+import V2DetailView from './V2DetailView'
 import type { Node } from '../../types'
 
 export type RightMode = 'contexto' | 'elementos' | 'historial' | 'hoy'
@@ -25,6 +26,8 @@ interface Props {
   onOpenNode: (id: string) => void
   onStartAbout: (id: string) => void
   onSelectCtx: (id: string) => void
+  detailNodeId: string | null
+  onCloseDetail: () => void
 }
 
 // Clasificación ligera de un nodo → icono + etiqueta de tipo.
@@ -54,7 +57,7 @@ function fmtDate(iso?: string): string {
   try { return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' }) } catch { return '' }
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout, onSelectCtx }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail }: Props) {
   useStore()
   const chat = useAIChat()
   const [today, setToday] = useState<Node | null>(() => store.todayDiary())
@@ -126,18 +129,35 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
     <aside className="v2-col v2-right">
       <div className="v2-right-tabs">
         {tabs.map(tb => (
-          <button key={tb.id} className={`v2-right-tab ${mode === tb.id ? 'active' : ''}`} onClick={() => onMode(tb.id)}>{tb.label}</button>
+          <button
+            key={tb.id}
+            className={`v2-right-tab ${!detailNodeId && mode === tb.id ? 'active' : ''}`}
+            onClick={() => { onCloseDetail(); onMode(tb.id) }}
+          >{tb.label}</button>
         ))}
       </div>
 
+      {/* Detalle de un elemento (documento/PDF/imagen/audio/nota) — con las tabs arriba. */}
+      {detailNodeId && (
+        <div className="v2-right-fill">
+          <div className="v2-detail-head">
+            <button className="v2-iconbtn" onClick={onCloseDetail} title="Volver">‹</button>
+            <span className="v2-center-title" style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {(store.getNode(detailNodeId)?.text || 'Elemento').replace(/^✦\s*/, '') || 'Elemento'}
+            </span>
+          </div>
+          <div className="v2-detail-body"><V2DetailView nodeId={detailNodeId} /></div>
+        </div>
+      )}
+
       {/* Elementos: el buscador universal REAL de la v1 (filtros por tipo, virtualizado). */}
-      {mode === 'elementos' && (
+      {!detailNodeId && mode === 'elementos' && (
         <div className="v2-right-fill">
           <ElementsPanel />
         </div>
       )}
 
-      {mode !== 'elementos' && (
+      {!detailNodeId && mode !== 'elementos' && (
       <div className="v2-right-body">
         {/* Archivos recién arrastrados al chat. */}
         {droppedFiles.length > 0 && (
