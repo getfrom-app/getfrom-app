@@ -98,6 +98,15 @@
 }
 .v2-iconbtn:hover { background: var(--bg-hover); color: var(--text-primary); }
 
+.v2-head-action {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-family: inherit;
+  padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+}
+.v2-head-action:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-focus); }
+.v2-head-action:disabled { opacity: 0.6; cursor: default; }
+.v2-head-action.recording { background: var(--danger); color: #fff; border-color: var(--danger); }
+
 .v2-chat-scroll { flex: 1; overflow-y: auto; padding: 24px 0; }
 .v2-chat-inner { max-width: 720px; margin: 0 auto; padding: 0 20px; }
 

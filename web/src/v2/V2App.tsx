@@ -8,6 +8,8 @@ import { store, useStore } from '../store/nodeStore'
 import { userStore } from '../store/userStore'
 import { aiChatStore, useAIChat } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
+import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
+import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2RightColumn, { RightMode } from './components/V2RightColumn'
@@ -69,6 +71,34 @@ export default function V2App() {
     setRightMode('elementos')
   }
 
+  // Dónde nace el contenido creado desde el centro: el contexto activo o el diario de hoy.
+  const captureParentId = (): string | null => {
+    if (selectedCtxId) return selectedCtxId
+    try { return getTodayDiaryUnderAgenda().id } catch { return null }
+  }
+
+  // Crear un DOCUMENTO (nota de texto _doc) desde el centro → se abre editable a la derecha.
+  const onNewDocument = () => {
+    const parentId = captureParentId()
+    if (!parentId) return
+    const n = store.createNode({ text: '', parentId, extraData: { _doc: '1' } })
+    store.updateNode(n.id, { body: '<p></p>' })
+    setDetailNodeId(n.id)
+  }
+
+  // Guardar una nota de voz grabada en el centro → se abre en el reproductor a la derecha.
+  const onAudioSaved = (r: { audioKey: string; durationSec: number; transcript: string }) => {
+    const parentId = captureParentId()
+    if (!parentId || !r.audioKey) return
+    const title = (r.transcript || '').trim().slice(0, 60) || 'Nota de voz'
+    const n = store.createNode({ text: title, parentId })
+    store.updateNode(n.id, {
+      extraData: JSON.stringify({ _audios: [{ audioKey: r.audioKey, durationSec: r.durationSec, transcript: r.transcript }] }),
+    })
+    setDetailNodeId(n.id)
+  }
+  const recorder = useV2Recorder(onAudioSaved)
+
   const onOpenNode = (id: string) => {
     // Abre el elemento en la columna derecha (visor/editor según su tipo).
     setDetailNodeId(id)
@@ -116,7 +146,13 @@ export default function V2App() {
   return (
     <div className="v2-root">
       <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} />
-      <V2Chat currentNodeId={currentNodeId} contextLabel={contextLabel} onFilesDropped={onFilesDropped} />
+      <V2Chat
+        currentNodeId={currentNodeId}
+        contextLabel={contextLabel}
+        onFilesDropped={onFilesDropped}
+        onNewDocument={onNewDocument}
+        recorder={recorder}
+      />
       {detailNodeId
         ? <V2DetailView nodeId={detailNodeId} onClose={() => setDetailNodeId(null)} />
         : <V2RightColumn

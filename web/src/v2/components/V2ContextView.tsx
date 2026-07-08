@@ -2,7 +2,7 @@
 // Como en la v1: contenido agrupado por tipo (Tareas / Notas / …), indicador de
 // contexto padre, botón ARCHIVAR (mapea al flag _closed de la v1 → sale del árbol
 // pero sigue buscable + rastreable por el RAG), y «Lo que Fromly sabe» al final.
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import {
   contextColor, contextParent, isContextClosed, setContextClosed,
@@ -26,6 +26,21 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode: _onOpenN
   // «Lo que Fromly sabe» — editable, se guarda al perder el foco.
   const [know, setKnow] = useState('')
   useEffect(() => { setKnow(readContextKnowledge(ctxId)) }, [ctxId])
+
+  // La columna de contexto muestra SOLO las tareas del contexto (+ lo que Fromly
+  // sabe abajo). El resto (texto de descripción antiguo, subcontextos, sesiones)
+  // se OCULTA aquí — no se borra: sigue en los datos, buscable y en el RAG.
+  // Snapshot al abrir el contexto (por ctxId): así lo que el usuario cree DESPUÉS
+  // (tareas/notas nuevas) sí aparece; solo se oculta el volcado preexistente.
+  const excludeIds = useMemo(() => {
+    const s = new Set<string>()
+    for (const n of store.children(ctxId)) {
+      if (n.deletedAt) continue
+      const isTask = n.status != null || (n.types || []).includes('tarea')
+      if (!isTask) s.add(n.id)
+    }
+    return s
+  }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!node) return <div className="v2-right-empty">Contexto no encontrado.</div>
 
@@ -54,10 +69,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode: _onOpenN
         )}
       </div>
 
-      {/* Contenido del contexto = OUTLINER REAL de la v1: tareas con checkbox,
-          ghost text, magic (verbo→tarea), chips de contexto, notas… idéntico a v1. */}
-      <div className="v2-ctx-outliner" style={{ marginTop: 12 }}>
-        <Outliner parentId={ctxId} autoFocusEmpty placeholder="Escribe una tarea o nota…" />
+      {/* Tareas del contexto = OUTLINER REAL de la v1 (checkbox, ghost text, magic
+          verbo→tarea, chips). Se ocultan el texto antiguo/subcontextos vía excludeIds. */}
+      <div className="v2-section-label" style={{ padding: '14px 0 4px' }}>Tareas</div>
+      <div className="v2-ctx-outliner">
+        <Outliner parentId={ctxId} excludeIds={excludeIds} autoFocusEmpty placeholder="Escribe una tarea…" />
       </div>
 
       {/* Lo que Fromly sabe — al final del todo */}

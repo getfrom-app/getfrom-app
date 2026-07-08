@@ -10,6 +10,8 @@ interface Props {
   currentNodeId: string | null
   contextLabel: string
   onFilesDropped: (files: File[]) => void
+  onNewDocument: () => void
+  recorder: { recording: boolean; busy: boolean; start: () => void; stop: () => void }
 }
 
 const SUGGESTIONS = [
@@ -19,7 +21,7 @@ const SUGGESTIONS = [
   { t: 'Crea una tarea', d: 'Captura rápida', p: 'Crea una tarea: ' },
 ]
 
-export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped }: Props) {
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, onNewDocument, recorder }: Props) {
   const chat = useAIChat()
   useStore()
   const [input, setInput] = useState('')
@@ -78,14 +80,21 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped }: 
     >
       <div className="v2-center-head">
         <span className="v2-center-title">{chat.sessionId ? contextLabel : 'Nueva conversación'}</span>
-        {!isEmpty && (
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {/* Crear contenido sin pasar por el chat: documento o nota de voz. */}
+          <button className="v2-head-action" title="Nuevo documento" onClick={onNewDocument}>＋ Documento</button>
           <button
-            className="v2-iconbtn"
-            style={{ marginLeft: 'auto' }}
-            title="Nueva conversación"
-            onClick={() => { aiChatStore.startNewSession() }}
-          >＋</button>
-        )}
+            className={`v2-head-action ${recorder.recording ? 'recording' : ''}`}
+            title={recorder.recording ? 'Detener y guardar' : 'Grabar audio (reunión o nota de voz)'}
+            disabled={recorder.busy}
+            onClick={() => (recorder.recording ? recorder.stop() : recorder.start())}
+          >
+            {recorder.busy ? '⏳ Guardando…' : recorder.recording ? '⏹ Detener' : '🎙 Grabar'}
+          </button>
+          {!isEmpty && (
+            <button className="v2-iconbtn" title="Nueva conversación" onClick={() => { aiChatStore.startNewSession() }}>＋</button>
+          )}
+        </div>
       </div>
 
       <div className="v2-chat-scroll" ref={scrollRef}>

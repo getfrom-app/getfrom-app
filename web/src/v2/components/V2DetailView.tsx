@@ -5,6 +5,7 @@
 import type { ReactNode } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { isDocNode } from '../../utils/docNode'
+import { parseExtraData } from '../../utils/papeleraHelper'
 import ResourcePanel from '../../components/panels/ResourcePanel'
 import AudioPanel from '../../components/panels/AudioPanel'
 import DocEditor from '../../components/views/DocEditor'
@@ -24,14 +25,15 @@ export default function V2DetailView({ nodeId, onClose }: Props) {
     return (node.text || 'Sin título').replace(/^✦\s*/, '') || 'Sin título'
   })()
 
+  const hasAudio = node ? Array.isArray(parseExtraData(node.extraData)._audios) : false
+
   let body: ReactNode
   if (!node) {
     body = <div className="v2-right-empty">Elemento no encontrado.</div>
+  } else if (hasAudio || (node.resourceType || '').toLowerCase().includes('audio')) {
+    body = <AudioPanel nodeId={node.id} />
   } else if (node.isResource || node.resourceType) {
-    const rt = (node.resourceType || '').toLowerCase()
-    body = rt.includes('audio')
-      ? <AudioPanel nodeId={node.id} />
-      : <ResourcePanel node={node} />
+    body = <ResourcePanel node={node} />
   } else if (isDocNode(node)) {
     body = <DocEditor node={node} compact />
   } else {
