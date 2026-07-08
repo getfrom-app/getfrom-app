@@ -16,7 +16,7 @@ interface Props {
 
 export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext }: Props) {
   const ctx = hideContext ? null : firstContextOf(node)
-  const title = (node.text || '').replace(/^[✦💬]\s*/, '').trim() || 'Sin título'
+  const title = (node.text || '').replace(/^(?:✦|💬)\s*/u, '').trim() || 'Sin título'
   return (
     <div
       className={`v2-el-row ${child ? 'v2-el-child' : ''}`}
