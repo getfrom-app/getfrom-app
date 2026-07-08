@@ -484,6 +484,25 @@ export function readContextKnowledge(contextId: string): string {
     .join('\n')
 }
 
+/** Añade hechos ESPECÍFICOS del contexto a su memoria ("Lo que Fromly sabe"),
+ *  deduplicando por substring normalizado (no vuelve a meter algo ya sabido). Es la
+ *  vía de ENRUTADO: un dato de un tema va a la memoria de su contexto, no al perfil. */
+export function appendContextFacts(contextId: string, facts: string[]): void {
+  const clean = facts.map(f => f.trim()).filter(Boolean)
+  if (!clean.length) return
+  const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
+  const lines = readContextKnowledge(contextId).split('\n').map(l => l.trim()).filter(Boolean)
+  const seen = lines.map(norm)
+  let added = false
+  for (const f of clean) {
+    const nf = norm(f)
+    if (nf.length < 3) continue
+    if (seen.some(e => e.includes(nf) || nf.includes(e))) continue
+    lines.push(f); seen.push(nf); added = true
+  }
+  if (added) writeContextKnowledge(contextId, lines.join('\n'))
+}
+
 /** Sobrescribe el conocimiento del contexto: una línea = un nodo hijo. Crea el
  *  nodo "🧠 Lo que Fromly sabe" si hace falta; lo elimina si queda vacío. */
 export function writeContextKnowledge(contextId: string, text: string): void {

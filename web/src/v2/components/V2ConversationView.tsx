@@ -8,6 +8,7 @@ import { useAIChat } from '../../store/aiChatStore'
 import { assignContext, nodeCtxRefs, contextColor } from '../../utils/cajones'
 import ContextPicker from '../../components/panels/ContextPicker'
 import { classifyElement } from '../elementKind'
+import { saveExample } from '../../api/autoClassify'
 import { ragRelated } from '../../api/client'
 import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
@@ -98,7 +99,10 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
             <div className="v2-ctxpick-pop">
               <ContextPicker
                 currentId={null}
-                onPick={id => { if (id) assignContext(sessionId, id); setPickerOpen(false) }}
+                onPick={id => {
+                  if (id) { assignContext(sessionId, id); const s = store.getNode(sessionId); if (s?.text?.trim()) saveExample(s.text.replace(/^✦\s*/, ''), id) }
+                  setPickerOpen(false)
+                }}
               />
             </div>
           )}

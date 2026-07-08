@@ -10,7 +10,15 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { trashNode } from '../../utils/papeleraHelper'
 import { firstContextOf, setNodeContext, convertToContext, convertToTask, isContextNode } from '../../utils/cajones'
+import { saveExample } from '../../api/autoClassify'
 import ContextPicker from './ContextPicker'
+
+// Asignar contexto A MANO es una señal fuerte: guarda un EJEMPLO para que la
+// auto-clasificación aprenda de los movimientos del usuario (mejora con el uso).
+function assignAndLearn(nodeId: string, ctxId: string | null) {
+  setNodeContext(nodeId, ctxId)
+  if (ctxId) { const n = store.getNode(nodeId); if (n?.text?.trim()) saveExample(n.text, ctxId) }
+}
 
 export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string; x: number; y: number; onClose: () => void }) {
   const { t } = useTranslation()
@@ -102,7 +110,7 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
           {current ? t('rightColMenu.changeContext') : t('rightColMenu.addContext')} <span style={{ float: 'right', opacity: 0.6 }}>›</span>
         </button>
         {current && (
-          <button className="node-ctx-item" onClick={() => { setNodeContext(nodeId, null); onClose() }}>
+          <button className="node-ctx-item" onClick={() => { assignAndLearn(nodeId, null); onClose() }}>
             {t('rightColMenu.removeContext')}
           </button>
         )}
@@ -117,7 +125,7 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
       {ctxFlyout && (
         <div className="ctx-pick" style={{ position: 'fixed', top: ctxFlyout.top, left: ctxFlyout.left, zIndex: 3001 }}
           onClick={e => e.stopPropagation()}>
-          <ContextPicker currentId={current?.id ?? null} onPick={id => { setNodeContext(nodeId, id); onClose() }} />
+          <ContextPicker currentId={current?.id ?? null} onPick={id => { assignAndLearn(nodeId, id); onClose() }} />
         </div>
       )}
     </>

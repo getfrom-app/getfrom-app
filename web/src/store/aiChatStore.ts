@@ -19,7 +19,7 @@ import { executeChatAction } from './aiChatExecutor'
 import { resolveTemplateCodes } from '../utils/templateCodes'
 import { learningsStore } from './learningsStore'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
-import { assignContext, isRootContext, isMarkedContext } from '../utils/cajones'
+import { assignContext, isRootContext, isMarkedContext, firstContextOf, appendContextFacts } from '../utils/cajones'
 import { resolvePrompt } from '../utils/promptsHelper'
 import { isContextKnowledge } from '../utils/knowledgeNodes'
 import { extractUserKnowledge } from '../api/autoClassify'
@@ -480,14 +480,24 @@ class AIChatStore {
     this.learnedFromChat.add(trimmed)
     try {
       const existingProfile = readProfileLines().join('. ')
-      // Enrutado: si se conversa sobre un nodo dentro de un contexto, solo lo GLOBAL.
-      const contextName = currentNodeId ? store.primaryContextName(currentNodeId) : null
+      // Contexto ACTIVO de la conversación (nodo, no solo nombre) → enrutamos los hechos
+      // específicos del tema a la memoria de ESE contexto; los globales, al perfil.
+      let ctxNode: Node | null = null
+      if (currentNodeId) {
+        const cn = store.getNode(currentNodeId)
+        if (cn) ctxNode = (isRootContext(currentNodeId) || isMarkedContext(cn)) ? cn : firstContextOf(cn)
+      }
+      const contextName = ctxNode?.text || null
       // Fecha de HOY (local) → el extractor fecha los datos de estado ("act. …") y
       // detecta contradicciones con el perfil actual (obsolete) para actualizarlos.
       const today = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
       const knowledge = await extractUserKnowledge(trimmed, existingProfile || undefined, contextName, today)
       if (!knowledge) return
       await saveUserKnowledgeToProfile(knowledge.people, knowledge.facts, knowledge.obsolete)
+      // Enrutado: hechos específicos del tema → memoria del contexto activo.
+      if (ctxNode && knowledge.contextFacts?.length) {
+        try { appendContextFacts(ctxNode.id, knowledge.contextFacts) } catch { /* noop */ }
+      }
     } catch { /* silencioso */ }
   }
 

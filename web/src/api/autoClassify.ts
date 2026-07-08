@@ -269,6 +269,9 @@ async function classifyNode(
 export interface UserKnowledge {
   people: string[]
   facts: string[]
+  // Hechos ESPECÍFICOS del contexto activo (si la conversación está en un contexto) →
+  // se guardan en la memoria de ESE contexto, no en el perfil global.
+  contextFacts?: string[]
   // Items del perfil actual que este mensaje deja OBSOLETOS (un dato cambió/se
   // contradice). El guardado los reemplaza en vez de acumular versiones contradictorias.
   obsolete?: string[]
@@ -284,8 +287,8 @@ export async function extractUserKnowledge(
     method: 'POST',
     body: JSON.stringify({ nodeText, existingProfile, contextName: contextName ?? undefined, today }),
   })
-  if (!data.people?.length && !data.facts?.length && !data.obsolete?.length) return null
-  return { people: data.people ?? [], facts: data.facts ?? [], obsolete: data.obsolete ?? [] }
+  if (!data.people?.length && !data.facts?.length && !data.contextFacts?.length && !data.obsolete?.length) return null
+  return { people: data.people ?? [], facts: data.facts ?? [], contextFacts: data.contextFacts ?? [], obsolete: data.obsolete ?? [] }
 }
 
 /**
