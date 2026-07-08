@@ -76,7 +76,9 @@ export default function ElementsPanel() {
     for (const n of store.allActive()) {
       const kind = classify(n); if (!kind) continue
       const snippet = (n.body || '').trimStart().startsWith('```from-pizarra') ? '' : stripHtml(n.body)
-      const title = (n.text || firstLineTitle(n.body) || snippet.slice(0, 60) || t('common.noTitle'))
+      // Quita el prefijo decorativo (✦ sesión / 💬 transcripción) para no duplicar
+      // icono: la fila ya muestra el icono de tipo (KIND_ICON) a la izquierda.
+      const title = (n.text || firstLineTitle(n.body) || snippet.slice(0, 60) || t('common.noTitle')).replace(/^[✦💬]\s*/, '')
       out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '', due: n.due, status: n.status })
     }
     out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
