@@ -207,6 +207,33 @@
 }
 .v2-search-input:focus { border-color: var(--accent); }
 
+/* ── Vista de contexto (modo Contexto) ─────────────────────────────── */
+.v2-ctx-head { border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.v2-ctx-head-title { display: flex; align-items: center; gap: 8px; }
+.v2-ctx-head-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+.v2-ctx-parent {
+  background: transparent; border: none; color: var(--text-accent); cursor: pointer;
+  font-size: 12px; padding: 0; font-family: inherit;
+}
+.v2-ctx-parent:hover { text-decoration: underline; }
+.v2-ctx-badge-archived {
+  font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--warning); background: rgba(217,119,6,0.12); padding: 2px 6px; border-radius: 4px;
+}
+.v2-ctx-archive-btn {
+  margin-top: 10px; width: 100%; padding: 7px 10px; border: 1px solid var(--border);
+  background: var(--bg-tertiary); color: var(--text-secondary); border-radius: var(--radius);
+  cursor: pointer; font-size: 12.5px; font-family: inherit;
+}
+.v2-ctx-archive-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.v2-el-check { flex: 0 0 auto; font-size: 15px; width: 20px; text-align: center; cursor: pointer; color: var(--text-secondary); }
+.v2-know-area {
+  width: 100%; min-height: 90px; resize: vertical; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 10px; font-family: inherit; font-size: 12.5px;
+  line-height: 1.5; color: var(--text-primary); background: var(--bg-primary); outline: none;
+}
+.v2-know-area:focus { border-color: var(--accent); }
+
 /* Loader inicial */
 .v2-loading { position: fixed; inset: 0; display: grid; place-items: center; background: var(--bg-primary); color: var(--text-secondary); }
 

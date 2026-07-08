@@ -38,11 +38,12 @@ export default function V2App() {
       .catch(() => setReady(true)) // no bloquear el shell aunque falle la carga
   }, [])
 
-  // Al elegir un contexto, la columna derecha muestra sus conversaciones.
+  // Al elegir un contexto, la columna derecha muestra SIEMPRE su ficha completa
+  // (vista de contexto): contenido agrupado + qué sabe Fromly + archivar.
   const onSelectCtx = (id: string | null) => {
     setSelectedCtxId(id)
     setFocusNodeId(null)
-    setRightMode('historial')
+    setRightMode(id ? 'contexto' : 'hoy')
   }
 
   const onNewChat = () => {
@@ -99,6 +100,7 @@ export default function V2App() {
         droppedFiles={droppedFiles}
         onOpenNode={onOpenNode}
         onStartAbout={onStartAbout}
+        onSelectCtx={onSelectCtx}
       />
       <div className="v2-beta-bar">Fromly {V2_VERSION} — beta<a href="/app/">volver a v1</a></div>
     </div>

@@ -7,11 +7,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore, store } from '../../store/nodeStore'
 import { useAIChat, aiChatStore } from '../../store/aiChatStore'
-import { readContextKnowledge, nodesInContext, contextColor } from '../../utils/cajones'
+import { nodesInContext } from '../../utils/cajones'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import DayColumn from '../../components/panels/DayColumn'
 import ElementsPanel from '../../components/panels/ElementsPanel'
+import V2ContextView from './V2ContextView'
 import type { Node } from '../../types'
 
 export type RightMode = 'contexto' | 'elementos' | 'historial' | 'hoy'
@@ -23,6 +24,7 @@ interface Props {
   droppedFiles: File[]
   onOpenNode: (id: string) => void
   onStartAbout: (id: string) => void
+  onSelectCtx: (id: string) => void
 }
 
 // Clasificación ligera de un nodo → icono + etiqueta de tipo.
@@ -52,7 +54,7 @@ function fmtDate(iso?: string): string {
   try { return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' }) } catch { return '' }
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout, onSelectCtx }: Props) {
   useStore()
   const chat = useAIChat()
   const [today, setToday] = useState<Node | null>(() => store.todayDiary())
@@ -95,11 +97,6 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
       .slice(0, 100)
   }, [store.nodesVersion, selectedCtxId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Contexto ──
-  const ctxKnowledge = selectedCtxId ? readContextKnowledge(selectedCtxId) : ''
-  const ctxMembers = selectedCtxId ? nodesInContext(selectedCtxId).slice(0, 100) : []
-  const ctxNode = selectedCtxId ? store.getNode(selectedCtxId) : null
-
   const tabs: { id: RightMode; label: string }[] = [
     { id: 'contexto', label: 'Contexto' },
     { id: 'elementos', label: 'Elementos' },
@@ -141,33 +138,9 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
         )}
 
         {mode === 'contexto' && (
-          selectedCtxId ? (
-            <div>
-              <div className="v2-section-label" style={{ padding: '0 0 6px' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span className="v2-ctx-dot" style={{ background: contextColor(selectedCtxId) }} />
-                  {ctxNode?.text || 'Contexto'}
-                </span>
-              </div>
-              <div className="v2-section-label" style={{ padding: '10px 0 4px' }}>🧠 Lo que Fromly sabe</div>
-              {ctxKnowledge
-                ? <div style={{ fontSize: 12.5, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{ctxKnowledge}</div>
-                : <div className="v2-right-empty" style={{ padding: '8px 0' }}>Fromly aún no ha aprendido nada de este contexto.</div>}
-              <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>Contenido ({ctxMembers.length})</div>
-              {ctxMembers.map(n => {
-                const c = classify(n)
-                return (
-                  <div className="v2-el-row" key={n.id} onClick={() => onOpenNode(n.id)}>
-                    <span className="v2-el-icon">{c.icon}</span>
-                    <span className="v2-el-main"><span className="v2-el-title">{n.text}</span><span className="v2-el-meta">{c.label}</span></span>
-                  </div>
-                )
-              })}
-              {ctxMembers.length === 0 && <div className="v2-right-empty" style={{ padding: '8px 0' }}>Sin contenido todavía.</div>}
-            </div>
-          ) : (
-            <div className="v2-right-empty">Elige un contexto en la izquierda para ver qué sabe Fromly de él y su contenido.</div>
-          )
+          selectedCtxId
+            ? <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} />
+            : <div className="v2-right-empty">Elige un contexto en la izquierda para ver qué sabe Fromly de él y su contenido.</div>
         )}
 
         {mode === 'historial' && (

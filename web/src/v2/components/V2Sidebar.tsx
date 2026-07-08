@@ -5,7 +5,7 @@
 import { useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
-import { isRootContext, isMarkedContext, contextColor } from '../../utils/cajones'
+import { isRootContext, isMarkedContext, isContextClosed, contextColor } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 interface Props {
@@ -22,7 +22,8 @@ function byName(a: Node, b: Node) {
 
 // Subcontextos (proyectos marcados) directos de un contexto.
 function subContextsOf(id: string): Node[] {
-  return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n)).sort(byName)
+  // Excluye archivados (_closed): salen del árbol pero siguen buscables + en el RAG.
+  return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
 export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat }: Props) {
