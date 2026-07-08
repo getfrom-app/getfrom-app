@@ -312,6 +312,7 @@ class AIChatStore {
     const userMsgId = this.appendMessageNode(sid, 'user', trimmed)
     this.appendToTranscript(sid, 'user', trimmed, voice?.audioKey || undefined, voice?.durationSec)
     this.messages.push({ id: userMsgId, role: 'user', content: trimmed, actions: [], audioKey: voice?.audioKey || undefined, audioDuration: voice?.durationSec })
+    if (sid) this.persistInlineLinks(sid, trimmed)
     this.notify()
 
     this.isStreaming = true
@@ -952,6 +953,32 @@ class AIChatStore {
     store.setCollapsedLocal(transcript.id, true)
 
     return sessionNode.id
+  }
+
+  /** ENLACES INLINE: si el mensaje del usuario contiene URLs, cada una se guarda como
+   * elemento-enlace (recurso) hijo de la conversación → aparece en Elementos y entra al
+   * RAG. Dedup por URL contra los recursos ya existentes en la sesión. Determinista
+   * (no depende de que el modelo decida guardarlo). */
+  private persistInlineLinks(sid: string, text: string) {
+    try {
+      const urls = (text.match(/\bhttps?:\/\/[^\s<>()"']+/gi) || [])
+        .map(u => u.replace(/[.,;:!?)\]]+$/, ''))              // limpia puntuación final
+      if (!urls.length) return
+      const existing = new Set(
+        store.children(sid).map(c => c.resourceUrl).filter(Boolean) as string[]
+      )
+      const seen = new Set<string>()
+      for (const url of urls.slice(0, 5)) {
+        if (existing.has(url) || seen.has(url)) continue
+        seen.add(url)
+        let title = url
+        try { const u = new URL(url); title = u.hostname.replace(/^www\./, '') + (u.pathname !== '/' ? u.pathname : '') } catch { /* usa url */ }
+        const kind = /youtube\.com|youtu\.be/.test(url) ? 'youtube'
+          : /open\.spotify\.com|.*\.mp3|podcast/.test(url) ? 'podcast' : 'url'
+        const created = store.createNode({ text: title.slice(0, 120), parentId: sid })
+        store.updateNode(created.id, { isResource: true, resourceUrl: url, resourceType: kind, resourceStatus: 'pending' })
+      }
+    } catch { /* nunca romper el envío por esto */ }
   }
 
   /** Devuelve un ID sintético (no crea nodo). Los mensajes se persisten via appendToTranscript. */
