@@ -1,8 +1,11 @@
-// Sidebar de Fromly 2.0 — contextos (= proyectos) jerárquicos + nueva conversación.
-// Reutiliza el motor: listMarkedContexts (cajones), useStore, useUserStore.
-import { useStore } from '../../store/nodeStore'
+// Sidebar de Fromly 2.0 — contextos (= proyectos) con navegación drill-down.
+// Nivel raíz = ÁREAS (hijos directos de 🧠 Contexto) + General. Clic en un
+// contexto: lo selecciona (la app reacciona) Y hace zoom-in a sus subcontextos
+// en la misma columna, con botón de volver.
+import { useState } from 'react'
+import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
-import { listMarkedContexts, contextColor, isMarkedContext } from '../../utils/cajones'
+import { isRootContext, isMarkedContext, contextColor } from '../../utils/cajones'
 import type { Node } from '../../types'
 
 interface Props {
@@ -11,38 +14,38 @@ interface Props {
   onNewChat: () => void
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat }: Props) {
-  useStore() // re-render en cambios del árbol
-  const user = useUserStore()
+// Ordena por nombre (ignorando emoji/espacios iniciales), estable.
+function byName(a: Node, b: Node) {
+  const clean = (s: string) => (s || '').replace(/^[^\p{L}\p{N}]+/u, '').toLocaleLowerCase('es')
+  return clean(a.text).localeCompare(clean(b.text), 'es')
+}
 
-  // Contextos abiertos (áreas + proyectos). listMarkedContexts ya excluye cerrados.
-  const contexts: Node[] = listMarkedContexts()
-  // Áreas = hijos directos de la raíz 🧠 Contexto; el resto son subcontextos.
-  const roots = contexts.filter(c => {
-    const parent = c.parentId
-    if (!parent) return true
-    const pnode = contexts.find(x => x.id === parent)
-    return !pnode || !isMarkedContext(pnode)
-  })
-  const childrenOf = (id: string) => contexts.filter(c => c.parentId === id)
+// Subcontextos (proyectos marcados) directos de un contexto.
+function subContextsOf(id: string): Node[] {
+  return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n)).sort(byName)
+}
+
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat }: Props) {
+  useStore()
+  const user = useUserStore()
+  const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
+
+  const currentParent = stack.length ? stack[stack.length - 1] : null
+
+  // Nivel raíz = ÁREAS (hijos directos de 🧠 Contexto, sin el Perfil 🧠…).
+  const areas: Node[] = store.allActive()
+    .filter(n => isRootContext(n.id) && !(n.text || '').startsWith('🧠'))
+    .sort(byName)
+
+  const items: Node[] = currentParent ? subContextsOf(currentParent.id) : areas
 
   const initial = (user.user?.email || 'A').charAt(0).toUpperCase()
 
-  const renderRow = (c: Node, depth: number) => {
-    const kids = childrenOf(c.id)
-    return (
-      <div key={c.id}>
-        <div
-          className={`v2-ctx-row ${depth > 0 ? 'child' : ''} ${selectedCtxId === c.id ? 'active' : ''}`}
-          onClick={() => onSelectCtx(c.id)}
-        >
-          <span className="v2-ctx-dot" style={{ background: contextColor(c.id) }} />
-          <span className="v2-el-title">{c.text || 'Sin título'}</span>
-        </div>
-        {kids.map(k => renderRow(k, depth + 1))}
-      </div>
-    )
+  const enter = (c: Node) => {
+    onSelectCtx(c.id)
+    if (subContextsOf(c.id).length > 0) setStack(prev => [...prev, c]) // zoom-in solo si tiene subcontextos
   }
+  const back = () => setStack(prev => prev.slice(0, -1))
 
   return (
     <aside className="v2-col v2-sidebar">
@@ -51,21 +54,59 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat }: Pro
       </div>
       <button className="v2-newchat" onClick={onNewChat}>＋ Nueva conversación</button>
 
-      <div className="v2-section-label">Contextos</div>
-      <div className="v2-ctx-list">
-        <div
-          className={`v2-ctx-row ${selectedCtxId === null ? 'active' : ''}`}
-          onClick={() => onSelectCtx(null)}
-        >
-          <span className="v2-ctx-dot" style={{ background: 'var(--text-tertiary)' }} />
-          <span className="v2-el-title">General</span>
+      {/* Cabecera de nivel: raíz = «Contextos»; dentro = volver + nombre del contexto */}
+      {currentParent ? (
+        <div className="v2-section-label" style={{ cursor: 'pointer' }} onClick={back}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 14 }}>‹</span> Volver
+          </span>
         </div>
-        {roots.length === 0 && (
-          <div className="v2-right-empty" style={{ padding: '16px 14px' }}>
-            Aún no tienes contextos. Créalos en la v1 y aparecerán aquí.
+      ) : (
+        <div className="v2-section-label">Contextos</div>
+      )}
+
+      <div className="v2-ctx-list">
+        {currentParent ? (
+          // Contexto en el que hemos entrado (seleccionable, resaltado como cabecera).
+          <div
+            className={`v2-ctx-row ${selectedCtxId === currentParent.id ? 'active' : ''}`}
+            onClick={() => onSelectCtx(currentParent.id)}
+          >
+            <span className="v2-ctx-dot" style={{ background: contextColor(currentParent.id) }} />
+            <span className="v2-el-title" style={{ fontWeight: 600 }}>{currentParent.text || 'Contexto'}</span>
+          </div>
+        ) : (
+          <div
+            className={`v2-ctx-row ${selectedCtxId === null ? 'active' : ''}`}
+            onClick={() => onSelectCtx(null)}
+          >
+            <span className="v2-ctx-dot" style={{ background: 'var(--text-tertiary)' }} />
+            <span className="v2-el-title">General</span>
           </div>
         )}
-        {roots.map(r => renderRow(r, 0))}
+
+        {currentParent && <div className="v2-section-label" style={{ padding: '10px 16px 4px' }}>Subcontextos</div>}
+
+        {items.map(c => {
+          const hasSubs = subContextsOf(c.id).length > 0
+          return (
+            <div
+              key={c.id}
+              className={`v2-ctx-row ${currentParent ? 'child' : ''} ${selectedCtxId === c.id ? 'active' : ''}`}
+              onClick={() => enter(c)}
+            >
+              <span className="v2-ctx-dot" style={{ background: contextColor(c.id) }} />
+              <span className="v2-el-title">{c.text || 'Sin título'}</span>
+              {hasSubs && <span className="v2-ctx-count">›</span>}
+            </div>
+          )
+        })}
+
+        {items.length === 0 && (
+          <div className="v2-right-empty" style={{ padding: '16px 14px' }}>
+            {currentParent ? 'Sin subcontextos.' : 'Aún no tienes contextos. Créalos en la v1 y aparecerán aquí.'}
+          </div>
+        )}
       </div>
 
       <div className="v2-sidebar-foot">

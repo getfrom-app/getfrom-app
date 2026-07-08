@@ -67,6 +67,17 @@ export default function V2App() {
     window.open(`/app/node/${id}`, '_blank', 'noopener')
   }
 
+  // El ElementsPanel de v1 abre nodos disparando `from:open-detail` (en vez de navegar).
+  // Lo escuchamos aquí para abrir el elemento desde el buscador universal.
+  useEffect(() => {
+    const h = (e: Event) => {
+      const id = (e as CustomEvent).detail?.nodeId
+      if (id) onOpenNode(id)
+    }
+    window.addEventListener('from:open-detail', h as EventListener)
+    return () => window.removeEventListener('from:open-detail', h as EventListener)
+  }, [])
+
   // El chat se centra en el nodo enfocado (si hay) o en el contexto seleccionado.
   const currentNodeId = focusNodeId || selectedCtxId
   const focusNode = focusNodeId ? store.getNode(focusNodeId) : null

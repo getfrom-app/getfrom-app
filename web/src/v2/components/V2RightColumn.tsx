@@ -11,6 +11,7 @@ import { readContextKnowledge, nodesInContext, contextColor } from '../../utils/
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import DayColumn from '../../components/panels/DayColumn'
+import ElementsPanel from '../../components/panels/ElementsPanel'
 import type { Node } from '../../types'
 
 export type RightMode = 'contexto' | 'elementos' | 'historial' | 'hoy'
@@ -54,7 +55,6 @@ function fmtDate(iso?: string): string {
 export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout }: Props) {
   useStore()
   const chat = useAIChat()
-  const [query, setQuery] = useState('')
   const [today, setToday] = useState<Node | null>(() => store.todayDiary())
 
   // La nota de hoy se garantiza SOLO al abrir «Hoy» (no al arrancar el shell).
@@ -63,20 +63,6 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
       try { setToday(getTodayDiaryUnderAgenda()) } catch { /* noop */ }
     }
   }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // ── Elementos (buscador global) ──
-  const elements = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    const filtered = store.allActive().filter(n => {
-      if (!n.text || n.isChat) return false
-      const ed = parseExtraData(n.extraData)
-      if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) return false
-      if (q && !n.text.toLowerCase().includes(q)) return false
-      return true
-    })
-    filtered.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
-    return filtered.slice(0, 200)
-  }, [query, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Historial (conversaciones) ──
   // Conversaciones reales (nodos de sesión), globales o filtradas por contexto (_ctxRefs).
@@ -129,8 +115,16 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
         ))}
       </div>
 
+      {/* Elementos: el buscador universal REAL de la v1 (filtros por tipo, virtualizado). */}
+      {mode === 'elementos' && (
+        <div className="v2-right-fill">
+          <ElementsPanel />
+        </div>
+      )}
+
+      {mode !== 'elementos' && (
       <div className="v2-right-body">
-        {/* Archivos recién arrastrados al chat (todos los modos). */}
+        {/* Archivos recién arrastrados al chat. */}
         {droppedFiles.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <div className="v2-section-label" style={{ padding: '0 0 8px' }}>Adjuntos ({droppedFiles.length})</div>
@@ -176,28 +170,6 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
           )
         )}
 
-        {mode === 'elementos' && (
-          <div>
-            <input
-              className="v2-search-input"
-              placeholder="Buscar en todo lo guardado…"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            <div className="v2-el-meta" style={{ marginBottom: 8 }}>{elements.length} elemento(s)</div>
-            {elements.map(n => {
-              const c = classify(n)
-              return (
-                <div className="v2-el-row" key={n.id} onClick={() => onOpenNode(n.id)}>
-                  <span className="v2-el-icon">{c.icon}</span>
-                  <span className="v2-el-main"><span className="v2-el-title">{n.text}</span><span className="v2-el-meta">{c.label}</span></span>
-                </div>
-              )
-            })}
-            {elements.length === 0 && <div className="v2-right-empty">Nada encontrado.</div>}
-          </div>
-        )}
-
         {mode === 'historial' && (
           <div>
             <div className="v2-el-row" onClick={() => aiChatStore.startNewSession()} style={{ color: 'var(--text-accent)', fontWeight: 600 }}>
@@ -216,9 +188,8 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
                 style={chat.sessionId === s.id ? { background: 'var(--accent-soft)' } : undefined}
                 onClick={() => aiChatStore.loadSession(s.id)}
               >
-                <span className="v2-el-icon">✦</span>
                 <span className="v2-el-main">
-                  <span className="v2-el-title">{s.text || 'Conversación'}</span>
+                  <span className="v2-el-title">{(s.text || 'Conversación').replace(/^✦\s*/, '') || 'Conversación'}</span>
                   <span className="v2-el-meta">{fmtDate(s.updatedAt)}</span>
                 </span>
               </div>
@@ -257,6 +228,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
             : <div className="v2-right-empty">Preparando la columna de hoy…</div>
         )}
       </div>
+      )}
     </aside>
   )
 }
