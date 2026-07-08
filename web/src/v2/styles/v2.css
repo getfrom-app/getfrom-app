@@ -65,16 +65,35 @@
   color: var(--text-tertiary); padding: 2px 0 10px;
 }
 .v2-el-active > .v2-el-row { background: var(--accent-soft); }
-/* Toggle Nota ⇄ Lienzo en la vista de detalle. */
-.v2-view-toggle {
-  display: flex; gap: 4px; padding: 8px 12px; border-bottom: 1px solid var(--border); flex: 0 0 auto;
+/* Cabecera de nota: fila única con el toggle a la izquierda y las acciones a la derecha. */
+.v2-note-toolbar {
+  display: flex; align-items: center; gap: 6px; padding: 8px 12px;
+  border-bottom: 1px solid var(--border); flex: 0 0 auto;
 }
+/* Toggle Nota ⇄ Lienzo (grupo de botones, sin fila propia). */
+.v2-view-toggle { display: flex; gap: 4px; }
 .v2-view-toggle button {
   font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; cursor: pointer;
   border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
 }
 .v2-view-toggle button:hover { background: var(--bg-hover); }
 .v2-view-toggle button.active { background: var(--accent-soft); color: var(--text-accent); border-color: var(--accent); }
+/* Barra de formato PLANA del documento (iconos normales, no píldora flotante). */
+.v2-note-formatbar { flex: 0 0 auto; }
+.v2-doc-toolbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
+  padding: 5px 10px; border-bottom: 1px solid var(--border); background: var(--bg-secondary, transparent);
+}
+.v2-doc-toolbar .ft-btn { color: var(--text-secondary); }
+.v2-doc-toolbar .ft-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.v2-doc-toolbar .ft-sep { background: var(--border); }
+/* Título de detalle editable (fila 1). */
+.v2-detail-title:hover { text-decoration: underline dotted var(--text-tertiary); text-underline-offset: 3px; }
+.v2-detail-title-input {
+  flex: 1; min-width: 0; font-size: 14px; font-weight: 600; font-family: inherit;
+  padding: 3px 6px; border-radius: 6px; border: 1px solid var(--accent); outline: none;
+  background: var(--bg, #fff); color: var(--text-primary);
+}
 /* Vista Agenda: cabecera con «volver al año». */
 .v2-agenda-back {
   display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600;

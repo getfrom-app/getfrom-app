@@ -14,7 +14,7 @@ import { useActiveDocEditor, getDocImageInsert } from '../../utils/docEditorStor
 
 const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5', '#868e96']
 
-export default function DocInspector({ compact }: { compact?: boolean } = {}) {
+export default function DocInspector({ compact, bar }: { compact?: boolean; bar?: boolean } = {}) {
   const { t } = useTranslation()
   const editor = useActiveDocEditor()
   const fileRef = useRef<HTMLInputElement | null>(null)
@@ -43,9 +43,11 @@ export default function DocInspector({ compact }: { compact?: boolean } = {}) {
     editor.chain().focus().setTextSelection(endOfLine).splitBlock().toggleTaskList().run()
   }
 
-  if (compact) {
+  if (compact || bar) {
+    // `bar`: barra PLANA de una fila (iconos normales, sin píldora flotante) para el
+    // panel de nota de v2. `compact`: la píldora estilo BubbleMenu del lienzo.
     return (
-      <div className="wf-format-toolbar" style={{ position: 'static', width: 'auto' }} onMouseDown={e => e.preventDefault()}>
+      <div className={bar ? 'v2-doc-toolbar' : 'wf-format-toolbar'} style={bar ? undefined : { position: 'static', width: 'auto' }} onMouseDown={e => e.preventDefault()}>
         {!showColors ? (
           <>
             <button className="ft-btn" title="H1" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 1 }).run() }}><span style={{ fontWeight: 800, fontSize: 10 }}>H1</span></button>

@@ -60,6 +60,35 @@ function fileIcon(f: File): string {
   return '📎'
 }
 
+// Título de la cabecera de detalle — clic para renombrar el nodo (fila 1).
+function EditableDetailTitle({ nodeId }: { nodeId: string }) {
+  useStore()
+  const [editing, setEditing] = useState(false)
+  const node = store.getNode(nodeId)
+  const title = (node?.text || 'Elemento').replace(/^✦\s*/, '') || 'Elemento'
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        className="v2-detail-title-input"
+        defaultValue={title}
+        onClick={e => e.stopPropagation()}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { const v = (e.target as HTMLInputElement).value.trim(); if (v) store.updateNode(nodeId, { text: v }); setEditing(false) }
+          if (e.key === 'Escape') setEditing(false)
+        }}
+        onBlur={e => { const v = e.target.value.trim(); if (v && v !== title) store.updateNode(nodeId, { text: v }); setEditing(false) }}
+      />
+    )
+  }
+  return (
+    <span className="v2-center-title v2-detail-title" title="Clic para renombrar" onClick={() => setEditing(true)}
+      style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'text' }}>
+      {title}
+    </span>
+  )
+}
+
 function fmtDate(iso?: string): string {
   if (!iso) return ''
   try { return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' }) } catch { return '' }
@@ -185,9 +214,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
         <div className="v2-right-fill">
           <div className="v2-detail-head">
             <button className="v2-iconbtn" onClick={onCloseDetail} title="Volver">‹</button>
-            <span className="v2-center-title" style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {(store.getNode(detailNodeId)?.text || 'Elemento').replace(/^✦\s*/, '') || 'Elemento'}
-            </span>
+            <EditableDetailTitle nodeId={detailNodeId} />
           </div>
           <div className="v2-detail-body"><V2DetailView nodeId={detailNodeId} /></div>
         </div>
