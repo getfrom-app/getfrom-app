@@ -217,6 +217,8 @@
 .v2-el-main { min-width: 0; flex: 1; }
 .v2-el-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v2-el-meta { font-size: 11px; color: var(--text-tertiary); }
+.v2-el-child { margin-left: 18px; border-left: 1px solid var(--border); padding-left: 12px; }
+.v2-el-child .v2-el-title { font-size: 12.5px; }
 .v2-el-filter { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
 .v2-chip {
   font-size: 11.5px; padding: 4px 9px; border-radius: 999px; cursor: pointer;
@@ -248,6 +250,12 @@
   cursor: pointer; font-size: 12.5px; font-family: inherit;
 }
 .v2-ctx-archive-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.v2-ctx-migrate-btn {
+  margin-top: 12px; width: 100%; padding: 8px 10px; border: 1px solid var(--accent);
+  background: var(--accent-soft); color: var(--text-accent); border-radius: var(--radius);
+  cursor: pointer; font-size: 12.5px; font-family: inherit; font-weight: 600;
+}
+.v2-ctx-migrate-btn:hover { background: var(--accent); color: #fff; }
 .v2-el-check { flex: 0 0 auto; font-size: 15px; width: 20px; text-align: center; cursor: pointer; color: var(--text-secondary); }
 .v2-know-area {
   width: 100%; min-height: 90px; resize: vertical; border: 1px solid var(--border);

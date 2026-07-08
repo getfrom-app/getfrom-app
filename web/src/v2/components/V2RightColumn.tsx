@@ -61,6 +61,26 @@ function fmtDate(iso?: string): string {
   try { return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' }) } catch { return '' }
 }
 
+// Clasifica un nodo como ELEMENTO de historial (nota/documento/pdf/imagen/audio/enlace),
+// o null si no lo es (tarea, evento, sesión, transcripción, mensaje, subcontexto).
+function classifyContent(n: Node): { icon: string; label: string } | null {
+  if (n.deletedAt || !n.text) return null
+  const ed = parseExtraData(n.extraData)
+  if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) return null
+  if (ed._ctx === '1') return null
+  if (n.status != null || (n.types || []).includes('tarea')) return null
+  if ((n.types || []).includes('evento') || n.isEvent) return null
+  const rt = (n.resourceType || '').toLowerCase()
+  if (n.isResource || n.resourceType) {
+    if (rt.includes('pdf')) return { icon: '📄', label: 'PDF' }
+    if (rt.includes('image') || rt.includes('img')) return { icon: '🖼', label: 'Imagen' }
+    return { icon: '🔗', label: 'Enlace' }
+  }
+  if (ed._doc === '1') return { icon: '📝', label: 'Documento' }
+  if (Array.isArray(ed._audios)) return { icon: '🎙', label: 'Audio' }
+  return { icon: '📝', label: 'Nota' }
+}
+
 export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation }: Props) {
   useStore()
   const chat = useAIChat()
@@ -89,38 +109,42 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
     return list.slice(0, 100)
   }, [store.nodesVersion, chat.sessionId, selectedCtxId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Contenido del contexto para el Historial: NOTAS/DOCUMENTOS, ARCHIVOS (PDF/imagen)
-  // y ENLACES. Se combinan con las conversaciones en una sola lista. (Tareas y eventos
-  // NO — esos viven en Contexto/Hoy.)
-  const contentItems = useMemo(() => {
-    const src = selectedCtxId ? nodesInContext(selectedCtxId) : store.allActive()
-    const items: { node: Node; icon: string; label: string; isChat: false }[] = []
-    for (const n of src) {
-      if (!n.text) continue
-      const ed = parseExtraData(n.extraData)
-      if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) continue
-      if (ed._ctx === '1') continue // subcontextos
-      if (n.status != null || (n.types || []).includes('tarea')) continue // tareas
-      if ((n.types || []).includes('evento') || n.isEvent) continue // eventos
-      const rt = (n.resourceType || '').toLowerCase()
-      let icon = '📝', label = 'Nota'
-      if (n.isResource || n.resourceType) {
-        if (rt.includes('pdf')) { icon = '📄'; label = 'PDF' }
-        else if (rt.includes('image') || rt.includes('img')) { icon = '🖼'; label = 'Imagen' }
-        else { icon = '🔗'; label = 'Enlace' }
-      } else if (ed._doc === '1') { label = 'Documento' } else if (Array.isArray(ed._audios)) { icon = '🎙'; label = 'Audio' }
-      items.push({ node: n, icon, label, isChat: false })
+  // Elementos DENTRO de cada conversación (hijos-contenido de la sesión) → indentados.
+  const bySession = useMemo(() => {
+    const m = new Map<string, { node: Node; icon: string; label: string }[]>()
+    for (const s of sessions) {
+      const kids: { node: Node; icon: string; label: string }[] = []
+      for (const n of store.children(s.id)) {
+        const c = classifyContent(n)
+        if (c) kids.push({ node: n, icon: c.icon, label: c.label })
+      }
+      if (kids.length) m.set(s.id, kids.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || '')))
     }
-    return items
-  }, [store.nodesVersion, selectedCtxId]) // eslint-disable-line react-hooks/exhaustive-deps
+    return m
+  }, [sessions, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Lista COMBINADA del Historial: conversaciones + notas + archivos + enlaces, por reciente.
-  const historyItems = useMemo(() => {
+  // Elementos SUELTOS (subidos/creados SIN conversación): su padre NO es una sesión.
+  const standalone = useMemo(() => {
+    const sessionIds = new Set(sessions.map(s => s.id))
+    const src = selectedCtxId ? nodesInContext(selectedCtxId) : store.allActive()
+    const out: { node: Node; icon: string; label: string }[] = []
+    for (const n of src) {
+      const c = classifyContent(n)
+      if (!c) continue
+      if (n.parentId && sessionIds.has(n.parentId)) continue // pertenece a una conversación
+      out.push({ node: n, icon: c.icon, label: c.label })
+    }
+    return out
+  }, [sessions, selectedCtxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Nivel superior del Historial: conversaciones + elementos sueltos, por reciente.
+  const topLevel = useMemo(() => {
     const chats = sessions.map(s => ({ node: s, icon: '💬', label: 'Conversación', isChat: true as const }))
-    const merged = [...chats, ...contentItems]
-    merged.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
-    return merged.slice(0, 200)
-  }, [sessions, contentItems])
+    const alone = standalone.map(it => ({ ...it, isChat: false as const }))
+    return [...chats, ...alone]
+      .sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
+      .slice(0, 200)
+  }, [sessions, standalone])
 
   const tabs: { id: RightMode; label: string }[] = [
     { id: 'contexto', label: 'Contexto' },
@@ -212,23 +236,34 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
               <span className="v2-el-main"><span className="v2-el-title">Nueva conversación{selectedCtxId ? ' en este contexto' : ''}</span></span>
             </div>
 
-            {/* Lista combinada: conversaciones + notas + documentos + archivos + enlaces */}
-            {historyItems.map(it => (
-              <div
-                className="v2-el-row"
-                key={it.node.id}
-                style={it.isChat && chat.sessionId === it.node.id ? { background: 'var(--accent-soft)' } : undefined}
-                onClick={() => (it.isChat ? onOpenConversation(it.node.id) : onOpenNode(it.node.id))}
-              >
-                <span className="v2-el-icon">{it.icon}</span>
-                <span className="v2-el-main">
-                  <span className="v2-el-title">{(it.node.text || it.label).replace(/^✦\s*/, '') || it.label}</span>
-                  <span className="v2-el-meta">{it.label} · {fmtDate(it.node.updatedAt)}</span>
-                </span>
+            {/* Conversaciones (con sus elementos indentados) + elementos sueltos. */}
+            {topLevel.map(it => (
+              <div key={it.node.id}>
+                <div
+                  className="v2-el-row"
+                  style={it.isChat && chat.sessionId === it.node.id ? { background: 'var(--accent-soft)' } : undefined}
+                  onClick={() => (it.isChat ? onOpenConversation(it.node.id) : onOpenNode(it.node.id))}
+                >
+                  <span className="v2-el-icon">{it.icon}</span>
+                  <span className="v2-el-main">
+                    <span className="v2-el-title">{(it.node.text || it.label).replace(/^✦\s*/, '') || it.label}</span>
+                    <span className="v2-el-meta">{it.label} · {fmtDate(it.node.updatedAt)}</span>
+                  </span>
+                </div>
+                {/* Elementos DENTRO de la conversación, indentados. */}
+                {it.isChat && bySession.get(it.node.id)?.map(child => (
+                  <div className="v2-el-row v2-el-child" key={child.node.id} onClick={() => onOpenNode(child.node.id)}>
+                    <span className="v2-el-icon">{child.icon}</span>
+                    <span className="v2-el-main">
+                      <span className="v2-el-title">{child.node.text || child.label}</span>
+                      <span className="v2-el-meta">{child.label}</span>
+                    </span>
+                  </div>
+                ))}
               </div>
             ))}
 
-            {historyItems.length === 0 && (
+            {topLevel.length === 0 && (
               <div className="v2-right-empty">
                 {selectedCtxId ? 'Este contexto no tiene conversaciones ni contenido todavía.' : 'Aún no hay nada. Empieza a hablar con Fromly.'}
               </div>
