@@ -147,6 +147,15 @@ export default function V2App() {
     prevStreaming.current = chat.isStreaming
   }, [chat.isStreaming])  // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Al ARRANCAR una conversación (sessionId null→set, p.ej. al escribir en el estado
+  // vacío) la columna derecha va sola a «Contexto» → se ve el panel de conversación
+  // con el bloque «Relacionado» (push) sin tener que cambiar de tab manualmente.
+  const prevSession = useRef<string | null>(null)
+  useEffect(() => {
+    if (!prevSession.current && chat.sessionId && !detailNodeId && !selectedCtxId) setRightMode('contexto')
+    prevSession.current = chat.sessionId
+  }, [chat.sessionId])  // eslint-disable-line react-hooks/exhaustive-deps
+
   // El ElementsPanel de v1 abre nodos disparando `from:open-detail` (en vez de navegar).
   // Lo escuchamos aquí para abrir el elemento desde el buscador universal.
   useEffect(() => {
