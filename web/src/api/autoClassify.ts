@@ -269,19 +269,23 @@ async function classifyNode(
 export interface UserKnowledge {
   people: string[]
   facts: string[]
+  // Items del perfil actual que este mensaje deja OBSOLETOS (un dato cambió/se
+  // contradice). El guardado los reemplaza en vez de acumular versiones contradictorias.
+  obsolete?: string[]
 }
 
 export async function extractUserKnowledge(
   nodeText: string,
   existingProfile?: string,
   contextName?: string | null,
+  today?: string,
 ): Promise<UserKnowledge | null> {
   const data = await apiRequest<UserKnowledge>('/ai/extract-user-knowledge', {
     method: 'POST',
-    body: JSON.stringify({ nodeText, existingProfile, contextName: contextName ?? undefined }),
+    body: JSON.stringify({ nodeText, existingProfile, contextName: contextName ?? undefined, today }),
   })
-  if (!data.people?.length && !data.facts?.length) return null
-  return { people: data.people ?? [], facts: data.facts ?? [] }
+  if (!data.people?.length && !data.facts?.length && !data.obsolete?.length) return null
+  return { people: data.people ?? [], facts: data.facts ?? [], obsolete: data.obsolete ?? [] }
 }
 
 /**

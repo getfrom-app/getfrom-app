@@ -482,9 +482,12 @@ class AIChatStore {
       const existingProfile = readProfileLines().join('. ')
       // Enrutado: si se conversa sobre un nodo dentro de un contexto, solo lo GLOBAL.
       const contextName = currentNodeId ? store.primaryContextName(currentNodeId) : null
-      const knowledge = await extractUserKnowledge(trimmed, existingProfile || undefined, contextName)
+      // Fecha de HOY (local) → el extractor fecha los datos de estado ("act. …") y
+      // detecta contradicciones con el perfil actual (obsolete) para actualizarlos.
+      const today = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+      const knowledge = await extractUserKnowledge(trimmed, existingProfile || undefined, contextName, today)
       if (!knowledge) return
-      await saveUserKnowledgeToProfile(knowledge.people, knowledge.facts)
+      await saveUserKnowledgeToProfile(knowledge.people, knowledge.facts, knowledge.obsolete)
     } catch { /* silencioso */ }
   }
 

@@ -58,8 +58,11 @@ export function readProfileLines(): string[] {
  * Guarda personas y hechos bajo "🧠 Lo que From sabe sobre ti".
  * Crea el nodo de sección si no existe y deduplica items dentro de cada sublínea.
  */
-export async function saveUserKnowledgeToProfile(people: string[], facts: string[]): Promise<void> {
-  if (!people.length && !facts.length) return
+// Normaliza para comparar (sin acentos, minúsculas, espacios colapsados).
+const _norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
+
+export async function saveUserKnowledgeToProfile(people: string[], facts: string[], obsolete: string[] = []): Promise<void> {
+  if (!people.length && !facts.length && !obsolete.length) return
 
   let perfil = store.perfilIANode?.() ?? null
   if (!perfil) {
@@ -78,22 +81,37 @@ export async function saveUserKnowledgeToProfile(people: string[], facts: string
   const kwNode = store.children(learnNode.id).filter(n => !n.deletedAt).find(n => (n.text || '').startsWith('Palabras clave:'))
   if (kwNode) store.deleteNode(kwNode.id)
 
+  // Items OBSOLETOS a eliminar (normalizados, con longitud mínima para no borrar por
+  // coincidencias triviales). Un item existente se quita si comparte texto sustancial
+  // con alguno de los obsoletos (en cualquier dirección).
+  const obs = obsolete.map(_norm).filter(o => o.length >= 8)
+  const isObsolete = (item: string) => {
+    const ni = _norm(item)
+    return obs.some(o => ni.includes(o) || o.includes(ni))
+  }
+
   const upsertSub = (prefix: string, items: string[], order: number) => {
     const cleanItems = items
       .map(item => item.replace(new RegExp(`^${prefix}:\\s*`, 'i'), '').trim())
       .filter(Boolean)
-    if (!cleanItems.length) return
     const sub = store.children(learnNode!.id).filter(n => !n.deletedAt).find(n => (n.text || '').startsWith(prefix + ':'))
     if (!sub) {
-      store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
-    } else {
-      const existingText = (sub.text || '').toLowerCase()
-      const newItems = cleanItems.filter(item => !existingText.includes(item.toLowerCase()))
-      if (newItems.length > 0) {
-        const currentText = (sub.text || '').trimEnd()
-        const sep = currentText.endsWith(':') ? ' ' : ', '
-        store.updateNode(sub.id, { text: currentText + sep + newItems.join(', ') })
-      }
+      if (cleanItems.length) store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
+      return
+    }
+    // Parte los items existentes, ELIMINA los obsoletos, y AÑADE los nuevos (sin duplicar).
+    const body = (sub.text || '').replace(new RegExp(`^${prefix}:\\s*`, 'i'), '')
+    let existing = body.split(/\s*,\s*/).map(s => s.trim()).filter(Boolean)
+    const before = existing.length
+    if (obs.length) existing = existing.filter(it => !isObsolete(it))
+    const existLower = existing.map(_norm)
+    let added = 0
+    for (const it of cleanItems) {
+      const nit = _norm(it)
+      if (!existLower.some(e => e.includes(nit) || nit.includes(e))) { existing.push(it); existLower.push(nit); added++ }
+    }
+    if (added > 0 || existing.length !== before) {
+      store.updateNode(sub.id, { text: prefix + ': ' + existing.join(', ') })
     }
   }
 
