@@ -64,6 +64,29 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
     return s
   }, [ctxId, store.nodesVersion, notesSnapshot]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ELEMENTOS del contexto: documentos, archivos (PDF/imagen), enlaces, audios.
+  // (Las notas de texto planas antiguas NO — esas se convierten con la migración.)
+  const elements = useMemo(() => {
+    const out: { node: Node; icon: string; label: string }[] = []
+    for (const n of store.children(ctxId)) {
+      if (n.deletedAt || !n.text) continue
+      const ed = parseExtraData(n.extraData)
+      if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) continue
+      if (ed._ctx === '1') continue
+      if (n.status != null || (n.types || []).includes('tarea')) continue
+      if ((n.types || []).includes('evento') || n.isEvent) continue
+      const rt = (n.resourceType || '').toLowerCase()
+      if (isDocNode(n) || ed._doc === '1') out.push({ node: n, icon: '📝', label: 'Documento' })
+      else if (n.isResource || n.resourceType) {
+        if (rt.includes('pdf')) out.push({ node: n, icon: '📄', label: 'PDF' })
+        else if (rt.includes('image') || rt.includes('img')) out.push({ node: n, icon: '🖼', label: 'Imagen' })
+        else out.push({ node: n, icon: '🔗', label: 'Enlace' })
+      } else if (Array.isArray(ed._audios)) out.push({ node: n, icon: '🎙', label: 'Audio' })
+      // notas de texto planas → se omiten (las gestiona la migración)
+    }
+    return out.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
+  }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Migración de notas antiguas → documento del contexto.
   const legacyCount = legacyNotesOf(ctxId).length
   const doMigrate = () => {
@@ -112,6 +135,19 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
       <div className="v2-ctx-outliner">
         <Outliner parentId={ctxId} excludeIds={excludeIds} autoFocusEmpty placeholder="Escribe una tarea…" />
       </div>
+
+      {/* Elementos del contexto (documentos, archivos, audios, enlaces) */}
+      {elements.length > 0 && (
+        <>
+          <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>Elementos ({elements.length})</div>
+          {elements.map(({ node: n, icon, label }) => (
+            <div className="v2-el-row" key={n.id} onClick={() => onOpenNode(n.id)}>
+              <span className="v2-el-icon">{icon}</span>
+              <span className="v2-el-main"><span className="v2-el-title">{n.text}</span><span className="v2-el-meta">{label}</span></span>
+            </div>
+          ))}
+        </>
+      )}
 
       {/* Lo que Fromly sabe — al final del todo */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
