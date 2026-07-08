@@ -151,7 +151,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
               ))}
             </div>
             <div className="v2-usermenu-sep" />
-            <a className="v2-usermenu-item" href="/app/">↩︎ Volver a la v1</a>
+            <a className="v2-usermenu-item" href="/app/v1">↩︎ Fromly clásico (v1)</a>
             <button className="v2-usermenu-item v2-usermenu-item--danger" onClick={() => { clearTokens(); window.location.href = '/login' }}>Cerrar sesión</button>
           </div>
         )}

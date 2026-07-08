@@ -276,7 +276,6 @@ export default function V2App() {
         onOpenConversation={onOpenConversation}
         viewingCtxFicha={viewingCtxFicha}
       />
-      <div className="v2-beta-bar">Fromly {V2_VERSION} — beta<a href="/app/">volver a v1</a></div>
       {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
       {showCapture && (
         <UnifiedCapture

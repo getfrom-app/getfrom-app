@@ -221,16 +221,25 @@ function AppInner() {
       <Route path="/google-callback" element={<PrivateRoute><GoogleCallbackPage /></PrivateRoute>} />
       {/* Claude OAuth consent — maneja su propio estado de auth */}
       <Route path="/claude-connect" element={<ClaudeConnectPage />} />
-      {/* Fromly 2.0 — beta chat-first aislada. NO toca la v1 (MainLayout intacto). */}
+      {/* Fromly 2.0 — ahora es la app PRINCIPAL (chat-first). Sigue accesible en /v2 por
+          compatibilidad de enlaces antiguos. */}
       <Route path="/v2/*" element={
         <PrivateRoute>
-          <Suspense fallback={<div className="v2-loading">Cargando Fromly 2.0…</div>}>
+          <Suspense fallback={<div className="v2-loading">Cargando Fromly…</div>}>
             <V2App />
           </Suspense>
         </PrivateRoute>
       } />
-      {/* Toda la app requiere cuenta */}
-      <Route path="/*" element={<PrivateRoute><MainLayout /></PrivateRoute>} />
+      {/* v1 (clásica) preservada como RESPALDO reversible en /v1. */}
+      <Route path="/v1/*" element={<PrivateRoute><MainLayout /></PrivateRoute>} />
+      {/* Por defecto: Fromly 2.0. Toda la app requiere cuenta. */}
+      <Route path="/*" element={
+        <PrivateRoute>
+          <Suspense fallback={<div className="v2-loading">Cargando Fromly…</div>}>
+            <V2App />
+          </Suspense>
+        </PrivateRoute>
+      } />
     </Routes>
   )
 }
