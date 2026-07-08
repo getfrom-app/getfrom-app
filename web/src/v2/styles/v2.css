@@ -263,6 +263,12 @@
   line-height: 1.5; color: var(--text-primary); background: var(--bg-primary); outline: none;
 }
 .v2-know-area:focus { border-color: var(--accent); }
+.v2-quickadd {
+  width: 100%; margin-top: 6px; padding: 6px 8px; border: 1px dashed var(--border);
+  border-radius: var(--radius); background: transparent; color: var(--text-primary);
+  font-size: 12.5px; font-family: inherit; outline: none;
+}
+.v2-quickadd:focus { border-color: var(--accent); border-style: solid; }
 .v2-ctx-add-select {
   font-size: 12px; font-family: inherit; padding: 5px 8px; border-radius: var(--radius);
   border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer;

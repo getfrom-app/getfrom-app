@@ -6,7 +6,8 @@ import { useMemo } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { listMarkedContexts, isRootContext, assignContext, nodeCtxRefs, contextColor } from '../../utils/cajones'
 import { classifyElement } from '../elementKind'
-import Outliner from '../../components/outliner/Outliner'
+import V2TaskList from './V2TaskList'
+import V2QuickAddTask from './V2QuickAddTask'
 import type { Node } from '../../types'
 
 interface Props {
@@ -18,17 +19,10 @@ interface Props {
 export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx }: Props) {
   useStore()
 
-  // Tareas de la conversación = hijos-tarea de la sesión. Ocultamos lo NO-tarea
-  // (transcripción, documentos, mensajes) con un snapshot al abrir la sesión.
-  const excludeIds = useMemo(() => {
-    const s = new Set<string>()
-    for (const n of store.children(sessionId)) {
-      if (n.deletedAt) continue
-      const isTask = n.status != null || (n.types || []).includes('tarea')
-      if (!isTask) s.add(n.id)
-    }
-    return s
-  }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Tareas de la conversación = hijos-tarea de la sesión (estilo Hoy).
+  const tasks = useMemo(() => {
+    return store.children(sessionId).filter(n => !n.deletedAt && (n.status != null || (n.types || []).includes('tarea')))
+  }, [sessionId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Elementos incluidos en la conversación (documentos, notas, PDF, imágenes, audios, enlaces).
   const elements = useMemo(() => {
@@ -71,11 +65,10 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
         </select>
       </div>
 
-      {/* Bloque de tareas de la conversación */}
+      {/* Bloque de tareas de la conversación — estilo Hoy */}
       <div className="v2-section-label" style={{ padding: '10px 0 4px' }}>Tareas</div>
-      <div className="v2-ctx-outliner">
-        <Outliner parentId={sessionId} excludeIds={excludeIds} autoFocusEmpty placeholder="Escribe una tarea…" />
-      </div>
+      <V2TaskList tasks={tasks} />
+      <V2QuickAddTask parentId={sessionId} />
 
       {/* Elementos de la conversación */}
       <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>Elementos ({elements.length})</div>

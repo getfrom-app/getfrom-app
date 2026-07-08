@@ -8,25 +8,16 @@ import {
   contextColor, contextParent, isContextClosed, setContextClosed,
   readContextKnowledge, writeContextKnowledge,
 } from '../../utils/cajones'
-import { parseExtraData } from '../../utils/papeleraHelper'
-import { isDocNode } from '../../utils/docNode'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
-import Outliner from '../../components/outliner/Outliner'
+import V2TaskList from './V2TaskList'
+import V2QuickAddTask from './V2QuickAddTask'
 import type { Node } from '../../types'
 
 interface Props {
   ctxId: string
   onSelectCtx: (id: string) => void
   onOpenNode: (id: string) => void
-}
-
-// ¿Es un hijo «estructural» (no tarea) que NUNCA debe salir en la lista de tareas?
-function isStructural(n: Node): boolean {
-  const ed = parseExtraData(n.extraData)
-  return ed._ctx === '1' || ed._aiSession === '1' || ed._aiTranscript === '1' || !!ed._aiMsgRole
-    || Array.isArray(ed._audios) || ed._doc === '1' || !!n.isResource || !!n.resourceType
-    || (n.types || []).includes('evento') || !!n.isEvent
 }
 
 export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props) {
@@ -40,30 +31,10 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
   const [know, setKnow] = useState('')
   useEffect(() => { setKnow(readContextKnowledge(ctxId)) }, [ctxId])
 
-  // La columna de contexto muestra SOLO las TAREAS (+ lo que Fromly sabe abajo).
-  // Se ocultan: (a) reactivamente lo estructural (documentos, recursos, subcontextos,
-  // sesiones, eventos…) — incluido un documento recién creado por la migración; y
-  // (b) por SNAPSHOT al abrir, las notas de texto antiguas (el volcado de descripción).
-  // Así lo que el usuario ESCRIBE nuevo (una tarea) sí aparece.
-  const notesSnapshot = useMemo(() => {
-    const s = new Set<string>()
-    for (const n of store.children(ctxId)) {
-      if (n.deletedAt) continue
-      const isTask = n.status != null || (n.types || []).includes('tarea')
-      if (!isTask && !isStructural(n) && !isDocNode(n)) s.add(n.id)
-    }
-    return s
-  }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const excludeIds = useMemo(() => {
-    const s = new Set<string>(notesSnapshot)
-    for (const n of store.children(ctxId)) {
-      if (n.deletedAt) continue
-      const isTask = n.status != null || (n.types || []).includes('tarea')
-      if (!isTask && (isStructural(n) || isDocNode(n))) s.add(n.id)
-    }
-    return s
-  }, [ctxId, store.nodesVersion, notesSnapshot]) // eslint-disable-line react-hooks/exhaustive-deps
+  // TAREAS del contexto (hijas directas con estado/tipo tarea), estilo Hoy.
+  const tasks = useMemo(() => {
+    return store.children(ctxId).filter(n => !n.deletedAt && (n.status != null || (n.types || []).includes('tarea')))
+  }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ELEMENTOS del contexto: documentos, archivos (PDF/imagen), enlaces, audios.
   // (Las notas de texto planas antiguas NO — esas se convierten con la migración.)
@@ -121,12 +92,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
         </button>
       )}
 
-      {/* Tareas del contexto = OUTLINER REAL de la v1 (checkbox, ghost text, magic
-          verbo→tarea, chips). Se ocultan el texto antiguo/subcontextos vía excludeIds. */}
+      {/* Tareas del contexto — estilo Hoy (checkbox, chips fecha/hora/recurrencia,
+          hover calendario/eliminar, clic → abre su nota a la derecha). */}
       <div className="v2-section-label" style={{ padding: '14px 0 4px' }}>Tareas</div>
-      <div className="v2-ctx-outliner">
-        <Outliner parentId={ctxId} excludeIds={excludeIds} autoFocusEmpty placeholder="Escribe una tarea…" />
-      </div>
+      <V2TaskList tasks={tasks} />
+      <V2QuickAddTask parentId={ctxId} />
 
       {/* Elementos del contexto (documentos, archivos, audios, enlaces) */}
       {elements.length > 0 && (

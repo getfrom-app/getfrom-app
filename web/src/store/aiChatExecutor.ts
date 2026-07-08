@@ -6,6 +6,7 @@
 import { store } from './nodeStore'
 import type { ExecutedAction } from './aiChatStore'
 import { ensureDayPath } from '../utils/agendaHelper'
+import { pushEventToGcal } from '../utils/gcalNodesSync'
 
 /** Quita prefijos de lista de un título de nodo: "1. ", "12) ", "- ", "* ", "• ".
  * (Magic a veces genera cada idea como "1. ..." → todos salían con un "1." delante.) */
@@ -198,6 +199,9 @@ function createEvent(a: Record<string, unknown>, sessionId?: string): ExecutedAc
     updates.extraData = JSON.stringify(ed)
   }
   store.updateNode(created.id, updates)
+  // Sincroniza con Google Calendar (no-op si el usuario no está conectado).
+  const eventNode = store.getNode(created.id)
+  if (eventNode) pushEventToGcal(eventNode).catch(() => {})
   return result('create_event', true,
     `Evento «${text}» — ${new Date(due).toLocaleString('es-ES', { dateStyle: 'short', timeStyle: 'short' })} creado.`,
     [created.id])
