@@ -277,6 +277,18 @@ export async function searchNodes(q: string, limit = 20): Promise<{ nodes: unkno
   return apiRequest(`/search/nodes?q=${encodeURIComponent(q)}&limit=${limit}`)
 }
 
+// RAG: contenido relacionado por SIGNIFICADO (modo push). Devuelve ids de nodos
+// del vault semánticamente cercanos al texto. Best-effort: [] si falla.
+export async function ragRelated(query: string, excludeIds: string[] = [], k = 6): Promise<{ nodeId: string; score: number }[]> {
+  try {
+    const res = await apiRequest<{ hits: { nodeId: string; score: number }[] }>('/ai/rag-related', {
+      method: 'POST',
+      body: JSON.stringify({ query, excludeIds, k }),
+    })
+    return res.hits || []
+  } catch { return [] }
+}
+
 // ── Public notes ──────────────────────────────────────────────────────────
 
 export async function publishNote(
