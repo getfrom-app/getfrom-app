@@ -28,6 +28,10 @@ export default function V2App() {
   const [selectedCtxId, setSelectedCtxId] = useState<string | null>(null)
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
   const [rightMode, setRightMode] = useState<RightMode>('hoy')
+  // ¿La tab Contexto muestra la FICHA del contexto (true) o el panel de la
+  // CONVERSACIÓN activa (false)? Al hablar manda la conversación; al entrar a un
+  // contexto para verlo, manda su ficha.
+  const [viewingCtxFicha, setViewingCtxFicha] = useState(false)
   const [droppedFiles, setDroppedFiles] = useState<File[]>([])
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // elemento abierto en la columna derecha
   const [rightWidth, setRightWidth] = useState(() => {
@@ -58,6 +62,7 @@ export default function V2App() {
     setSelectedCtxId(id)
     setFocusNodeId(null)
     setDetailNodeId(null)
+    setViewingCtxFicha(!!id)  // clic en un contexto = ver su ficha
     setRightMode(id ? 'contexto' : 'hoy')
   }
 
@@ -66,6 +71,7 @@ export default function V2App() {
     setSelectedCtxId(null)
     setFocusNodeId(null)
     setDetailNodeId(null)
+    setViewingCtxFicha(false)
     setRightMode('contexto') // durante una conversación, la derecha muestra su panel
     aiChatStore.startNewSession()
   }
@@ -77,6 +83,7 @@ export default function V2App() {
     setSelectedCtxId(id)
     setFocusNodeId(null)
     setDetailNodeId(null)
+    setViewingCtxFicha(false)  // se está iniciando una conversación, no viendo la ficha
     setRightMode('contexto')
     aiChatStore.startNewSession()
   }
@@ -87,6 +94,7 @@ export default function V2App() {
     aiChatStore.loadSession(id)
     setSelectedCtxId(null)
     setFocusNodeId(null)
+    setViewingCtxFicha(false)
     const content = store.children(id).filter(n => {
       if (n.deletedAt || !n.text) return false
       const ed = parseExtraData(n.extraData)
@@ -178,6 +186,18 @@ export default function V2App() {
     }
   }, [chat.sessionId, chat.messages.length])  // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Al ENVIARSE/LLEGAR un mensaje (la conversación crece), la tab Contexto pasa a
+  // mostrar el panel de la CONVERSACIÓN (Relacionado/Tareas/Elementos) aunque haya un
+  // contexto seleccionado. No se dispara solo por tener una sesión vieja cargada: solo
+  // cuando el nº de mensajes aumenta (actividad real).
+  const prevMsgCount = useRef(0)
+  useEffect(() => {
+    if (chat.messages.length > prevMsgCount.current && chat.messages.length > 0) {
+      setViewingCtxFicha(false)
+    }
+    prevMsgCount.current = chat.messages.length
+  }, [chat.messages.length])
+
   // El ElementsPanel de v1 abre nodos disparando `from:open-detail` (en vez de navegar).
   // Lo escuchamos aquí para abrir el elemento desde el buscador universal.
   useEffect(() => {
@@ -254,6 +274,7 @@ export default function V2App() {
         onResize={setRightWidth}
         activeSessionId={chat.sessionId}
         onOpenConversation={onOpenConversation}
+        viewingCtxFicha={viewingCtxFicha}
       />
       <div className="v2-beta-bar">Fromly {V2_VERSION} — beta<a href="/app/">volver a v1</a></div>
       {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}

@@ -34,6 +34,7 @@ interface Props {
   onResize: (w: number) => void
   activeSessionId: string | null
   onOpenConversation: (id: string) => void
+  viewingCtxFicha: boolean
 }
 
 // Clasificación ligera de un nodo → icono + etiqueta de tipo.
@@ -70,7 +71,7 @@ function classifyContent(n: Node): ReturnType<typeof classifyElement> {
   return classifyElement(n)
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha }: Props) {
   useStore()
   const chat = useAIChat()
   const [today, setToday] = useState<Node | null>(() => store.todayDiary())
@@ -216,11 +217,15 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
         )}
 
         {mode === 'contexto' && (
-          selectedCtxId
-            ? <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} />
-            : activeSessionId
-              ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
-              : <div className="v2-right-empty">Elige un contexto a la izquierda, o empieza una conversación: aquí verás sus tareas y elementos.</div>
+          // Con una conversación activa manda su PANEL (Relacionado/Tareas/Elementos);
+          // la FICHA del contexto solo cuando entras a un contexto a verlo (viewingCtxFicha).
+          (activeSessionId && !viewingCtxFicha)
+            ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
+            : selectedCtxId
+              ? <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} />
+              : activeSessionId
+                ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
+                : <div className="v2-right-empty">Elige un contexto a la izquierda, o empieza una conversación: aquí verás sus tareas y elementos.</div>
         )}
 
         {mode === 'historial' && (
