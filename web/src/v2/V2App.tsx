@@ -147,14 +147,21 @@ export default function V2App() {
     prevStreaming.current = chat.isStreaming
   }, [chat.isStreaming])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Al ARRANCAR una conversación (sessionId null→set, p.ej. al escribir en el estado
-  // vacío) la columna derecha va sola a «Contexto» → se ve el panel de conversación
-  // con el bloque «Relacionado» (push) sin tener que cambiar de tab manualmente.
-  const prevSession = useRef<string | null>(null)
+  // Al aparecer el PRIMER mensaje de usuario de una conversación, la columna derecha
+  // va sola a «Contexto» → se ve el panel de conversación con el bloque «Relacionado»
+  // (push) sin cambiar de tab a mano. Se dispara por mensaje (no por sessionId, que
+  // puede venir persistido del reload), una sola vez por sesión, y solo desde la tab
+  // por defecto «Hoy» para no pisar una elección deliberada (Elementos/Historial).
+  const switchedFor = useRef<string | null>(null)
   useEffect(() => {
-    if (!prevSession.current && chat.sessionId && !detailNodeId && !selectedCtxId) setRightMode('contexto')
-    prevSession.current = chat.sessionId
-  }, [chat.sessionId])  // eslint-disable-line react-hooks/exhaustive-deps
+    const sid = chat.sessionId
+    if (!sid || detailNodeId || selectedCtxId) return
+    if (switchedFor.current === sid || rightMode !== 'hoy') return
+    if (chat.messages.some(m => m.role === 'user')) {
+      switchedFor.current = sid
+      setRightMode('contexto')
+    }
+  }, [chat.sessionId, chat.messages.length])  // eslint-disable-line react-hooks/exhaustive-deps
 
   // El ElementsPanel de v1 abre nodos disparando `from:open-detail` (en vez de navegar).
   // Lo escuchamos aquí para abrir el elemento desde el buscador universal.
