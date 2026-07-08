@@ -20,7 +20,7 @@ export default function ContextChip({
 }) {
   const color = contextColor(context.id)
   return (
-    <span className="ctx-chip" style={{ background: color + '18', color, border: `1px solid ${color}40` }}>
+    <span className="ctx-chip" style={{ ['--chip' as string]: color }}>
       <span className="ctx-chip-name" title={title} onClick={onClick}>{context.text || 'Contexto'}</span>
       {onRemove && (
         <button className="ctx-chip-x" title={removeTitle} aria-label={removeTitle}
