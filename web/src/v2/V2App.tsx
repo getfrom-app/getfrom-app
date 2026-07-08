@@ -8,6 +8,7 @@ import { store, useStore } from '../store/nodeStore'
 import { userStore } from '../store/userStore'
 import { aiChatStore, useAIChat } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
+import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
@@ -27,6 +28,11 @@ export default function V2App() {
   const [rightMode, setRightMode] = useState<RightMode>('hoy')
   const [droppedFiles, setDroppedFiles] = useState<File[]>([])
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // elemento abierto en la columna derecha
+  const [rightWidth, setRightWidth] = useState(() => {
+    const v = Number(localStorage.getItem('v2_right_w'))
+    return v >= 320 && v <= 900 ? v : 440
+  })
+  useEffect(() => { localStorage.setItem('v2_right_w', String(rightWidth)) }, [rightWidth])
 
   // Arranque del motor SOLO si la v1 no lo cargó ya en esta sesión SPA.
   // NO re-ejecutamos las migraciones estructurales de v1 (algunas destructivas):
@@ -56,7 +62,26 @@ export default function V2App() {
   const onNewChat = () => {
     setFocusNodeId(null)
     setDetailNodeId(null)
+    setRightMode('contexto') // durante una conversación, la derecha muestra su panel
     aiChatStore.startNewSession()
+  }
+
+  // Abrir una conversación: chat al CENTRO + su(s) elemento(s) en la DERECHA a la vez.
+  // 1 elemento → se abre en detalle; varios → listados en la tab Contexto (panel de conversación).
+  const onOpenConversation = (id: string) => {
+    aiChatStore.loadSession(id)
+    setSelectedCtxId(null)
+    setFocusNodeId(null)
+    const content = store.children(id).filter(n => {
+      if (n.deletedAt || !n.text) return false
+      const ed = parseExtraData(n.extraData)
+      if (ed._aiTranscript === '1' || ed._aiMsgRole) return false
+      if (n.status != null || (n.types || []).includes('tarea')) return false
+      if ((n.types || []).includes('evento') || n.isEvent) return false
+      return true
+    })
+    setRightMode('contexto')
+    setDetailNodeId(content.length === 1 ? content[0].id : null)
   }
 
   // «Empezar una conversación a partir de un contenido existente»: nueva sesión
@@ -145,7 +170,7 @@ export default function V2App() {
 
   return (
     <ToastProvider>
-    <div className="v2-root">
+    <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
       <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} />
       <V2Chat
         currentNodeId={currentNodeId}
@@ -164,6 +189,9 @@ export default function V2App() {
         onSelectCtx={onSelectCtx}
         detailNodeId={detailNodeId}
         onCloseDetail={() => setDetailNodeId(null)}
+        onResize={setRightWidth}
+        activeSessionId={chat.sessionId}
+        onOpenConversation={onOpenConversation}
       />
       <div className="v2-beta-bar">Fromly {V2_VERSION} — beta<a href="/app/">volver a v1</a></div>
     </div>

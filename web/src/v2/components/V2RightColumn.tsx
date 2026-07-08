@@ -13,6 +13,7 @@ import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import DayColumn from '../../components/panels/DayColumn'
 import ElementsPanel from '../../components/panels/ElementsPanel'
 import V2ContextView from './V2ContextView'
+import V2ConversationView from './V2ConversationView'
 import V2DetailView from './V2DetailView'
 import type { Node } from '../../types'
 
@@ -28,6 +29,9 @@ interface Props {
   onSelectCtx: (id: string) => void
   detailNodeId: string | null
   onCloseDetail: () => void
+  onResize: (w: number) => void
+  activeSessionId: string | null
+  onOpenConversation: (id: string) => void
 }
 
 // Clasificación ligera de un nodo → icono + etiqueta de tipo.
@@ -57,7 +61,7 @@ function fmtDate(iso?: string): string {
   try { return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' }) } catch { return '' }
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation }: Props) {
   useStore()
   const chat = useAIChat()
   const [today, setToday] = useState<Node | null>(() => store.todayDiary())
@@ -125,8 +129,26 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
     { id: 'hoy', label: 'Hoy' },
   ]
 
+  // Arrastrar el borde izquierdo para ensanchar/estrechar la columna derecha.
+  const startResize = (e: React.PointerEvent) => {
+    e.preventDefault()
+    const onMove = (ev: PointerEvent) => {
+      const w = Math.min(900, Math.max(320, window.innerWidth - ev.clientX))
+      onResize(w)
+    }
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      document.body.style.userSelect = ''
+    }
+    document.body.style.userSelect = 'none'
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+  }
+
   return (
     <aside className="v2-col v2-right">
+      <div className="v2-resize-handle" onPointerDown={startResize} title="Arrastra para ensanchar" />
       <div className="v2-right-tabs">
         {tabs.map(tb => (
           <button
@@ -178,7 +200,9 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
         {mode === 'contexto' && (
           selectedCtxId
             ? <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} />
-            : <div className="v2-right-empty">Elige un contexto en la izquierda para ver qué sabe Fromly de él y su contenido.</div>
+            : activeSessionId
+              ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
+              : <div className="v2-right-empty">Elige un contexto a la izquierda, o empieza una conversación: aquí verás sus tareas y elementos.</div>
         )}
 
         {mode === 'historial' && (
@@ -194,7 +218,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
                 className="v2-el-row"
                 key={it.node.id}
                 style={it.isChat && chat.sessionId === it.node.id ? { background: 'var(--accent-soft)' } : undefined}
-                onClick={() => (it.isChat ? aiChatStore.loadSession(it.node.id) : onOpenNode(it.node.id))}
+                onClick={() => (it.isChat ? onOpenConversation(it.node.id) : onOpenNode(it.node.id))}
               >
                 <span className="v2-el-icon">{it.icon}</span>
                 <span className="v2-el-main">

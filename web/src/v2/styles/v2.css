@@ -29,7 +29,10 @@
 }
 .v2-sidebar { background: var(--bg-tertiary); border-right: 1px solid var(--border); }
 .v2-center  { background: var(--bg-primary); }
-.v2-right   { background: var(--bg-secondary); border-left: 1px solid var(--border); }
+.v2-right   { background: var(--bg-secondary); border-left: 1px solid var(--border); position: relative; }
+/* Tirador para redimensionar la columna derecha (arrastrar el borde izquierdo). */
+.v2-resize-handle { position: absolute; left: -3px; top: 0; bottom: 0; width: 7px; cursor: col-resize; z-index: 30; }
+.v2-resize-handle:hover { background: var(--accent-soft); }
 
 /* ── Sidebar (contextos = proyectos) ───────────────────────────────── */
 .v2-sidebar-head {
@@ -252,6 +255,10 @@
   line-height: 1.5; color: var(--text-primary); background: var(--bg-primary); outline: none;
 }
 .v2-know-area:focus { border-color: var(--accent); }
+.v2-ctx-add-select {
+  font-size: 12px; font-family: inherit; padding: 5px 8px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer;
+}
 
 /* ── Vista de detalle (visor/editor en la columna derecha) ─────────── */
 .v2-detail-head {
