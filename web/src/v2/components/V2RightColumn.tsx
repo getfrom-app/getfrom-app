@@ -82,20 +82,38 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
     return list.slice(0, 100)
   }, [store.nodesVersion, chat.sessionId, selectedCtxId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Contenido existente del contexto presentado COMO conversaciones (semilla para empezar).
-  // No son chats reales; clic → inicia una conversación centrada en ese contenido.
-  const ctxSeeds = useMemo(() => {
-    if (!selectedCtxId) return [] as Node[]
-    return nodesInContext(selectedCtxId)
-      .filter(n => {
-        const ed = parseExtraData(n.extraData)
-        if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) return false
-        if (ed._ctx === '1') return false // no los subcontextos
-        return !!n.text
-      })
-      .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
-      .slice(0, 100)
+  // Contenido del contexto para el Historial: NOTAS/DOCUMENTOS, ARCHIVOS (PDF/imagen)
+  // y ENLACES. Se combinan con las conversaciones en una sola lista. (Tareas y eventos
+  // NO — esos viven en Contexto/Hoy.)
+  const contentItems = useMemo(() => {
+    const src = selectedCtxId ? nodesInContext(selectedCtxId) : store.allActive()
+    const items: { node: Node; icon: string; label: string; isChat: false }[] = []
+    for (const n of src) {
+      if (!n.text) continue
+      const ed = parseExtraData(n.extraData)
+      if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) continue
+      if (ed._ctx === '1') continue // subcontextos
+      if (n.status != null || (n.types || []).includes('tarea')) continue // tareas
+      if ((n.types || []).includes('evento') || n.isEvent) continue // eventos
+      const rt = (n.resourceType || '').toLowerCase()
+      let icon = '📝', label = 'Nota'
+      if (n.isResource || n.resourceType) {
+        if (rt.includes('pdf')) { icon = '📄'; label = 'PDF' }
+        else if (rt.includes('image') || rt.includes('img')) { icon = '🖼'; label = 'Imagen' }
+        else { icon = '🔗'; label = 'Enlace' }
+      } else if (ed._doc === '1') { label = 'Documento' } else if (Array.isArray(ed._audios)) { icon = '🎙'; label = 'Audio' }
+      items.push({ node: n, icon, label, isChat: false })
+    }
+    return items
   }, [store.nodesVersion, selectedCtxId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Lista COMBINADA del Historial: conversaciones + notas + archivos + enlaces, por reciente.
+  const historyItems = useMemo(() => {
+    const chats = sessions.map(s => ({ node: s, icon: '💬', label: 'Conversación', isChat: true as const }))
+    const merged = [...chats, ...contentItems]
+    merged.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
+    return merged.slice(0, 200)
+  }, [sessions, contentItems])
 
   const tabs: { id: RightMode; label: string }[] = [
     { id: 'contexto', label: 'Contexto' },
@@ -150,46 +168,25 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
               <span className="v2-el-main"><span className="v2-el-title">Nueva conversación{selectedCtxId ? ' en este contexto' : ''}</span></span>
             </div>
 
-            {/* Conversaciones reales */}
-            {sessions.length > 0 && (
-              <div className="v2-section-label" style={{ padding: '12px 0 4px' }}>Conversaciones</div>
-            )}
-            {sessions.map(s => (
+            {/* Lista combinada: conversaciones + notas + documentos + archivos + enlaces */}
+            {historyItems.map(it => (
               <div
                 className="v2-el-row"
-                key={s.id}
-                style={chat.sessionId === s.id ? { background: 'var(--accent-soft)' } : undefined}
-                onClick={() => aiChatStore.loadSession(s.id)}
+                key={it.node.id}
+                style={it.isChat && chat.sessionId === it.node.id ? { background: 'var(--accent-soft)' } : undefined}
+                onClick={() => (it.isChat ? aiChatStore.loadSession(it.node.id) : onOpenNode(it.node.id))}
               >
+                <span className="v2-el-icon">{it.icon}</span>
                 <span className="v2-el-main">
-                  <span className="v2-el-title">{(s.text || 'Conversación').replace(/^✦\s*/, '') || 'Conversación'}</span>
-                  <span className="v2-el-meta">{fmtDate(s.updatedAt)}</span>
+                  <span className="v2-el-title">{(it.node.text || it.label).replace(/^✦\s*/, '') || it.label}</span>
+                  <span className="v2-el-meta">{it.label} · {fmtDate(it.node.updatedAt)}</span>
                 </span>
               </div>
             ))}
 
-            {/* Contenido existente como conversaciones (semilla para empezar) */}
-            {selectedCtxId && ctxSeeds.length > 0 && (
-              <>
-                <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>Empezar desde tu contenido</div>
-                {ctxSeeds.map(n => {
-                  const c = classify(n)
-                  return (
-                    <div className="v2-el-row" key={n.id} onClick={() => onStartAbout(n.id)} title="Empezar una conversación sobre esto">
-                      <span className="v2-el-icon">{c.icon}</span>
-                      <span className="v2-el-main">
-                        <span className="v2-el-title">{n.text}</span>
-                        <span className="v2-el-meta">{c.label} · abrir como conversación</span>
-                      </span>
-                    </div>
-                  )
-                })}
-              </>
-            )}
-
-            {sessions.length === 0 && ctxSeeds.length === 0 && (
+            {historyItems.length === 0 && (
               <div className="v2-right-empty">
-                {selectedCtxId ? 'Este contexto no tiene conversaciones ni contenido todavía.' : 'Aún no hay conversaciones. Empieza a hablar con Fromly.'}
+                {selectedCtxId ? 'Este contexto no tiene conversaciones ni contenido todavía.' : 'Aún no hay nada. Empieza a hablar con Fromly.'}
               </div>
             )}
           </div>

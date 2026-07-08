@@ -33,6 +33,7 @@ export async function executeChatAction(
   const name = (action.action as string) || ''
   switch (name) {
     case 'create_note':    return createNote(action, sessionId, currentNodeId)
+    case 'create_document':return createDocument(action, sessionId, currentNodeId)
     case 'create_task':    return createTask(action, sessionId, currentNodeId)
     case 'create_event':   return createEvent(action, sessionId)
     case 'update_node':    return updateNode(action)
@@ -96,6 +97,49 @@ function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeI
   }
   const tagPart = tags.length > 0 ? ` con tags #${tags.join(' #')}` : ''
   return result('create_note', true, `Nota «${text}» creada${tagPart}.`, [created.id])
+}
+
+/** Markdown ligero → HTML para el body de un documento (`_doc`). El usuario lo
+ *  refina luego en el editor. Cubre encabezados, viñetas, negrita/cursiva y párrafos. */
+function mdToHtml(md: string): string {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const inline = (s: string) => esc(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>')
+  const out: string[] = []
+  let inList = false
+  const closeList = () => { if (inList) { out.push('</ul>'); inList = false } }
+  for (const raw of md.split('\n')) {
+    const line = raw.trimEnd()
+    if (!line.trim()) { closeList(); continue }
+    const h = line.match(/^(#{1,3})\s+(.*)$/)
+    if (h) { closeList(); const lvl = h[1].length; out.push(`<h${lvl}>${inline(h[2])}</h${lvl}>`); continue }
+    const li = line.match(/^\s*[-*•]\s+(.*)$/)
+    if (li) { if (!inList) { out.push('<ul>'); inList = true } out.push(`<li>${inline(li[1])}</li>`); continue }
+    closeList()
+    out.push(`<p>${inline(line)}</p>`)
+  }
+  closeList()
+  return out.join('') || '<p></p>'
+}
+
+/** create_document — crea un DOCUMENTO (`_doc`): su contenido vive en el body (HTML).
+ *  Es la excepción a «la IA nunca escribe body»: un documento ES su body. Se abre
+ *  editable en la columna derecha (artifact). */
+function createDocument(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
+  const title = cleanNodeTitle((a.text as string) || (a.title as string) || 'Documento')
+  const content = ((a.body as string) || (a.content as string) || '').trim()
+  const tags = (a.tags as string[]) || []
+  const rawParent = (a.parent_id as string | undefined) || null
+  const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
+  const created = store.createNode({
+    text: title,
+    parentId: explicitParent ?? sessionId ?? currentNodeId ?? null,
+    types: tags,
+    extraData: { _doc: '1' },
+  })
+  store.updateNode(created.id, { body: mdToHtml(content) })
+  return result('create_document', true, `Documento «${title}» creado.`, [created.id])
 }
 
 function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
