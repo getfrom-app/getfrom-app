@@ -2054,5 +2054,9 @@
   "dayNav.prevMonth": "Föregående månad",
   "dayNav.nextMonth": "Nästa månad",
   "dayNav.prevYear": "Föregående år",
-  "dayNav.nextYear": "Nästa år"
+  "dayNav.nextYear": "Nästa år",
+  "ctxPanel.archive": "Arkivera",
+  "ctxPanel.unarchive": "Återställ",
+  "ctxPanel.subcontexts": "Underkontexter",
+  "ctxPanel.archivedPlural": "Arkiverade"
 }

@@ -56,28 +56,23 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* (Breadcrumb del panel retirado: ya existe el breadcrumb general de la página.) */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 88px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-        {/* Estado abierto / cerrado — SOLO subcontextos (con contexto padre).
-            Los contextos RAÍZ son entidad superior: sin estado. */}
+        {/* Archivar — SOLO subcontextos (con contexto padre). Sustituye a
+            abierto/cerrado: archivado = fuera del árbol pero buscable + en el RAG.
+            Los contextos RAÍZ (áreas) son entidad superior: no se archivan. */}
         {contextParent(nodeId) && (() => {
-          const st = contextState(node)
-          const seg = (label: string, value: 'open' | 'closed', dot: string) => (
-            <button key={value} onClick={() => setContextState(nodeId, value)} title={label}
-              style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                padding: '6px 8px', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: st === value ? 600 : 500,
-                color: st === value ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                background: st === value ? color + '20' : 'transparent', border: 'none',
-                borderLeft: value !== 'open' ? `1px solid ${color}33` : 'none' }}>
-              <span style={{ width: 7, height: 7, borderRadius: '50%', background: dot, flexShrink: 0 }} />
-              {label}
-            </button>
-          )
+          const archived = contextState(node) === 'closed'
           return (
             <div>
-              <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('ctxPanel.state')}</div>
-              <div style={{ display: 'flex', borderRadius: 999, border: `1px solid ${color}40`, overflow: 'hidden', background: color + '0a' }}>
-                {seg(t('ctxPanel.open'), 'open', '#16a34a')}
-                {seg(t('ctxPanel.closed'), 'closed', 'var(--text-tertiary)')}
-              </div>
+              <button
+                onClick={() => setContextState(nodeId, archived ? 'open' : 'closed')}
+                title={archived ? t('ctxPanel.unarchive') : t('ctxPanel.archive')}
+                style={{ width: '100%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  padding: '7px 10px', cursor: 'pointer', font: 'inherit', fontSize: 12.5, fontWeight: 500,
+                  color: archived ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  background: archived ? color + '20' : 'transparent',
+                  border: `1px solid ${color}40`, borderRadius: 8 }}>
+                {archived ? '↩︎ ' + t('ctxPanel.unarchive') : '🗄 ' + t('ctxPanel.archive')}
+              </button>
             </div>
           )
         })()}
@@ -233,13 +228,13 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {abiertos.length > 0 && (
                 <div className="dc-group">
-                  <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('ctxPanel.subcontextsOpen')} · {abiertos.length}</div>
+                  <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('ctxPanel.subcontexts')} · {abiertos.length}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{abiertos.map(c => ctxRow(c, false))}</div>
                 </div>
               )}
               {cerrados.length > 0 && (
                 <div className="dc-group">
-                  <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('ctxPanel.closedPlural')} · {cerrados.length}</div>
+                  <div className="rc-section-label" style={{ marginBottom: 6 }}>{t('ctxPanel.archivedPlural')} · {cerrados.length}</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>{cerrados.map(c => ctxRow(c, true))}</div>
                 </div>
               )}

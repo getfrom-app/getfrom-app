@@ -2054,5 +2054,9 @@
   "dayNav.prevMonth": "Önceki ay",
   "dayNav.nextMonth": "Sonraki ay",
   "dayNav.prevYear": "Önceki yıl",
-  "dayNav.nextYear": "Sonraki yıl"
+  "dayNav.nextYear": "Sonraki yıl",
+  "ctxPanel.archive": "Arşivle",
+  "ctxPanel.unarchive": "Arşivden çıkar",
+  "ctxPanel.subcontexts": "Alt bağlamlar",
+  "ctxPanel.archivedPlural": "Arşivlenmiş"
 }

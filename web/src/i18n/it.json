@@ -2054,5 +2054,9 @@
   "dayNav.prevMonth": "Mese precedente",
   "dayNav.nextMonth": "Mese successivo",
   "dayNav.prevYear": "Anno precedente",
-  "dayNav.nextYear": "Anno successivo"
+  "dayNav.nextYear": "Anno successivo",
+  "ctxPanel.archive": "Archivia",
+  "ctxPanel.unarchive": "Ripristina",
+  "ctxPanel.subcontexts": "Sottocontesti",
+  "ctxPanel.archivedPlural": "Archiviati"
 }

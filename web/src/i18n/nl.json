@@ -2054,5 +2054,9 @@
   "dayNav.prevMonth": "Vorige maand",
   "dayNav.nextMonth": "Volgende maand",
   "dayNav.prevYear": "Vorig jaar",
-  "dayNav.nextYear": "Volgend jaar"
+  "dayNav.nextYear": "Volgend jaar",
+  "ctxPanel.archive": "Archiveren",
+  "ctxPanel.unarchive": "Herstellen",
+  "ctxPanel.subcontexts": "Subcontexten",
+  "ctxPanel.archivedPlural": "Gearchiveerd"
 }

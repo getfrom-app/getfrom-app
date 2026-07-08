@@ -2054,5 +2054,9 @@
   "dayNav.prevMonth": "Προηγούμενος μήνας",
   "dayNav.nextMonth": "Επόμενος μήνας",
   "dayNav.prevYear": "Προηγούμενο έτος",
-  "dayNav.nextYear": "Επόμενο έτος"
+  "dayNav.nextYear": "Επόμενο έτος",
+  "ctxPanel.archive": "Αρχειοθέτηση",
+  "ctxPanel.unarchive": "Επαναφορά",
+  "ctxPanel.subcontexts": "Υποπλαίσια",
+  "ctxPanel.archivedPlural": "Αρχειοθετημένα"
 }

@@ -2054,5 +2054,9 @@
   "dayNav.prevMonth": "Предыдущий месяц",
   "dayNav.nextMonth": "Следующий месяц",
   "dayNav.prevYear": "Предыдущий год",
-  "dayNav.nextYear": "Следующий год"
+  "dayNav.nextYear": "Следующий год",
+  "ctxPanel.archive": "Архивировать",
+  "ctxPanel.unarchive": "Разархивировать",
+  "ctxPanel.subcontexts": "Подконтексты",
+  "ctxPanel.archivedPlural": "В архиве"
 }
