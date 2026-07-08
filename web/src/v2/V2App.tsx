@@ -18,7 +18,7 @@ export default function V2App() {
   useStore()
   const [ready, setReady] = useState(store.isLoaded)
   const [selectedCtxId, setSelectedCtxId] = useState<string | null>(null)
-  const [rightMode, setRightMode] = useState<RightMode>('contexto')
+  const [rightMode, setRightMode] = useState<RightMode>('hoy')
   const [droppedFiles, setDroppedFiles] = useState<File[]>([])
 
   // Arranque del motor SOLO si la v1 no lo cargó ya en esta sesión SPA.

@@ -1,13 +1,19 @@
-// Columna derecha contextual de Fromly 2.0 — 3 modos.
-// Contexto: qué sabe Fromly del contexto activo + sus miembros.
+// Columna derecha contextual de Fromly 2.0 — 4 modos.
+// Contexto:  qué sabe Fromly del contexto activo + sus miembros.
 // Elementos: buscador global de todo lo guardado (notas, tareas, archivos…).
-// Hoy: tareas y eventos del día (reusa todayDiary del motor).
-import { useMemo, useState } from 'react'
+// Historial: lista de conversaciones (chats) — clic retoma la conversación.
+// Hoy:       columna de referencia del día REAL de la v1 (DayColumn):
+//            eventos de Google Calendar, atrasadas, para hoy, bucles abiertos.
+import { useEffect, useMemo, useState } from 'react'
 import { useStore, store } from '../../store/nodeStore'
+import { useAIChat, aiChatStore } from '../../store/aiChatStore'
 import { readContextKnowledge, nodesInContext, contextColor } from '../../utils/cajones'
+import { parseExtraData } from '../../utils/papeleraHelper'
+import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
+import DayColumn from '../../components/panels/DayColumn'
 import type { Node } from '../../types'
 
-export type RightMode = 'contexto' | 'elementos' | 'hoy'
+export type RightMode = 'contexto' | 'elementos' | 'historial' | 'hoy'
 
 interface Props {
   mode: RightMode
@@ -39,44 +45,63 @@ function fileIcon(f: File): string {
   return '📎'
 }
 
+function fmtDate(iso?: string): string {
+  if (!iso) return ''
+  try { return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' }) } catch { return '' }
+}
+
 export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode }: Props) {
   useStore()
+  const chat = useAIChat()
   const [query, setQuery] = useState('')
+  const [today, setToday] = useState<Node | null>(() => store.todayDiary())
 
-  // ── Datos Elementos (buscador global) ──
+  // La nota de hoy se garantiza SOLO al abrir «Hoy» (no al arrancar el shell).
+  useEffect(() => {
+    if (mode === 'hoy' && !today) {
+      try { setToday(getTodayDiaryUnderAgenda()) } catch { /* noop */ }
+    }
+  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Elementos (buscador global) ──
   const elements = useMemo(() => {
-    const all = store.allActive()
     const q = query.trim().toLowerCase()
-    const filtered = all.filter(n => {
-      if (!n.text) return false
-      if (n.isChat) return false
+    const filtered = store.allActive().filter(n => {
+      if (!n.text || n.isChat) return false
+      const ed = parseExtraData(n.extraData)
+      if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) return false
       if (q && !n.text.toLowerCase().includes(q)) return false
       return true
     })
-    // Orden por recientes.
     filtered.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
     return filtered.slice(0, 200)
   }, [query, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Datos Hoy ──
-  const today = store.todayDiary()
-  const todayItems: Node[] = useMemo(() => {
-    if (!today) return []
-    const kids = store.children(today.id).filter(n => !n.deletedAt)
-    return kids
-  }, [today?.id, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  // ── Historial (conversaciones) ──
+  const sessions = useMemo(() => {
+    const list = store.allActive().filter(n => parseExtraData(n.extraData)._aiSession === '1')
+    list.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
+    return list.slice(0, 100)
+  }, [store.nodesVersion, chat.sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Datos Contexto ──
+  // ── Contexto ──
   const ctxKnowledge = selectedCtxId ? readContextKnowledge(selectedCtxId) : ''
   const ctxMembers = selectedCtxId ? nodesInContext(selectedCtxId).slice(0, 100) : []
   const ctxNode = selectedCtxId ? store.getNode(selectedCtxId) : null
 
+  const tabs: { id: RightMode; label: string }[] = [
+    { id: 'contexto', label: 'Contexto' },
+    { id: 'elementos', label: 'Elementos' },
+    { id: 'historial', label: 'Historial' },
+    { id: 'hoy', label: 'Hoy' },
+  ]
+
   return (
     <aside className="v2-col v2-right">
       <div className="v2-right-tabs">
-        <button className={`v2-right-tab ${mode === 'contexto' ? 'active' : ''}`} onClick={() => onMode('contexto')}>Contexto</button>
-        <button className={`v2-right-tab ${mode === 'elementos' ? 'active' : ''}`} onClick={() => onMode('elementos')}>Elementos</button>
-        <button className={`v2-right-tab ${mode === 'hoy' ? 'active' : ''}`} onClick={() => onMode('hoy')}>Hoy</button>
+        {tabs.map(tb => (
+          <button key={tb.id} className={`v2-right-tab ${mode === tb.id ? 'active' : ''}`} onClick={() => onMode(tb.id)}>{tb.label}</button>
+        ))}
       </div>
 
       <div className="v2-right-body">
@@ -148,23 +173,35 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
           </div>
         )}
 
-        {mode === 'hoy' && (
+        {mode === 'historial' && (
           <div>
-            <div className="v2-section-label" style={{ padding: '0 0 8px' }}>
-              {today ? new Date().toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'long' }) : 'Hoy'}
+            <div className="v2-el-meta" style={{ marginBottom: 8 }}>{sessions.length} conversación(es)</div>
+            <div className="v2-el-row" onClick={() => aiChatStore.startNewSession()} style={{ color: 'var(--text-accent)', fontWeight: 600 }}>
+              <span className="v2-el-icon">＋</span>
+              <span className="v2-el-main"><span className="v2-el-title">Nueva conversación</span></span>
             </div>
-            {!today && <div className="v2-right-empty">Aún no hay nota de hoy. Escribe algo en el chat y aparecerá.</div>}
-            {today && todayItems.length === 0 && <div className="v2-right-empty">Nada para hoy todavía.</div>}
-            {todayItems.map(n => {
-              const c = classify(n)
-              return (
-                <div className="v2-el-row" key={n.id} onClick={() => onOpenNode(n.id)}>
-                  <span className="v2-el-icon">{c.icon}</span>
-                  <span className="v2-el-main"><span className="v2-el-title">{n.text}</span><span className="v2-el-meta">{c.label}{n.due ? ' · ' + n.due.slice(0, 10) : ''}</span></span>
-                </div>
-              )
-            })}
+            {sessions.map(s => (
+              <div
+                className="v2-el-row"
+                key={s.id}
+                style={chat.sessionId === s.id ? { background: 'var(--accent-soft)' } : undefined}
+                onClick={() => aiChatStore.loadSession(s.id)}
+              >
+                <span className="v2-el-icon">✦</span>
+                <span className="v2-el-main">
+                  <span className="v2-el-title">{s.text || 'Conversación'}</span>
+                  <span className="v2-el-meta">{fmtDate(s.updatedAt)}</span>
+                </span>
+              </div>
+            ))}
+            {sessions.length === 0 && <div className="v2-right-empty">Aún no hay conversaciones. Empieza a hablar con Fromly.</div>}
           </div>
+        )}
+
+        {mode === 'hoy' && (
+          today
+            ? <DayColumn node={today} includeNodes={false} />
+            : <div className="v2-right-empty">Preparando la columna de hoy…</div>
         )}
       </div>
     </aside>
