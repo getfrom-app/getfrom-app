@@ -59,10 +59,23 @@ export default function V2App() {
     setRightMode(id ? 'contexto' : 'hoy')
   }
 
+  // Botón «Nueva conversación» (barra izquierda) → SIEMPRE sin contexto (General).
   const onNewChat = () => {
+    setSelectedCtxId(null)
     setFocusNodeId(null)
     setDetailNodeId(null)
     setRightMode('contexto') // durante una conversación, la derecha muestra su panel
+    aiChatStore.startNewSession()
+  }
+
+  // «＋» al pasar el ratón sobre un contexto → nueva conversación DENTRO de ese contexto.
+  // Al escribir el 1er mensaje, send() la vincula al contexto (assignContext) → sale en
+  // su Historial y su ficha.
+  const onNewChatInCtx = (id: string) => {
+    setSelectedCtxId(id)
+    setFocusNodeId(null)
+    setDetailNodeId(null)
+    setRightMode('contexto')
     aiChatStore.startNewSession()
   }
 
@@ -187,7 +200,7 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} />
       <V2Chat
         currentNodeId={currentNodeId}
         contextLabel={contextLabel}

@@ -19,6 +19,7 @@ import { executeChatAction } from './aiChatExecutor'
 import { resolveTemplateCodes } from '../utils/templateCodes'
 import { learningsStore } from './learningsStore'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
+import { assignContext, isRootContext, isMarkedContext } from '../utils/cajones'
 import { resolvePrompt } from '../utils/promptsHelper'
 import { isContextKnowledge } from '../utils/knowledgeNodes'
 import { extractUserKnowledge } from '../api/autoClassify'
@@ -288,6 +289,14 @@ class AIChatStore {
 
     if (!this.sessionId) {
       this.sessionId = this.createSessionNode(trimmed)
+      // Si la conversación nace DENTRO de un contexto (currentNodeId es un contexto,
+      // no un nodo cualquiera enfocado), vincúlala a él → aparece en su Historial/ficha.
+      if (currentNodeId) {
+        const cn = store.getNode(currentNodeId)
+        if (cn && (isRootContext(currentNodeId) || isMarkedContext(cn))) {
+          try { assignContext(this.sessionId, currentNodeId) } catch { /* noop */ }
+        }
+      }
     }
     const sid = this.sessionId
 

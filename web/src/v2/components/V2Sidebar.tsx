@@ -12,6 +12,7 @@ interface Props {
   selectedCtxId: string | null
   onSelectCtx: (id: string | null) => void
   onNewChat: () => void
+  onNewChatInCtx: (id: string) => void
 }
 
 // Ordena por nombre (ignorando emoji/espacios iniciales), estable.
@@ -26,7 +27,7 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx }: Props) {
   useStore()
   const user = useUserStore()
   const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
@@ -75,6 +76,11 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat }: Pro
           >
             <span className="v2-ctx-dot" style={{ background: contextColor(currentParent.id) }} />
             <span className="v2-el-title" style={{ fontWeight: 600 }}>{currentParent.text || 'Contexto'}</span>
+            <button
+              className="v2-ctx-add"
+              title="Nueva conversación en este contexto"
+              onClick={(e) => { e.stopPropagation(); onNewChatInCtx(currentParent.id) }}
+            >＋</button>
           </div>
         ) : (
           <div
@@ -98,6 +104,11 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat }: Pro
             >
               <span className="v2-ctx-dot" style={{ background: contextColor(c.id) }} />
               <span className="v2-el-title">{c.text || 'Sin título'}</span>
+              <button
+                className="v2-ctx-add"
+                title="Nueva conversación en este contexto"
+                onClick={(e) => { e.stopPropagation(); onNewChatInCtx(c.id) }}
+              >＋</button>
               {hasSubs && <span className="v2-ctx-count">›</span>}
             </div>
           )

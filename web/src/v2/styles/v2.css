@@ -69,6 +69,17 @@
 .v2-ctx-row .v2-ctx-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--accent); }
 .v2-ctx-row.child { padding-left: 30px; font-size: 12.5px; }
 .v2-ctx-count { margin-left: auto; font-size: 11px; color: var(--text-tertiary); }
+/* «＋» de nueva conversación en un contexto — solo al pasar el ratón por la fila. */
+.v2-ctx-add {
+  margin-left: auto; display: none; flex: 0 0 auto;
+  align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; border: none; border-radius: 5px;
+  background: transparent; color: var(--text-tertiary); cursor: pointer;
+  font-size: 15px; line-height: 1;
+}
+.v2-ctx-row:hover .v2-ctx-add { display: inline-flex; }
+.v2-ctx-add + .v2-ctx-count { margin-left: 4px; }
+.v2-ctx-add:hover { background: var(--accent-soft); color: var(--text-accent); }
 
 /* Conversaciones dentro del contexto */
 .v2-conv-row {
@@ -92,7 +103,8 @@
   height: 48px; flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
   padding: 0 16px; border-bottom: 1px solid var(--border);
 }
-.v2-center-title { font-weight: 600; font-size: 14px; }
+.v2-center-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.v2-center-ctx { color: var(--text-tertiary); font-weight: 500; }
 .v2-center-sub { color: var(--text-tertiary); font-size: 12px; }
 .v2-iconbtn {
   background: transparent; border: none; color: var(--text-secondary);

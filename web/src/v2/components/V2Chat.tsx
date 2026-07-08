@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAIChat, aiChatStore } from '../../store/aiChatStore'
 import type { ChatMessage } from '../../store/aiChatStore'
-import { useStore } from '../../store/nodeStore'
+import { store, useStore } from '../../store/nodeStore'
 
 interface Props {
   currentNodeId: string | null
@@ -79,6 +79,13 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
 
   const isEmpty = messages.length === 0
 
+  // Título de la CABECERA: cuando hay conversación, su título (el mismo que el Historial:
+  // ✦ + primer mensaje → luego auto-título IA). Sin conversación: «Nueva conversación»
+  // (+ contexto si hay uno seleccionado). El contexto va como prefijo tenue.
+  const hasCtx = !!contextLabel && contextLabel !== 'General'
+  const sessionNode = chat.sessionId ? store.getNode(chat.sessionId) : null
+  const convTitle = sessionNode ? (sessionNode.text || '').replace(/^✦\s*/, '').trim() : ''
+
   return (
     <main
       className="v2-col v2-center"
@@ -88,7 +95,10 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
       style={{ position: 'relative' }}
     >
       <div className="v2-center-head">
-        <span className="v2-center-title">{chat.sessionId ? contextLabel : 'Nueva conversación'}</span>
+        <span className="v2-center-title">
+          {hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}
+          {chat.sessionId ? (convTitle || 'Conversación') : 'Nueva conversación'}
+        </span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
           {/* Crear contenido sin pasar por el chat: documento o nota de voz. */}
           <button className="v2-head-action" title="Nuevo documento" onClick={onNewDocument}>＋ Documento</button>
