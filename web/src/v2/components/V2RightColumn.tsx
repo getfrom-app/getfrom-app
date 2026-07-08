@@ -15,6 +15,7 @@ import ElementsPanel from '../../components/panels/ElementsPanel'
 import V2ContextView from './V2ContextView'
 import V2ConversationView from './V2ConversationView'
 import V2DetailView from './V2DetailView'
+import { classifyElement } from '../elementKind'
 import type { Node } from '../../types'
 
 export type RightMode = 'contexto' | 'elementos' | 'historial' | 'hoy'
@@ -61,24 +62,11 @@ function fmtDate(iso?: string): string {
   try { return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' }) } catch { return '' }
 }
 
-// Clasifica un nodo como ELEMENTO de historial (nota/documento/pdf/imagen/audio/enlace),
-// o null si no lo es (tarea, evento, sesión, transcripción, mensaje, subcontexto).
+// Clasifica un nodo como ELEMENTO de historial (documento/nota/pdf/imagen/enlace/audio).
+// Usa el clasificador compartido (alineado con la v1: detecta enlaces por isResource/
+// extraData._resourceUrl/_resource, no solo por resourceType).
 function classifyContent(n: Node): { icon: string; label: string } | null {
-  if (n.deletedAt || !n.text) return null
-  const ed = parseExtraData(n.extraData)
-  if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) return null
-  if (ed._ctx === '1') return null
-  if (n.status != null || (n.types || []).includes('tarea')) return null
-  if ((n.types || []).includes('evento') || n.isEvent) return null
-  const rt = (n.resourceType || '').toLowerCase()
-  if (n.isResource || n.resourceType) {
-    if (rt.includes('pdf')) return { icon: '📄', label: 'PDF' }
-    if (rt.includes('image') || rt.includes('img')) return { icon: '🖼', label: 'Imagen' }
-    return { icon: '🔗', label: 'Enlace' }
-  }
-  if (ed._doc === '1') return { icon: '📝', label: 'Documento' }
-  if (Array.isArray(ed._audios)) return { icon: '🎙', label: 'Audio' }
-  return { icon: '📝', label: 'Nota' }
+  return classifyElement(n)
 }
 
 export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation }: Props) {

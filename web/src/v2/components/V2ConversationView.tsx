@@ -5,7 +5,7 @@
 import { useMemo } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { listMarkedContexts, isRootContext, assignContext, nodeCtxRefs, contextColor } from '../../utils/cajones'
-import { parseExtraData } from '../../utils/papeleraHelper'
+import { classifyElement } from '../elementKind'
 import Outliner from '../../components/outliner/Outliner'
 import type { Node } from '../../types'
 
@@ -30,23 +30,12 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
     return s
   }, [sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Elementos incluidos en la conversación (contenido, no tareas ni transcripción).
+  // Elementos incluidos en la conversación (documentos, notas, PDF, imágenes, audios, enlaces).
   const elements = useMemo(() => {
     const out: { node: Node; icon: string; label: string }[] = []
     for (const n of store.children(sessionId)) {
-      if (n.deletedAt || !n.text) continue
-      const ed = parseExtraData(n.extraData)
-      if (ed._aiTranscript === '1' || ed._aiMsgRole) continue
-      if (n.status != null || (n.types || []).includes('tarea')) continue
-      if ((n.types || []).includes('evento') || n.isEvent) continue
-      const rt = (n.resourceType || '').toLowerCase()
-      let icon = '📝', label = 'Nota'
-      if (n.isResource || n.resourceType) {
-        if (rt.includes('pdf')) { icon = '📄'; label = 'PDF' }
-        else if (rt.includes('image') || rt.includes('img')) { icon = '🖼'; label = 'Imagen' }
-        else { icon = '🔗'; label = 'Enlace' }
-      } else if (ed._doc === '1') { label = 'Documento' } else if (Array.isArray(ed._audios)) { icon = '🎙'; label = 'Audio' }
-      out.push({ node: n, icon, label })
+      const c = classifyElement(n)
+      if (c) out.push({ node: n, icon: c.icon, label: c.label })
     }
     return out
   }, [sessionId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps

@@ -11,6 +11,7 @@ import {
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { isDocNode } from '../../utils/docNode'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
+import { classifyElement } from '../elementKind'
 import Outliner from '../../components/outliner/Outliner'
 import type { Node } from '../../types'
 
@@ -69,20 +70,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
   const elements = useMemo(() => {
     const out: { node: Node; icon: string; label: string }[] = []
     for (const n of store.children(ctxId)) {
-      if (n.deletedAt || !n.text) continue
-      const ed = parseExtraData(n.extraData)
-      if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) continue
-      if (ed._ctx === '1') continue
-      if (n.status != null || (n.types || []).includes('tarea')) continue
-      if ((n.types || []).includes('evento') || n.isEvent) continue
-      const rt = (n.resourceType || '').toLowerCase()
-      if (isDocNode(n) || ed._doc === '1') out.push({ node: n, icon: '📝', label: 'Documento' })
-      else if (n.isResource || n.resourceType) {
-        if (rt.includes('pdf')) out.push({ node: n, icon: '📄', label: 'PDF' })
-        else if (rt.includes('image') || rt.includes('img')) out.push({ node: n, icon: '🖼', label: 'Imagen' })
-        else out.push({ node: n, icon: '🔗', label: 'Enlace' })
-      } else if (Array.isArray(ed._audios)) out.push({ node: n, icon: '🎙', label: 'Audio' })
-      // notas de texto planas → se omiten (las gestiona la migración)
+      const c = classifyElement(n)
+      // documentos/PDF/imágenes/ENLACES/audios; las notas de texto planas se omiten
+      // (las gestiona la migración, para no volver a llenar la columna).
+      if (!c || c.kind === 'note') continue
+      out.push({ node: n, icon: c.icon, label: c.label })
     }
     return out.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
