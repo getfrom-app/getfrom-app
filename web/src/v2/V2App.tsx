@@ -3,24 +3,28 @@
 // No toca la v1. Monta sobre el MISMO motor (stores, sync, auth) de v1.
 // El chat es el centro; la columna derecha reacciona; los contextos = proyectos.
 // ══════════════════════════════════════════════════════════════════════
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { store, useStore } from '../store/nodeStore'
 import { userStore } from '../store/userStore'
-import { aiChatStore } from '../store/aiChatStore'
+import { aiChatStore, useAIChat } from '../store/aiChatStore'
+import { isDocNode } from '../utils/docNode'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2RightColumn, { RightMode } from './components/V2RightColumn'
+import V2DetailView from './components/V2DetailView'
 import './styles/v2.css'
 
 export const V2_VERSION = 'v2.0.0-beta.1'
 
 export default function V2App() {
   useStore()
+  const chat = useAIChat()
   const [ready, setReady] = useState(store.isLoaded)
   const [selectedCtxId, setSelectedCtxId] = useState<string | null>(null)
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
   const [rightMode, setRightMode] = useState<RightMode>('hoy')
   const [droppedFiles, setDroppedFiles] = useState<File[]>([])
+  const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // elemento abierto en la columna derecha
 
   // Arranque del motor SOLO si la v1 no lo cargó ya en esta sesión SPA.
   // NO re-ejecutamos las migraciones estructurales de v1 (algunas destructivas):
@@ -43,11 +47,13 @@ export default function V2App() {
   const onSelectCtx = (id: string | null) => {
     setSelectedCtxId(id)
     setFocusNodeId(null)
+    setDetailNodeId(null)
     setRightMode(id ? 'contexto' : 'hoy')
   }
 
   const onNewChat = () => {
     setFocusNodeId(null)
+    setDetailNodeId(null)
     aiChatStore.startNewSession()
   }
 
@@ -64,9 +70,27 @@ export default function V2App() {
   }
 
   const onOpenNode = (id: string) => {
-    // La v2 aún no tiene vista de detalle propia → abre el nodo en la v1 en otra pestaña.
-    window.open(`/app/node/${id}`, '_blank', 'noopener')
+    // Abre el elemento en la columna derecha (visor/editor según su tipo).
+    setDetailNodeId(id)
   }
+
+  // Artifacts: cuando la IA crea un documento/nota/recurso en una conversación,
+  // se abre solo en la columna derecha (como Claude). Detecta el fin del turno.
+  const prevStreaming = useRef(false)
+  useEffect(() => {
+    if (prevStreaming.current && !chat.isStreaming) {
+      try {
+        const last = [...chat.messages].reverse().find(m => m.role === 'assistant' && m.actions && m.actions.length > 0)
+        const ids: string[] = last ? last.actions.flatMap((a: { createdIds?: string[] }) => a.createdIds || []) : []
+        // Prioriza documentos/recursos; si no, la primera nota creada (no tareas sueltas).
+        const nodes = ids.map(id => store.getNode(id)).filter(Boolean) as ReturnType<typeof store.getNode>[]
+        const artifact = nodes.find(n => !!n && (isDocNode(n) || !!n.isResource))
+          || nodes.find(n => !!n && n.status == null && !n.isEvent)
+        if (artifact) setDetailNodeId(artifact.id)
+      } catch { /* noop */ }
+    }
+    prevStreaming.current = chat.isStreaming
+  }, [chat.isStreaming])  // eslint-disable-line react-hooks/exhaustive-deps
 
   // El ElementsPanel de v1 abre nodos disparando `from:open-detail` (en vez de navegar).
   // Lo escuchamos aquí para abrir el elemento desde el buscador universal.
@@ -93,15 +117,17 @@ export default function V2App() {
     <div className="v2-root">
       <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} />
       <V2Chat currentNodeId={currentNodeId} contextLabel={contextLabel} onFilesDropped={onFilesDropped} />
-      <V2RightColumn
-        mode={rightMode}
-        onMode={setRightMode}
-        selectedCtxId={selectedCtxId}
-        droppedFiles={droppedFiles}
-        onOpenNode={onOpenNode}
-        onStartAbout={onStartAbout}
-        onSelectCtx={onSelectCtx}
-      />
+      {detailNodeId
+        ? <V2DetailView nodeId={detailNodeId} onClose={() => setDetailNodeId(null)} />
+        : <V2RightColumn
+            mode={rightMode}
+            onMode={setRightMode}
+            selectedCtxId={selectedCtxId}
+            droppedFiles={droppedFiles}
+            onOpenNode={onOpenNode}
+            onStartAbout={onStartAbout}
+            onSelectCtx={onSelectCtx}
+          />}
       <div className="v2-beta-bar">Fromly {V2_VERSION} — beta<a href="/app/">volver a v1</a></div>
     </div>
   )
