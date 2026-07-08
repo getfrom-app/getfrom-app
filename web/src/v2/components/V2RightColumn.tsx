@@ -65,7 +65,7 @@ function fmtDate(iso?: string): string {
 // Clasifica un nodo como ELEMENTO de historial (documento/nota/pdf/imagen/enlace/audio).
 // Usa el clasificador compartido (alineado con la v1: detecta enlaces por isResource/
 // extraData._resourceUrl/_resource, no solo por resourceType).
-function classifyContent(n: Node): { icon: string; label: string } | null {
+function classifyContent(n: Node): ReturnType<typeof classifyElement> {
   return classifyElement(n)
 }
 
@@ -112,14 +112,19 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
   }, [sessions, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Elementos SUELTOS (subidos/creados SIN conversación): su padre NO es una sesión.
+  // OJO: excluimos las «notas» de texto plano (bullets del árbol v1) — hay miles y
+  // no son «elementos» del historial. En v2 el contenido suelto nace como DOCUMENTO
+  // (_doc) o RECURSO (archivo/PDF/imagen/enlace/audio); las notas que crea la IA van
+  // anidadas bajo su conversación (bySession), no aquí. Así el Historial global no se
+  // inunda con el vault heredado.
   const standalone = useMemo(() => {
     const sessionIds = new Set(sessions.map(s => s.id))
     const src = selectedCtxId ? nodesInContext(selectedCtxId) : store.allActive()
     const out: { node: Node; icon: string; label: string }[] = []
     for (const n of src) {
       const c = classifyContent(n)
-      if (!c) continue
-      if (n.parentId && sessionIds.has(n.parentId)) continue // pertenece a una conversación
+      if (!c || c.kind === 'note') continue                    // fragmentos/bullets v1 → fuera
+      if (n.parentId && sessionIds.has(n.parentId)) continue   // pertenece a una conversación
       out.push({ node: n, icon: c.icon, label: c.label })
     }
     return out
