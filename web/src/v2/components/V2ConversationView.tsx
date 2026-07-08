@@ -1,15 +1,17 @@
 // Panel de la CONVERSACIÓN activa (tab Contexto cuando hay un chat abierto y no
-// hay contexto seleccionado). Muestra: añadir a contexto, bloque de TAREAS de la
-// conversación (Outliner real; la IA las crea como hijas de la sesión) y los
-// ELEMENTOS incluidos (notas, documentos, PDF, imágenes, audios, enlaces).
-import { useEffect, useMemo, useState } from 'react'
+// hay contexto seleccionado). Muestra: añadir a contexto (buscador tipo v1), bloque
+// de contenido RELACIONADO por significado (RAG), TAREAS de la conversación (estilo
+// v1) y los ELEMENTOS incluidos (notas, documentos, PDF, imágenes, enlaces).
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { useAIChat } from '../../store/aiChatStore'
-import { listMarkedContexts, isRootContext, assignContext, nodeCtxRefs, contextColor } from '../../utils/cajones'
+import { assignContext, nodeCtxRefs, contextColor } from '../../utils/cajones'
+import ContextPicker from '../../components/panels/ContextPicker'
 import { classifyElement } from '../elementKind'
 import { ragRelated } from '../../api/client'
 import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
+import V2ElementRow from './V2ElementRow'
 import type { Node } from '../../types'
 
 interface Props {
@@ -21,14 +23,23 @@ interface Props {
 export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx }: Props) {
   useStore()
   const chat = useAIChat()
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const pickerWrap = useRef<HTMLDivElement>(null)
+
+  // Cerrar el picker al hacer clic fuera.
+  useEffect(() => {
+    if (!pickerOpen) return
+    const onDoc = (e: MouseEvent) => { if (pickerWrap.current && !pickerWrap.current.contains(e.target as HTMLElement)) setPickerOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [pickerOpen])
 
   // MODO PUSH: contenido RELACIONADO por significado del último mensaje del usuario.
-  // Se llena solo (RAG) mientras conversas; excluye lo que ya vive en la conversación.
   const lastUserMsg = useMemo(() => {
     const m = [...chat.messages].reverse().find(x => x.role === 'user')
     return (m?.content || '').trim()
   }, [chat.messages])
-  const [related, setRelated] = useState<{ node: Node; icon: string; label: string }[]>([])
+  const [related, setRelated] = useState<{ node: Node; icon: string }[]>([])
   useEffect(() => {
     if (lastUserMsg.length < 4) { setRelated([]); return }
     let cancelled = false
@@ -36,12 +47,12 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
     const t = setTimeout(() => {
       ragRelated(lastUserMsg, exclude, 6).then(hits => {
         if (cancelled) return
-        const out: { node: Node; icon: string; label: string }[] = []
+        const out: { node: Node; icon: string }[] = []
         for (const h of hits) {
           const n = store.getNode(h.nodeId)
           if (!n || n.deletedAt || !n.text) continue
           const c = classifyElement(n)
-          out.push({ node: n, icon: c?.icon || '📄', label: c?.label || 'Nota' })
+          out.push({ node: n, icon: c?.icon || '📄' })
         }
         setRelated(out)
       }).catch(() => {})
@@ -56,24 +67,22 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
 
   // Elementos incluidos en la conversación (documentos, notas, PDF, imágenes, audios, enlaces).
   const elements = useMemo(() => {
-    const out: { node: Node; icon: string; label: string }[] = []
+    const out: { node: Node; icon: string }[] = []
     for (const n of store.children(sessionId)) {
       const c = classifyElement(n)
-      if (c) out.push({ node: n, icon: c.icon, label: c.label })
+      if (c) out.push({ node: n, icon: c.icon })
     }
     return out
   }, [sessionId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const sessionNode = store.getNode(sessionId)
   const ctxRefs = sessionNode ? nodeCtxRefs(sessionNode) : []
-  const contexts = [
-    ...store.allActive().filter(n => isRootContext(n.id) && !(n.text || '').startsWith('🧠')),
-    ...listMarkedContexts(),
-  ]
 
   return (
     <div>
-      {/* Añadir la conversación a un contexto */}
+      <div className="v2-panel-title">Contexto</div>
+
+      {/* Añadir la conversación a un contexto (buscador con crear, como en v1). */}
       <div className="v2-section-label" style={{ padding: '0 0 6px' }}>Conversación</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
         {ctxRefs.map(id => {
@@ -85,25 +94,25 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
             </button>
           )
         })}
-        <select
-          className="v2-ctx-add-select"
-          value=""
-          onChange={e => { if (e.target.value) assignContext(sessionId, e.target.value) }}
-        >
-          <option value="">＋ Añadir a contexto…</option>
-          {contexts.map(c => <option key={c.id} value={c.id}>{c.text}</option>)}
-        </select>
+        <div className="v2-ctxpick-wrap" ref={pickerWrap}>
+          <button className="v2-ctx-add-btn" onClick={() => setPickerOpen(o => !o)}>＋ Añadir a contexto…</button>
+          {pickerOpen && (
+            <div className="v2-ctxpick-pop">
+              <ContextPicker
+                currentId={null}
+                onPick={id => { if (id) assignContext(sessionId, id); setPickerOpen(false) }}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* MODO PUSH: relacionado por significado (RAG) del último mensaje. */}
       {related.length > 0 && (
         <div style={{ marginBottom: 4 }}>
-          <div className="v2-section-label" style={{ padding: '6px 0 4px' }}>🔗 Relacionado</div>
-          {related.map(({ node: n, icon, label }) => (
-            <div className="v2-el-row" key={n.id} onClick={() => onOpenNode(n.id)} title="Relacionado con lo que hablas">
-              <span className="v2-el-icon">{icon}</span>
-              <span className="v2-el-main"><span className="v2-el-title">{n.text}</span><span className="v2-el-meta">{label}</span></span>
-            </div>
+          <div className="v2-section-label" style={{ padding: '6px 0 4px' }}>Relacionado</div>
+          {related.map(({ node: n, icon }) => (
+            <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} />
           ))}
         </div>
       )}
@@ -115,11 +124,8 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
 
       {/* Elementos de la conversación */}
       <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>Elementos ({elements.length})</div>
-      {elements.map(({ node: n, icon, label }) => (
-        <div className="v2-el-row" key={n.id} onClick={() => onOpenNode(n.id)}>
-          <span className="v2-el-icon">{icon}</span>
-          <span className="v2-el-main"><span className="v2-el-title">{n.text}</span><span className="v2-el-meta">{label}</span></span>
-        </div>
+      {elements.map(({ node: n, icon }) => (
+        <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} hideContext />
       ))}
       {elements.length === 0 && <div className="v2-right-empty" style={{ padding: '8px 0' }}>Sin elementos todavía. Pídele a Fromly una nota, un documento, o sube archivos.</div>}
     </div>

@@ -59,6 +59,12 @@
   display: flex; align-items: center; justify-content: space-between;
 }
 .v2-ctx-list { flex: 1; overflow-y: auto; padding-bottom: 12px; }
+/* Título de panel (Historial / Contexto) — mismo estilo que «ELEMENTOS» del resto de tabs. */
+.v2-panel-title {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text-tertiary); padding: 2px 0 10px;
+}
+.v2-el-active > .v2-el-row { background: var(--accent-soft); }
 .v2-ctx-row {
   display: flex; align-items: center; gap: 8px;
   padding: 7px 14px; cursor: pointer; font-size: 13px; color: var(--text-secondary);
@@ -221,14 +227,22 @@
 
 /* Lista de elementos / recientes */
 .v2-el-row {
-  display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--radius);
+  display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; border-radius: var(--radius);
   cursor: pointer; font-size: 13px; color: var(--text-primary);
 }
 .v2-el-row:hover { background: var(--bg-hover); }
-.v2-el-icon { flex: 0 0 auto; font-size: 15px; width: 20px; text-align: center; }
-.v2-el-main { min-width: 0; flex: 1; }
-.v2-el-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.v2-el-icon { flex: 0 0 auto; font-size: 15px; width: 20px; text-align: center; line-height: 1.4; }
+.v2-el-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+/* Título completo: envuelve a varias líneas, nunca se recorta por la derecha. */
+.v2-el-title { white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+.v2-el-metarow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .v2-el-meta { font-size: 11px; color: var(--text-tertiary); }
+/* Chip de contexto (en vez de la etiqueta de tipo — el icono ya indica el tipo). */
+.v2-el-ctxchip {
+  font-size: 10.5px; font-weight: 600; line-height: 1.4; padding: 1px 7px; border-radius: 999px;
+  color: var(--chip, var(--text-secondary));
+  background: color-mix(in srgb, var(--chip, var(--text-tertiary)) 14%, transparent);
+}
 .v2-el-child { margin-left: 18px; border-left: 1px solid var(--border); padding-left: 12px; }
 .v2-el-child .v2-el-title { font-size: 12.5px; }
 .v2-el-filter { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -284,6 +298,18 @@
 .v2-ctx-add-select {
   font-size: 12px; font-family: inherit; padding: 5px 8px; border-radius: var(--radius);
   border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer;
+}
+/* Añadir a contexto — botón + popover con el buscador ContextPicker de la v1. */
+.v2-ctxpick-wrap { position: relative; }
+.v2-ctx-add-btn {
+  font-size: 12px; font-family: inherit; padding: 5px 10px; border-radius: 999px;
+  border: 1px dashed var(--border); background: transparent; color: var(--text-secondary); cursor: pointer;
+}
+.v2-ctx-add-btn:hover { border-color: var(--accent); color: var(--text-accent); }
+.v2-ctxpick-pop {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; width: 260px;
+  background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.18); padding: 6px;
 }
 
 /* ── Vista de detalle (visor/editor en la columna derecha) ─────────── */

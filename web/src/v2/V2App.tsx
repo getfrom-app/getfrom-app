@@ -14,6 +14,7 @@ import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2RightColumn, { RightMode } from './components/V2RightColumn'
+import RightColMenu from '../components/panels/RightColMenu'
 import { ToastProvider } from '../components/Toast'
 import './styles/v2.css'
 
@@ -187,6 +188,18 @@ export default function V2App() {
     return () => window.removeEventListener('from:open-detail', h as EventListener)
   }, [])
 
+  // Menú contextual (clic derecho) de cualquier fila/elemento → RightColMenu de la v1.
+  // Las filas disparan `from:open-rowmenu` con { nodeId, x, y }.
+  const [rowMenu, setRowMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
+  useEffect(() => {
+    const h = (e: Event) => {
+      const d = (e as CustomEvent).detail
+      if (d?.nodeId) setRowMenu({ nodeId: d.nodeId, x: d.x, y: d.y })
+    }
+    window.addEventListener('from:open-rowmenu', h as EventListener)
+    return () => window.removeEventListener('from:open-rowmenu', h as EventListener)
+  }, [])
+
   // El chat se centra en el nodo enfocado (si hay) o en el contexto seleccionado.
   const currentNodeId = focusNodeId || selectedCtxId
   const focusNode = focusNodeId ? store.getNode(focusNodeId) : null
@@ -223,6 +236,7 @@ export default function V2App() {
         onOpenConversation={onOpenConversation}
       />
       <div className="v2-beta-bar">Fromly {V2_VERSION} — beta<a href="/app/">volver a v1</a></div>
+      {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
     </div>
     </ToastProvider>
   )

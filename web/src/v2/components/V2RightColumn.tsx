@@ -6,7 +6,7 @@
 //            eventos de Google Calendar, atrasadas, para hoy, bucles abiertos.
 import { useEffect, useMemo, useState } from 'react'
 import { useStore, store } from '../../store/nodeStore'
-import { useAIChat, aiChatStore } from '../../store/aiChatStore'
+import { useAIChat } from '../../store/aiChatStore'
 import { nodesInContext } from '../../utils/cajones'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
@@ -15,6 +15,7 @@ import ElementsPanel from '../../components/panels/ElementsPanel'
 import V2ContextView from './V2ContextView'
 import V2ConversationView from './V2ConversationView'
 import V2DetailView from './V2DetailView'
+import V2ElementRow from './V2ElementRow'
 import { classifyElement } from '../elementKind'
 import type { Node } from '../../types'
 
@@ -224,34 +225,20 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
 
         {mode === 'historial' && (
           <div>
-            <div className="v2-el-row" onClick={() => aiChatStore.startNewSession()} style={{ color: 'var(--text-accent)', fontWeight: 600 }}>
-              <span className="v2-el-icon">＋</span>
-              <span className="v2-el-main"><span className="v2-el-title">Nueva conversación{selectedCtxId ? ' en este contexto' : ''}</span></span>
-            </div>
+            <div className="v2-panel-title">Historial</div>
 
             {/* Conversaciones (con sus elementos indentados) + elementos sueltos. */}
             {topLevel.map(it => (
-              <div key={it.node.id}>
-                <div
-                  className="v2-el-row"
-                  style={it.isChat && chat.sessionId === it.node.id ? { background: 'var(--accent-soft)' } : undefined}
-                  onClick={() => (it.isChat ? onOpenConversation(it.node.id) : onOpenNode(it.node.id))}
-                >
-                  <span className="v2-el-icon">{it.icon}</span>
-                  <span className="v2-el-main">
-                    <span className="v2-el-title">{(it.node.text || it.label).replace(/^✦\s*/, '') || it.label}</span>
-                    <span className="v2-el-meta">{it.label} · {fmtDate(it.node.updatedAt)}</span>
-                  </span>
-                </div>
+              <div key={it.node.id} className={it.isChat && chat.sessionId === it.node.id ? 'v2-el-active' : undefined}>
+                <V2ElementRow
+                  node={it.node}
+                  icon={it.icon}
+                  onOpen={id => (it.isChat ? onOpenConversation(id) : onOpenNode(id))}
+                  extraMeta={fmtDate(it.node.updatedAt)}
+                />
                 {/* Elementos DENTRO de la conversación, indentados. */}
                 {it.isChat && bySession.get(it.node.id)?.map(child => (
-                  <div className="v2-el-row v2-el-child" key={child.node.id} onClick={() => onOpenNode(child.node.id)}>
-                    <span className="v2-el-icon">{child.icon}</span>
-                    <span className="v2-el-main">
-                      <span className="v2-el-title">{child.node.text || child.label}</span>
-                      <span className="v2-el-meta">{child.label}</span>
-                    </span>
-                  </div>
+                  <V2ElementRow key={child.node.id} node={child.node} icon={child.icon} onOpen={onOpenNode} child hideContext />
                 ))}
               </div>
             ))}

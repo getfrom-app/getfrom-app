@@ -12,6 +12,7 @@ import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
 import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
+import V2ElementRow from './V2ElementRow'
 import type { Node } from '../../types'
 
 interface Props {
@@ -62,6 +63,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
 
   return (
     <div>
+      <div className="v2-panel-title">Contexto</div>
       {/* Cabecera: nombre + padre + archivar */}
       <div className="v2-ctx-head">
         <div className="v2-ctx-head-title">
@@ -102,11 +104,8 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
       {elements.length > 0 && (
         <>
           <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>Elementos ({elements.length})</div>
-          {elements.map(({ node: n, icon, label }) => (
-            <div className="v2-el-row" key={n.id} onClick={() => onOpenNode(n.id)}>
-              <span className="v2-el-icon">{icon}</span>
-              <span className="v2-el-main"><span className="v2-el-title">{n.text}</span><span className="v2-el-meta">{label}</span></span>
-            </div>
+          {elements.map(({ node: n, icon }) => (
+            <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} hideContext />
           ))}
         </>
       )}
