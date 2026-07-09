@@ -14,6 +14,10 @@ import DocEditorBoundary from '../../components/DocEditorBoundary'
 export default function V2AgendaView() {
   useStore()
   const [dayId, setDayId] = useState<string | null>(null)
+  // Cockpit de tareas/eventos plegado por defecto: es todo el backlog y enterraba la nota.
+  const [cockpitOpen, setCockpitOpen] = useState<boolean>(() => {
+    try { return localStorage.getItem('v2.agenda.cockpit') === '1' } catch { return false }
+  })
 
   // La rejilla anual emite `from:set-day` al pulsar un día → aseguramos/creamos su
   // nota (Agenda→Año→Mes→Día) y la mostramos.
@@ -34,15 +38,27 @@ export default function V2AgendaView() {
       <div>
         <button className="v2-agenda-back" onClick={() => setDayId(null)}>‹ Volver al año</button>
         <div className="v2-panel-title">{dayNode.text || 'Día'}</div>
-        {/* Eventos + tareas del día (estilizados). SIN el outliner de bullets. */}
-        <DayColumn node={dayNode} includeNodes={false} />
-        {/* Alta rápida de tarea/evento del día. */}
-        <V2DayQuickAdd dayNode={dayNode} />
-        {/* Nota del día como DOCUMENTO (no bullets). */}
-        <div className="v2-section-label" style={{ padding: '10px 0 4px' }}>Nota del día</div>
+        {/* Nota del día como DOCUMENTO (no bullets) — lo primero, para escribir sin scroll. */}
+        <div className="v2-section-label" style={{ padding: '2px 0 4px' }}>Nota del día</div>
         <DocEditorBoundary compact>
           <DocEditor node={dayNode} compact registerActive autofocus={false} />
         </DocEditorBoundary>
+        {/* Cockpit de tareas + eventos del día: COLAPSABLE (todo el backlog es largo). */}
+        <button
+          className="v2-agenda-cockpit-toggle"
+          onClick={() => setCockpitOpen(v => { const nv = !v; try { localStorage.setItem('v2.agenda.cockpit', nv ? '1' : '0') } catch { /* noop */ }; return nv })}
+          aria-expanded={cockpitOpen}
+        >
+          {cockpitOpen ? '▾' : '▸'} Tareas y eventos del día
+        </button>
+        {cockpitOpen && (
+          <>
+            {/* Eventos + tareas del día (estilizados). SIN el outliner de bullets. */}
+            <DayColumn node={dayNode} includeNodes={false} />
+            {/* Alta rápida de tarea/evento del día. */}
+            <V2DayQuickAdd dayNode={dayNode} />
+          </>
+        )}
       </div>
     )
   }

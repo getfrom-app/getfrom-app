@@ -84,6 +84,16 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // `syncTasksToNodes` crea el nodo-tarea, para ponerle el `due` correcto.
   const pendingDueRef = useRef<Map<string, { due: string; isEvent: boolean }>>(new Map())
 
+  // Los nodos con título CANÓNICO (nota diaria = la fecha) NO deben perderlo cuando su body
+  // empieza vacío: `firstLineTitle('')` devuelve «Documento» y pisaría «Viernes, 9 de julio…».
+  // En esos nodos guardamos SOLO el body y respetamos el `text` existente.
+  const keepsOwnTitle = () => {
+    const n = store.getNode(node.id)
+    return !!(n?.isDiaryEntry || n?.diaryDate)
+  }
+  // Construye el update de guardado: incluye `text` salvo en nodos de título canónico.
+  const bodySave = (html: string) => keepsOwnTitle() ? { body: html } : { body: html, text: firstLineTitle(html) }
+
   // Sube una imagen a R2 y la inserta en el cursor.
   const insertImage = async (file: File) => {
     const ed = editorRef.current
@@ -248,7 +258,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       const html = editor.getHTML()
       saveTimer.current = window.setTimeout(() => {
         autoMagicTasks() // Magic: párrafos-tarea (fuera del cursor) → casilla
-        store.updateNode(node.id, { body: editor.getHTML(), text: firstLineTitle(editor.getHTML()) })
+        store.updateNode(node.id, bodySave(editor.getHTML()))
         syncTasksToNodes()
       }, 500)
     },
@@ -295,6 +305,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // Sanear título al abrir + clic en enlaces internos/externos.
   useEffect(() => {
     if (!editor) return
+    if (keepsOwnTitle()) return   // nota diaria: conserva el título de la fecha
     const t = firstLineTitle(editor.getHTML())
     if (t && t !== node.text) store.updateNode(node.id, { text: t })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,7 +330,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     if (saveTimer.current) clearTimeout(saveTimer.current)
     if (editor) {
       syncTasksToNodes() // reconcilia y asigna ids al doc ANTES de guardar el HTML final
-      store.updateNode(node.id, { body: editor.getHTML(), text: firstLineTitle(editor.getHTML()) })
+      store.updateNode(node.id, bodySave(editor.getHTML()))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, node.id])

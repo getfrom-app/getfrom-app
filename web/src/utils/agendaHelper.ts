@@ -49,11 +49,16 @@ function getOrCreateDay(date: Date, monthId: string): Node {
     const dt = new Date(c.diaryDate)
     return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d
   })
-  if (existing) return existing
   const dayDate = new Date(y, m, d, 0, 0, 0, 0)
   const dayText = dayDate.toLocaleDateString('es-ES', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   }).replace(/^\w/, c => c.toUpperCase())
+  if (existing) {
+    // Auto-reparación: si el editor de documento pisó el título del día con «Documento»
+    // (body vacío) o se quedó sin texto, restaurar el título canónico de la fecha.
+    if (!existing.text || existing.text === 'Documento') store.updateNode(existing.id, { text: dayText })
+    return existing
+  }
   const dayNode = store.createNode({
     text: dayText,
     parentId: monthId,
