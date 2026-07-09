@@ -13949,7 +13949,8 @@ textarea:focus-visible,
 }
 .ctx-pick--inline .ctx-pick-search { margin: 4px 6px 6px; }
 
-/* Elementos — botón de acciones (···) por fila: aparece al pasar por encima */
-.el-row .el-more { opacity: 0; transition: opacity 0.1s; }
-.el-row:hover .el-more, .el-more:focus { opacity: 0.85; }
+/* Elementos — botón de acciones (···) y eliminar directo por fila: aparecen al pasar por encima */
+.el-row .el-more, .el-row .el-row-del { opacity: 0; transition: opacity 0.1s; }
+.el-row:hover .el-more, .el-more:focus, .el-row:hover .el-row-del, .el-row-del:focus { opacity: 0.85; }
 .el-more:hover { background: var(--bg-hover, #f4f4f5) !important; color: var(--text-secondary, #666) !important; }
+.el-row-del:hover { opacity: 1 !important; color: #e03131 !important; background: rgba(224,49,49,.1) !important; }

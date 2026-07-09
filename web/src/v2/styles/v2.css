@@ -387,6 +387,14 @@
 }
 .v2-el-child { margin-left: 18px; border-left: 1px solid var(--border); padding-left: 12px; }
 .v2-el-child .v2-el-title { font-size: 12.5px; }
+/* Eliminar al hover — oculto en reposo, visible al pasar por la fila (mismo patrón que .dc-del). */
+.v2-el-del {
+  flex: 0 0 auto; align-self: center; opacity: 0; transition: opacity .1s;
+  background: none; border: none; cursor: pointer; padding: 5px; border-radius: 5px;
+  color: var(--text-tertiary, #999); display: flex; align-items: center;
+}
+.v2-el-row:hover .v2-el-del { opacity: 0.7; }
+.v2-el-del:hover { opacity: 1 !important; color: #e03131; background: rgba(224,49,49,.1); }
 .v2-el-filter { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
 /* TAG de contexto clicable (añadir/ver contexto de la conversación). */
 .v2-chip {

@@ -2,6 +2,7 @@
 // Conversación). Título a varias líneas (nunca se corta), y en lugar de la etiqueta
 // de tipo (el icono ya lo dice) muestra el CONTEXTO al que pertenece, si hay alguno.
 // El menú contextual (clic derecho) se añade aquí para todas las tabs a la vez.
+import { store } from '../../store/nodeStore'
 import { firstContextOf, contextColor } from '../../utils/cajones'
 import type { Node } from '../../types'
 
@@ -17,6 +18,11 @@ interface Props {
 export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext }: Props) {
   const ctx = hideContext ? null : firstContextOf(node)
   const title = (node.text || '').replace(/^(?:✦|💬)\s*/u, '').trim() || 'Sin título'
+  const del = (e: React.MouseEvent) => {
+    e.stopPropagation(); e.preventDefault()
+    store.deleteNode(node.id)
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Movido a la papelera', type: 'success' } }))
+  }
   return (
     <div
       className={`v2-el-row ${child ? 'v2-el-child' : ''}`}
@@ -40,6 +46,10 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
           </span>
         )}
       </span>
+      {/* Eliminar al hover — mismo patrón que el resto de listas de la app (dc-del). */}
+      <button className="v2-el-del" title="Eliminar" onClick={del}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+      </button>
     </div>
   )
 }
