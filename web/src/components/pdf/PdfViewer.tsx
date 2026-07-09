@@ -103,14 +103,19 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
   // ── Renderizar páginas ────────────────────────────────────────────────────
   useEffect(() => {
     if (!pdfDocRef.current || numPages === 0) return
+    let cancelled = false   // evita que dos renderAll concurrentes (cambio de escala/páginas)
+                            // pisen la misma capa de texto → carrera que dejaba la selección rota
     async function renderAll() {
       const pdfjsLib = await import('pdfjs-dist')
       for (let i = 1; i <= numPages; i++) {
+        if (cancelled) return
         const canvas = canvasRefs.current.get(i); if (!canvas) continue
         const page = await pdfDocRef.current.getPage(i)
+        if (cancelled) return
         const vp = page.getViewport({scale})
         canvas.width = vp.width; canvas.height = vp.height
         await page.render({ canvasContext: canvas.getContext('2d')!, viewport: vp }).promise
+        if (cancelled) return
         // Capa de texto invisible (seleccionable) para poder copiar/enviar fragmentos al lienzo.
         const textLayerDiv = textLayerRefs.current.get(i)
         if (textLayerDiv) {
@@ -138,6 +143,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
       }
     }
     renderAll().catch(console.error)
+    return () => { cancelled = true }
   }, [numPages, scale])
 
   // ── Renderizar SVG de anotaciones YA existentes (solo lectura, sin captura de ratón) ──
