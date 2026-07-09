@@ -12,8 +12,7 @@ import {
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
-import DocEditor from '../../components/views/DocEditor'
-import DocEditorBoundary from '../../components/DocEditorBoundary'
+import { V2NoteBody } from './V2DetailView'
 import ContextPicker from '../../components/panels/ContextPicker'
 import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
@@ -160,15 +159,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
         </>
       )}
 
-      {/* Notas — editor real (mismo TipTap que una nota normal), no una casilla de texto. */}
-      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 4 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 2px' }}>📝 Notas</div>
-        <DocEditorBoundary compact>
-          <DocEditor node={notesNode} compact autofocus={false} />
-        </DocEditorBoundary>
-      </div>
-
-      {/* Lo que Fromly sabe — al final del todo */}
+      {/* Lo que Fromly sabe */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
         <div className="v2-section-label" style={{ padding: '0 0 6px' }}>🧠 Lo que Fromly sabe</div>
         <textarea
@@ -178,6 +169,14 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
           onChange={(e) => setKnow(e.target.value)}
           onBlur={() => writeContextKnowledge(ctxId, know)}
         />
+      </div>
+
+      {/* Notas — EL MISMO editor completo que cualquier nota (toggle Nota/Lienzo, favorito,
+          exportar, publicar…), no una versión reducida. Al final de todo, como el resto de
+          información del contexto ya está arriba. */}
+      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 Notas</div>
+        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage />
       </div>
     </div>
   )

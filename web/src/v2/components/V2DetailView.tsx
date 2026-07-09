@@ -94,7 +94,13 @@ function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: s
   )
 }
 
-function V2NoteBody({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: string) => void }) {
+// Exportado: V2ContextView lo reutiliza TAL CUAL para el editor de «Notas» del
+// contexto (Alberto: «quiero un editor de nota como este, como el de cualquier
+// nota» — no una versión reducida aparte). `inlinePage`: vive DENTRO de una página
+// más larga que ya scrollea (sin `height:100%`, que solo tiene sentido cuando ES
+// el contenido único de la columna derecha) — el modo Lienzo pasa a tener una
+// altura fija (necesita un viewport acotado, no puede fiarse de "lo que sobre").
+export function V2NoteBody({ node, onSelectCtx, inlinePage }: { node: Node; onSelectCtx: (id: string) => void; inlinePage?: boolean }) {
   const { t } = useTranslation()
   const [canvas, setCanvas] = useState(parseExtraData(node.extraData)._v2canvas === '1' || parseExtraData(node.extraData)._v2view === 'lienzo')
   const doc = isDocNode(node)
@@ -125,7 +131,7 @@ function V2NoteBody({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: strin
   const deleteCard = () => { store.deleteNode(node.id); toast(t('context.toastMovedToTrash', 'Movido a la papelera')); window.dispatchEvent(new Event('from:close-detail')) }
 
   return (
-    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+    <div style={inlinePage ? undefined : { height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {/* Fila única: toggle a la izquierda + acciones a la derecha */}
       <div className="v2-note-toolbar">
         <div className="v2-view-toggle">
@@ -164,7 +170,9 @@ function V2NoteBody({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: strin
         </div>
       )}
 
-      <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: canvas ? 'hidden' : 'auto' }}>
+      <div style={inlinePage
+        ? { position: 'relative', overflow: canvas ? 'hidden' : 'visible', height: canvas ? 480 : undefined, minHeight: canvas ? 480 : undefined }
+        : { flex: 1, minHeight: 0, position: 'relative', overflow: canvas ? 'hidden' : 'auto' }}>
         {canvas
           ? <PizarraView parentId={node.id} flowUnpositioned globalCanvas={false} embedded />
           : asDoc

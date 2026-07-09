@@ -9,8 +9,7 @@ import { assignContext, nodeCtxRefs, contextColor, getOrCreateContainerNotes } f
 import { parseExtraData } from '../../utils/papeleraHelper'
 import PdfCanvasPreview from '../../components/views/PdfCanvasPreview'
 import ContextPicker from '../../components/panels/ContextPicker'
-import DocEditor from '../../components/views/DocEditor'
-import DocEditorBoundary from '../../components/DocEditorBoundary'
+import { V2NoteBody } from './V2DetailView'
 import { classifyElement } from '../elementKind'
 import { saveExample } from '../../api/autoClassify'
 import { ragRelated } from '../../api/client'
@@ -179,12 +178,11 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
       ))}
       {elements.length === 0 && <div className="v2-right-empty" style={{ padding: '8px 0' }}>Sin elementos todavía. Pídele a Fromly una nota, un documento, o sube archivos.</div>}
 
-      {/* Notas — editor real (mismo TipTap que una nota normal) para esta conversación. */}
-      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 4 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 2px' }}>📝 Notas</div>
-        <DocEditorBoundary compact>
-          <DocEditor node={notesNode} compact autofocus={false} />
-        </DocEditorBoundary>
+      {/* Notas — EL MISMO editor completo que cualquier nota (toggle Nota/Lienzo, favorito,
+          exportar, publicar…) para esta conversación, al final de todo. */}
+      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 Notas</div>
+        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage />
       </div>
     </div>
   )
