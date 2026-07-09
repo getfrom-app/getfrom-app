@@ -66,6 +66,9 @@ export default function V2App() {
     setDetailNodeId(null)
     setViewingCtxFicha(!!id)  // clic en un contexto = ver su ficha
     setRightMode(id ? 'contexto' : 'hoy')
+    // Cambiar de contexto RESETEA el chat: la conversación activa NO se arrastra al nuevo
+    // contexto — queda guardada en el suyo (Historial) y la pantalla vuelve a vacío.
+    aiChatStore.startNewSession()
   }
 
   // Botón «Nueva conversación» (barra izquierda) → SIEMPRE sin contexto (General).

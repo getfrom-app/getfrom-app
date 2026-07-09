@@ -14,6 +14,11 @@ import type { Node } from '../../types'
 import { isDocNode, firstLineTitle } from '../../utils/docNode'
 import { isMarkedContext, listMarkedContexts, contextColor, assignContext } from '../../utils/cajones'
 import { openNodeDetail } from '../../utils/canvasNav'
+import { renderInline } from '../outliner/InlineRenderer'
+import RowContextChip from './RowContextChip'
+import TaskHoverActions from './TaskHoverActions'
+import { TaskPropsPopover } from './DiaryPanelComponents'
+import { toggleTaskDone } from '../../utils/dailyCockpit'
 
 type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
@@ -137,6 +142,7 @@ export default function ElementsPanel() {
   const [menu, setMenu] = useState<{ id: string; x: number; y: number; ctx: boolean } | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
   const [renameVal, setRenameVal] = useState('')
+  const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
   const renameRef = useRef<HTMLInputElement>(null)
 
   function openMenu(id: string, x: number, y: number) {
@@ -217,6 +223,29 @@ export default function ElementsPanel() {
             {virtualizer.getVirtualItems().map(vi => {
               const r = filtered[vi.index]
               const isRenaming = renaming === r.id
+              // Tareas y eventos → pieza COMPLETA, idéntica a la columna «Hoy»:
+              // checkbox real (toggleTaskDone), texto con chips (renderInline),
+              // chip de contexto (RowContextChip) y acciones al hover (TaskHoverActions).
+              if ((r.kind === 'task' || r.kind === 'event') && !isRenaming) {
+                const n = store.getNode(r.id)
+                if (n) return (
+                  <div
+                    key={r.id}
+                    className={`dc-row ${n.status === 'done' ? 'dc-row--done' : ''}`}
+                    data-node-id={n.id}
+                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openMenu(r.id, e.clientX, e.clientY) }}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_H, transform: `translateY(${vi.start}px)`, boxSizing: 'border-box' }}
+                  >
+                    <button
+                      className={`dc-check ${n.status === 'done' ? 'dc-check--done' : ''}`}
+                      onClick={(e) => { e.stopPropagation(); toggleTaskDone(n) }}
+                    >{n.status === 'done' ? '✓' : ''}</button>
+                    <span className="dc-text" onClick={() => openNodeDetail(n.id)}>{n.text ? renderInline(n.text) : t('tip.task', 'Tarea')}</span>
+                    <RowContextChip node={n} />
+                    <TaskHoverActions node={n} onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
+                  </div>
+                )
+              }
               return (
                 <div
                   key={r.id}
@@ -287,6 +316,12 @@ export default function ElementsPanel() {
             </div>
           </>
         )
+      })()}
+
+      {/* Popover de propiedades de tarea (fecha/hora) — al hover en una tarea/evento */}
+      {propsNodeId && (() => {
+        const pn = store.getNode(propsNodeId)
+        return pn ? <TaskPropsPopover node={pn} allowRename allowDelete onClose={() => setPropsNodeId(null)} /> : null
       })()}
     </div>
   )
