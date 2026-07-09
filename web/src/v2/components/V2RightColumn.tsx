@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore, store } from '../../store/nodeStore'
 import { useAIChat } from '../../store/aiChatStore'
 import { nodesInContext } from '../../utils/cajones'
-import { parseExtraData } from '../../utils/papeleraHelper'
+import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import DayColumn from '../../components/panels/DayColumn'
 import ElementsPanel from '../../components/panels/ElementsPanel'
@@ -111,6 +111,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, onOpenNode,
     const list = store.allActive().filter(n => {
       const ed = parseExtraData(n.extraData)
       if (ed._aiSession !== '1') return false
+      if (isInPapelera(n.id)) return false   // borrada → no aparece en Historial (trashNode reparenta, no pone deletedAt)
       if (selectedCtxId) {
         const refs = Array.isArray(ed._ctxRefs) ? ed._ctxRefs : []
         if (!refs.includes(selectedCtxId)) return false
@@ -149,6 +150,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, onOpenNode,
       const c = classifyContent(n)
       if (!c || c.kind === 'note') continue                    // fragmentos/bullets v1 → fuera
       if (n.parentId && sessionIds.has(n.parentId)) continue   // pertenece a una conversación
+      if (isInPapelera(n.id)) continue                          // borrado → fuera del Historial
       out.push({ node: n, icon: c.icon, label: c.label })
     }
     return out

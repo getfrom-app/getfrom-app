@@ -19,6 +19,7 @@ import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
+import { isInPapelera } from '../../utils/papeleraHelper'
 
 type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
@@ -83,6 +84,7 @@ export default function ElementsPanel() {
     const out: ElemRow[] = []
     for (const n of store.allActive()) {
       const kind = classify(n); if (!kind) continue
+      if (isInPapelera(n.id)) continue   // en Papelera (borrado) → no es un elemento vivo
       const snippet = (n.body || '').trimStart().startsWith('```from-pizarra') ? '' : stripHtml(n.body)
       // Quita el prefijo decorativo (✦ sesión / 💬 transcripción) para no duplicar
       // icono: la fila ya muestra el icono de tipo (KIND_ICON) a la izquierda.
