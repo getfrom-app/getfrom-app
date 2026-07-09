@@ -7,12 +7,11 @@ import { useState, useRef, useLayoutEffect, type CSSProperties } from 'react'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
-import { collectDailyCockpit, toggleTaskDone } from '../../utils/dailyCockpit'
+import { collectDailyCockpit } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
-import RowContextChip from '../panels/RowContextChip'
-import TaskHoverActions from '../panels/TaskHoverActions'
+import TaskRow from '../panels/TaskRow'
 import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, firstContextOf, clearContextParent, convertToTask } from '../../utils/cajones'
 import ContextChip from '../panels/ContextChip'
 import type { Node } from '../../types'
@@ -27,7 +26,7 @@ const ctxMenuItem: CSSProperties = {
 
 export default function DailyCockpit({ disablePlanner = false, bare = false }: { disablePlanner?: boolean; bare?: boolean } = {}) {
   useStore() // suscripción: re-render con cada cambio del store
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
   // Menú contextual de las filas de CONTEXTO + animación de salida.
   const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null)
@@ -127,11 +126,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     })
   }
 
-  function completeTask(e: React.MouseEvent, n: Node) {
-    e.stopPropagation()
-    toggleTaskDone(n) // estampa _doneAt=hoy → sigue visible (tachada) hasta mañana
-  }
-
   function closeBucle(e: React.MouseEvent, n: Node) {
     e.stopPropagation()
     store.updateNode(n.id, { status: 'done' })
@@ -143,31 +137,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     const p = store.getNode(n.parentId)
     if (!p || p.isDiaryEntry) return null
     return p.text || null
-  }
-
-  function dueLabel(n: Node): string {
-    if (!n.due) return ''
-    const d = new Date(n.due)
-    return d.toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'es-ES', { weekday: 'short', day: 'numeric' })
-  }
-
-  /** Color del chip de fecha: atrasada=rojo, hoy=ámbar, futura=azul. */
-  function dueColor(n: Node): string {
-    if (!n.due) return 'var(--text-tertiary)'
-    const d = new Date(n.due); const now = new Date()
-    const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
-    const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
-    if (dd < t0) return '#e03131'
-    if (dd === t0) return '#f59e0b'
-    return '#3b82f6'
-  }
-
-  /** Hora de ejecución si el due la lleva (asignada p.ej. arrastrando al planner) */
-  function timeLabel(n: Node): string | null {
-    if (!n.due) return null
-    const d = new Date(n.due)
-    if (d.getHours() === 0 && d.getMinutes() === 0) return null
-    return d.toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'es-ES', { hour: '2-digit', minute: '2-digit' })
   }
 
   function dragProps(n: Node) {
@@ -187,30 +156,18 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     </button>
   )
 
-  const renderTaskRow = (n: Node, opts: { showDue?: boolean; inContext?: boolean }) => (
-    <div
+  // TaskRow ÚNICO compartido con toda la app (Elementos, Contexto, otros días):
+  // mismo checkbox, texto, chips de hora/día/repetición, contexto y hover en todas
+  // partes — un solo componente, no una copia por pestaña que se pueda desviar.
+  const renderTaskRow = (n: Node, opts: { showDue?: boolean }) => (
+    <TaskRow
       key={n.id}
-      ref={registerRow(n.id)}
-      className={`dc-row ${n.status === 'done' ? 'dc-row--done' : ''}`}
-      onClick={() => openNodeDetail(n.id)}
-      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
-      {...dragProps(n)}
-    >
-      <button
-        className={`dc-check ${n.status === 'done' ? 'dc-check--done' : ''}`}
-        onClick={e => completeTask(e, n)}
-        title={t('daily.markDone')}
-        aria-label={t('daily.markDone')}
-      >{n.status === 'done' ? '✓' : ''}</button>
-      {/* UNA sola línea, ancho completo: texto truncado + hora/fecha + chip de contexto. */}
-      <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
-      {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
-      {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(n), flexShrink: 0 }} title={t('dailyCockpit.editDateRecurrence')}
-        onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
-      {/* Contexto SIEMPRE como chip al lado del texto (formato compacto). */}
-      <RowContextChip node={n} />
-      <TaskHoverActions node={n} onOpenDate={nn => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
-    </div>
+      node={n}
+      onOpenDate={nn => setPropsNodeId(id => id === nn.id ? null : nn.id)}
+      showDue={!!opts.showDue}
+      dragProps={dragProps(n)}
+      rowRef={registerRow(n.id)}
+    />
   )
 
   const renderBucleRow = (n: Node) => (
@@ -282,8 +239,8 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         </div>
         {due && (
           <div className="dc-ctx-tasks" style={{ paddingLeft: 18 }}>
-            {due.overdue.map(t => renderTaskRow(t, { showDue: true, inContext: true }))}
-            {due.today.map(t => renderTaskRow(t, { inContext: true }))}
+            {due.overdue.map(t => renderTaskRow(t, { showDue: true }))}
+            {due.today.map(t => renderTaskRow(t, {}))}
           </div>
         )}
       </div>

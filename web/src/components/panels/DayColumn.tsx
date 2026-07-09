@@ -18,12 +18,12 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcalColor, getGcalEventId } from '../../utils/gcalNodesSync'
 import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
-import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { getCalendarEvents, type CalendarEvent } from '../../api/googleCalendar'
 import { gcalEventNodeId } from '../../utils/deterministicId'
 import { useUserStore } from '../../store/userStore'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
+import TaskRow from './TaskRow'
 import { firstContextOf, contextColor } from '../../utils/cajones'
 import { TaskPropsPopover, GCalEventEditor } from './DiaryPanelComponents'
 
@@ -220,24 +220,12 @@ export default function DayColumn({
       {/* 2-4. HOY → cockpit (Atrasadas · Para hoy · Bucles). */}
       {isToday && <DailyCockpit bare disablePlanner />}
 
-      {/* Otros días → tareas con due en ESE día. */}
+      {/* Otros días → tareas con due en ESE día. TaskRow ÚNICO (mismo que Hoy/Elementos). */}
       {!isToday && dayTasks.length > 0 && (
         <div className="dc-group">
           {header('tareas', t('tip.dayTasks'))}
           {!collapsed.has('tareas') && dayTasks.map(task => (
-            <div key={task.id} className={`dc-row ${task.status === 'done' ? 'dc-row--done' : ''}`} data-node-id={task.id}
-              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: task.id, x: e.clientX, y: e.clientY } })) }}>
-              <button className={`dc-check ${task.status === 'done' ? 'dc-check--done' : ''}`}
-                onClick={e => { e.stopPropagation(); toggleTaskDone(task) }} title={t('daily.markDone')} aria-label={t('daily.markDone')}>
-                {task.status === 'done' ? '✓' : ''}
-              </button>
-              <span className="dc-text" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
-                {task.text ? renderInline(task.text) : t('tip.task')}
-              </span>
-              {hhmm(task.due) !== '00:00' && task.due && <span className="dc-time">{hhmm(task.due)}</span>}
-              <RowContextChip node={task} />
-              <TaskHoverActions node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
-            </div>
+            <TaskRow key={task.id} node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
           ))}
         </div>
       )}

@@ -17,6 +17,7 @@ import { openNodeDetail } from '../../utils/canvasNav'
 import { renderInline } from '../outliner/InlineRenderer'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
+import TaskRow from './TaskRow'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
@@ -230,10 +231,22 @@ export default function ElementsPanel() {
             {virtualizer.getVirtualItems().map(vi => {
               const r = filtered[vi.index]
               const isRenaming = renaming === r.id
-              // Tareas y eventos → pieza COMPLETA, idéntica a la columna «Hoy»:
-              // checkbox real (toggleTaskDone), texto con chips (renderInline),
-              // chip de contexto (RowContextChip) y acciones al hover (TaskHoverActions).
-              if ((r.kind === 'task' || r.kind === 'event') && !isRenaming) {
+              // Tarea → TaskRow ÚNICO compartido con toda la app (Hoy, Contexto, otros
+              // días): mismo checkbox, texto, chips de hora/día/repetición, contexto y
+              // acciones de hover en TODAS partes, no una copia distinta por pestaña.
+              if (r.kind === 'task' && !isRenaming) {
+                const n = store.getNode(r.id)
+                if (n) return (
+                  <TaskRow
+                    key={r.id}
+                    node={n}
+                    onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_H, transform: `translateY(${vi.start}px)`, boxSizing: 'border-box' }}
+                  />
+                )
+              }
+              // Evento: pieza propia (sin checkbox de tarea real / chips de repetición).
+              if (r.kind === 'event' && !isRenaming) {
                 const n = store.getNode(r.id)
                 if (n) return (
                   <div

@@ -13736,6 +13736,16 @@ textarea:focus-visible,
   background: none;
   padding: 0;
 }
+.dc-rec {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: var(--bg-hover, rgba(0,0,0,0.05));
+  padding: 0 6px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
 .dc-parent {
   flex-shrink: 1;
   font-size: 11px;
