@@ -64,7 +64,7 @@ const ROW_H = 46
 export default function ElementsPanel() {
   const { t } = useTranslation()
   const s = useStore()
-  const [filter, setFilter] = useState<ElemKind | 'all'>('all')
+  const [filter, setFilter] = useState<ElemKind | 'all' | 'favorite'>('all')
   const [taskSub, setTaskSub] = useState<TaskSub>('all')
   const [q, setQ] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -89,14 +89,16 @@ export default function ElementsPanel() {
   const nq = q.trim().toLowerCase()
   const showTaskSub = filter === 'task' || filter === 'event'
   const filtered = useMemo(() => rows.filter(r => {
-    if (filter === 'all' && r.kind === 'memory') return false // memoria IA solo con su propio chip (no ensucia «Todos»)
-    if (filter !== 'all' && r.kind !== filter) return false
+    if (filter === 'favorite') { if (!store.getNode(r.id)?.isFavorite) return false }
+    else if (filter === 'all') { if (r.kind === 'memory') return false } // memoria IA solo con su propio chip
+    else if (r.kind !== filter) return false
     if (showTaskSub && !matchesTaskSub(r, taskSub)) return false
     if (!nq) return true
     return r.title.toLowerCase().includes(nq) || r.snippet.toLowerCase().includes(nq)
   }), [rows, filter, taskSub, showTaskSub, nq])
 
   const counts = useMemo(() => rows.reduce((acc, r) => { acc[r.kind] = (acc[r.kind] || 0) + 1; return acc }, {} as Record<ElemKind, number>), [rows])
+  const favCount = useMemo(() => { void s.nodesVersion; return rows.filter(r => store.getNode(r.id)?.isFavorite).length }, [rows, s.nodesVersion])
 
   const virtualizer = useVirtualizer({
     count: filtered.length,
@@ -105,8 +107,9 @@ export default function ElementsPanel() {
     overscan: 12,
   })
 
-  const CHIPS: { key: ElemKind | 'all'; label: string }[] = [
-    { key: 'all',     label: t('elements.all') },
+  const CHIPS: { key: ElemKind | 'all' | 'favorite'; label: string }[] = [
+    { key: 'all',      label: t('elements.all') },
+    { key: 'favorite', label: '★ ' + t('elements.favorites', 'Favoritos') },
     { key: 'text',    label: t('elements.texts') },
     { key: 'task',    label: t('elements.tasks') },
     { key: 'event',   label: t('elements.events') },
@@ -173,7 +176,7 @@ export default function ElementsPanel() {
         <div className="el-filterbar">
           {CHIPS.map(c => {
             const active = filter === c.key
-            const n = c.key === 'all' ? (rows.length - (counts.memory || 0)) : (counts[c.key] || 0)
+            const n = c.key === 'all' ? (rows.length - (counts.memory || 0)) : c.key === 'favorite' ? favCount : (counts[c.key as ElemKind] || 0)
             return (
               <button key={c.key} onClick={() => { setFilter(c.key); if (c.key !== 'task' && c.key !== 'event') setTaskSub('all') }}
                 style={{

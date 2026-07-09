@@ -7,12 +7,13 @@ import type { ChatMessage } from '../../store/aiChatStore'
 import { store, useStore } from '../../store/nodeStore'
 import NewTaskModal from '../../components/modals/NewTaskModal'
 import NewEventModal from '../../components/modals/NewEventModal'
+import { listTemplates } from '../../utils/tagsHelper'
 
 interface Props {
   currentNodeId: string | null
   contextLabel: string
   onFilesDropped: (files: File[]) => void
-  onNewDocument: () => void
+  onNewDocument: (templateId?: string) => void
   recorder: { recording: boolean; busy: boolean; start: () => void; stop: () => void }
 }
 
@@ -39,6 +40,15 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
   const [dragOver, setDragOver] = useState(false)
   const [showTask, setShowTask] = useState(false)
   const [showEvent, setShowEvent] = useState(false)
+  const [docMenu, setDocMenu] = useState(false)
+  const docMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!docMenu) return
+    const onDoc = (e: MouseEvent) => { if (docMenuRef.current && !docMenuRef.current.contains(e.target as HTMLElement)) setDocMenu(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [docMenu])
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
@@ -104,8 +114,20 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           {chat.sessionId ? (convTitle || 'Conversación') : 'Nueva conversación'}
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {/* Crear contenido sin pasar por el chat: documento, tarea, evento o nota de voz. */}
-          <button className="v2-head-action" title="Nuevo documento" onClick={onNewDocument}>＋ Documento</button>
+          {/* Crear contenido sin pasar por el chat: documento (con plantillas), tarea, evento o voz. */}
+          <div style={{ position: 'relative' }} ref={docMenuRef}>
+            <button className="v2-head-action" title="Nuevo documento"
+              onClick={() => { const tpls = listTemplates(); if (tpls.length) setDocMenu(o => !o); else onNewDocument() }}>＋ Documento</button>
+            {docMenu && (
+              <div className="v2-doc-menu">
+                <button onClick={() => { onNewDocument(); setDocMenu(false) }}>📄 En blanco</button>
+                <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>Plantillas</div>
+                {listTemplates().map(tpl => (
+                  <button key={tpl.id} onClick={() => { onNewDocument(tpl.id); setDocMenu(false) }}>{(tpl.text || 'Plantilla').replace(/^[^\p{L}\p{N}]+/u, '')}</button>
+                ))}
+              </div>
+            )}
+          </div>
           <button className="v2-head-action" title="Nueva tarea" onClick={() => setShowTask(true)}>＋ Tarea</button>
           <button className="v2-head-action" title="Nuevo evento" onClick={() => setShowEvent(true)}>＋ Evento</button>
           <button

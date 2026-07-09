@@ -10,6 +10,7 @@ import { aiChatStore, useAIChat } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
+import { applyTemplate } from '../utils/tagsHelper'
 import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
@@ -125,12 +126,14 @@ export default function V2App() {
     try { return getTodayDiaryUnderAgenda().id } catch { return null }
   }
 
-  // Crear un DOCUMENTO (nota de texto _doc) desde el centro → se abre editable a la derecha.
-  const onNewDocument = () => {
+  // Crear un DOCUMENTO (nota de texto _doc) desde el centro → se abre editable a la
+  // derecha. Si se pasa una plantilla, se aplica su contenido al nuevo documento.
+  const onNewDocument = (templateId?: string) => {
     const parentId = captureParentId()
     if (!parentId) return
     const n = store.createNode({ text: '', parentId, extraData: { _doc: '1' } })
     store.updateNode(n.id, { body: '<p></p>' })
+    if (templateId) { try { applyTemplate(templateId, n.id) } catch { /* noop */ } }
     setDetailNodeId(n.id)
   }
 
@@ -231,13 +234,27 @@ export default function V2App() {
       return tag === 'INPUT' || tag === 'TEXTAREA' || (el as HTMLElement).isContentEditable
     }
     const onKey = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey
+      const typing = isTyping(document.activeElement)
       // ⌘K / Ctrl+K → paleta de captura/búsqueda (funciona aunque estés escribiendo).
-      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
+      if (mod && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
         e.preventDefault(); setShowCapture(v => !v); return
       }
+      // ⌘, → Ajustes.
+      if (mod && e.key === ',') {
+        e.preventDefault(); window.dispatchEvent(new Event('from:open-settings')); return
+      }
+      // ⌘Z / ⌘⇧Z / ⌘Y → deshacer/rehacer del árbol (solo FUERA de un campo de texto,
+      // para no pisar el deshacer del editor/outliner).
+      if (mod && !typing && e.key.toLowerCase() === 'z') {
+        e.preventDefault(); if (e.shiftKey) store.redo?.(); else store.undo?.(); return
+      }
+      if (mod && !typing && e.key.toLowerCase() === 'y') {
+        e.preventDefault(); store.redo?.(); return
+      }
       // Barra espaciadora → captura rápida (solo si NO estás en un campo de texto).
-      if (e.code === 'Space' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.repeat) {
-        if (showCapture || isTyping(document.activeElement)) return
+      if (e.code === 'Space' && !mod && !e.altKey && !e.repeat) {
+        if (showCapture || typing) return
         e.preventDefault(); setShowCapture(true)
       }
     }

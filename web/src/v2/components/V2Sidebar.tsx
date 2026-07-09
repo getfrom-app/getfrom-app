@@ -48,6 +48,13 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
     return () => document.removeEventListener('mousedown', onDoc)
   }, [userMenu])
 
+  // ⌘, abre Ajustes desde cualquier sitio (evento global disparado por V2App).
+  useEffect(() => {
+    const h = () => setShowSettings(true)
+    window.addEventListener('from:open-settings', h)
+    return () => window.removeEventListener('from:open-settings', h)
+  }, [])
+
   const currentParent = stack.length ? stack[stack.length - 1] : null
 
   // Nivel raíz = ÁREAS (hijos directos de 🧠 Contexto, sin el Perfil 🧠…).
