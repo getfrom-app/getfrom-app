@@ -176,7 +176,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
           información del contexto ya está arriba. */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
         <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 Notas</div>
-        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage />
+        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />
       </div>
     </div>
   )

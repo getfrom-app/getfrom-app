@@ -77,13 +77,16 @@
   display: flex; align-items: center; gap: 6px; padding: 8px 12px;
   border-bottom: 1px solid var(--border); flex: 0 0 auto;
 }
-/* Toggle Nota ⇄ Lienzo (grupo de botones, sin fila propia). */
+/* Toggle Nota ⇄ Lienzo — MISMO estilo sutil que el resto de acciones del toolbar
+   (MD/HTML/PDF/🌐/🗑: borde fino, chico, discreto), y las dos MISMA anchura fija
+   (antes cada botón se ajustaba a su propio texto → «Nota» y «Lienzo» no medían
+   igual). */
 .v2-view-toggle { display: flex; gap: 4px; }
 .v2-view-toggle button {
-  font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 999px; cursor: pointer;
-  border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
+  width: 60px; font-size: 11px; font-weight: 500; padding: 4px 6px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border,#e2e2e2); background: none; color: var(--text-secondary,#666); line-height: 1;
 }
-.v2-view-toggle button:hover { background: var(--bg-hover); }
+.v2-view-toggle button:hover { background: var(--bg-hover); color: var(--text-primary); }
 .v2-view-toggle button.active { background: var(--accent-soft); color: var(--text-accent); border-color: var(--accent); }
 /* Desplegable «Vistas» (Tabla / Kanban / Calendario). */
 .v2-view-more {

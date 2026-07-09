@@ -74,7 +74,7 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
       {/* Notas — EL MISMO editor completo que cualquier nota, NO es el título de la tarea. */}
       <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
         <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 Notas</div>
-        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage />
+        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />
       </div>
 
       {showProps && <TaskPropsPopover node={node} allowDelete onDeleted={() => window.dispatchEvent(new Event('from:close-detail'))} onClose={() => setShowProps(false)} />}

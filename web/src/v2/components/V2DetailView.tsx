@@ -94,13 +94,17 @@ function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: s
   )
 }
 
-// Exportado: V2ContextView lo reutiliza TAL CUAL para el editor de «Notas» del
-// contexto (Alberto: «quiero un editor de nota como este, como el de cualquier
-// nota» — no una versión reducida aparte). `inlinePage`: vive DENTRO de una página
-// más larga que ya scrollea (sin `height:100%`, que solo tiene sentido cuando ES
-// el contenido único de la columna derecha) — el modo Lienzo pasa a tener una
-// altura fija (necesita un viewport acotado, no puede fiarse de "lo que sobre").
-export function V2NoteBody({ node, onSelectCtx, inlinePage }: { node: Node; onSelectCtx: (id: string) => void; inlinePage?: boolean }) {
+// Exportado: V2ContextView/V2ConversationView/V2TaskDetailView lo reutilizan TAL
+// CUAL para su editor de «Notas» (Alberto: «quiero un editor de nota como este,
+// como el de cualquier nota» — no una versión reducida aparte). `inlinePage`: vive
+// DENTRO de una página más larga que ya scrollea (sin `height:100%`, que solo
+// tiene sentido cuando ES el contenido único de la columna derecha) — el modo
+// Lienzo pasa a tener una altura fija (necesita un viewport acotado). `hideContext`:
+// oculta el chip de contexto propio del editor — cuando la nota es las «Notas» DE
+// un contexto/conversación/tarea concretos, ese contexto ya se muestra arriba en
+// esa misma vista (mostrarlo también aquí es redundante, o incluso otra cosa: el
+// contexto de la nota-hija no tiene por qué coincidir con el de su contenedor).
+export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { node: Node; onSelectCtx: (id: string) => void; inlinePage?: boolean; hideContext?: boolean }) {
   const { t } = useTranslation()
   const [canvas, setCanvas] = useState(parseExtraData(node.extraData)._v2canvas === '1' || parseExtraData(node.extraData)._v2view === 'lienzo')
   const doc = isDocNode(node)
@@ -155,7 +159,7 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage }: { node: Node; onSe
       </div>
 
       {/* Contexto de la nota (chips + añadir) — opcional pero siempre disponible. */}
-      {!canvas && <V2NoteContext node={node} onSelectCtx={onSelectCtx} />}
+      {!canvas && !hideContext && <V2NoteContext node={node} onSelectCtx={onSelectCtx} />}
 
       {/* Barra de formato PLANA (iconos normales) — cuando se edita como documento. */}
       {asDoc && !canvas && (

@@ -182,7 +182,7 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
           exportar, publicar…) para esta conversación, al final de todo. */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
         <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 Notas</div>
-        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage />
+        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />
       </div>
     </div>
   )
