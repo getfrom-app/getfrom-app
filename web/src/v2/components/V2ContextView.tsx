@@ -6,8 +6,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import {
   contextColor, contextParent, isContextClosed, setContextClosed,
-  readContextKnowledge, writeContextKnowledge,
+  readContextKnowledge, writeContextKnowledge, nodesInContext,
 } from '../../utils/cajones'
+import { parseExtraData } from '../../utils/papeleraHelper'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
 import V2TaskList from './V2TaskList'
@@ -37,16 +38,30 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
     return store.children(ctxId).filter(n => !n.deletedAt && (n.status != null || (n.types || []).includes('tarea')))
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ELEMENTOS del contexto: documentos, archivos (PDF/imagen), enlaces, audios.
-  // (Las notas de texto planas antiguas NO — esas se convierten con la migración.)
+  // ELEMENTOS del contexto: TODOS los archivos/recursos asociados — documentos, PDF,
+  // imágenes, enlaces, audios — vengan como hijos directos del contexto, como miembros
+  // por referencia (_ctxRefs/tag), o DENTRO de una conversación que pertenece al contexto
+  // (p.ej. un PDF subido a un chat de este contexto). Las notas de texto planas se omiten
+  // (las gestiona la migración, para no volver a llenar la columna).
   const elements = useMemo(() => {
+    void store.nodesVersion
     const out: { node: Node; icon: string; label: string }[] = []
-    for (const n of store.children(ctxId)) {
+    const seen = new Set<string>()
+    const consider = (n: Node) => {
+      if (seen.has(n.id) || n.deletedAt) return
       const c = classifyElement(n)
-      // documentos/PDF/imágenes/ENLACES/audios; las notas de texto planas se omiten
-      // (las gestiona la migración, para no volver a llenar la columna).
-      if (!c || c.kind === 'note') continue
+      if (!c || c.kind === 'note') return
+      seen.add(n.id)
       out.push({ node: n, icon: c.icon, label: c.label })
+    }
+    for (const n of store.children(ctxId)) consider(n)      // hijos directos
+    const members = nodesInContext(ctxId)
+    for (const m of members) {
+      consider(m)                                            // miembros por referencia
+      // Recursos dentro de una conversación-miembro (PDF/imagen subidos al chat).
+      if (parseExtraData(m.extraData)._aiSession === '1') {
+        for (const child of store.children(m.id)) consider(child)
+      }
     }
     return out.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps

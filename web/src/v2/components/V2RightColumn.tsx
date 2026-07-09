@@ -56,7 +56,10 @@ function EditableDetailTitle({ nodeId }: { nodeId: string }) {
   useStore()
   const [editing, setEditing] = useState(false)
   const node = store.getNode(nodeId)
-  const title = (node?.text || 'Elemento').replace(/^✦\s*/, '') || 'Elemento'
+  // Deriva el título: texto del nodo (sin ✦), o la 1ª línea del cuerpo si el texto está
+  // vacío/solo-espacios (documentos con el título dentro del body), o «Elemento».
+  const bodyTitle = (node?.body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80)
+  const title = ((node?.text || '').replace(/^✦\s*/, '').trim()) || bodyTitle || 'Elemento'
   if (editing) {
     return (
       <input
