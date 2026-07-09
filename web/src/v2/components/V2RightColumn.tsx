@@ -9,6 +9,7 @@ import { useStore, store } from '../../store/nodeStore'
 import { useAIChat, isQuickCommandSession } from '../../store/aiChatStore'
 import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
+import PublishButton from '../../components/PublishButton'
 import DayColumn from '../../components/panels/DayColumn'
 import ElementsPanel from '../../components/panels/ElementsPanel'
 import V2ContextView from './V2ContextView'
@@ -207,15 +208,36 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
       </div>
 
       {/* Detalle de un elemento (documento/PDF/imagen/audio/nota) — con las tabs arriba. */}
-      {detailNodeId && (
-        <div className="v2-right-fill">
-          <div className="v2-detail-head">
-            <button className="v2-iconbtn" onClick={onCloseDetail} title="Volver">‹</button>
-            <EditableDetailTitle nodeId={detailNodeId} />
+      {detailNodeId && (() => {
+        const detailNode = store.getNode(detailNodeId)
+        // Recursos (PDF/imagen/audio/enlace/podcast…) llevan publicar+eliminar AQUÍ, en la
+        // cabecera, junto al título — antes cada visor de recurso repetía el título en su
+        // propia fila solo para poder colgar estos 2 botones (redundante: el título ya
+        // está arriba). Nota/tarea NO: ya tienen su propia barra con más acciones propias.
+        const ed = detailNode ? parseExtraData(detailNode.extraData) : {}
+        const isResourceLike = !!detailNode && (detailNode.isResource || !!detailNode.resourceType || Array.isArray(ed._audios))
+        return (
+          <div className="v2-right-fill">
+            <div className="v2-detail-head">
+              <button className="v2-iconbtn" onClick={onCloseDetail} title="Volver">‹</button>
+              <EditableDetailTitle nodeId={detailNodeId} />
+              {isResourceLike && detailNode && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <PublishButton node={detailNode} />
+                  <button
+                    title="Eliminar"
+                    onClick={() => { store.deleteNode(detailNode.id); onCloseDetail() }}
+                    className="v2-iconbtn"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="v2-detail-body"><V2DetailView nodeId={detailNodeId} onSelectCtx={onSelectCtx} /></div>
           </div>
-          <div className="v2-detail-body"><V2DetailView nodeId={detailNodeId} onSelectCtx={onSelectCtx} /></div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* Elementos: el buscador universal REAL de la v1 (filtros por tipo, virtualizado). */}
       {!detailNodeId && mode === 'elementos' && (

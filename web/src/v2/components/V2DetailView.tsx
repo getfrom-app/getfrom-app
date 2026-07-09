@@ -72,12 +72,14 @@ function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: s
   // Mismo criterio que el chip del Historial/columnas (RowContextChip): firstContextOf.
   const current = firstContextOf(node)
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', padding: '4px 20px 0' }}>
+    <div className="v2-notectx-row">
       {current && (
         <button className="v2-chip" onClick={() => onSelectCtx?.(current.id)} style={{ ['--chip' as string]: contextColor(current.id) }}>{current.text}</button>
       )}
       <div className="v2-ctxpick-wrap" ref={wrap}>
-        <button className="v2-ctx-add-btn" onClick={() => setOpen(o => !o)}>{current ? 'Cambiar contexto…' : '＋ Añadir a contexto…'}</button>
+        <button className="v2-ctx-edit-btn" onClick={() => setOpen(o => !o)} title={current ? 'Cambiar contexto' : 'Añadir a contexto'}>
+          <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2.5a1.5 1.5 0 0 1 2 2L6 15l-3 1 1-3L14.5 2.5z"/></svg>
+        </button>
         {open && (
           <div className="v2-ctxpick-pop">
             <ContextPicker currentId={current?.id ?? null} onPick={id => {
@@ -180,14 +182,12 @@ function V2NoteBody({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: strin
 // renderizan de verdad; el resto (enlaces, libros, podcasts…) usa el ResourcePanel.
 // Siempre con su contexto arriba (chip + cambiar), igual que nota/tarea.
 function V2ResourceView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: string) => void }) {
-  const { t } = useTranslation()
   const ed = parseExtraData(node.extraData)
   const url = (ed._resourceUrl as string) || node.resourceUrl || ''
   const rawType = ((ed._resourceType as string) || node.resourceType || '').toLowerCase()
   // PDFs antiguos sin `_resourceType` → detectados por URL/nombre (mismo helper que el clasificador).
   const type = isPdfResource(node, ed) ? 'pdf' : rawType
   const key = (ed._resourceKey as string) || undefined
-  const deleteCard = () => { store.deleteNode(node.id); toast(t('context.toastMovedToTrash', 'Movido a la papelera')); window.dispatchEvent(new Event('from:close-detail')) }
 
   if ((type !== 'pdf' && type !== 'image') || (!url && !key)) {
     return (
@@ -198,21 +198,10 @@ function V2ResourceView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: s
     )
   }
 
-  const header = (
-    <div className="v2-note-toolbar">
-      <span className="v2-section-label" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: 0 }}>{node.text || t('common.noTitle', 'Sin título')}</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-        <PublishButton node={node} />
-        <button title={t('tip.delete', 'Eliminar')} onClick={deleteCard} style={{ ...actBtn, color: 'var(--text-tertiary,#999)' }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-        </button>
-      </div>
-    </div>
-  )
-
+  // Publicar/eliminar viven en la cabecera exterior (junto al título editable, V2RightColumn)
+  // — no hace falta repetir aquí el título solo para colgar esos 2 botones.
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      {header}
       <V2NoteContext node={node} onSelectCtx={onSelectCtx} />
       <div style={{ flex: 1, minHeight: 0, overflow: type === 'pdf' ? 'hidden' : 'auto', padding: type === 'image' ? 16 : 0 }}>
         {type === 'pdf'

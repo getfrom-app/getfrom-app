@@ -450,6 +450,20 @@
   border: 1px dashed var(--border); background: transparent; color: var(--text-secondary); cursor: pointer;
 }
 .v2-ctx-add-btn:hover { border-color: var(--accent); color: var(--text-accent); }
+/* Fila de contexto de nota/tarea/recurso (V2NoteContext) — su propia fila con
+   borde para no pegarse ni arriba ni abajo con lo que la rodea. */
+.v2-notectx-row {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  padding: 8px 12px; border-bottom: 1px solid var(--border);
+}
+/* Cambiar/añadir contexto — chip-icono a la MISMA altura que .v2-chip (antes era
+   un botón con texto largo y padding distinto que desentonaba). */
+.v2-ctx-edit-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; border-radius: 3px;
+  border: 1px solid var(--border); background: transparent; color: var(--text-tertiary); cursor: pointer;
+}
+.v2-ctx-edit-btn:hover { border-color: var(--accent); color: var(--text-accent); }
 .v2-ctxpick-pop {
   position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; width: 260px;
   background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border);
