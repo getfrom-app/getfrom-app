@@ -178,7 +178,8 @@ function V2NoteBody({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: strin
 
 // Visor de RECURSO archivo: PDF (con selección/subrayado, como v1) o imagen se
 // renderizan de verdad; el resto (enlaces, libros, podcasts…) usa el ResourcePanel.
-function V2ResourceView({ node }: { node: Node }) {
+// Siempre con su contexto arriba (chip + cambiar), igual que nota/tarea.
+function V2ResourceView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: string) => void }) {
   const { t } = useTranslation()
   const ed = parseExtraData(node.extraData)
   const url = (ed._resourceUrl as string) || node.resourceUrl || ''
@@ -188,8 +189,14 @@ function V2ResourceView({ node }: { node: Node }) {
   const key = (ed._resourceKey as string) || undefined
   const deleteCard = () => { store.deleteNode(node.id); toast(t('context.toastMovedToTrash', 'Movido a la papelera')); window.dispatchEvent(new Event('from:close-detail')) }
 
-  if (type !== 'pdf' && type !== 'image') return <ResourcePanel node={node} />
-  if (!url && !key) return <ResourcePanel node={node} />
+  if ((type !== 'pdf' && type !== 'image') || (!url && !key)) {
+    return (
+      <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <V2NoteContext node={node} onSelectCtx={onSelectCtx} />
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}><ResourcePanel node={node} /></div>
+      </div>
+    )
+  }
 
   const header = (
     <div className="v2-note-toolbar">
@@ -206,6 +213,7 @@ function V2ResourceView({ node }: { node: Node }) {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {header}
+      <V2NoteContext node={node} onSelectCtx={onSelectCtx} />
       <div style={{ flex: 1, minHeight: 0, overflow: type === 'pdf' ? 'hidden' : 'auto', padding: type === 'image' ? 16 : 0 }}>
         {type === 'pdf'
           ? <PdfContainer url={url} nodeId={node.id} filename={node.text || 'PDF'} resourceKey={key} hideCanvasAction />
@@ -224,11 +232,24 @@ export default function V2DetailView({ nodeId, onSelectCtx }: { nodeId: string; 
   const hasAudio = Array.isArray(ed._audios)
   const rt = ((node.resourceType || ed._resourceType || '') as string).toLowerCase()
 
-  if (hasAudio || rt.includes('audio')) return <AudioPanel nodeId={node.id} />
+  // Cualquier tipo de RECURSO (audio, PDF/imagen, o el resto — enlaces, podcasts,
+  // libros…) muestra su contexto arriba (chip + cambiar), igual que nota/tarea.
+  // Antes ningún recurso mostraba ni navegaba a su contexto.
+  if (hasAudio || rt.includes('audio')) return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <V2NoteContext node={node} onSelectCtx={onSelectCtx} />
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}><AudioPanel nodeId={node.id} /></div>
+    </div>
+  )
   // PDF / imagen → visor real (con subrayado en PDF). Otros recursos → ResourcePanel.
   // `isPdfResource` cubre los PDFs antiguos sin `_resourceType:'pdf'` (detecta por URL/nombre).
-  if (isPdfResource(node, ed) || rt === 'image') return <V2ResourceView node={node} />
-  if (node.isResource || node.resourceType) return <ResourcePanel node={node} />
+  if (isPdfResource(node, ed) || rt === 'image') return <V2ResourceView node={node} onSelectCtx={onSelectCtx} />
+  if (node.isResource || node.resourceType) return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <V2NoteContext node={node} onSelectCtx={onSelectCtx} />
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}><ResourcePanel node={node} /></div>
+    </div>
+  )
   // TAREA/EVENTO: NUNCA como documento genérico — antes caía aquí abajo (V2NoteBody)
   // con body vacío y el DocEditor le pisaba el título con «Documento» al guardar.
   if (node.status != null || node.isEvent) return <V2TaskDetailView node={node} onSelectCtx={onSelectCtx} />
