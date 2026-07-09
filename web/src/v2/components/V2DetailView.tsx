@@ -18,6 +18,7 @@ import DocEditorBoundary from '../../components/DocEditorBoundary'
 import DocInspector from '../../components/views/DocInspector'
 import PublishButton from '../../components/PublishButton'
 import { exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
+import { convertNoteToBlock } from '../../utils/noteBlocks'
 import type { Node } from '../../types'
 
 const toast = (message: string) => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type: 'success' } }))
@@ -30,6 +31,13 @@ function V2NoteBody({ node }: { node: Node }) {
   const { t } = useTranslation()
   const [canvas, setCanvas] = useState(parseExtraData(node.extraData)._v2canvas === '1' || parseExtraData(node.extraData)._v2view === 'lienzo')
   const doc = isDocNode(node)
+  // Editor UNIFICADO: todo se edita como DOCUMENTO (texto enriquecido). Las notas
+  // «clásicas» (outliner con hijos, formato viejo) se abren en el outliner pero con un
+  // botón «Convertir a documento» (convertNoteToBlock, reversible). Una nota sin hijos
+  // se edita directamente como documento.
+  const hasKids = store.children(node.id).some(n => !n.deletedAt && (n.text || '').trim())
+  const asDoc = doc || !hasKids
+  const convertToDoc = () => { if (convertNoteToBlock(node.id)) toast('Convertido a documento') }
 
   const setView = (c: boolean) => {
     setCanvas(c)
@@ -54,7 +62,7 @@ function V2NoteBody({ node }: { node: Node }) {
           <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite} style={{ ...actBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/></svg>
           </button>
-          {doc && !canvas && <>
+          {asDoc && !canvas && <>
             <button title={t('export.markdown')} onClick={() => { exportNodeMarkdown(node); toast(t('context.toastExportedMarkdown')) }} style={actBtn}>MD</button>
             <button title={t('export.html')} onClick={() => { exportNodeHtml(node); toast(t('context.toastExportedHtml')) }} style={actBtn}>HTML</button>
             <button title={t('export.pdf')} onClick={() => exportNodePdf(node)} style={actBtn}>PDF</button>
@@ -66,15 +74,23 @@ function V2NoteBody({ node }: { node: Node }) {
         </div>
       </div>
 
-      {/* Barra de formato PLANA (iconos normales) — solo para documentos en modo texto. */}
-      {doc && !canvas && (
+      {/* Barra de formato PLANA (iconos normales) — cuando se edita como documento. */}
+      {asDoc && !canvas && (
         <div className="v2-note-formatbar"><DocInspector bar /></div>
+      )}
+
+      {/* Nota clásica (outliner): aviso para migrarla al editor de documento unificado. */}
+      {!asDoc && !canvas && (
+        <div className="v2-convert-banner">
+          <span>Esta nota usa el formato clásico (listas).</span>
+          <button onClick={convertToDoc}>Convertir a documento</button>
+        </div>
       )}
 
       <div style={{ flex: 1, minHeight: 0, position: 'relative', overflow: canvas ? 'hidden' : 'auto' }}>
         {canvas
           ? <PizarraView parentId={node.id} flowUnpositioned globalCanvas={false} embedded />
-          : doc
+          : asDoc
             ? <div style={{ padding: '18px 20px 88px' }}><DocEditorBoundary compact><DocEditor node={node} compact registerActive autofocus={false} /></DocEditorBoundary></div>
             : <Outliner parentId={node.id} autoFocusEmpty placeholder="Escribe aquí… (usa «/» para insertar tabla, kanban, calendario…)" />}
       </div>

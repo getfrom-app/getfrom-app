@@ -342,7 +342,17 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     const a = (e.target as HTMLElement).closest('a') as HTMLAnchorElement | null
     if (!a) return
     const href = a.getAttribute('href') || ''
-    if (href.startsWith('/node/') || href.startsWith('/app/node/')) { e.preventDefault(); navigate(href.replace('/app', '')) }
+    if (href.startsWith('/node/') || href.startsWith('/app/node/') || href.startsWith('from://node/')) {
+      e.preventDefault()
+      const id = href.replace(/^\/app/, '').replace(/^\/node\//, '').replace(/^from:\/\/node\//, '')
+      // En Fromly 2.0 los enlaces internos ABREN el elemento en el panel de detalle
+      // (evento que V2App escucha); en v1 se navega igual que antes.
+      if (window.location.pathname.startsWith('/app') && !window.location.pathname.startsWith('/app/v1')) {
+        window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: id } }))
+      } else {
+        navigate('/node/' + id)
+      }
+    }
     else if (/^https?:\/\//i.test(href)) { e.preventDefault(); window.open(href, '_blank', 'noopener') }
   }
 

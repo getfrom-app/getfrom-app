@@ -110,6 +110,17 @@
 .v2-doc-menu > button:hover { background: var(--bg-hover); }
 /* Barra de formato PLANA del documento (iconos normales, no píldora flotante). */
 .v2-note-formatbar { flex: 0 0 auto; }
+/* Aviso para convertir una nota clásica (outliner) al editor de documento. */
+.v2-convert-banner {
+  flex: 0 0 auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 14px; border-bottom: 1px solid var(--border);
+  background: var(--accent-soft); font-size: 12.5px; color: var(--text-secondary);
+}
+.v2-convert-banner button {
+  margin-left: auto; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 999px;
+  border: 1px solid var(--accent); background: transparent; color: var(--text-accent); cursor: pointer;
+}
+.v2-convert-banner button:hover { background: var(--accent); color: #fff; }
 .v2-doc-toolbar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
   padding: 5px 10px; border-bottom: 1px solid var(--border); background: var(--bg-secondary, transparent);
