@@ -19,6 +19,7 @@ import TaskItem from '@tiptap/extension-task-item'
 import { store, useStore } from '../../store/nodeStore'
 import { assignContext } from '../../utils/cajones'
 import { firstLineTitle } from '../../utils/docNode'
+import { markdownToHtml } from '../../utils/importMarkdown'
 import { extractDateFromEnd } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { uploadFile } from '../../api/client'
@@ -27,6 +28,18 @@ import TaskItemChip from './TaskItemChip'
 import { MagicTaskGhost } from './MagicTaskGhost'
 import type { MagicPrediction } from './MagicTaskGhost'
 import { useTranslation } from 'react-i18next'
+
+// ¿El texto pegado parece MARKDOWN? (encabezados, listas, code fence, cita, enlaces,
+// negritas). Basta un marcador claro para tratarlo como markdown y renderizarlo.
+function looksLikeMarkdown(s: string): boolean {
+  return /(^|\n)#{1,6}\s+\S/.test(s)          // # Encabezado
+    || /(^|\n)\s*[-*+]\s+\S/.test(s)          // - lista
+    || /(^|\n)\s*\d+\.\s+\S/.test(s)          // 1. lista
+    || /```/.test(s)                          // ``` bloque de código
+    || /(^|\n)>\s+\S/.test(s)                 // > cita
+    || /\[[^\]]+\]\([^)\s]+\)/.test(s)        // [texto](url)
+    || /\*\*[^*\n]+\*\*/.test(s)              // **negrita**
+}
 
 // Paleta de la barra flotante (misma que FormatToolbar del outliner).
 const DOC_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#a16207', '#6b7280']
@@ -254,6 +267,18 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         const items = Array.from(e.clipboardData?.items || [])
         const img = items.find(i => i.type.startsWith('image/'))
         if (img) { const f = img.getAsFile(); if (f) { insertImage(f); return true } }
+        // Pegar TEXTO PLANO que parece MARKDOWN → renderizarlo (encabezados, listas,
+        // negritas, código, enlaces, citas). Solo si NO viene HTML del portapapeles
+        // (si copias de una web, ya trae HTML y lo maneja TipTap).
+        const text = e.clipboardData?.getData('text/plain') || ''
+        const html = e.clipboardData?.getData('text/html') || ''
+        if (text && !html && looksLikeMarkdown(text)) {
+          const rendered = markdownToHtml(text)
+          if (rendered && rendered !== `<p>${text}</p>`) {
+            editorRef.current?.chain().focus().insertContent(rendered).run()
+            return true
+          }
+        }
         return false
       },
       handleDrop: (_v, e) => {

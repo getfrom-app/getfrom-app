@@ -11,6 +11,7 @@ import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 import { applyTemplate } from '../utils/tagsHelper'
+import { createMarkdownNode } from '../utils/importMarkdown'
 import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
@@ -115,9 +116,23 @@ export default function V2App() {
     aiChatStore.startNewSession()
   }
 
-  const onFilesDropped = (files: File[]) => {
-    setDroppedFiles(prev => [...prev, ...files])
-    setRightMode('elementos')
+  const onFilesDropped = async (files: File[]) => {
+    // .md / .markdown / .txt → se importan como NOTA (documento) con el markdown ya
+    // renderizado (como si hubieras pegado el texto). El resto (PDF/imagen…) sigue el
+    // flujo de adjuntos/RAG.
+    const isText = (f: File) => /\.(md|markdown|txt)$/i.test(f.name) || f.type === 'text/markdown' || f.type === 'text/plain'
+    const textFiles = files.filter(isText)
+    const otherFiles = files.filter(f => !isText(f))
+    let lastId: string | null = null
+    for (const f of textFiles) {
+      try {
+        const content = await f.text()
+        const note = createMarkdownNode(captureParentId(), content, f.name, false)
+        if (note) lastId = note.id
+      } catch { /* ignora un archivo ilegible */ }
+    }
+    if (lastId) { setDetailNodeId(lastId); setRightMode('contexto') } // abre la nota importada
+    if (otherFiles.length) { setDroppedFiles(prev => [...prev, ...otherFiles]); setRightMode('elementos') }
   }
 
   // Dónde nace el contenido creado desde el centro: el contexto activo o el diario de hoy.
