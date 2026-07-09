@@ -4,6 +4,20 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.787 — 9 julio 2026 · Corregido un bug importante + Agenda=Hoy + Notas con editor completo
+
+Corregimos un fallo serio en Fromly 2.0 y afinamos varias cosas de la columna derecha con feedback en vivo.
+
+- **Corregido**: al abrir una tarea o un evento desde la columna derecha, en algunos casos perdía su nombre y quedaba titulado «Documento». Ya no puede volver a pasar — si tenías algún elemento renombrado así por error, dínoslo y te ayudamos a identificarlo.
+- **La Agenda ahora es igual que Hoy**: entra a cualquier día desde el calendario anual y verás exactamente la misma columna que en la pestaña Hoy — eventos, para hacer, seguimiento, por planificar — con un botón "+" en cada bloque para crear directamente.
+- **"Notas" en contexto, conversación o tarea**: ahora es el mismo editor completo que usas en cualquier nota (formato, favorito, exportar, publicar, e incluso cambiar a lienzo), no una simple casilla de texto.
+- **Contexto padre**: ya puedes asignar o cambiar el contexto padre de cualquier contexto directamente desde la columna derecha.
+- **PDF**: el subrayado de texto ahora se marca en amarillo directamente sobre la página, y hay una nueva herramienta para recortar cualquier región del PDF como imagen.
+- **Arrastrar archivos**: ya funciona igual de bien lo sueltes donde lo sueltes (chat o barra de contextos), y puedes quitar un archivo de una conversación sin borrarlo.
+- Contexto visible y editable en cualquier tipo de elemento (nota, tarea, PDF, imagen, enlace); Historial más limpio (los comandos rápidos de un solo mensaje ya no lo saturan).
+
+---
+
 ## Web v9.6.716 — 6 julio 2026 · Cada día, su propio lienzo (+ calendario del año)
 
 Rediseñamos cómo funcionan los días y el calendario para que escribir sea fluido. Antes los días vivían dentro del lienzo infinito y, al alejar el zoom, un texto podía abarcar varios días y los tamaños se descuadraban. Ahora hay dos superficies claras y una barra de navegación fija:
