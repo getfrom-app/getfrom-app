@@ -27,7 +27,7 @@ import ContextPicker from '../../components/panels/ContextPicker'
 import { useRef, useEffect } from 'react'
 import type { Node } from '../../types'
 
-const toast = (message: string) => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type: 'success' } }))
+const toast = (message: string, type: 'success' | 'warning' = 'success') => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type } }))
 const actBtn = { background: 'none', border: '1px solid var(--border,#e2e2e2)', borderRadius: 6, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px 6px', color: 'var(--text-secondary,#666)', fontSize: 11, lineHeight: 1 } as const
 
 // Nota o documento: se puede ver como TEXTO o como LIENZO (mismo nodo). El toggle
@@ -101,7 +101,14 @@ function V2NoteBody({ node }: { node: Node }) {
   // se edita directamente como documento.
   const hasKids = store.children(node.id).some(n => !n.deletedAt && (n.text || '').trim())
   const asDoc = doc || !hasKids
-  const convertToDoc = () => { if (convertNoteToBlock(node.id)) toast('Convertido a documento') }
+  // `force`: es una acción EXPLÍCITA sobre ESTA nota (no una migración masiva) — se
+  // convierte aunque cuelgue de un contenedor plano no-contexto. Antes fallaba en
+  // SILENCIO (el botón no hacía nada) cuando `isTopConvertible` decidía que el padre
+  // debía absorberla; con feedback si de verdad no se puede (bloqueante real dentro).
+  const convertToDoc = () => {
+    if (convertNoteToBlock(node.id, true)) toast('Convertido a documento')
+    else toast('No se pudo convertir: contiene algo que no se puede migrar (revisa su contenido).', 'warning')
+  }
 
   const setView = (c: boolean) => {
     setCanvas(c)

@@ -10,6 +10,7 @@ import { aiChatStore, useAIChat } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
+import { isMarkedContext, isRootContext } from '../utils/cajones'
 import { applyTemplate } from '../utils/tagsHelper'
 import { createMarkdownNode } from '../utils/importMarkdown'
 import { uploadFile } from '../api/client'
@@ -227,7 +228,12 @@ export default function V2App() {
   const recorder = useV2Recorder(onAudioSaved)
 
   const onOpenNode = (id: string) => {
-    // Abre el elemento en la columna derecha (visor/editor según su tipo).
+    // Un CONTEXTO (marcado o área raíz) siempre abre su FICHA completa (tareas +
+    // elementos + «Archivar» + «Lo que Fromly sabe»), sea cual sea la ruta de entrada
+    // (sidebar, cockpit «Hoy», chip de contexto…). Antes solo la sidebar llegaba a
+    // `onSelectCtx`; el resto caía en el detalle genérico (V2NoteBody) y perdía Archivar.
+    if (isMarkedContext(store.getNode(id)) || isRootContext(id)) { onSelectCtx(id); return }
+    // Elemento normal: se abre en la columna derecha (visor/editor según su tipo).
     setDetailNodeId(id)
   }
 

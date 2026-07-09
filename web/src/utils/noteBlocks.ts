@@ -74,14 +74,18 @@ function hasUnhandledBlocker(n: Node): boolean {
 /** ¿Es una nota convertible de ALTO NIVEL? Tiene hijos, no es ella misma un tipo especial,
  *  no contiene bloqueantes no-extraíbles, y su padre NO es a su vez una nota convertible
  *  (para no partir la jerarquía: la sub-sección se aplana dentro del padre, sus elementos no
- *  texto se extraen). */
-function isTopConvertible(n: Node): boolean {
+ *  texto se extraen). Con `force` (acción EXPLÍCITA del usuario sobre ESTA nota concreta, no
+ *  una migración masiva) se salta SOLO esa comprobación del padre: convertir la nota que se
+ *  está mirando, aunque cuelgue de un contenedor plano no-contexto. Los bloqueantes reales
+ *  (la propia nota es un tipo especial, o contiene uno no extraíble) siguen aplicando siempre. */
+function isTopConvertible(n: Node, force = false): boolean {
   if (isDocNode(n)) return false // YA es un bloque (aunque sea `_fromNote`): no se re-convierte
   if (ed(n)._absorbedBy != null) return false // ya está OCULTO dentro de un bloque → no es nota suelta
   if (isBlockingKind(n)) return false
   const kids = activeChildren(n.id)
   if (kids.length === 0) return false            // hoja: no es nota
   if (hasUnhandledBlocker(n)) return false
+  if (force) return true
   const parent = n.parentId ? store.getNode(n.parentId) : null
   if (parent && !parent.deletedAt && !isDocNode(parent) && !isBlockingKind(parent) && !hasUnhandledBlocker(parent) && activeChildren(parent.id).length > 0) {
     return false // el padre se convertirá y aplanará esta sub-sección dentro
@@ -224,10 +228,13 @@ function walkSubtree(id: string, depth: number, parts: string[], absorb: string[
   }
 }
 
-/** Convierte UNA nota (con toda su jerarquía) en bloque `_doc`. REVERSIBLE. */
-export function convertNoteToBlock(id: string): boolean {
+/** Convierte UNA nota (con toda su jerarquía) en bloque `_doc`. REVERSIBLE.
+ *  `force=true` = acción explícita del usuario sobre ESTA nota (botón «Convertir a
+ *  documento» en su propio detalle): convierte aunque cuelgue de un contenedor plano
+ *  que en teoría "la absorbería" si se migrara en bloque (ver `isTopConvertible`). */
+export function convertNoteToBlock(id: string, force = false): boolean {
   const n = store.getNode(id)
-  if (!n || n.deletedAt || !store.isNote(n) || !isTopConvertible(n)) return false
+  if (!n || n.deletedAt || !store.isNote(n) || !isTopConvertible(n, force)) return false
 
   const parts: string[] = []
   const absorb: string[] = []
