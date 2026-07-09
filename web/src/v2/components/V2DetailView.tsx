@@ -20,7 +20,7 @@ import DocInspector from '../../components/views/DocInspector'
 import PublishButton from '../../components/PublishButton'
 import { exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
 import { convertNoteToBlock } from '../../utils/noteBlocks'
-import { assignContext, nodeCtxRefs, contextColor } from '../../utils/cajones'
+import { firstContextOf, setNodeContext, contextColor } from '../../utils/cajones'
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from '../../components/panels/ContextPicker'
 import { useRef, useEffect } from 'react'
@@ -67,22 +67,20 @@ function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: s
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
-  const refs = nodeCtxRefs(node)
+  // Mismo criterio que el chip del Historial/columnas (RowContextChip): firstContextOf.
+  const current = firstContextOf(node)
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', padding: '4px 20px 0' }}>
-      {refs.map(id => {
-        const c = store.getNode(id)
-        if (!c) return null
-        return (
-          <button key={id} className="v2-chip" onClick={() => onSelectCtx?.(id)} style={{ ['--chip' as string]: contextColor(id) }}>{c.text}</button>
-        )
-      })}
+      {current && (
+        <button className="v2-chip" onClick={() => onSelectCtx?.(current.id)} style={{ ['--chip' as string]: contextColor(current.id) }}>{current.text}</button>
+      )}
       <div className="v2-ctxpick-wrap" ref={wrap}>
-        <button className="v2-ctx-add-btn" onClick={() => setOpen(o => !o)}>＋ Añadir a contexto…</button>
+        <button className="v2-ctx-add-btn" onClick={() => setOpen(o => !o)}>{current ? 'Cambiar contexto…' : '＋ Añadir a contexto…'}</button>
         {open && (
           <div className="v2-ctxpick-pop">
-            <ContextPicker currentId={null} onPick={id => {
-              if (id) { assignContext(node.id, id); if (node.text?.trim()) saveExample(node.text.replace(/^✦\s*/, ''), id) }
+            <ContextPicker currentId={current?.id ?? null} onPick={id => {
+              setNodeContext(node.id, id)
+              if (id && node.text?.trim()) saveExample(node.text.replace(/^✦\s*/, ''), id)
               setOpen(false)
             }} />
           </div>
