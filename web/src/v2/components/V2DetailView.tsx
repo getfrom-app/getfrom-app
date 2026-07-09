@@ -9,6 +9,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { isDocNode } from '../../utils/docNode'
 import { parseExtraData } from '../../utils/papeleraHelper'
+import { isPdfResource } from '../elementKind'
 import ResourcePanel from '../../components/panels/ResourcePanel'
 import AudioPanel from '../../components/panels/AudioPanel'
 import PdfContainer from '../../components/pdf/PdfContainer'
@@ -173,7 +174,9 @@ function V2ResourceView({ node }: { node: Node }) {
   const { t } = useTranslation()
   const ed = parseExtraData(node.extraData)
   const url = (ed._resourceUrl as string) || node.resourceUrl || ''
-  const type = ((ed._resourceType as string) || node.resourceType || '').toLowerCase()
+  const rawType = ((ed._resourceType as string) || node.resourceType || '').toLowerCase()
+  // PDFs antiguos sin `_resourceType` → detectados por URL/nombre (mismo helper que el clasificador).
+  const type = isPdfResource(node, ed) ? 'pdf' : rawType
   const key = (ed._resourceKey as string) || undefined
   const deleteCard = () => { store.deleteNode(node.id); toast(t('context.toastMovedToTrash', 'Movido a la papelera')); window.dispatchEvent(new Event('from:close-detail')) }
 
@@ -215,7 +218,8 @@ export default function V2DetailView({ nodeId }: { nodeId: string }) {
 
   if (hasAudio || rt.includes('audio')) return <AudioPanel nodeId={node.id} />
   // PDF / imagen → visor real (con subrayado en PDF). Otros recursos → ResourcePanel.
-  if (rt === 'pdf' || rt === 'image') return <V2ResourceView node={node} />
+  // `isPdfResource` cubre los PDFs antiguos sin `_resourceType:'pdf'` (detecta por URL/nombre).
+  if (isPdfResource(node, ed) || rt === 'image') return <V2ResourceView node={node} />
   if (node.isResource || node.resourceType) return <ResourcePanel node={node} />
   return <V2NoteBody node={node} />
 }
