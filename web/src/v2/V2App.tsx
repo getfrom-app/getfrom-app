@@ -35,6 +35,7 @@ export default function V2App() {
   // CONVERSACIÓN activa (false)? Al hablar manda la conversación; al entrar a un
   // contexto para verlo, manda su ficha.
   const [viewingCtxFicha, setViewingCtxFicha] = useState(false)
+  const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // elemento abierto en la columna derecha
   const [rightWidth, setRightWidth] = useState(() => {
     const v = Number(localStorage.getItem('v2_right_w'))
@@ -119,52 +120,76 @@ export default function V2App() {
     aiChatStore.startNewSession()
   }
 
-  const onFilesDropped = async (files: File[]) => {
-    // .md / .markdown / .txt → se importan como NOTA (documento) con el markdown ya
-    // renderizado (como si hubieras pegado el texto). El resto (PDF/imagen…) sigue el
-    // flujo de adjuntos/RAG.
-    const isText = (f: File) => /\.(md|markdown|txt)$/i.test(f.name) || f.type === 'text/markdown' || f.type === 'text/plain'
-    const textFiles = files.filter(isText)
-    const otherFiles = files.filter(f => !isText(f))
-    let lastId: string | null = null
-    for (const f of textFiles) {
-      try {
-        const content = await f.text()
-        const note = createMarkdownNode(captureParentId(), content, f.name, false)
-        if (note) lastId = note.id
-      } catch { /* ignora un archivo ilegible */ }
-    }
-    if (lastId) { setDetailNodeId(lastId); setRightMode('contexto') } // abre la nota importada
+  const isTextFile = (f: File) => /\.(md|markdown|txt)$/i.test(f.name) || f.type === 'text/markdown' || f.type === 'text/plain'
 
-    // PDF / imagen / otros → se ADJUNTAN a la conversación: se suben a R2, se crean como
-    // nodo-recurso hijo de la sesión (aparecen en su panel de Contexto y en Historial), y
-    // se avisa en el chat + toast. Si no hay conversación aún, se crea una (el adjunto la
-    // inicia). Así el usuario nunca cree que la subida ha fallado.
-    if (otherFiles.length) {
-      const seed = otherFiles[0].name.replace(/\.[^.]+$/, '')
-      const sid = aiChatStore.ensureSession(seed, selectedCtxId || undefined)
-      setDetailNodeId(null)
-      setViewingCtxFicha(false)
-      setRightMode('contexto')   // muestra el panel de la conversación con sus elementos
-      let ok = 0
-      for (const f of otherFiles) {
-        const node = store.createNode({ text: f.name.replace(/\.[^.]+$/, ''), parentId: sid })
-        try {
-          const { key, publicUrl } = await uploadFile(f)
-          const resourceType = f.type.startsWith('image/') ? 'image' : f.type === 'application/pdf' ? 'pdf' : 'file'
-          store.updateNode(node.id, { isResource: true, extraData: JSON.stringify({ _resourceUrl: publicUrl, _resourceKey: key, _resourceType: resourceType }) })
-          ok++
-          toast(`📎 ${f.name} adjuntado a la conversación`)
-        } catch {
-          store.deleteNode(node.id)   // limpiar nodo vacío si la subida falla
-          toast(`No se pudo subir ${f.name}`, 'error')
-        }
+  // Sube un archivo a R2 y crea su nodo-recurso bajo `parentId`. Devuelve el id o null.
+  const uploadResourceNode = async (f: File, parentId: string | null): Promise<string | null> => {
+    const node = store.createNode({ text: f.name.replace(/\.[^.]+$/, ''), parentId })
+    try {
+      const { key, publicUrl } = await uploadFile(f)
+      const resourceType = f.type.startsWith('image/') ? 'image' : f.type === 'application/pdf' ? 'pdf' : 'file'
+      store.updateNode(node.id, { isResource: true, extraData: JSON.stringify({ _resourceUrl: publicUrl, _resourceKey: key, _resourceType: resourceType }) })
+      return node.id
+    } catch {
+      store.deleteNode(node.id)
+      toast(`No se pudo subir ${f.name}`, 'error')
+      return null
+    }
+  }
+
+  // Importa archivos a Fromly bajo `parentId` SIN crear conversación (.md → nota; resto →
+  // recurso). Se usa al soltar sobre la columna de contextos (o sobre el chat sin conversación).
+  const importFilesToFromly = async (files: File[], parentId: string | null): Promise<string | null> => {
+    let lastId: string | null = null
+    for (const f of files) {
+      if (isTextFile(f)) {
+        try { const note = createMarkdownNode(parentId, await f.text(), f.name, false); if (note) lastId = note.id } catch { /* */ }
+      } else {
+        const id = await uploadResourceNode(f, parentId)
+        if (id) { lastId = id; toast(`📥 ${f.name} importado a Fromly`) }
       }
+    }
+    return lastId
+  }
+
+  // Soltar sobre el CHAT: con conversación activa → se adjunta a ella (RAG + aviso en el
+  // chat). SIN conversación → NO se crea una: se importa a Fromly y se abre el elemento.
+  const onFilesDropped = async (files: File[]) => {
+    const textFiles = files.filter(isTextFile)
+    const otherFiles = files.filter(f => !isTextFile(f))
+
+    // Notas de texto: siempre se importan como documento.
+    let lastNote: string | null = null
+    for (const f of textFiles) {
+      try { const note = createMarkdownNode(captureParentId(), await f.text(), f.name, false); if (note) lastNote = note.id } catch { /* */ }
+    }
+    if (lastNote) { setDetailNodeId(lastNote); setRightMode('contexto') }
+
+    if (!otherFiles.length) return
+
+    if (aiChatStore.sessionId) {
+      // Hay conversación → adjuntar a ella.
+      const sid = aiChatStore.sessionId
+      setDetailNodeId(null); setViewingCtxFicha(false); setRightMode('contexto')
+      let ok = 0
+      for (const f of otherFiles) { if (await uploadResourceNode(f, sid)) { ok++; toast(`📎 ${f.name} adjuntado a la conversación`) } }
       if (ok > 0) {
         const label = ok === 1 ? `**${otherFiles[0].name}**` : `${ok} archivos`
         aiChatStore.addNotice(`He incorporado ${label} a esta conversación. Ya puedes preguntarme sobre su contenido.`)
       }
+    } else {
+      // Sin conversación → importar a Fromly (RAG), sin iniciar chat.
+      const id = await importFilesToFromly(otherFiles, captureParentId())
+      if (id) { setDetailNodeId(id); setViewingCtxFicha(false); setRightMode('contexto') }
     }
+  }
+
+  // Soltar sobre la columna de CONTEXTOS (izquierda) → importar a Fromly (al contexto sobre
+  // el que se suelta, o al diario de hoy), nunca a la conversación.
+  const onImportToContext = async (files: File[], ctxId: string | null) => {
+    const parent = ctxId ?? captureParentId()
+    const id = await importFilesToFromly(files, parent)
+    if (id) { setSelectedCtxId(ctxId); setDetailNodeId(id); setViewingCtxFicha(false); setRightMode('contexto') }
   }
 
   // Toast unificado (mismo canal que el resto de la app).
@@ -355,7 +380,7 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onImportFiles={onImportToContext} onDragStateChange={setImportDragOver} />
       <V2Chat
         currentNodeId={currentNodeId}
         contextLabel={contextLabel}
@@ -376,6 +401,7 @@ export default function V2App() {
         activeSessionId={chat.sessionId}
         onOpenConversation={onOpenConversation}
         viewingCtxFicha={viewingCtxFicha}
+        importDragOver={importDragOver}
       />
       {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
       {showCapture && (

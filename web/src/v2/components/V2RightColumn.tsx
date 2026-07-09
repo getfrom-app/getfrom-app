@@ -25,6 +25,7 @@ interface Props {
   mode: RightMode
   onMode: (m: RightMode) => void
   selectedCtxId: string | null
+  importDragOver?: boolean
   onOpenNode: (id: string) => void
   onStartAbout: (id: string) => void
   onSelectCtx: (id: string) => void
@@ -95,7 +96,7 @@ function classifyContent(n: Node): ReturnType<typeof classifyElement> {
   return classifyElement(n)
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha }: Props) {
   useStore()
   const chat = useAIChat()
   const [today, setToday] = useState<Node | null>(() => store.todayDiary())
@@ -191,6 +192,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, onOpenNode,
   return (
     <aside className="v2-col v2-right">
       <div className="v2-resize-handle" onPointerDown={startResize} title="Arrastra para ensanchar" />
+      {importDragOver && <div className="v2-import-banner">📥 Importar a Fromly</div>}
       <div className="v2-right-tabs">
         {tabs.map(tb => (
           <button

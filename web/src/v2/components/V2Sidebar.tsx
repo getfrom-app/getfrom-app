@@ -17,6 +17,8 @@ interface Props {
   onSelectCtx: (id: string | null) => void
   onNewChat: () => void
   onNewChatInCtx: (id: string) => void
+  onImportFiles: (files: File[], ctxId: string | null) => void
+  onDragStateChange?: (active: boolean) => void
 }
 
 // Ordena por nombre (ignorando emoji/espacios iniciales), estable.
@@ -31,9 +33,18 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onImportFiles, onDragStateChange }: Props) {
   useStore()
   const user = useUserStore()
+  const [dragCtx, setDragCtx] = useState<string | null | undefined>(undefined) // ctxId sobre el que se arrastra (undefined = no drag)
+  const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer.types || []).includes('Files')
+  const dropFiles = (e: React.DragEvent, ctxId: string | null) => {
+    if (!hasFiles(e)) return
+    e.preventDefault(); e.stopPropagation()
+    setDragCtx(undefined); onDragStateChange?.(false)
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length) onImportFiles(files, ctxId)
+  }
   const { theme, setTheme } = useTheme()
   const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
   const [userMenu, setUserMenu] = useState(false)
@@ -73,7 +84,12 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
   const back = () => setStack(prev => prev.slice(0, -1))
 
   return (
-    <aside className="v2-col v2-sidebar">
+    <aside
+      className={`v2-col v2-sidebar ${dragCtx !== undefined ? 'v2-sidebar--drag' : ''}`}
+      onDragOver={(e) => { if (hasFiles(e)) { e.preventDefault(); if (dragCtx === undefined) { setDragCtx(currentParent?.id ?? null); onDragStateChange?.(true) } } }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as HTMLElement)) { setDragCtx(undefined); onDragStateChange?.(false) } }}
+      onDrop={(e) => dropFiles(e, currentParent?.id ?? null)}
+    >
       <div className="v2-sidebar-head">
         <span className="v2-brand">Fromly <span className="v2-brand-badge">2.0</span></span>
       </div>
@@ -122,8 +138,10 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
           return (
             <div
               key={c.id}
-              className={`v2-ctx-row ${currentParent ? 'child' : ''} ${selectedCtxId === c.id ? 'active' : ''}`}
+              className={`v2-ctx-row ${currentParent ? 'child' : ''} ${selectedCtxId === c.id ? 'active' : ''} ${dragCtx === c.id ? 'v2-ctx-row--drop' : ''}`}
               onClick={() => enter(c)}
+              onDragOver={(e) => { if (hasFiles(e)) { e.preventDefault(); e.stopPropagation(); if (dragCtx !== c.id) { setDragCtx(c.id); onDragStateChange?.(true) } } }}
+              onDrop={(e) => dropFiles(e, c.id)}
             >
               <span className="v2-ctx-dot" style={{ background: contextColor(c.id) }} />
               <span className="v2-el-title">{c.text || 'Sin título'}</span>

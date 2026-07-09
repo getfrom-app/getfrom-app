@@ -499,6 +499,17 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
+/* Importar a Fromly: banner en la parte superior de la columna derecha al arrastrar
+   un archivo sobre la columna de contextos, y resalte de la sidebar / contexto destino. */
+.v2-import-banner {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 50;
+  background: var(--text-accent, #6c5ce7); color: #fff;
+  font-size: 12.5px; font-weight: 600; text-align: center;
+  padding: 9px 12px; letter-spacing: 0.02em;
+}
+.v2-sidebar--drag { outline: 2px dashed var(--text-accent, #6c5ce7); outline-offset: -4px; }
+.v2-ctx-row--drop { background: var(--accent-soft) !important; box-shadow: inset 0 0 0 1px var(--text-accent, #6c5ce7); }
+
 @media (max-width: 900px) {
   .v2-root { grid-template-columns: 1fr; }
   .v2-sidebar, .v2-right { display: none; }

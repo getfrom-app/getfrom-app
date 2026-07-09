@@ -217,7 +217,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
         </div>
       </div>
 
-      {dragOver && <div className="v2-drop-overlay">Suelta para adjuntar al chat</div>}
+      {dragOver && <div className="v2-drop-overlay">{chat.sessionId ? '📎 Importar a la conversación' : '📥 Importar a Fromly'}</div>}
 
       {/* Modales de creación rápida (mismos que la v1). Las tareas nacen en el
           contexto activo (o el diario de hoy si no hay); los eventos, en el diario. */}
