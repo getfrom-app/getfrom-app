@@ -11,6 +11,7 @@ import { isDocNode } from '../../utils/docNode'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import ResourcePanel from '../../components/panels/ResourcePanel'
 import AudioPanel from '../../components/panels/AudioPanel'
+import PdfContainer from '../../components/pdf/PdfContainer'
 import Outliner from '../../components/outliner/Outliner'
 import PizarraView from '../../components/views/PizarraView'
 import DocEditor from '../../components/views/DocEditor'
@@ -123,15 +124,55 @@ function V2NoteBody({ node }: { node: Node }) {
   )
 }
 
+// Visor de RECURSO archivo: PDF (con selección/subrayado, como v1) o imagen se
+// renderizan de verdad; el resto (enlaces, libros, podcasts…) usa el ResourcePanel.
+function V2ResourceView({ node }: { node: Node }) {
+  const { t } = useTranslation()
+  const ed = parseExtraData(node.extraData)
+  const url = (ed._resourceUrl as string) || node.resourceUrl || ''
+  const type = ((ed._resourceType as string) || node.resourceType || '').toLowerCase()
+  const key = (ed._resourceKey as string) || undefined
+  const deleteCard = () => { store.deleteNode(node.id); toast(t('context.toastMovedToTrash', 'Movido a la papelera')); window.dispatchEvent(new Event('from:close-detail')) }
+
+  if (type !== 'pdf' && type !== 'image') return <ResourcePanel node={node} />
+  if (!url && !key) return <ResourcePanel node={node} />
+
+  const header = (
+    <div className="v2-note-toolbar">
+      <span className="v2-section-label" style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: 0 }}>{node.text || t('common.noTitle', 'Sin título')}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+        <PublishButton node={node} />
+        <button title={t('tip.delete', 'Eliminar')} onClick={deleteCard} style={{ ...actBtn, color: 'var(--text-tertiary,#999)' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+        </button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      {header}
+      <div style={{ flex: 1, minHeight: 0, overflow: type === 'pdf' ? 'hidden' : 'auto', padding: type === 'image' ? 16 : 0 }}>
+        {type === 'pdf'
+          ? <PdfContainer url={url} nodeId={node.id} filename={node.text || 'PDF'} resourceKey={key} />
+          : <img src={url} alt={node.text || ''} style={{ maxWidth: '100%', height: 'auto', borderRadius: 8, display: 'block' }} />}
+      </div>
+    </div>
+  )
+}
+
 export default function V2DetailView({ nodeId }: { nodeId: string }) {
   useStore()
   const node = store.getNode(nodeId)
   if (!node) return <div className="v2-right-empty">Elemento no encontrado.</div>
 
-  const hasAudio = Array.isArray(parseExtraData(node.extraData)._audios)
-  const rt = (node.resourceType || '').toLowerCase()
+  const ed = parseExtraData(node.extraData)
+  const hasAudio = Array.isArray(ed._audios)
+  const rt = ((node.resourceType || ed._resourceType || '') as string).toLowerCase()
 
   if (hasAudio || rt.includes('audio')) return <AudioPanel nodeId={node.id} />
+  // PDF / imagen → visor real (con subrayado en PDF). Otros recursos → ResourcePanel.
+  if (rt === 'pdf' || rt === 'image') return <V2ResourceView node={node} />
   if (node.isResource || node.resourceType) return <ResourcePanel node={node} />
   return <V2NoteBody node={node} />
 }

@@ -7,6 +7,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { useAIChat } from '../../store/aiChatStore'
 import { assignContext, nodeCtxRefs, contextColor } from '../../utils/cajones'
 import { parseExtraData } from '../../utils/papeleraHelper'
+import PdfCanvasPreview from '../../components/views/PdfCanvasPreview'
 import ContextPicker from '../../components/panels/ContextPicker'
 import { classifyElement } from '../elementKind'
 import { saveExample } from '../../api/autoClassify'
@@ -138,11 +139,14 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
           {thumbs.map(({ node: n, kind }) => {
             const e = parseExtraData(n.extraData)
             const url = (e._resourceUrl as string) || ''
+            const key = (e._resourceKey as string) || undefined
             return (
               <button className="v2-thumb" key={n.id} title={n.text || ''} onClick={() => onOpenNode(n.id)}>
                 {kind === 'image' && url
                   ? <img className="v2-thumb-img" src={url} alt={n.text || ''} />
-                  : <div className="v2-thumb-icon">📄</div>}
+                  : (url || key)
+                    ? <div className="v2-thumb-pdf"><PdfCanvasPreview url={url} resourceKey={key} width={220} /></div>
+                    : <div className="v2-thumb-icon">📄</div>}
                 <div className="v2-thumb-name">{n.text || 'Archivo'}</div>
               </button>
             )

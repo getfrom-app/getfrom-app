@@ -21,7 +21,7 @@ import { TaskPropsPopover } from './DiaryPanelComponents'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
 
-type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory'
+type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; due?: string | null; status?: string | null }
@@ -35,6 +35,7 @@ function classify(n: Node): ElemKind | null {
   // Nodos de CONVERSACIÓN (sesión ✦, transcript 💬, mensajes) NO son elementos: viven en
   // Historial, no en Elementos. Sin esto, los chats se colaban aquí como falsas «notas».
   if (e._aiSession != null || e._aiTranscript != null || e._aiMsgRole != null) return null
+  if (e._pdfSelection != null) return 'highlight'   // subrayado guardado de un PDF (cita)
   if (isMarkedContext(n)) return 'context'
   if (n.status != null) return 'task'
   if (n.isEvent) return 'event'
@@ -67,7 +68,7 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
   return true
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠' }
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️' }
 const ROW_H = 46
 
 export default function ElementsPanel() {
@@ -125,6 +126,7 @@ export default function ElementsPanel() {
     { key: 'event',   label: t('elements.events') },
     { key: 'link',    label: t('elements.links') },
     { key: 'pdf',     label: t('elements.pdfs') },
+    { key: 'highlight', label: '🖍️ ' + t('elements.highlights', 'Subrayados') },
     { key: 'image',   label: t('elements.images') },
     { key: 'context', label: t('elements.contexts') },
     { key: 'memory',  label: t('elements.memory', 'Memoria') },

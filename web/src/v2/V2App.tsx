@@ -270,6 +270,28 @@ export default function V2App() {
     return () => window.removeEventListener('from:close-detail', h)
   }, [])
 
+  // Subrayar en un PDF → «Guardar» crea un HIGHLIGHT: nodo-cita buscable con `_pdfSelection`,
+  // hijo del PDF de origen, que se lista como tipo propio en Elementos. (En el lienzo v1 esto
+  // lo hace PizarraView; en v2 no hay lienzo montado, así que lo maneja el shell.)
+  useEffect(() => {
+    const h = (e: Event) => {
+      const d = (e as CustomEvent<{ text?: string; sourceNodeId?: string; page?: number | null }>).detail
+      const text = (d?.text || '').trim()
+      const sourceId = d?.sourceNodeId
+      if (!text || !sourceId) return
+      const src = store.getNode(sourceId)
+      if (!src) return
+      const extra: Record<string, string> = { _doc: '1', _ctext: '1', _pdfSelection: '1', _pdfSourceId: sourceId }
+      if (d?.page != null) extra._pdfPage = String(d.page)
+      const quote = store.createNode({ text: '', parentId: sourceId, extraData: extra })
+      const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      store.updateNode(quote.id, { body: `<blockquote><p>${esc(text)}</p></blockquote>` })
+      toast('Subrayado guardado')
+    }
+    window.addEventListener('from:pdf-send-to-canvas', h as EventListener)
+    return () => window.removeEventListener('from:pdf-send-to-canvas', h as EventListener)
+  }, [])
+
   // Menú contextual (clic derecho) de cualquier fila/elemento → RightColMenu de la v1.
   // Las filas disparan `from:open-rowmenu` con { nodeId, x, y }.
   const [rowMenu, setRowMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)

@@ -6,7 +6,7 @@ import { parseExtraData } from '../utils/papeleraHelper'
 import { isDocNode } from '../utils/docNode'
 import type { Node } from '../types'
 
-export type ElKind = 'document' | 'note' | 'pdf' | 'image' | 'link' | 'audio'
+export type ElKind = 'document' | 'note' | 'pdf' | 'image' | 'link' | 'audio' | 'highlight'
 
 export function classifyElement(n: Node): { kind: ElKind; icon: string; label: string } | null {
   if (n.deletedAt || !n.text) return null
@@ -14,6 +14,7 @@ export function classifyElement(n: Node): { kind: ElKind; icon: string; label: s
   if (e._absorbedBy != null) return null                       // oculto dentro de un bloque
   if (e._aiSession === '1' || e._aiTranscript === '1' || e._aiMsgRole) return null
   if (e._ctx === '1') return null                              // subcontexto
+  if (e._pdfSelection != null) return { kind: 'highlight', icon: '🖍️', label: 'Subrayado' }
   if (n.status != null || (n.types || []).includes('tarea')) return null   // tarea
   if (n.isEvent || (n.types || []).includes('evento')) return null         // evento
 

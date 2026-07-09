@@ -8,6 +8,7 @@ import { store, useStore } from '../../store/nodeStore'
 import NewTaskModal from '../../components/modals/NewTaskModal'
 import NewEventModal from '../../components/modals/NewEventModal'
 import { listTemplates } from '../../utils/tagsHelper'
+import { renderInline } from '../../components/outliner/InlineRenderer'
 
 interface Props {
   currentNodeId: string | null
@@ -166,7 +167,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
                 <div className="v2-msg-body">
                   {(() => {
                     const disp = stripActions(m.content)
-                    if (disp) return disp.split('\n').map((line, i) => <p key={i}>{line || ' '}</p>)
+                    if (disp) return disp.split('\n').map((line, i) => <p key={i}>{line ? renderInline(line) : ' '}</p>)
                     if (streaming && m.role === 'assistant') {
                       return <span className="v2-creating">✨ Creando<span className="v2-creating-dots" /></span>
                     }
