@@ -36,6 +36,7 @@ function classify(n: Node): ElemKind | null {
   // Nodos de CONVERSACIÓN (sesión ✦, transcript 💬, mensajes) NO son elementos: viven en
   // Historial, no en Elementos. Sin esto, los chats se colaban aquí como falsas «notas».
   if (e._aiSession != null || e._aiTranscript != null || e._aiMsgRole != null) return null
+  if (e._containerNotes === '1') return null   // espacio de notas libres (estructural, no un elemento)
   if (e._pdfSelection != null) return 'highlight'   // subrayado guardado de un PDF (cita)
   if (isMarkedContext(n)) return 'context'
   if (n.status != null) return 'task'

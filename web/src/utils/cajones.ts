@@ -527,3 +527,27 @@ export function writeContextKnowledge(contextId: string, text: string): void {
   }
   for (let i = lines.length; i < existing.length; i++) store.deleteNode(existing[i].id)
 }
+
+// ── Notas libres (del usuario, no de la IA) ────────────────────────────────────
+// Espacio de escritura suelto para CUALQUIER contenedor (contexto o conversación):
+// a diferencia de «Lo que Fromly sabe» (memoria de la IA, una línea = un hecho),
+// esto es simplemente lo que el usuario quiera apuntar — un solo nodo, texto libre.
+// Marcado `_containerNotes='1'` para poder EXCLUIRLO de Elementos/búsqueda global
+// (es una superficie estructural de la columna derecha, no un elemento del contenido).
+export function containerNotesNode(containerId: string): Node | null {
+  return store.children(containerId).find(n => !n.deletedAt && ed(n)._containerNotes === '1') ?? null
+}
+
+export function readContainerNotes(containerId: string): string {
+  return containerNotesNode(containerId)?.text || ''
+}
+
+export function writeContainerNotes(containerId: string, text: string): void {
+  const trimmed = text
+  const n = containerNotesNode(containerId)
+  if (!trimmed.trim()) { if (n) store.deleteNode(n.id); return }
+  if (n) { store.updateNode(n.id, { text: trimmed }); return }
+  const sibs = store.children(containerId).filter(x => !x.deletedAt)
+  const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
+  store.createNode({ text: trimmed, parentId: containerId, siblingOrder: maxOrder + 1000, extraData: { _containerNotes: '1' } })
+}

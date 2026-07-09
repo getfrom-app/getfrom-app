@@ -7,6 +7,7 @@ import { store, useStore } from '../../store/nodeStore'
 import {
   contextColor, contextParent, isContextClosed, setContextClosed,
   readContextKnowledge, writeContextKnowledge, nodesInContext,
+  readContainerNotes, writeContainerNotes,
 } from '../../utils/cajones'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
@@ -32,6 +33,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
   // «Lo que Fromly sabe» — editable, se guarda al perder el foco.
   const [know, setKnow] = useState('')
   useEffect(() => { setKnow(readContextKnowledge(ctxId)) }, [ctxId])
+
+  // «Notas» — espacio de escritura LIBRE del usuario (no memoria de la IA): apuntes,
+  // comentarios, lo que sea. Mismo patrón que «Lo que Fromly sabe» pero es OTRO nodo.
+  const [notes, setNotes] = useState('')
+  useEffect(() => { setNotes(readContainerNotes(ctxId)) }, [ctxId])
 
   // TAREAS del contexto (hijas directas con estado/tipo tarea), estilo Hoy.
   const tasks = useMemo(() => {
@@ -107,6 +113,18 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
           ))}
         </>
       )}
+
+      {/* Notas — espacio de escritura libre del usuario para este contexto. */}
+      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+        <div className="v2-section-label" style={{ padding: '0 0 6px' }}>📝 Notas</div>
+        <textarea
+          className="v2-know-area"
+          value={notes}
+          placeholder="Escribe aquí lo que quieras sobre este contexto…"
+          onChange={(e) => setNotes(e.target.value)}
+          onBlur={() => writeContainerNotes(ctxId, notes)}
+        />
+      </div>
 
       {/* Lo que Fromly sabe — al final del todo */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>

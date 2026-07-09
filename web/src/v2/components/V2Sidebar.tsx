@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
-import { isRootContext, isMarkedContext, isContextClosed, contextColor } from '../../utils/cajones'
+import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent } from '../../utils/cajones'
 import { useTheme } from '../../hooks/useTheme'
 import { clearTokens } from '../../api/client'
 import SettingsModal from '../../components/modals/SettingsModal'
@@ -65,6 +65,23 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
     window.addEventListener('from:open-settings', h)
     return () => window.removeEventListener('from:open-settings', h)
   }, [])
+
+  // La izquierda sigue a `selectedCtxId` venga de donde venga (clic aquí, abrir una
+  // nota con contexto, un chip de contexto…): recompone el «pasillo» de drill-down
+  // hasta hacerlo visible. Si tiene subcontextos entra en él (se vuelve cabecera,
+  // igual que un clic manual); si es hoja, queda resaltado en la lista de su padre.
+  useEffect(() => {
+    if (!selectedCtxId) { setStack([]); return }
+    const n = store.getNode(selectedCtxId)
+    if (!n) return
+    const chain: Node[] = []
+    let cur = contextParent(selectedCtxId)
+    let guard = 0
+    while (cur && guard++ < 40) { chain.unshift(cur); cur = contextParent(cur.id) }
+    if (subContextsOf(selectedCtxId).length > 0) chain.push(n)
+    setStack(chain)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCtxId])
 
   const currentParent = stack.length ? stack[stack.length - 1] : null
 

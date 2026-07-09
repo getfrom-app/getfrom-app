@@ -10,7 +10,7 @@ import { aiChatStore, useAIChat } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
-import { isMarkedContext, isRootContext } from '../utils/cajones'
+import { isMarkedContext, isRootContext, firstContextOf } from '../utils/cajones'
 import { applyTemplate } from '../utils/tagsHelper'
 import { createMarkdownNode } from '../utils/importMarkdown'
 import { uploadFile } from '../api/client'
@@ -24,6 +24,19 @@ import { ToastProvider } from '../components/Toast'
 import './styles/v2.css'
 
 export const V2_VERSION = 'v2.0.0-beta.1'
+
+// La conversación que creó un nodo (si la hay): las acciones de escritura de la IA
+// parentan lo creado bajo la sesión (`aiChatExecutor.ts`), así que basta subir por
+// `parentId` hasta encontrar el nodo `_aiSession`. Tope de 10 niveles por seguridad.
+function findOriginSession(id: string): string | null {
+  let cur = store.getNode(id)
+  let guard = 0
+  while (cur && guard++ < 10) {
+    if (parseExtraData(cur.extraData)._aiSession === '1') return cur.id
+    cur = cur.parentId ? store.getNode(cur.parentId) : undefined
+  }
+  return null
+}
 
 export default function V2App() {
   useStore()
@@ -232,7 +245,24 @@ export default function V2App() {
     // elementos + «Archivar» + «Lo que Fromly sabe»), sea cual sea la ruta de entrada
     // (sidebar, cockpit «Hoy», chip de contexto…). Antes solo la sidebar llegaba a
     // `onSelectCtx`; el resto caía en el detalle genérico (V2NoteBody) y perdía Archivar.
-    if (isMarkedContext(store.getNode(id)) || isRootContext(id)) { onSelectCtx(id); return }
+    const node = store.getNode(id)
+    if (isMarkedContext(node) || isRootContext(id)) { onSelectCtx(id); return }
+
+    // Elemento normal: las 3 columnas se sincronizan con él. (1) Si nació dentro de
+    // una conversación, esa conversación pasa al CENTRO (sustituye la actual — igual
+    // que clicar la conversación en Historial). (2) Si pertenece a un contexto, la
+    // IZQUIERDA lo selecciona (V2Sidebar hace drill-down solo hasta él por su propio
+    // efecto sobre `selectedCtxId`). Ninguna de las dos cosas reinicia sesión de chat
+    // (a diferencia de `onSelectCtx`, pensado para clics explícitos en la sidebar).
+    const originSession = node ? findOriginSession(id) : null
+    if (originSession && originSession !== chat.sessionId) {
+      aiChatStore.loadSession(originSession)
+      setFocusNodeId(null)
+      setViewingCtxFicha(false)
+    }
+    const ctx = node ? firstContextOf(node) : null
+    if (ctx) setSelectedCtxId(ctx.id)
+
     // Elemento normal: se abre en la columna derecha (visor/editor según su tipo).
     setDetailNodeId(id)
   }

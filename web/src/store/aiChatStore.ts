@@ -54,15 +54,45 @@ export interface ChatMessage {
   audioDuration?: number
 }
 
-/** Parsea y elimina {{chips:[...]}} del texto. Devuelve texto limpio + chips. */
+/** Parsea y elimina {{chips:[...]}} del texto. Devuelve texto limpio + chips.
+ *  Busca el bloque en CUALQUIER posición (no solo anclado al final) y SIEMPRE lo
+ *  quita del texto aunque el JSON de dentro esté mal formado — el marcador crudo
+ *  NUNCA debe llegar a `cleanText` (antes, un JSON inválido dejaba `{{chips:...}}`
+ *  visible tal cual en el chat). */
 export function parseChips(text: string): { cleanText: string; chips: string[] } {
-  const match = text.match(/\{\{chips:([\s\S]*?)\}\}\s*$/)
-  if (!match) return { cleanText: text, chips: [] }
+  const match = text.match(/\{\{chips:([\s\S]*?)\}\}/)
+  if (!match || match.index == null) return { cleanText: text, chips: [] }
+  const cleanText = (text.slice(0, match.index) + text.slice(match.index + match[0].length)).trim()
   try {
-    const chips = JSON.parse(match[1]) as string[]
-    const cleanText = text.slice(0, text.lastIndexOf('{{chips:')).trim()
-    return { cleanText, chips: Array.isArray(chips) ? chips.slice(0, 4) : [] }
-  } catch { return { cleanText: text, chips: [] } }
+    const parsed = JSON.parse(match[1])
+    return { cleanText, chips: Array.isArray(parsed) ? parsed.slice(0, 4) : [] }
+  } catch { return { cleanText, chips: [] } }
+}
+
+function ed(n: Node): Record<string, unknown> {
+  try { return JSON.parse(n.extraData || '{}') } catch { return {} }
+}
+
+/** ¿Es una sesión de «solo comando» (créame una tarea, ponme un evento…) sin
+ *  valor conversacional real? Criterio (decisión de Alberto): exactamente 1
+ *  turno (1 mensaje tuyo + 1 de Magic), esa respuesta ejecutó al menos una
+ *  acción de escritura (hay algo creado, hermano del transcript, bajo la
+ *  sesión) y el texto de la respuesta es corto (confirmación, no contenido
+ *  sustancial). Se usa para NO mostrarla en Historial — sigue en la BD y
+ *  buscable, solo no ensucia la lista. En cuanto se añade un 2º mensaje deja
+ *  de cumplir el criterio y aparece sola. */
+export function isQuickCommandSession(sessionId: string): boolean {
+  const transcript = store.children(sessionId).find(c => !c.deletedAt && ed(c)._aiTranscript === '1')
+  if (!transcript) return false
+  const msgs = store.children(transcript.id).filter(c => !c.deletedAt)
+  const userMsgs = msgs.filter(m => ed(m)._aiMsgRole === 'user')
+  const assistantMsgs = msgs.filter(m => ed(m)._aiMsgRole === 'assistant')
+  if (userMsgs.length !== 1 || assistantMsgs.length !== 1) return false
+  const createdSiblings = store.children(sessionId).filter(c => !c.deletedAt && c.id !== transcript.id)
+  if (createdSiblings.length === 0) return false // no ejecutó ninguna acción → puede ser una pregunta real
+  const content = ed(assistantMsgs[0])._aiMsgContent
+  const text = (typeof content === 'string' ? content : (assistantMsgs[0].text || '')).trim()
+  return text.length > 0 && text.length <= 160
 }
 
 export interface ExecutedAction {
@@ -370,12 +400,15 @@ class AIChatStore {
             }
           }
         )
-        // Parsear y aplicar chips de seguimiento al mensaje assistant
+        // Parsear y aplicar chips de seguimiento al mensaje assistant. Se actualiza
+        // siempre que se haya encontrado un bloque `{{chips:...}}` (cleanText !==
+        // original), no solo si el JSON de dentro era válido — así el marcador nunca
+        // se queda visible en el chat aunque no se puedan derivar chips clicables.
         const { cleanText, chips } = parseChips(assistantText)
-        if (chips.length > 0) {
+        if (cleanText !== assistantText) {
           const idx2 = this.messages.findIndex(m => m.id === assistantMsgId)
           if (idx2 >= 0) {
-            this.messages[idx2] = { ...this.messages[idx2], content: cleanText, chips }
+            this.messages[idx2] = { ...this.messages[idx2], content: cleanText, chips: chips.length ? chips : undefined }
             this.notify()
           }
         }
@@ -570,12 +603,13 @@ class AIChatStore {
           }
         }
       )
-      // Parsear y aplicar chips del mensaje de resumen
+      // Parsear y aplicar chips del mensaje de resumen (ver comentario arriba: se
+      // aplica siempre que se haya encontrado un bloque, no solo si el JSON era válido).
       const { cleanText: summaryClean, chips: summaryChips } = parseChips(summaryText)
-      if (summaryChips.length > 0) {
+      if (summaryClean !== summaryText) {
         const idx2 = this.messages.findIndex(m => m.id === summaryMsgId)
         if (idx2 >= 0) {
-          this.messages[idx2] = { ...this.messages[idx2], content: summaryClean, chips: summaryChips }
+          this.messages[idx2] = { ...this.messages[idx2], content: summaryClean, chips: summaryChips.length ? summaryChips : undefined }
           this.notify()
         }
       }

@@ -6,7 +6,7 @@
 //            eventos de Google Calendar, atrasadas, para hoy, bucles abiertos.
 import { useEffect, useMemo, useState } from 'react'
 import { useStore, store } from '../../store/nodeStore'
-import { useAIChat } from '../../store/aiChatStore'
+import { useAIChat, isQuickCommandSession } from '../../store/aiChatStore'
 import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import DayColumn from '../../components/panels/DayColumn'
@@ -116,6 +116,9 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
       const ed = parseExtraData(n.extraData)
       if (ed._aiSession !== '1') return false
       if (isInPapelera(n.id)) return false   // borrada → no aparece en Historial (trashNode reparenta, no pone deletedAt)
+      // Comando de 1 turno sin valor conversacional (p.ej. «créame una tarea…») → no
+      // ensucia Historial. Sigue en la BD/buscable; al añadir un 2º mensaje aparece sola.
+      if (isQuickCommandSession(n.id)) return false
       return true
     })
     list.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))

@@ -24,6 +24,9 @@ function stripActions(s: string): string {
   return s
     .replace(/```from-action[\s\S]*?```/g, '')
     .replace(/```from-action[\s\S]*$/, '')
+    // Red de seguridad: el marcador de chips de seguimiento ya se separa en el store
+    // (parseChips), pero nunca debe poder colarse crudo al chat pase lo que pase.
+    .replace(/\{\{chips:[\s\S]*?\}\}/g, '')
     .trim()
 }
 

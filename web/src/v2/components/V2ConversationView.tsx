@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { useAIChat } from '../../store/aiChatStore'
-import { assignContext, nodeCtxRefs, contextColor } from '../../utils/cajones'
+import { assignContext, nodeCtxRefs, contextColor, readContainerNotes, writeContainerNotes } from '../../utils/cajones'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import PdfCanvasPreview from '../../components/views/PdfCanvasPreview'
 import ContextPicker from '../../components/panels/ContextPicker'
@@ -85,6 +85,10 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
   const sessionNode = store.getNode(sessionId)
   const ctxRefs = sessionNode ? nodeCtxRefs(sessionNode) : []
 
+  // «Notas» — espacio de escritura libre del usuario para ESTA conversación.
+  const [notes, setNotes] = useState('')
+  useEffect(() => { setNotes(readContainerNotes(sessionId)) }, [sessionId])
+
   return (
     <div>
       {/* Añadir la conversación a un contexto (buscador con crear, como en v1). */}
@@ -158,6 +162,18 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
         <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} hideContext />
       ))}
       {elements.length === 0 && <div className="v2-right-empty" style={{ padding: '8px 0' }}>Sin elementos todavía. Pídele a Fromly una nota, un documento, o sube archivos.</div>}
+
+      {/* Notas — espacio de escritura libre del usuario para esta conversación. */}
+      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
+        <div className="v2-section-label" style={{ padding: '0 0 6px' }}>📝 Notas</div>
+        <textarea
+          className="v2-know-area"
+          value={notes}
+          placeholder="Escribe aquí lo que quieras sobre esta conversación…"
+          onChange={(e) => setNotes(e.target.value)}
+          onBlur={() => writeContainerNotes(sessionId, notes)}
+        />
+      </div>
     </div>
   )
 }
