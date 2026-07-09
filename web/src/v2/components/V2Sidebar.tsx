@@ -9,6 +9,7 @@ import { isRootContext, isMarkedContext, isContextClosed, contextColor } from '.
 import { useTheme } from '../../hooks/useTheme'
 import { clearTokens } from '../../api/client'
 import SettingsModal from '../../components/modals/SettingsModal'
+import V2Trash from './V2Trash'
 import type { Node } from '../../types'
 
 interface Props {
@@ -37,6 +38,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
   const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
   const [userMenu, setUserMenu] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
+  const [showTrash, setShowTrash] = useState(false)
   const userWrap = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -139,6 +141,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         {userMenu && (
           <div className="v2-usermenu">
             <button className="v2-usermenu-item" onClick={() => { setShowSettings(true); setUserMenu(false) }}>⚙︎ Ajustes</button>
+            <button className="v2-usermenu-item" onClick={() => { setShowTrash(true); setUserMenu(false) }}>🗑 Papelera</button>
             <div className="v2-usermenu-sep" />
             <div className="v2-usermenu-label">Tema</div>
             <div className="v2-theme-seg">
@@ -165,6 +168,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         </button>
       </div>
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showTrash && <V2Trash onClose={() => setShowTrash(false)} />}
     </aside>
   )
 }
