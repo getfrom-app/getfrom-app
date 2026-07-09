@@ -9,6 +9,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { fetchFileContent } from '../../api/client'
+import { store, useStore } from '../../store/nodeStore'
+import { parseExtraData } from '../../utils/papeleraHelper'
 
 interface PathAnnotation {
   type: 'path'; page: number; color: string; width: number; opacity: number
@@ -31,6 +33,7 @@ export type { Annotation, PathAnnotation, TextAnnotation }
 
 export default function PdfViewer({ url, nodeId, filename, resourceKey, annotations, hideCanvasAction }: Props) {
   const { t: tr }    = useTranslation()
+  useStore()   // re-render al crear/borrar subrayados de este PDF
   const canvasRefs   = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const svgRefs      = useRef<Map<number, SVGSVGElement>>(new Map())
   const textLayerRefs= useRef<Map<number, HTMLDivElement>>(new Map())
@@ -45,6 +48,22 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
   const [loading,     setLoading]     = useState(true)
   // Selección de texto (Heptabase Fase 2): botón flotante «Enviar al lienzo»
   const [textSel,     setTextSel]     = useState<{ text: string; x: number; y: number; page: number | null } | null>(null)
+  // Subrayados guardados de ESTE PDF (hijos con `_pdfSelection`) — listables y borrables inline.
+  const [showHl,      setShowHl]      = useState(false)
+  const highlights = store.children(nodeId)
+    .filter(c => { if (c.deletedAt) return false; const ed = parseExtraData(c.extraData); return ed._pdfSelection === '1' })
+    .map(c => {
+      const ed = parseExtraData(c.extraData)
+      const d = document.createElement('div'); d.innerHTML = c.body || ''
+      return { id: c.id, text: (d.textContent || '').trim(), page: ed._pdfPage ? Number(ed._pdfPage) : null }
+    })
+
+  // Saltar a la página de un subrayado (scroll dentro del contenedor de páginas).
+  const scrollToPage = useCallback((page: number | null) => {
+    if (!page) return
+    const el = pagesRootRef.current?.querySelector<HTMLElement>(`[data-page="${page}"]`)
+    el?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [])
 
   // ── Cargar PDF ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -264,6 +283,31 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
           <button className="pdf-tb-btn" onClick={()=>setScale(s=>Math.min(3,s+0.25))}>+</button>
         </div>
         <div style={{flex:1}}/>
+        {/* Subrayados guardados de este PDF: contador + desplegable con borrado inline */}
+        {highlights.length > 0 && (
+          <div className="pdf-tb-group" style={{position:'relative',borderRight:'none'}}>
+            <button className="pdf-tb-btn" title={tr('pdf.highlights')} onClick={()=>setShowHl(v=>!v)}
+              style={{width:'auto',padding:'0 8px',gap:4,display:'flex',alignItems:'center',fontSize:12,color: showHl ? 'var(--text-primary)' : undefined}}>
+              🖍 {highlights.length}
+            </button>
+            {showHl && (
+              <div className="pdf-highlights-menu">
+                {highlights.map(h => (
+                  <div key={h.id} className="pdf-highlight-row">
+                    <button className="pdf-highlight-text" onClick={()=>{ scrollToPage(h.page); setShowHl(false) }} title={h.text}>
+                      {h.page ? <span className="pdf-highlight-page">p.{h.page}</span> : null}
+                      <span style={{flex:1,minWidth:0,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{h.text || tr('common.noTitle','Sin título')}</span>
+                    </button>
+                    <button className="pdf-highlight-del" title={tr('tip.delete','Eliminar')}
+                      onClick={()=>{ store.deleteNode(h.id); if (highlights.length <= 1) setShowHl(false) }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
         {/* Acciones del archivo */}
         <div className="pdf-tb-group" style={{borderLeft:'1px solid var(--border)',paddingLeft:8,marginLeft:4,borderRight:'none'}}>
           <button onClick={openFile} className="node-resource-pdf-open" title={tr('tip.openNewTab')} style={{background:'none',border:'none',cursor:'pointer'}}>

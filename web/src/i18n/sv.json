@@ -1567,6 +1567,7 @@
   "settingsView.ageMinutes": "för {{n}}min sedan",
   "outliner.notesHeader": "Anteckningar",
   "pdf.loadingViewer": "Laddar PDF-visare…",
+  "pdf.highlights": "Markeringar",
   "outliner.recBadgeMonthSing": "mån.",
   "hotkeys.toggleTask": "Växla uppgiftsstatus",
   "magicChat.itemPlural": "objekt",

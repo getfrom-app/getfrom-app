@@ -1742,6 +1742,7 @@
   "audioPanel.loading": "Loading audio…",
   "audioPanel.noAudio": "No audio in this note.",
   "pdf.loadingViewer": "Loading PDF viewer…",
+  "pdf.highlights": "Highlights",
   "pdf.document": "PDF document",
   "pdf.loadingPdf": "📄 Loading PDF…",
   "cmdpalette.event": "Event",

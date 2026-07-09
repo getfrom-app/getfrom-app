@@ -1567,6 +1567,7 @@
   "settingsView.ageMinutes": "{{n}}dk önce",
   "outliner.notesHeader": "Notlar",
   "pdf.loadingViewer": "PDF görüntüleyici yükleniyor…",
+  "pdf.highlights": "Vurgular",
   "outliner.recBadgeMonthSing": "ay",
   "hotkeys.toggleTask": "Görev durumunu değiştir",
   "magicChat.itemPlural": "öğe",

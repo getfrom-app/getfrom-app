@@ -1567,6 +1567,7 @@
   "settingsView.ageMinutes": "{{n}}мин назад",
   "outliner.notesHeader": "Заметки",
   "pdf.loadingViewer": "Загрузка просмотрщика PDF…",
+  "pdf.highlights": "Выделения",
   "outliner.recBadgeMonthSing": "мес.",
   "hotkeys.toggleTask": "Циклически менять статус задачи",
   "magicChat.itemPlural": "элементов",

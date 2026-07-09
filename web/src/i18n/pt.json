@@ -1567,6 +1567,7 @@
   "settingsView.ageMinutes": "Há {{n}}min",
   "outliner.notesHeader": "Notas",
   "pdf.loadingViewer": "A carregar visualizador de PDF…",
+  "pdf.highlights": "Destaques",
   "outliner.recBadgeMonthSing": "mês",
   "hotkeys.toggleTask": "Alternar estado da tarefa",
   "magicChat.itemPlural": "elementos",

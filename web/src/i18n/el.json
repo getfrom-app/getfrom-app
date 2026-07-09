@@ -1567,6 +1567,7 @@
   "settingsView.ageMinutes": "Πριν {{n}} λεπτά",
   "outliner.notesHeader": "Σημειώσεις",
   "pdf.loadingViewer": "Φόρτωση προβολέα PDF…",
+  "pdf.highlights": "Επισημάνσεις",
   "outliner.recBadgeMonthSing": "μήνας",
   "hotkeys.toggleTask": "Εναλλαγή κατάστασης εργασίας",
   "magicChat.itemPlural": "στοιχεία",
