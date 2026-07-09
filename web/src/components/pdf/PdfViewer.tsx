@@ -23,11 +23,13 @@ interface Props {
   url: string; nodeId: string; filename: string; resourceKey?: string
   annotations: Annotation[]
   onAnnotationsChange: (anns: Annotation[]) => void
+  /** En v2 (chat-first) no hay lienzo: se oculta la acción «Enviar al lienzo». */
+  hideCanvasAction?: boolean
 }
 
 export type { Annotation, PathAnnotation, TextAnnotation }
 
-export default function PdfViewer({ url, nodeId, filename, resourceKey, annotations }: Props) {
+export default function PdfViewer({ url, nodeId, filename, resourceKey, annotations, hideCanvasAction }: Props) {
   const { t: tr }    = useTranslation()
   const canvasRefs   = useRef<Map<number, HTMLCanvasElement>>(new Map())
   const svgRefs      = useRef<Map<number, SVGSVGElement>>(new Map())
@@ -308,9 +310,11 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         {textSel && (
           <div className="pdf-selection-actions" style={{ left: textSel.x, top: textSel.y }}
             onMouseDown={e=>e.preventDefault() /* no perder la selección al hacer clic */}>
-            <button className="pdf-send-to-canvas-btn" onClick={()=>actOnSelection('canvas')}>
-              ⤴ {tr('tip.sendToCanvas')}
-            </button>
+            {!hideCanvasAction && (
+              <button className="pdf-send-to-canvas-btn" onClick={()=>actOnSelection('canvas')}>
+                ⤴ {tr('tip.sendToCanvas')}
+              </button>
+            )}
             <button className="pdf-send-to-canvas-btn pdf-send-to-canvas-btn--save" onClick={()=>actOnSelection('save')}>
               💾 {tr('tip.saveSelection')}
             </button>

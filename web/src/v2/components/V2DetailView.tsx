@@ -154,7 +154,7 @@ function V2ResourceView({ node }: { node: Node }) {
       {header}
       <div style={{ flex: 1, minHeight: 0, overflow: type === 'pdf' ? 'hidden' : 'auto', padding: type === 'image' ? 16 : 0 }}>
         {type === 'pdf'
-          ? <PdfContainer url={url} nodeId={node.id} filename={node.text || 'PDF'} resourceKey={key} />
+          ? <PdfContainer url={url} nodeId={node.id} filename={node.text || 'PDF'} resourceKey={key} hideCanvasAction />
           : <img src={url} alt={node.text || ''} style={{ maxWidth: '100%', height: 'auto', borderRadius: 8, display: 'block' }} />}
       </div>
     </div>

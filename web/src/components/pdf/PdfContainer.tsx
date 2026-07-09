@@ -18,9 +18,10 @@ interface Props {
   nodeId: string
   filename: string
   resourceKey?: string
+  hideCanvasAction?: boolean
 }
 
-export default function PdfContainer({ url, nodeId, filename, resourceKey }: Props) {
+export default function PdfContainer({ url, nodeId, filename, resourceKey, hideCanvasAction }: Props) {
   const { t } = useTranslation()
   const [annotations, setAnnotations] = useState<Annotation[]>(() =>
     cache.get(nodeId) || []
@@ -65,6 +66,7 @@ export default function PdfContainer({ url, nodeId, filename, resourceKey }: Pro
         resourceKey={resourceKey}
         annotations={annotations}
         onAnnotationsChange={handleChange}
+        hideCanvasAction={hideCanvasAction}
       />
     </Suspense>
   )
