@@ -20,6 +20,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { assignContext } from '../../utils/cajones'
 import { firstLineTitle } from '../../utils/docNode'
 import { markdownToHtml } from '../../utils/importMarkdown'
+import DocMention from './DocMention'
 import { extractDateFromEnd } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { uploadFile } from '../../api/client'
@@ -405,6 +406,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       <div onClick={onContentClick}>
         <EditorContent editor={editor} />
       </div>
+      {editor && <DocMention editor={editor} selfId={node.id} />}
     </div>
   )
 }

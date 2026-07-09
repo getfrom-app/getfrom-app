@@ -4,7 +4,7 @@
 // persiste en extraData (_v2canvas). Las vistas Tabla/Kanban/Calendario NO son un modo
 // de la nota: son BLOQUES que se insertan dentro del contenido con «/» (slash) en el
 // editor — cada uno muestra sus propios hijos, sin tapar el resto de la nota.
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { isDocNode } from '../../utils/docNode'
@@ -27,6 +27,28 @@ const actBtn = { background: 'none', border: '1px solid var(--border,#e2e2e2)', 
 // Nota o documento: se puede ver como TEXTO o como LIENZO (mismo nodo). El toggle
 // persiste en extraData (_v2canvas). Cabecera de una sola fila: [Nota | Lienzo] a la
 // izquierda, acciones (favorito, exportar, publicar, eliminar) a la derecha.
+// Retroenlaces: elementos cuyo cuerpo enlaza a este nodo (/node/<id>). Enlace bidireccional.
+function V2Backlinks({ nodeId }: { nodeId: string }) {
+  useStore()
+  const links = useMemo(() => {
+    const needle = `/node/${nodeId}`
+    return store.allActive().filter(n => n.id !== nodeId && !n.deletedAt && (n.body || '').includes(needle))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodeId, store.nodesVersion])
+  if (!links.length) return null
+  return (
+    <div style={{ borderTop: '1px solid var(--border)', margin: '4px 20px 40px', paddingTop: 14 }}>
+      <div className="v2-section-label" style={{ padding: '0 0 6px' }}>Enlazado desde ({links.length})</div>
+      {links.map(n => (
+        <div className="v2-el-row" key={n.id} onClick={() => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: n.id } }))}>
+          <span className="v2-el-icon">📝</span>
+          <span className="v2-el-main"><span className="v2-el-title">{(n.text || '').replace(/^[✦💬]\s*/u, '') || 'Sin título'}</span></span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function V2NoteBody({ node }: { node: Node }) {
   const { t } = useTranslation()
   const [canvas, setCanvas] = useState(parseExtraData(node.extraData)._v2canvas === '1' || parseExtraData(node.extraData)._v2view === 'lienzo')
@@ -91,7 +113,10 @@ function V2NoteBody({ node }: { node: Node }) {
         {canvas
           ? <PizarraView parentId={node.id} flowUnpositioned globalCanvas={false} embedded />
           : asDoc
-            ? <div style={{ padding: '18px 20px 88px' }}><DocEditorBoundary compact><DocEditor node={node} compact registerActive autofocus={false} /></DocEditorBoundary></div>
+            ? <>
+                <div style={{ padding: '18px 20px 12px' }}><DocEditorBoundary compact><DocEditor node={node} compact registerActive autofocus={false} /></DocEditorBoundary></div>
+                <V2Backlinks nodeId={node.id} />
+              </>
             : <Outliner parentId={node.id} autoFocusEmpty placeholder="Escribe aquí… (usa «/» para insertar tabla, kanban, calendario…)" />}
       </div>
     </div>
