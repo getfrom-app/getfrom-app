@@ -13703,6 +13703,10 @@ textarea:focus-visible,
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Fila de UNA LÍNEA: el texto ocupa el ancho disponible y se trunca; la fecha y el
+   chip de contexto quedan al lado a la derecha. (No afecta a filas de dos líneas,
+   cuyo texto va dentro de .dc-row-l1.) */
+.dc-row > .dc-text { flex: 1 1 auto; min-width: 0; }
 .dc-due {
   flex-shrink: 0;
   font-size: 11px;

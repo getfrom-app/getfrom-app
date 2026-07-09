@@ -67,20 +67,18 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   // ── Tareas de hoy/atrasadas que pertenecen a un CONTEXTO ──────────────────
   // Se muestran bajo su contexto (sección Contextos), NO en las listas planas de
   // Atrasadas / Para hoy. Las que no tienen contexto siguen en sus listas.
+  // ctxTasks: qué contextos tienen tareas de hoy/atrasadas (para separar «Seguimiento»,
+  // que son los contextos SIN tareas de hoy). Las tareas ya se muestran planas en «Para hacer».
   const ctxTasks = new Map<string, { ctx: Node; overdue: Node[]; today: Node[] }>()
-  const bucketed = new Set<string>()
   const bucket = (n: Node, kind: 'overdue' | 'today') => {
     const c = firstContextOf(n)
     if (!c) return
     let e = ctxTasks.get(c.id)
     if (!e) { e = { ctx: c, overdue: [], today: [] }; ctxTasks.set(c.id, e) }
     e[kind].push(n)
-    bucketed.add(n.id)
   }
   for (const n of data.overdue) bucket(n, 'overdue')
   for (const n of data.today) bucket(n, 'today')
-  const overdueFlat = data.overdue.filter(n => !bucketed.has(n.id))
-  const todayFlat = data.today.filter(n => !bucketed.has(n.id))
 
   // ── Animación FLIP: las filas se deslizan a su nueva posición al reordenar ──
   // (p.ej. al completar, la tarea baja al final de su grupo en vez de saltar).
@@ -204,23 +202,14 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
         title={t('daily.markDone')}
         aria-label={t('daily.markDone')}
       >{n.status === 'done' ? '✓' : ''}</button>
-      {/* Columna: línea 1 = texto (ancho completo) + acciones; línea 2 = meta. */}
-      <div className="dc-row-main">
-        <div className="dc-row-l1">
-          <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
-          {/* Contexto: chip a la DERECHA del texto (mismo renglón). Si no tiene
-              contexto muestra «?» para asignarlo. Oculto cuando va bajo su contexto. */}
-          {!opts.inContext && <span style={{ marginLeft: 4, flexShrink: 0 }}><RowContextChip node={n} /></span>}
-          <TaskHoverActions node={n} onOpenDate={nn => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
-        </div>
-        {/* Línea 2 (meta). Se oculta sola con CSS `:empty` si no hay nada. */}
-        <div className="dc-row-l2">
-          {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
-          {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(n) }} title={t('dailyCockpit.editDateRecurrence')}
-            onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
-          {!opts.inContext && parentLabel(n) && n.parentId !== firstContextOf(n)?.id && <span className="dc-parent">{parentLabel(n)}</span>}
-        </div>
-      </div>
+      {/* UNA sola línea, ancho completo: texto truncado + hora/fecha + chip de contexto. */}
+      <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
+      {timeLabel(n) && <span className="dc-time">{timeLabel(n)}</span>}
+      {opts.showDue && dueLabel(n) && <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(n), flexShrink: 0 }} title={t('dailyCockpit.editDateRecurrence')}
+        onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{dueLabel(n)}</span>}
+      {/* Contexto SIEMPRE como chip al lado del texto (formato compacto). */}
+      <RowContextChip node={n} />
+      <TaskHoverActions node={n} onOpenDate={nn => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
     </div>
   )
 
@@ -251,10 +240,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   // salen salvo que tengan tareas de hoy → «Para hacer»). Los contextos en estado
   // «Algún día» viven en su árbol, no en la columna del día.
   const activeCtxs = listActiveContexts()
-  const porHacerCtxs: Node[] = []
-  const phSeen = new Set<string>()
-  for (const c of activeCtxs) if (ctxTasks.has(c.id)) { porHacerCtxs.push(c); phSeen.add(c.id) }
-  for (const { ctx } of ctxTasks.values()) if (!phSeen.has(ctx.id)) { porHacerCtxs.push(ctx); phSeen.add(ctx.id) }
   const seguimientoCtxs = activeCtxs.filter(c => !ctxTasks.has(c.id) && !!contextParent(c.id))
 
   // Fila de un contexto (dot color + padre + contadores + tareas anidadas si las
@@ -319,22 +304,15 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       {/* PARA HACER — unifica atrasadas + hoy + contextos. Las tareas se agrupan
           bajo su contexto; las que no tienen contexto, bajo «Sin contexto». */}
       {(() => {
-        const hasSinCtx = overdueFlat.length + todayFlat.length > 0
-        if (!hasSinCtx && porHacerCtxs.length === 0) return null
+        // Lista PLANA: todas las tareas (atrasadas + hoy) en filas de una línea, cada una
+        // con su contexto como chip al lado. Sin agrupar por contexto (más concentrado).
+        if (data.overdue.length + data.today.length === 0) return null
         const open = !collapsedG.has('porhacer')
         return (
           <div className="dc-group">
             {gHeader('porhacer', 'Para hacer')}
-            {open && porHacerCtxs.map(renderCtxRow)}
-            {/* «Sin contexto» — al final del bloque «Para hacer», antes de Seguimiento.
-                SIN inContext → muestra el chip «?» para asignar contexto. */}
-            {open && hasSinCtx && (
-              <div className="dc-group">
-                <div className="rc-section-label" style={{ margin: '2px 0 4px' }}>Sin contexto</div>
-                {overdueFlat.map(n => renderTaskRow(n, { showDue: true }))}
-                {todayFlat.map(n => renderTaskRow(n, {}))}
-              </div>
-            )}
+            {open && data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
+            {open && data.today.map(n => renderTaskRow(n, { showDue: true }))}
           </div>
         )
       })()}
