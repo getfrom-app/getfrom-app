@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { useAIChat } from '../../store/aiChatStore'
 import { assignContext, nodeCtxRefs, contextColor } from '../../utils/cajones'
+import { parseExtraData } from '../../utils/papeleraHelper'
 import ContextPicker from '../../components/panels/ContextPicker'
 import { classifyElement } from '../elementKind'
 import { saveExample } from '../../api/autoClassify'
@@ -68,13 +69,17 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
 
   // Elementos incluidos en la conversación (documentos, notas, PDF, imágenes, audios, enlaces).
   const elements = useMemo(() => {
-    const out: { node: Node; icon: string }[] = []
+    const out: { node: Node; icon: string; kind: string }[] = []
     for (const n of store.children(sessionId)) {
       const c = classifyElement(n)
-      if (c) out.push({ node: n, icon: c.icon })
+      if (c) out.push({ node: n, icon: c.icon, kind: c.kind })
     }
     return out
   }, [sessionId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Los adjuntos (PDF / imagen) se ven como MINIATURA (tarjeta); el resto como línea.
+  const thumbs = elements.filter(e => e.kind === 'pdf' || e.kind === 'image')
+  const lineEls = elements.filter(e => e.kind !== 'pdf' && e.kind !== 'image')
 
   const sessionNode = store.getNode(sessionId)
   const ctxRefs = sessionNode ? nodeCtxRefs(sessionNode) : []
@@ -126,7 +131,26 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
 
       {/* Elementos de la conversación */}
       <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>Elementos ({elements.length})</div>
-      {elements.map(({ node: n, icon }) => (
+
+      {/* Adjuntos (PDF / imagen) como miniaturas. */}
+      {thumbs.length > 0 && (
+        <div className="v2-thumb-grid">
+          {thumbs.map(({ node: n, kind }) => {
+            const e = parseExtraData(n.extraData)
+            const url = (e._resourceUrl as string) || ''
+            return (
+              <button className="v2-thumb" key={n.id} title={n.text || ''} onClick={() => onOpenNode(n.id)}>
+                {kind === 'image' && url
+                  ? <img className="v2-thumb-img" src={url} alt={n.text || ''} />
+                  : <div className="v2-thumb-icon">📄</div>}
+                <div className="v2-thumb-name">{n.text || 'Archivo'}</div>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {lineEls.map(({ node: n, icon }) => (
         <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} hideContext />
       ))}
       {elements.length === 0 && <div className="v2-right-empty" style={{ padding: '8px 0' }}>Sin elementos todavía. Pídele a Fromly una nota, un documento, o sube archivos.</div>}

@@ -26,7 +26,6 @@ interface Props {
   mode: RightMode
   onMode: (m: RightMode) => void
   selectedCtxId: string | null
-  droppedFiles: File[]
   onOpenNode: (id: string) => void
   onStartAbout: (id: string) => void
   onSelectCtx: (id: string) => void
@@ -51,13 +50,6 @@ function classify(n: Node): { icon: string; label: string } {
   if (types.includes('tarea') || n.status === 'pending' || n.status === 'done') return { icon: '☑️', label: 'Tarea' }
   if (n.isDiaryEntry) return { icon: '🗓️', label: 'Diario' }
   return { icon: '📝', label: 'Nota' }
-}
-
-function fileIcon(f: File): string {
-  const t = f.type
-  if (t.startsWith('image/')) return '🖼️'
-  if (t.includes('pdf')) return '📄'
-  return '📎'
 }
 
 // Título de la cabecera de detalle — clic para renombrar el nodo (fila 1).
@@ -101,7 +93,7 @@ function classifyContent(n: Node): ReturnType<typeof classifyElement> {
   return classifyElement(n)
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFiles, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha }: Props) {
   useStore()
   const chat = useAIChat()
   const [today, setToday] = useState<Node | null>(() => store.todayDiary())
@@ -229,22 +221,6 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, droppedFile
 
       {!detailNodeId && mode !== 'elementos' && (
       <div className="v2-right-body">
-        {/* Archivos recién arrastrados al chat. */}
-        {droppedFiles.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div className="v2-section-label" style={{ padding: '0 0 8px' }}>Adjuntos ({droppedFiles.length})</div>
-            <div className="v2-thumb-grid">
-              {droppedFiles.map((f, i) => (
-                <div className="v2-thumb" key={i} title={f.name}>
-                  <div className="v2-thumb-icon">{fileIcon(f)}</div>
-                  <div className="v2-thumb-name">{f.name}</div>
-                </div>
-              ))}
-            </div>
-            <div className="v2-el-meta" style={{ marginTop: 6 }}>Ingesta al RAG en la siguiente fase.</div>
-          </div>
-        )}
-
         {mode === 'contexto' && (
           // Con una conversación activa manda su PANEL (Relacionado/Tareas/Elementos);
           // la FICHA del contexto solo cuando entras a un contexto a verlo (viewingCtxFicha).

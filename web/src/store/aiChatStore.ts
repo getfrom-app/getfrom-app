@@ -228,6 +228,26 @@ class AIChatStore {
     this.notify()
   }
 
+  /** Devuelve la sesión activa; si no hay, crea una nueva (con seed opcional). Vincula al
+   * contexto si `currentNodeId` es un contexto. Se usa al adjuntar archivos sin haber
+   * escrito aún: el adjunto crea/usa una conversación para poder hablar de él. */
+  ensureSession(seed = 'Conversación', currentNodeId?: string): string {
+    if (this.sessionId) return this.sessionId
+    this.sessionId = this.createSessionNode(seed)
+    if (currentNodeId) {
+      try { if (isMarkedContext(store.getNode(currentNodeId)!)) assignContext(this.sessionId, currentNodeId) } catch { /* noop */ }
+    }
+    this.notify()
+    return this.sessionId
+  }
+
+  /** Añade un aviso (mensaje de Magic) al chat sin llamar a la IA. Efímero: informa de
+   * algo que acaba de pasar (p. ej. «he incorporado este PDF»). */
+  addNotice(content: string) {
+    this.messages.push({ id: crypto.randomUUID(), role: 'assistant', content, actions: [] })
+    this.notify()
+  }
+
   /** Inyectar un par user+assistant directamente, sin llamar al AI. Para onboarding. */
   injectMessages(userContent: string, assistantContent: string) {
     const userId = crypto.randomUUID()

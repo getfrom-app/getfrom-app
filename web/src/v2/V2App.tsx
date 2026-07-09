@@ -12,6 +12,7 @@ import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 import { applyTemplate } from '../utils/tagsHelper'
 import { createMarkdownNode } from '../utils/importMarkdown'
+import { uploadFile } from '../api/client'
 import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
@@ -34,7 +35,6 @@ export default function V2App() {
   // CONVERSACIÓN activa (false)? Al hablar manda la conversación; al entrar a un
   // contexto para verlo, manda su ficha.
   const [viewingCtxFicha, setViewingCtxFicha] = useState(false)
-  const [droppedFiles, setDroppedFiles] = useState<File[]>([])
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // elemento abierto en la columna derecha
   const [rightWidth, setRightWidth] = useState(() => {
     const v = Number(localStorage.getItem('v2_right_w'))
@@ -135,8 +135,41 @@ export default function V2App() {
       } catch { /* ignora un archivo ilegible */ }
     }
     if (lastId) { setDetailNodeId(lastId); setRightMode('contexto') } // abre la nota importada
-    if (otherFiles.length) { setDroppedFiles(prev => [...prev, ...otherFiles]); setRightMode('elementos') }
+
+    // PDF / imagen / otros → se ADJUNTAN a la conversación: se suben a R2, se crean como
+    // nodo-recurso hijo de la sesión (aparecen en su panel de Contexto y en Historial), y
+    // se avisa en el chat + toast. Si no hay conversación aún, se crea una (el adjunto la
+    // inicia). Así el usuario nunca cree que la subida ha fallado.
+    if (otherFiles.length) {
+      const seed = otherFiles[0].name.replace(/\.[^.]+$/, '')
+      const sid = aiChatStore.ensureSession(seed, selectedCtxId || undefined)
+      setDetailNodeId(null)
+      setViewingCtxFicha(false)
+      setRightMode('contexto')   // muestra el panel de la conversación con sus elementos
+      let ok = 0
+      for (const f of otherFiles) {
+        const node = store.createNode({ text: f.name.replace(/\.[^.]+$/, ''), parentId: sid })
+        try {
+          const { key, publicUrl } = await uploadFile(f)
+          const resourceType = f.type.startsWith('image/') ? 'image' : f.type === 'application/pdf' ? 'pdf' : 'file'
+          store.updateNode(node.id, { isResource: true, extraData: JSON.stringify({ _resourceUrl: publicUrl, _resourceKey: key, _resourceType: resourceType }) })
+          ok++
+          toast(`📎 ${f.name} adjuntado a la conversación`)
+        } catch {
+          store.deleteNode(node.id)   // limpiar nodo vacío si la subida falla
+          toast(`No se pudo subir ${f.name}`, 'error')
+        }
+      }
+      if (ok > 0) {
+        const label = ok === 1 ? `**${otherFiles[0].name}**` : `${ok} archivos`
+        aiChatStore.addNotice(`He incorporado ${label} a esta conversación. Ya puedes preguntarme sobre su contenido.`)
+      }
+    }
   }
+
+  // Toast unificado (mismo canal que el resto de la app).
+  const toast = (message: string, type: 'success' | 'error' = 'success') =>
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type } }))
 
   // Dónde nace el contenido creado desde el centro: el contexto activo o el diario de hoy.
   const captureParentId = (): string | null => {
@@ -312,7 +345,6 @@ export default function V2App() {
         mode={rightMode}
         onMode={setRightMode}
         selectedCtxId={selectedCtxId}
-        droppedFiles={droppedFiles}
         onOpenNode={onOpenNode}
         onStartAbout={onStartAbout}
         onSelectCtx={onSelectCtx}

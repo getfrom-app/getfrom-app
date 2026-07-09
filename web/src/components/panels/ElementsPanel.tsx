@@ -31,6 +31,9 @@ function classify(n: Node): ElemKind | null {
   if (n.deletedAt) return null
   const e = ed(n)
   if (e._absorbedBy != null) return null       // oculto dentro de un bloque → no es elemento suelto
+  // Nodos de CONVERSACIÓN (sesión ✦, transcript 💬, mensajes) NO son elementos: viven en
+  // Historial, no en Elementos. Sin esto, los chats se colaban aquí como falsas «notas».
+  if (e._aiSession != null || e._aiTranscript != null || e._aiMsgRole != null) return null
   if (isMarkedContext(n)) return 'context'
   if (n.status != null) return 'task'
   if (n.isEvent) return 'event'

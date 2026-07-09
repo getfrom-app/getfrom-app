@@ -29,6 +29,7 @@ function classify(n: Node): ElemKind | null {
   if (n.deletedAt) return null
   const e = ed(n)
   if (e._absorbedBy != null) return null
+  if (e._aiSession != null || e._aiTranscript != null || e._aiMsgRole != null) return null  // conversación → Historial, no aquí
   if (isMarkedContext(n)) return 'context'
   if (n.status != null) return 'task'
   if (n.isEvent) return 'event'
