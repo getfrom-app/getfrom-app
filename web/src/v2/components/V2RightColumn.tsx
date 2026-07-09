@@ -7,7 +7,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore, store } from '../../store/nodeStore'
 import { useAIChat } from '../../store/aiChatStore'
-import { nodesInContext } from '../../utils/cajones'
 import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import DayColumn from '../../components/panels/DayColumn'
@@ -106,21 +105,18 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, onOpenNode,
   }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Historial (conversaciones) ──
-  // Conversaciones reales (nodos de sesión), globales o filtradas por contexto (_ctxRefs).
+  // SIEMPRE global: el Historial es el índice para saltar a cualquier sitio de Fromly,
+  // no se filtra por el contexto abierto. (El contexto tiene su propia ficha en Contexto.)
   const sessions = useMemo(() => {
     const list = store.allActive().filter(n => {
       const ed = parseExtraData(n.extraData)
       if (ed._aiSession !== '1') return false
       if (isInPapelera(n.id)) return false   // borrada → no aparece en Historial (trashNode reparenta, no pone deletedAt)
-      if (selectedCtxId) {
-        const refs = Array.isArray(ed._ctxRefs) ? ed._ctxRefs : []
-        if (!refs.includes(selectedCtxId)) return false
-      }
       return true
     })
     list.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
     return list.slice(0, 100)
-  }, [store.nodesVersion, chat.sessionId, selectedCtxId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [store.nodesVersion, chat.sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Elementos DENTRO de cada conversación (hijos-contenido de la sesión) → indentados.
   const bySession = useMemo(() => {
@@ -144,9 +140,8 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, onOpenNode,
   // inunda con el vault heredado.
   const standalone = useMemo(() => {
     const sessionIds = new Set(sessions.map(s => s.id))
-    const src = selectedCtxId ? nodesInContext(selectedCtxId) : store.allActive()
     const out: { node: Node; icon: string; label: string }[] = []
-    for (const n of src) {
+    for (const n of store.allActive()) {                        // SIEMPRE global (no por contexto)
       const c = classifyContent(n)
       if (!c || c.kind === 'note') continue                    // fragmentos/bullets v1 → fuera
       if (n.parentId && sessionIds.has(n.parentId)) continue   // pertenece a una conversación
@@ -154,7 +149,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, onOpenNode,
       out.push({ node: n, icon: c.icon, label: c.label })
     }
     return out
-  }, [sessions, selectedCtxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sessions, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Nivel superior del Historial: conversaciones + elementos sueltos, por reciente.
   const topLevel = useMemo(() => {
