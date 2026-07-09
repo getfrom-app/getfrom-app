@@ -6,12 +6,27 @@
 
 ## Novedades (julio 2026, Fromly 2.0)
 
-- **Archivos y PDF**: arrastra un PDF o imagen al chat y se incorpora a la conversación; suéltalo sobre la columna de contextos (izquierda) para importarlo a Fromly sin abrir conversación. Los PDF se abren con visor real: puedes **seleccionar texto y subrayar**; los subrayados se guardan y se listan como su propio tipo en Elementos. Cada PDF muestra una miniatura de su primera página.
+- **Archivos y PDF**: arrastra un PDF o imagen a cualquier sitio (chat o columna de contextos) — si
+  tienes una conversación abierta se incorpora a ella, si no se importa directamente. Los PDF se
+  abren con visor real: puedes **seleccionar texto y subrayar** (el subrayado queda marcado en
+  amarillo sobre la propia página) y **recortar cualquier región como imagen** con la herramienta de
+  recorte de la barra de herramientas. Cada PDF muestra una miniatura de su primera página.
+  Puedes **quitar un archivo de una conversación** sin borrarlo — sigue guardado y buscable.
 - **Conector con Claude (MCP)**: Claude puede buscar, crear, editar, **borrar y mover** tus notas, subir archivos reales y hacer limpiezas por lotes. Las notas que crea Claude son documentos normales (no listas de puntos).
-- **Columna "Hoy" más compacta**: cada tarea en una sola línea, con su contexto como etiqueta al lado.
-- **Nota diaria**: editor de documento (no bullets) y creación rápida de tarea/evento del día.
-- **Contexto de una nota**: siempre visible y editable desde la propia nota (chip + "Cambiar contexto").
-- **Historial global**: lista todas tus conversaciones y elementos, para saltar rápido a cualquier sitio.
+- **Agenda = Hoy**: entrar a cualquier día desde el calendario anual muestra exactamente la misma
+  vista que la columna "Hoy" (eventos, para hacer, seguimiento, por planificar), con botones "+"
+  directos en cada bloque para crear un evento o una tarea de ese día.
+- **"Notas" en cualquier contexto, conversación o tarea**: un editor de nota completo (el mismo que
+  usas en cualquier nota — formato, favorito, exportar, publicar, e incluso cambiar a lienzo) para
+  apuntar lo que quieras, aparte de las tareas y elementos de ese sitio.
+- **Contexto padre**: puedes asignar o cambiar el contexto padre de cualquier contexto directamente
+  desde la columna derecha.
+- **Columna "Hoy" más compacta**: cada tarea en una sola línea, con chips de hora, fecha (color
+  según esté atrasada, sea hoy o futura) y repetición, más su contexto al lado.
+- **Contexto de cualquier elemento**: siempre visible y editable — nota, tarea, PDF, imagen o
+  enlace — con un chip y un botón para cambiarlo, y clic para navegar directamente a ese contexto.
+- **Historial global** más limpio: lista tus conversaciones y elementos para saltar rápido a
+  cualquier sitio; los comandos rápidos de un solo turno («créame una tarea…») ya no lo saturan.
 
 ---
 

@@ -1,7 +1,66 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-09 (Web v9.6.771)
+> Última actualización: 2026-07-09 (Web v9.6.787)
+
+---
+
+## 🗓️ Sesión 2026-07-09 (cont.) — Bug crítico «Documento», Agenda=Hoy, Notas con editor completo
+
+Web **v9.6.771 → v9.6.787**. Log detallado: `logs/2026-07-09-bug-documento-agenda-notas-editor-completo.md`.
+
+**🔴 Bug crítico resuelto: tareas/eventos se corrompían a «Documento» al abrirlos.**
+Causa raíz: `V2DetailView` no tenía ruta propia para tarea/evento → caían en `V2NoteBody` (editor de
+documento genérico) con `body` vacío; el `DocEditor` calculaba `firstLineTitle('')`='Documento' y lo
+GUARDABA como el `text` real del nodo en su próximo auto-guardado, perdiendo el nombre original para
+siempre. Fix de raíz + 3 redes de seguridad: (1) nueva vista `V2TaskDetailView` (checkbox + chips
+fecha/hora/repetición + contexto + Notas aparte, sin caer nunca en el editor de documento); (2)
+`DocEditor.keepsOwnTitle()` ampliado a proteger también tareas/eventos (antes solo notas diarias);
+(3) `DayColumn` auto-repara el título de un día si llegó corrompido, sea cual sea la función que lo
+trajo (`ensureDayPath`, `store.todayDiary()`, `getTodayDiaryUnderAgenda()`). **Los nodos ya
+corrompidos antes del fix no son recuperables** (título original sobrescrito y perdido). Auditoría
+con MCP tras el fix: 12 nodos afectados con `bodyLen:0` (1 tarea, 3 «contexto» dentro de
+transcripciones, 6 «documentos» bajo el lienzo raíz, 1 de bajo impacto) — Alberto los identifica/
+renombra a mano.
+
+**Rediseño Agenda=Hoy.** El día visto desde la tab Agenda pasa a ser IDÉNTICO al de la tab Hoy: el
+mismo `DayColumn`, sin «Volver al año» (redundante con clicar la tab), sin toggle colapsable, sin
+inputs de alta rápida — «Eventos de hoy»/«Para hacer» llevan un «+» en su propia cabecera (modal
+real), cabeceras siempre visibles. Nota de escritura libre al final de todo. `NewEventModal` gana
+`parentId`/`defaultDateStr` (antes siempre colgaba de HOY) + `onCreated` (evita navegar fuera de
+`/app/v2` con React Router — bug latente que también tenía el botón +Evento del chat).
+
+**TaskRow único.** Existían 4 copias independientes de la fila de tarea (Hoy, otros días, Elementos,
+Contexto v2), cada una con piezas distintas. Unificadas en `components/panels/TaskRow.tsx`:
+checkbox + texto + chips hora/día/repetición + contexto + hover — un solo componente para las 4
+vistas.
+
+**Notas: de casilla de texto a editor real.** Primera pasada (get-or-create de un nodo `_doc` +
+`DocEditor` compact) resultó insuficiente para Alberto («quiero el mismo editor que cualquier
+nota»). Se exportó `V2NoteBody` (el componente real que abre cualquier nota: toggle Nota⇄Lienzo,
+favorito, exportar, publicar, barra de formato completa) con un prop `inlinePage` para vivir dentro
+de una página más larga sin depender de `height:100%`. Reutilizado tal cual (mismo componente, cero
+duplicación) como sección «Notas» de Contexto/Conversación/Tarea. Prop `hideContext` suprime el chip
+de contexto del propio editor cuando ya se muestra arriba en esa misma vista (evita redundancia).
+
+**Drag-and-drop de archivos unificado.** Bug: soltar un archivo en el chat funcionaba, en la sidebar
+de contextos daba error (dos rutas de código distintas, una rota). Unificado en una sola ruta
+(`onFilesDropped`): con conversación activa se adjunta ahí, sin conversación se importa al
+contexto/día activo — sea cual sea la superficie donde se suelte. Nuevo «Quitar de esta
+conversación» (reparenta sin borrar, sigue en el RAG).
+
+**PDF — anotación estilo Heptabase.** Subrayado visual persistente: al guardar una selección de
+texto se capturan sus rects normalizados (`Range.getClientRects()`) y se pintan como marca amarilla
+translúcida sobre la página (mismo SVG que las anotaciones de pluma). Recorte de región: modo de
+arrastre que recorta directamente del `<canvas>` renderizado y sube el resultado como imagen,
+colgada del PDF de origen.
+
+**Consistencia UI**: contexto navegable + editable en cualquier recurso (PDF/imagen/audio/enlace,
+no solo nota/tarea); contexto padre asignable desde la columna derecha (`reparentContext`, ya
+existía en `cajones.ts` sin UI en v2); fila redundante quitada del visor de recurso (título ya
+arriba); toggle Nota/Lienzo restyled al mismo estilo sutil que el resto de acciones, con anchura
+fija igual para los dos botones; Historial oculta sesiones de «solo comando» (1 turno, sin valor
+conversacional) sin borrarlas.
 
 ---
 
