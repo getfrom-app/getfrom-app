@@ -1743,6 +1743,8 @@
   "audioPanel.noAudio": "No audio in this note.",
   "pdf.loadingViewer": "Loading PDF viewer…",
   "pdf.highlights": "Highlights",
+  "pdf.captureRegion": "Crop region",
+  "pdf.captureSaved": "Snippet saved",
   "pdf.document": "PDF document",
   "pdf.loadingPdf": "📄 Loading PDF…",
   "cmdpalette.event": "Event",

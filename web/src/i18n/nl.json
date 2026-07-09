@@ -1568,6 +1568,8 @@
   "outliner.notesHeader": "Notities",
   "pdf.loadingViewer": "PDF-viewer laden…",
   "pdf.highlights": "Markeringen",
+  "pdf.captureRegion": "Gebied bijsnijden",
+  "pdf.captureSaved": "Uitsnede opgeslagen",
   "outliner.recBadgeMonthSing": "maand",
   "hotkeys.toggleTask": "Taakstatus doorlopen",
   "magicChat.itemPlural": "elementen",

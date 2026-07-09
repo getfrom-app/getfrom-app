@@ -1568,6 +1568,8 @@
   "outliner.notesHeader": "Σημειώσεις",
   "pdf.loadingViewer": "Φόρτωση προβολέα PDF…",
   "pdf.highlights": "Επισημάνσεις",
+  "pdf.captureRegion": "Περικοπή περιοχής",
+  "pdf.captureSaved": "Το απόσπασμα αποθηκεύτηκε",
   "outliner.recBadgeMonthSing": "μήνας",
   "hotkeys.toggleTask": "Εναλλαγή κατάστασης εργασίας",
   "magicChat.itemPlural": "στοιχεία",

@@ -8,9 +8,14 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { fetchFileContent } from '../../api/client'
+import { fetchFileContent, uploadFile } from '../../api/client'
 import { store, useStore } from '../../store/nodeStore'
 import { parseExtraData } from '../../utils/papeleraHelper'
+
+/** Rectángulo NORMALIZADO (0-1, relativo al ancho/alto de la página) — mismo
+ *  convenio que los `points` de PathAnnotation, para que el subrayado se dibuje
+ *  en el sitio correcto a cualquier zoom. */
+interface NormRect { x: number; y: number; w: number; h: number }
 
 interface PathAnnotation {
   type: 'path'; page: number; color: string; width: number; opacity: number
@@ -47,7 +52,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
   const scaleInitialized = useRef(false)
   const [loading,     setLoading]     = useState(true)
   // Selección de texto (Heptabase Fase 2): botón flotante «Enviar al lienzo»
-  const [textSel,     setTextSel]     = useState<{ text: string; x: number; y: number; page: number | null } | null>(null)
+  const [textSel,     setTextSel]     = useState<{ text: string; x: number; y: number; page: number | null; rects: NormRect[] } | null>(null)
   // Subrayados guardados de ESTE PDF (hijos con `_pdfSelection`) — listables y borrables inline.
   const [showHl,      setShowHl]      = useState(false)
   const highlights = store.children(nodeId)
@@ -55,8 +60,16 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
     .map(c => {
       const ed = parseExtraData(c.extraData)
       const d = document.createElement('div'); d.innerHTML = c.body || ''
-      return { id: c.id, text: (d.textContent || '').trim(), page: ed._pdfPage ? Number(ed._pdfPage) : null }
+      let rects: NormRect[] = []
+      try { rects = JSON.parse((ed._pdfHlRects as string) || '[]') } catch { /* ignore */ }
+      return { id: c.id, text: (d.textContent || '').trim(), page: ed._pdfPage ? Number(ed._pdfPage) : null, rects }
     })
+  // Modo «recorte de región» (Heptabase): arrastrar sobre la página captura esa
+  // zona como imagen. Independiente de la selección de texto (se excluyen: al
+  // activarlo se desactiva la selección nativa del navegador sobre las páginas).
+  const [captureMode, setCaptureMode] = useState(false)
+  const [dragRect, setDragRect] = useState<{ page: number; x0: number; y0: number; x1: number; y1: number } | null>(null)
+  const dragStartRef = useRef<{ page: number; x: number; y: number } | null>(null)
 
   // Saltar a la página de un subrayado (scroll dentro del contenedor de páginas).
   const scrollToPage = useCallback((page: number | null) => {
@@ -165,11 +178,22 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
     return () => { cancelled = true }
   }, [numPages, scale])
 
-  // ── Renderizar SVG de anotaciones YA existentes (solo lectura, sin captura de ratón) ──
+  // ── Renderizar SVG de anotaciones YA existentes (solo lectura, sin captura de ratón)
+  //    + subrayados guardados de este PDF (rects amarillos translúcidos, debajo de
+  //    cualquier trazo de pluma) ──
   const renderSvg = useCallback((svg: SVGSVGElement, page: number, anns: Annotation[]) => {
     while (svg.firstChild) svg.removeChild(svg.firstChild)
     const w = pageWidths[page-1] || svg.clientWidth || 1
     const h = pageHeights[page-1] || svg.clientHeight || 1
+    for (const hl of highlights.filter(hh => hh.page === page)) {
+      for (const r of hl.rects) {
+        const el = document.createElementNS('http://www.w3.org/2000/svg', 'rect')
+        el.setAttribute('x', String(r.x * w)); el.setAttribute('y', String(r.y * h))
+        el.setAttribute('width', String(r.w * w)); el.setAttribute('height', String(r.h * h))
+        el.setAttribute('fill', 'rgba(255,224,71,0.45)')
+        svg.appendChild(el)
+      }
+    }
     for (const ann of anns.filter(a => a.page === page)) {
       if (ann.type === 'path' && ann.points.length >= 2) {
         const d = ann.points.map((p,i) => `${i===0?'M':'L'} ${p[0]*w} ${p[1]*h}`).join(' ')
@@ -188,7 +212,8 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
         svg.appendChild(el)
       }
     }
-  }, [pageWidths, pageHeights])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageWidths, pageHeights, JSON.stringify(highlights.map(h => [h.id, h.rects]))])
 
   // Re-dibujar anotaciones cuando cambian O cuando el PDF termina de cargar (numPages > 0).
   // Sin numPages en deps, las anotaciones se dibujan cuando los SVG refs aún están vacíos.
@@ -213,13 +238,28 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
       }
       const text = sel.toString().trim()
       if (!text) { setTextSel(null); return }
-      const rect = sel.getRangeAt(0).getBoundingClientRect()
+      const range = sel.getRangeAt(0)
+      const rect = range.getBoundingClientRect()
       const rootRect = root.getBoundingClientRect()
       // Página de origen (para citar/filtrar la selección guardada): del ancestro marcado con data-page.
       const anchorEl = sel.anchorNode instanceof Element ? sel.anchorNode : sel.anchorNode?.parentElement
       const pageEl = anchorEl?.closest<HTMLElement>('[data-page]')
       const page = pageEl ? Number(pageEl.dataset.page) : null
-      setTextSel({ text, x: rect.left + rect.width / 2 - rootRect.left + root.scrollLeft, y: rect.top - rootRect.top + root.scrollTop, page })
+      // Rects de la selección NORMALIZADOS a la página (0-1) — uno por línea, para
+      // poder pintar el subrayado persistente en su sitio exacto a cualquier zoom.
+      let rects: NormRect[] = []
+      if (pageEl) {
+        const pageRect = pageEl.getBoundingClientRect()
+        rects = Array.from(range.getClientRects())
+          .filter(r => r.width > 0 && r.height > 0)
+          .map(r => ({
+            x: (r.left - pageRect.left) / pageRect.width,
+            y: (r.top - pageRect.top) / pageRect.height,
+            w: r.width / pageRect.width,
+            h: r.height / pageRect.height,
+          }))
+      }
+      setTextSel({ text, x: rect.left + rect.width / 2 - rootRect.left + root.scrollLeft, y: rect.top - rootRect.top + root.scrollTop, page, rects })
     }
     document.addEventListener('selectionchange', onSelChange)
     return () => document.removeEventListener('selectionchange', onSelChange)
@@ -231,10 +271,67 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
   function actOnSelection(mode: 'canvas' | 'save') {
     if (!textSel) return
     window.dispatchEvent(new CustomEvent('from:pdf-send-to-canvas', {
-      detail: { text: textSel.text, sourceNodeId: nodeId, filename, page: textSel.page, mode },
+      detail: { text: textSel.text, sourceNodeId: nodeId, filename, page: textSel.page, mode, rects: textSel.rects },
     }))
     window.getSelection()?.removeAllRanges()
     setTextSel(null)
+  }
+
+  // ── Recorte de región (Heptabase): arrastrar sobre una página → captura esa
+  //    zona del CANVAS ya renderizado como imagen y la sube como recurso propio,
+  //    colgado del PDF de origen. Independiente de la selección de texto. ──
+  function onPagesMouseDown(e: React.MouseEvent) {
+    if (!captureMode) return
+    const pageEl = (e.target as HTMLElement).closest<HTMLElement>('[data-page]')
+    if (!pageEl) return
+    e.preventDefault()
+    const r = pageEl.getBoundingClientRect()
+    const page = Number(pageEl.dataset.page)
+    const x = e.clientX - r.left, y = e.clientY - r.top
+    dragStartRef.current = { page, x, y }
+    setDragRect({ page, x0: x, y0: y, x1: x, y1: y })
+  }
+  function onPagesMouseMove(e: React.MouseEvent) {
+    if (!captureMode || !dragStartRef.current) return
+    const { page, x: x0, y: y0 } = dragStartRef.current
+    const pageEl = pagesRootRef.current?.querySelector<HTMLElement>(`[data-page="${page}"]`)
+    if (!pageEl) return
+    const r = pageEl.getBoundingClientRect()
+    setDragRect({ page, x0, y0, x1: e.clientX - r.left, y1: e.clientY - r.top })
+  }
+  async function onPagesMouseUp() {
+    if (!captureMode || !dragStartRef.current || !dragRect) { dragStartRef.current = null; return }
+    dragStartRef.current = null
+    const { page, x0, y0, x1, y1 } = dragRect
+    setDragRect(null)
+    const sx = Math.min(x0, x1), sy = Math.min(y0, y1)
+    const sw = Math.abs(x1 - x0), sh = Math.abs(y1 - y0)
+    if (sw < 8 || sh < 8) return // arrastre ínfimo (clic accidental) — ignorar
+    const canvas = canvasRefs.current.get(page)
+    if (!canvas) return
+    // El canvas fuente puede tener más resolución que su tamaño CSS (devicePixelRatio
+    // no se aplica aquí, pero por seguridad escalamos por su propio ancho/alto reales).
+    const rx = canvas.width / canvas.clientWidth, ry = canvas.height / canvas.clientHeight
+    const out = document.createElement('canvas')
+    out.width = Math.round(sw * rx); out.height = Math.round(sh * ry)
+    out.getContext('2d')!.drawImage(canvas, sx * rx, sy * ry, sw * rx, sh * ry, 0, 0, out.width, out.height)
+    out.toBlob(async (blob) => {
+      if (!blob) return
+      try {
+        const base = filename.replace(/\.pdf$/i, '')
+        const file = new File([blob], `${base}-recorte-p${page}.png`, { type: 'image/png' })
+        const { key, publicUrl } = await uploadFile(file)
+        store.createNode({
+          text: `Recorte de ${base} (p.${page})`,
+          parentId: nodeId,
+          extraData: { _resourceType: 'image', _resourceUrl: publicUrl, _resourceKey: key, _pdfSourceId: nodeId, _pdfPage: String(page) },
+        })
+        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: tr('pdf.captureSaved'), type: 'success' } }))
+      } catch (err) {
+        console.error('[PdfViewer] capture error:', err)
+        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: tr('common.error'), type: 'warning' } }))
+      }
+    }, 'image/png')
   }
 
   // ── Abrir/descargar ───────────────────────────────────────────────────────
@@ -282,6 +379,15 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
           <span style={{fontSize:11,color:'var(--text-secondary)',padding:'0 4px'}}>{Math.round(scale*100)}%</span>
           <button className="pdf-tb-btn" onClick={()=>setScale(s=>Math.min(3,s+0.25))}>+</button>
         </div>
+        <div className="pdf-tb-group">
+          <button
+            className={`pdf-tb-btn ${captureMode ? 'pdf-tb-btn--active' : ''}`}
+            title={tr('pdf.captureRegion')}
+            onClick={() => setCaptureMode(v => !v)}
+          >
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2v3M6 15v3M2 6h3M15 6h3M6 6h9v9H6z"/></svg>
+          </button>
+        </div>
         <div style={{flex:1}}/>
         {/* Subrayados guardados de este PDF: contador + desplegable con borrado inline */}
         {highlights.length > 0 && (
@@ -321,7 +427,11 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
       </div>
 
       {/* Páginas */}
-      <div className="pdf-viewer-pages" ref={pagesRootRef} style={{ position: 'relative' }}>
+      <div
+        className="pdf-viewer-pages" ref={pagesRootRef}
+        style={{ position: 'relative', cursor: captureMode ? 'crosshair' : undefined, userSelect: captureMode ? 'none' : undefined }}
+        onMouseDown={onPagesMouseDown} onMouseMove={onPagesMouseMove} onMouseUp={onPagesMouseUp} onMouseLeave={onPagesMouseUp}
+      >
         {/* Loading como overlay — no afecta al layout ni causa saltos */}
         {loading && (
           <div style={{
@@ -352,6 +462,14 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
               <svg ref={el=>{if(el){svgRefs.current.set(page,el);renderSvg(el,page,annotations)}}}
                 className="pdf-viewer-svg" style={{pointerEvents:'none'}} />
               <div className="pdf-page-num">{tr('tip.pageLabel', { page, total: numPages })}</div>
+              {/* Rectángulo de arrastre del recorte de región (Heptabase) — feedback en vivo. */}
+              {dragRect && dragRect.page === page && (
+                <div className="pdf-capture-rect" style={{
+                  position: 'absolute',
+                  left: Math.min(dragRect.x0, dragRect.x1), top: Math.min(dragRect.y0, dragRect.y1),
+                  width: Math.abs(dragRect.x1 - dragRect.x0), height: Math.abs(dragRect.y1 - dragRect.y0),
+                }} />
+              )}
             </div>
           )
         })}

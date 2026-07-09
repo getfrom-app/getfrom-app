@@ -1743,6 +1743,8 @@
   "audioPanel.noAudio": "No hay audio en esta nota.",
   "pdf.loadingViewer": "Cargando visor PDF…",
   "pdf.highlights": "Subrayados",
+  "pdf.captureRegion": "Recortar región",
+  "pdf.captureSaved": "Recorte guardado",
   "pdf.document": "Documento PDF",
   "pdf.loadingPdf": "📄 Cargando PDF…",
   "cmdpalette.event": "Evento",

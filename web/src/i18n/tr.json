@@ -1568,6 +1568,8 @@
   "outliner.notesHeader": "Notlar",
   "pdf.loadingViewer": "PDF görüntüleyici yükleniyor…",
   "pdf.highlights": "Vurgular",
+  "pdf.captureRegion": "Bölge kırp",
+  "pdf.captureSaved": "Kırpma kaydedildi",
   "outliner.recBadgeMonthSing": "ay",
   "hotkeys.toggleTask": "Görev durumunu değiştir",
   "magicChat.itemPlural": "öğe",

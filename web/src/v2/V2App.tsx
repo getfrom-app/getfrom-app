@@ -336,7 +336,7 @@ export default function V2App() {
   // lo hace PizarraView; en v2 no hay lienzo montado, así que lo maneja el shell.)
   useEffect(() => {
     const h = (e: Event) => {
-      const d = (e as CustomEvent<{ text?: string; sourceNodeId?: string; page?: number | null }>).detail
+      const d = (e as CustomEvent<{ text?: string; sourceNodeId?: string; page?: number | null; rects?: { x: number; y: number; w: number; h: number }[] }>).detail
       const text = (d?.text || '').trim()
       const sourceId = d?.sourceNodeId
       if (!text || !sourceId) return
@@ -344,6 +344,10 @@ export default function V2App() {
       if (!src) return
       const extra: Record<string, string> = { _doc: '1', _ctext: '1', _pdfSelection: '1', _pdfSourceId: sourceId }
       if (d?.page != null) extra._pdfPage = String(d.page)
+      // Rects normalizados de la selección → el visor los pinta como marca amarilla
+      // persistente sobre la página (antes solo quedaba la cita en la lista 🖍, sin
+      // marca visual en el propio PDF).
+      if (d?.rects?.length) extra._pdfHlRects = JSON.stringify(d.rects)
       const quote = store.createNode({ text: '', parentId: sourceId, extraData: extra })
       const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       store.updateNode(quote.id, { body: `<blockquote><p>${esc(text)}</p></blockquote>` })

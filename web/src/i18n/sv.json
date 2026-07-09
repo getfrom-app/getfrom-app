@@ -1568,6 +1568,8 @@
   "outliner.notesHeader": "Anteckningar",
   "pdf.loadingViewer": "Laddar PDF-visare…",
   "pdf.highlights": "Markeringar",
+  "pdf.captureRegion": "Beskär område",
+  "pdf.captureSaved": "Utklipp sparat",
   "outliner.recBadgeMonthSing": "mån.",
   "hotkeys.toggleTask": "Växla uppgiftsstatus",
   "magicChat.itemPlural": "objekt",

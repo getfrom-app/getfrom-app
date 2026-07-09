@@ -1568,6 +1568,8 @@
   "outliner.notesHeader": "Notes",
   "pdf.loadingViewer": "Chargement de la visionneuse PDF…",
   "pdf.highlights": "Surlignages",
+  "pdf.captureRegion": "Recadrer une zone",
+  "pdf.captureSaved": "Extrait enregistré",
   "outliner.recBadgeMonthSing": "mois",
   "hotkeys.toggleTask": "Faire défiler l'état de la tâche",
   "magicChat.itemPlural": "éléments",

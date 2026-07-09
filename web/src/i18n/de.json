@@ -1568,6 +1568,8 @@
   "outliner.notesHeader": "Notizen",
   "pdf.loadingViewer": "PDF-Viewer wird geladen…",
   "pdf.highlights": "Markierungen",
+  "pdf.captureRegion": "Bereich zuschneiden",
+  "pdf.captureSaved": "Ausschnitt gespeichert",
   "outliner.recBadgeMonthSing": "Monat",
   "hotkeys.toggleTask": "Aufgabenstatus durchschalten",
   "magicChat.itemPlural": "Elemente",

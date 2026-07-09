@@ -6084,6 +6084,11 @@ body.outliner-drag-active {
 }
 .pdf-send-to-canvas-btn:hover { opacity: .9; }
 .pdf-send-to-canvas-btn--save { background: #444; }
+/* Rectángulo de arrastre del recorte de región (Heptabase) — feedback en vivo. */
+.pdf-capture-rect {
+  border: 1.5px dashed var(--accent); background: rgba(108,92,231,0.12);
+  pointer-events: none; z-index: 15;
+}
 
 .node-resource-pdf-wrap {
   display: flex;
