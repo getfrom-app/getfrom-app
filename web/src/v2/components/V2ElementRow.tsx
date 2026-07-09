@@ -13,9 +13,13 @@ interface Props {
   child?: boolean          // fila indentada (elemento dentro de una conversación)
   extraMeta?: string       // texto extra a la derecha del chip (p.ej. la fecha en Historial)
   hideContext?: boolean    // no mostrar el chip de contexto (vista ya dentro de ese contexto)
+  /** Si se pasa, aparece un botón «quitar de aquí» (distinto de eliminar): saca el
+   *  elemento de este contenedor (p.ej. una conversación) sin borrarlo — sigue en
+   *  Fromly y buscable, solo deja de estar «dentro» de este sitio concreto. */
+  onDetach?: (id: string) => void
 }
 
-export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext }: Props) {
+export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext, onDetach }: Props) {
   const ctx = hideContext ? null : firstContextOf(node)
   const title = (node.text || '').replace(/^(?:✦|💬)\s*/u, '').trim() || 'Sin título'
   const del = (e: React.MouseEvent) => {
@@ -46,7 +50,12 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
           </span>
         )}
       </span>
-      {/* Eliminar al hover — mismo patrón que el resto de listas de la app (dc-del). */}
+      {/* Quitar de la conversación (no borra, solo desengancha) + Eliminar — al hover. */}
+      {onDetach && (
+        <button className="v2-el-del" title="Quitar de esta conversación" onClick={e => { e.stopPropagation(); e.preventDefault(); onDetach(node.id) }}>
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l8 8M14 6l-8 8"/><rect x="2" y="14" width="16" height="4" rx="1"/></svg>
+        </button>
+      )}
       <button className="v2-el-del" title="Eliminar" onClick={del}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
       </button>

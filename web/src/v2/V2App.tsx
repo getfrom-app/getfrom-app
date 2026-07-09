@@ -166,8 +166,12 @@ export default function V2App() {
     return lastId
   }
 
-  // Soltar sobre el CHAT: con conversación activa → se adjunta a ella (RAG + aviso en el
-  // chat). SIN conversación → NO se crea una: se importa a Fromly y se abre el elemento.
+  // Soltar un archivo — MISMO comportamiento sea cual sea la superficie donde se suelte
+  // (chat, sidebar de contextos…): con conversación activa → se adjunta a ella (RAG +
+  // aviso en el chat); SIN conversación → se importa a Fromly bajo el contexto/día activo
+  // y se abre el elemento. Antes soltar sobre la sidebar tenía su PROPIA ruta
+  // (`onImportToContext`, ligada al contexto concreto sobre el que soltabas) que daba
+  // error al subir — una sola ruta, un solo sitio que arreglar/mantener.
   const onFilesDropped = async (files: File[]) => {
     const textFiles = files.filter(isTextFile)
     const otherFiles = files.filter(f => !isTextFile(f))
@@ -196,14 +200,6 @@ export default function V2App() {
       const id = await importFilesToFromly(otherFiles, captureParentId())
       if (id) { setDetailNodeId(id); setViewingCtxFicha(false); setRightMode('contexto') }
     }
-  }
-
-  // Soltar sobre la columna de CONTEXTOS (izquierda) → importar a Fromly (al contexto sobre
-  // el que se suelta, o al diario de hoy), nunca a la conversación.
-  const onImportToContext = async (files: File[], ctxId: string | null) => {
-    const parent = ctxId ?? captureParentId()
-    const id = await importFilesToFromly(files, parent)
-    if (id) { setSelectedCtxId(ctxId); setDetailNodeId(id); setViewingCtxFicha(false); setRightMode('contexto') }
   }
 
   // Toast unificado (mismo canal que el resto de la app).
@@ -420,7 +416,7 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onImportFiles={onImportToContext} onDragStateChange={setImportDragOver} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} />
       <V2Chat
         currentNodeId={currentNodeId}
         contextLabel={contextLabel}

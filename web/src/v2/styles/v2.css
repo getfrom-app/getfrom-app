@@ -494,12 +494,22 @@
   gap: 8px; margin: 4px 0 8px;
 }
 .v2-thumb {
+  position: relative;
   display: flex; flex-direction: column; align-items: stretch; text-align: left;
   border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
   background: var(--bg-elevated, var(--bg-secondary)); cursor: pointer; padding: 0;
   font-family: inherit; transition: border-color .12s, box-shadow .12s;
 }
 .v2-thumb:hover { border-color: var(--text-accent); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+/* Quitar de la conversación — esquina, solo al hover de la tarjeta. */
+.v2-thumb-detach {
+  position: absolute; top: 4px; right: 4px; z-index: 2;
+  width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 5px; background: rgba(0,0,0,0.55); color: #fff; cursor: pointer;
+  opacity: 0; transition: opacity .1s;
+}
+.v2-thumb:hover .v2-thumb-detach { opacity: 1; }
+.v2-thumb-detach:hover { background: rgba(224,49,49,0.85); }
 .v2-thumb-icon {
   display: flex; align-items: center; justify-content: center;
   height: 68px; font-size: 26px;
@@ -524,7 +534,6 @@
   padding: 9px 12px; letter-spacing: 0.02em;
 }
 .v2-sidebar--drag { outline: 2px dashed var(--text-accent, #6c5ce7); outline-offset: -4px; }
-.v2-ctx-row--drop { background: var(--accent-soft) !important; box-shadow: inset 0 0 0 1px var(--text-accent, #6c5ce7); }
 
 @media (max-width: 900px) {
   .v2-root { grid-template-columns: 1fr; }

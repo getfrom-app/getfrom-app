@@ -90,6 +90,15 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
   // «Notas» — editor real (DocEditor) para ESTA conversación. Get-or-create una vez.
   const notesNode = useMemo(() => getOrCreateContainerNotes(sessionId), [sessionId])
 
+  // Quitar un elemento de ESTA conversación (no lo borra): lo saca de sus hijos y lo
+  // reparenta a su contexto (si la conversación tiene uno) o, si no, al padre de la
+  // propia sesión — sigue existiendo en Fromly y buscable, solo deja de estar «dentro».
+  const detachFromConversation = (nodeId: string) => {
+    const newParent = ctxRefs[0] ?? sessionNode?.parentId ?? null
+    store.updateNode(nodeId, { parentId: newParent })
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Quitado de la conversación (sigue en Fromly)', type: 'success' } }))
+  }
+
   return (
     <div>
       {/* Añadir la conversación a un contexto (buscador con crear, como en v1). */}
@@ -146,21 +155,27 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
             const url = (e._resourceUrl as string) || ''
             const key = (e._resourceKey as string) || undefined
             return (
-              <button className="v2-thumb" key={n.id} title={n.text || ''} onClick={() => onOpenNode(n.id)}>
+              <div className="v2-thumb" key={n.id} title={n.text || ''} role="button" tabIndex={0}
+                onClick={() => onOpenNode(n.id)}
+                onKeyDown={e => { if (e.key === 'Enter') onOpenNode(n.id) }}>
+                <button className="v2-thumb-detach" title="Quitar de esta conversación"
+                  onClick={e => { e.stopPropagation(); detachFromConversation(n.id) }}>
+                  <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l8 8M14 6l-8 8"/><rect x="2" y="14" width="16" height="4" rx="1"/></svg>
+                </button>
                 {kind === 'image' && url
                   ? <img className="v2-thumb-img" src={url} alt={n.text || ''} />
                   : (url || key)
                     ? <div className="v2-thumb-pdf"><PdfCanvasPreview url={url} resourceKey={key} width={220} /></div>
                     : <div className="v2-thumb-icon">📄</div>}
                 <div className="v2-thumb-name">{n.text || 'Archivo'}</div>
-              </button>
+              </div>
             )
           })}
         </div>
       )}
 
       {lineEls.map(({ node: n, icon }) => (
-        <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} hideContext />
+        <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} hideContext onDetach={detachFromConversation} />
       ))}
       {elements.length === 0 && <div className="v2-right-empty" style={{ padding: '8px 0' }}>Sin elementos todavía. Pídele a Fromly una nota, un documento, o sube archivos.</div>}
 

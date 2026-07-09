@@ -17,7 +17,10 @@ interface Props {
   onSelectCtx: (id: string | null) => void
   onNewChat: () => void
   onNewChatInCtx: (id: string) => void
-  onImportFiles: (files: File[], ctxId: string | null) => void
+  // Mismo handler que el chat (V2App.onFilesDropped): con conversación activa se
+  // adjunta ahí, si no se importa al contexto/día activo. Soltar en la sidebar ya
+  // NO tiene una ruta propia por-contexto (daba error al subir; una sola ruta).
+  onFilesDropped: (files: File[]) => void
   onDragStateChange?: (active: boolean) => void
 }
 
@@ -33,17 +36,17 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onImportFiles, onDragStateChange }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onFilesDropped, onDragStateChange }: Props) {
   useStore()
   const user = useUserStore()
-  const [dragCtx, setDragCtx] = useState<string | null | undefined>(undefined) // ctxId sobre el que se arrastra (undefined = no drag)
+  const [dragOver, setDragOver] = useState(false) // resaltado visual mientras se arrastra (ya no por-contexto)
   const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer.types || []).includes('Files')
-  const dropFiles = (e: React.DragEvent, ctxId: string | null) => {
+  const dropFiles = (e: React.DragEvent) => {
     if (!hasFiles(e)) return
     e.preventDefault(); e.stopPropagation()
-    setDragCtx(undefined); onDragStateChange?.(false)
+    setDragOver(false); onDragStateChange?.(false)
     const files = Array.from(e.dataTransfer.files)
-    if (files.length) onImportFiles(files, ctxId)
+    if (files.length) onFilesDropped(files)
   }
   const { theme, setTheme } = useTheme()
   const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
@@ -102,10 +105,10 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
 
   return (
     <aside
-      className={`v2-col v2-sidebar ${dragCtx !== undefined ? 'v2-sidebar--drag' : ''}`}
-      onDragOver={(e) => { if (hasFiles(e)) { e.preventDefault(); if (dragCtx === undefined) { setDragCtx(currentParent?.id ?? null); onDragStateChange?.(true) } } }}
-      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as HTMLElement)) { setDragCtx(undefined); onDragStateChange?.(false) } }}
-      onDrop={(e) => dropFiles(e, currentParent?.id ?? null)}
+      className={`v2-col v2-sidebar ${dragOver ? 'v2-sidebar--drag' : ''}`}
+      onDragOver={(e) => { if (hasFiles(e)) { e.preventDefault(); if (!dragOver) { setDragOver(true); onDragStateChange?.(true) } } }}
+      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as HTMLElement)) { setDragOver(false); onDragStateChange?.(false) } }}
+      onDrop={dropFiles}
     >
       <div className="v2-sidebar-head">
         <span className="v2-brand">Fromly <span className="v2-brand-badge">2.0</span></span>
@@ -155,10 +158,8 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
           return (
             <div
               key={c.id}
-              className={`v2-ctx-row ${currentParent ? 'child' : ''} ${selectedCtxId === c.id ? 'active' : ''} ${dragCtx === c.id ? 'v2-ctx-row--drop' : ''}`}
+              className={`v2-ctx-row ${currentParent ? 'child' : ''} ${selectedCtxId === c.id ? 'active' : ''}`}
               onClick={() => enter(c)}
-              onDragOver={(e) => { if (hasFiles(e)) { e.preventDefault(); e.stopPropagation(); if (dragCtx !== c.id) { setDragCtx(c.id); onDragStateChange?.(true) } } }}
-              onDrop={(e) => dropFiles(e, c.id)}
             >
               <span className="v2-ctx-dot" style={{ background: contextColor(c.id) }} />
               <span className="v2-el-title">{c.text || 'Sin título'}</span>
