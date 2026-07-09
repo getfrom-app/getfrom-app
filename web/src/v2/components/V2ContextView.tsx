@@ -2,16 +2,19 @@
 // Como en la v1: contenido agrupado por tipo (Tareas / Notas / …), indicador de
 // contexto padre, botón ARCHIVAR (mapea al flag _closed de la v1 → sale del árbol
 // pero sigue buscable + rastreable por el RAG), y «Lo que Fromly sabe» al final.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import {
   contextColor, contextParent, isContextClosed, setContextClosed,
   readContextKnowledge, writeContextKnowledge, nodesInContext,
-  readContainerNotes, writeContainerNotes,
+  getOrCreateContainerNotes, reparentContext, clearContextParent,
 } from '../../utils/cajones'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
+import DocEditor from '../../components/views/DocEditor'
+import DocEditorBoundary from '../../components/DocEditorBoundary'
+import ContextPicker from '../../components/panels/ContextPicker'
 import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
@@ -30,14 +33,26 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
   const closed = node ? isContextClosed(node) : false
   const canArchive = !!parent // solo subcontextos (las áreas no se archivan)
 
+  // Contexto PADRE — picker inline (mismo patrón que «Cambiar contexto» de nota/tarea).
+  const [parentPickerOpen, setParentPickerOpen] = useState(false)
+  const parentPickWrap = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!parentPickerOpen) return
+    const onDoc = (e: MouseEvent) => { if (parentPickWrap.current && !parentPickWrap.current.contains(e.target as HTMLElement)) setParentPickerOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [parentPickerOpen])
+  // Un contexto no puede colgar de sí mismo ni de uno de sus propios descendientes (ciclo).
+  const isDescendantOf = (candidateId: string) => {
+    let cur: Node | null | undefined = store.getNode(candidateId)
+    let guard = 0
+    while (cur && guard++ < 60) { if (cur.id === ctxId) return true; cur = cur.parentId ? store.getNode(cur.parentId) : null }
+    return false
+  }
+
   // «Lo que Fromly sabe» — editable, se guarda al perder el foco.
   const [know, setKnow] = useState('')
   useEffect(() => { setKnow(readContextKnowledge(ctxId)) }, [ctxId])
-
-  // «Notas» — espacio de escritura LIBRE del usuario (no memoria de la IA): apuntes,
-  // comentarios, lo que sea. Mismo patrón que «Lo que Fromly sabe» pero es OTRO nodo.
-  const [notes, setNotes] = useState('')
-  useEffect(() => { setNotes(readContainerNotes(ctxId)) }, [ctxId])
 
   // TAREAS del contexto (hijas directas con estado/tipo tarea), estilo Hoy.
   const tasks = useMemo(() => {
@@ -80,10 +95,41 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
     if (docId) onOpenNode(docId)
   }
 
+  // Documento de «Notas» — get-or-create UNA vez por contexto (no en cada render).
+  const notesNode = useMemo(() => getOrCreateContainerNotes(ctxId), [ctxId])
+
   if (!node) return <div className="v2-right-empty">Contexto no encontrado.</div>
 
   return (
     <div>
+      {/* Contexto PADRE — chip navegable + cambiar/quitar (mismo patrón que el resto). */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+        {parent ? (
+          <span className="v2-chip" style={{ ['--chip' as string]: contextColor(parent.id), cursor: 'default' }}>
+            <span style={{ cursor: 'pointer' }} onClick={() => onSelectCtx(parent.id)}>{parent.text}</span>
+          </span>
+        ) : null}
+        <div className="v2-ctxpick-wrap" ref={parentPickWrap}>
+          <button className="v2-ctx-edit-btn" onClick={() => setParentPickerOpen(o => !o)} title={parent ? 'Cambiar contexto padre' : 'Añadir contexto padre'}>
+            <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2.5a1.5 1.5 0 0 1 2 2L6 15l-3 1 1-3L14.5 2.5z"/></svg>
+          </button>
+          {parentPickerOpen && (
+            <div className="v2-ctxpick-pop">
+              <ContextPicker
+                currentId={parent?.id ?? null}
+                exclude={c => c.id === ctxId || isDescendantOf(c.id)}
+                onPick={id => {
+                  if (id) reparentContext(ctxId, id)
+                  else clearContextParent(ctxId)
+                  setParentPickerOpen(false)
+                }}
+              />
+            </div>
+          )}
+        </div>
+        {!parent && <span className="v2-el-meta">Sin contexto padre</span>}
+      </div>
+
       {/* Migración: notas antiguas del contexto → un documento colgado del contexto. */}
       {legacyCount > 0 && (
         <button className="v2-ctx-migrate-btn" onClick={doMigrate}>
@@ -114,16 +160,12 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
         </>
       )}
 
-      {/* Notas — espacio de escritura libre del usuario para este contexto. */}
-      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 6px' }}>📝 Notas</div>
-        <textarea
-          className="v2-know-area"
-          value={notes}
-          placeholder="Escribe aquí lo que quieras sobre este contexto…"
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={() => writeContainerNotes(ctxId, notes)}
-        />
+      {/* Notas — editor real (mismo TipTap que una nota normal), no una casilla de texto. */}
+      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 4 }}>
+        <div className="v2-section-label" style={{ padding: '0 0 2px' }}>📝 Notas</div>
+        <DocEditorBoundary compact>
+          <DocEditor node={notesNode} compact autofocus={false} />
+        </DocEditorBoundary>
       </div>
 
       {/* Lo que Fromly sabe — al final del todo */}

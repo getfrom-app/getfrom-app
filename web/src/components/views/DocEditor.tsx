@@ -92,7 +92,9 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // original era justo este: tareas abiertas por error quedaban tituladas «Documento».
   const keepsOwnTitle = () => {
     const n = store.getNode(node.id)
-    return !!(n?.isDiaryEntry || n?.diaryDate || n?.status != null || n?.isEvent)
+    if (!n) return false
+    if (n.isDiaryEntry || n.diaryDate || n.status != null || n.isEvent) return true
+    try { return JSON.parse(n.extraData || '{}')._containerNotes === '1' } catch { return false }
   }
   // Construye el update de guardado: incluye `text` salvo en nodos de título canónico.
   const bodySave = (html: string) => keepsOwnTitle() ? { body: html } : { body: html, text: firstLineTitle(html) }

@@ -5,15 +5,17 @@
 // elementos llamados Documento»). Sigue siendo una TAREA: checkbox + chips de
 // fecha/hora/repetición (clic abre el popover real) + su contexto (clic navega,
 // antes no hacía nada) + un espacio de NOTAS libre (no el body de la tarea).
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
-import { firstContextOf, contextColor, readContainerNotes, writeContainerNotes } from '../../utils/cajones'
+import { firstContextOf, contextColor, getOrCreateContainerNotes } from '../../utils/cajones'
 import { timeLabel, dueLabel, dueColor, recLabel } from '../../components/panels/TaskRow'
 import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
+import DocEditor from '../../components/views/DocEditor'
+import DocEditorBoundary from '../../components/DocEditorBoundary'
 
 interface Props {
   node: Node
@@ -27,8 +29,7 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
   const done = node.status === 'done'
   const ctx = firstContextOf(node)
 
-  const [notes, setNotes] = useState('')
-  useEffect(() => { setNotes(readContainerNotes(node.id)) }, [node.id])
+  const notesNode = useMemo(() => getOrCreateContainerNotes(node.id), [node.id])
 
   const time = timeLabel(node, i18n.language)
   const due = dueLabel(node, i18n.language)
@@ -71,16 +72,12 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
         )}
       </div>
 
-      {/* Notas — espacio de escritura libre sobre esta tarea/evento (NO es el título). */}
-      <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 6px' }}>📝 Notas</div>
-        <textarea
-          className="v2-know-area"
-          value={notes}
-          placeholder="Comentarios, contexto adicional…"
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={() => writeContainerNotes(node.id, notes)}
-        />
+      {/* Notas — editor real (mismo TipTap que una nota normal), NO es el título. */}
+      <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 4 }}>
+        <div className="v2-section-label" style={{ padding: '0 0 2px' }}>📝 Notas</div>
+        <DocEditorBoundary compact>
+          <DocEditor node={notesNode} compact autofocus={false} />
+        </DocEditorBoundary>
       </div>
 
       {showProps && <TaskPropsPopover node={node} allowDelete onDeleted={() => window.dispatchEvent(new Event('from:close-detail'))} onClose={() => setShowProps(false)} />}

@@ -5,10 +5,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { useAIChat } from '../../store/aiChatStore'
-import { assignContext, nodeCtxRefs, contextColor, readContainerNotes, writeContainerNotes } from '../../utils/cajones'
+import { assignContext, nodeCtxRefs, contextColor, getOrCreateContainerNotes } from '../../utils/cajones'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import PdfCanvasPreview from '../../components/views/PdfCanvasPreview'
 import ContextPicker from '../../components/panels/ContextPicker'
+import DocEditor from '../../components/views/DocEditor'
+import DocEditorBoundary from '../../components/DocEditorBoundary'
 import { classifyElement } from '../elementKind'
 import { saveExample } from '../../api/autoClassify'
 import { ragRelated } from '../../api/client'
@@ -85,9 +87,8 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
   const sessionNode = store.getNode(sessionId)
   const ctxRefs = sessionNode ? nodeCtxRefs(sessionNode) : []
 
-  // «Notas» — espacio de escritura libre del usuario para ESTA conversación.
-  const [notes, setNotes] = useState('')
-  useEffect(() => { setNotes(readContainerNotes(sessionId)) }, [sessionId])
+  // «Notas» — editor real (DocEditor) para ESTA conversación. Get-or-create una vez.
+  const notesNode = useMemo(() => getOrCreateContainerNotes(sessionId), [sessionId])
 
   return (
     <div>
@@ -163,16 +164,12 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
       ))}
       {elements.length === 0 && <div className="v2-right-empty" style={{ padding: '8px 0' }}>Sin elementos todavía. Pídele a Fromly una nota, un documento, o sube archivos.</div>}
 
-      {/* Notas — espacio de escritura libre del usuario para esta conversación. */}
-      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 6px' }}>📝 Notas</div>
-        <textarea
-          className="v2-know-area"
-          value={notes}
-          placeholder="Escribe aquí lo que quieras sobre esta conversación…"
-          onChange={(e) => setNotes(e.target.value)}
-          onBlur={() => writeContainerNotes(sessionId, notes)}
-        />
+      {/* Notas — editor real (mismo TipTap que una nota normal) para esta conversación. */}
+      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 4 }}>
+        <div className="v2-section-label" style={{ padding: '0 0 2px' }}>📝 Notas</div>
+        <DocEditorBoundary compact>
+          <DocEditor node={notesNode} compact autofocus={false} />
+        </DocEditorBoundary>
       </div>
     </div>
   )
