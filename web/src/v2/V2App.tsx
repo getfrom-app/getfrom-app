@@ -227,6 +227,13 @@ export default function V2App() {
     return () => window.removeEventListener('from:open-detail', h as EventListener)
   }, [])
 
+  // Cerrar el detalle cuando un panel lo pide (p.ej. al ELIMINAR el elemento abierto).
+  useEffect(() => {
+    const h = () => setDetailNodeId(null)
+    window.addEventListener('from:close-detail', h)
+    return () => window.removeEventListener('from:close-detail', h)
+  }, [])
+
   // Menú contextual (clic derecho) de cualquier fila/elemento → RightColMenu de la v1.
   // Las filas disparan `from:open-rowmenu` con { nodeId, x, y }.
   const [rowMenu, setRowMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
