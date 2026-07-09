@@ -231,10 +231,15 @@ export default function V2App() {
       return tag === 'INPUT' || tag === 'TEXTAREA' || (el as HTMLElement).isContentEditable
     }
     const onKey = (e: KeyboardEvent) => {
-      if (e.code !== 'Space' || e.metaKey || e.ctrlKey || e.altKey || e.repeat) return
-      if (showCapture || isTyping(document.activeElement)) return
-      e.preventDefault()
-      setShowCapture(true)
+      // ⌘K / Ctrl+K → paleta de captura/búsqueda (funciona aunque estés escribiendo).
+      if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'k') {
+        e.preventDefault(); setShowCapture(v => !v); return
+      }
+      // Barra espaciadora → captura rápida (solo si NO estás en un campo de texto).
+      if (e.code === 'Space' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.repeat) {
+        if (showCapture || isTyping(document.activeElement)) return
+        e.preventDefault(); setShowCapture(true)
+      }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
