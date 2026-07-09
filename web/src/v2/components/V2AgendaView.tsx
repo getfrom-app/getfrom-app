@@ -7,6 +7,9 @@ import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import YearCalendarPanel from '../../components/panels/YearCalendarPanel'
 import DayColumn from '../../components/panels/DayColumn'
+import V2DayQuickAdd from './V2DayQuickAdd'
+import DocEditor from '../../components/views/DocEditor'
+import DocEditorBoundary from '../../components/DocEditorBoundary'
 
 export default function V2AgendaView() {
   useStore()
@@ -31,8 +34,15 @@ export default function V2AgendaView() {
       <div>
         <button className="v2-agenda-back" onClick={() => setDayId(null)}>‹ Volver al año</button>
         <div className="v2-panel-title">{dayNode.text || 'Día'}</div>
-        {/* Eventos + tareas del día + espacio de notas (outliner editable). */}
-        <DayColumn node={dayNode} includeNodes />
+        {/* Eventos + tareas del día (estilizados). SIN el outliner de bullets. */}
+        <DayColumn node={dayNode} includeNodes={false} />
+        {/* Alta rápida de tarea/evento del día. */}
+        <V2DayQuickAdd dayNode={dayNode} />
+        {/* Nota del día como DOCUMENTO (no bullets). */}
+        <div className="v2-section-label" style={{ padding: '10px 0 4px' }}>Nota del día</div>
+        <DocEditorBoundary compact>
+          <DocEditor node={dayNode} compact registerActive autofocus={false} />
+        </DocEditorBoundary>
       </div>
     )
   }

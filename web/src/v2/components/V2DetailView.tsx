@@ -20,6 +20,10 @@ import DocInspector from '../../components/views/DocInspector'
 import PublishButton from '../../components/PublishButton'
 import { exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
 import { convertNoteToBlock } from '../../utils/noteBlocks'
+import { assignContext, nodeCtxRefs, contextColor } from '../../utils/cajones'
+import { saveExample } from '../../api/autoClassify'
+import ContextPicker from '../../components/panels/ContextPicker'
+import { useRef, useEffect } from 'react'
 import type { Node } from '../../types'
 
 const toast = (message: string) => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type: 'success' } }))
@@ -46,6 +50,44 @@ function V2Backlinks({ nodeId }: { nodeId: string }) {
           <span className="v2-el-main"><span className="v2-el-title">{(n.text || '').replace(/^[✦💬]\s*/u, '') || 'Sin título'}</span></span>
         </div>
       ))}
+    </div>
+  )
+}
+
+// Contexto de una nota: chips de los contextos asignados + «Añadir a contexto» (opcional).
+// Si no se añade ninguno, la nota queda sin contexto (no pasa nada) — pero SIEMPRE se
+// puede añadir desde aquí, así que una nota nueva ya no queda sin forma de asignarla.
+function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: string) => void }) {
+  useStore()
+  const [open, setOpen] = useState(false)
+  const wrap = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => { if (wrap.current && !wrap.current.contains(e.target as HTMLElement)) setOpen(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+  const refs = nodeCtxRefs(node)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', padding: '4px 20px 0' }}>
+      {refs.map(id => {
+        const c = store.getNode(id)
+        if (!c) return null
+        return (
+          <button key={id} className="v2-chip" onClick={() => onSelectCtx?.(id)} style={{ ['--chip' as string]: contextColor(id) }}>{c.text}</button>
+        )
+      })}
+      <div className="v2-ctxpick-wrap" ref={wrap}>
+        <button className="v2-ctx-add-btn" onClick={() => setOpen(o => !o)}>＋ Añadir a contexto…</button>
+        {open && (
+          <div className="v2-ctxpick-pop">
+            <ContextPicker currentId={null} onPick={id => {
+              if (id) { assignContext(node.id, id); if (node.text?.trim()) saveExample(node.text.replace(/^✦\s*/, ''), id) }
+              setOpen(false)
+            }} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -96,6 +138,9 @@ function V2NoteBody({ node }: { node: Node }) {
           </button>
         </div>
       </div>
+
+      {/* Contexto de la nota (chips + añadir) — opcional pero siempre disponible. */}
+      {!canvas && <V2NoteContext node={node} />}
 
       {/* Barra de formato PLANA (iconos normales) — cuando se edita como documento. */}
       {asDoc && !canvas && (
