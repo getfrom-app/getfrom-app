@@ -84,12 +84,15 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // `syncTasksToNodes` crea el nodo-tarea, para ponerle el `due` correcto.
   const pendingDueRef = useRef<Map<string, { due: string; isEvent: boolean }>>(new Map())
 
-  // Los nodos con título CANÓNICO (nota diaria = la fecha) NO deben perderlo cuando su body
-  // empieza vacío: `firstLineTitle('')` devuelve «Documento» y pisaría «Viernes, 9 de julio…».
-  // En esos nodos guardamos SOLO el body y respetamos el `text` existente.
+  // Los nodos con título CANÓNICO (nota diaria = la fecha; TAREA/EVENTO = su texto)
+  // NO deben perderlo cuando su body empieza vacío: `firstLineTitle('')` devuelve
+  // «Documento» y pisaría el título real. Red de seguridad: si por un fallo de
+  // enrutado (V2DetailView, etc.) una TAREA/EVENTO acaba abriéndose en este editor
+  // como si fuera un documento en blanco, NUNCA debe perder su nombre — el bug
+  // original era justo este: tareas abiertas por error quedaban tituladas «Documento».
   const keepsOwnTitle = () => {
     const n = store.getNode(node.id)
-    return !!(n?.isDiaryEntry || n?.diaryDate)
+    return !!(n?.isDiaryEntry || n?.diaryDate || n?.status != null || n?.isEvent)
   }
   // Construye el update de guardado: incluye `text` salvo en nodos de título canónico.
   const bodySave = (html: string) => keepsOwnTitle() ? { body: html } : { body: html, text: firstLineTitle(html) }

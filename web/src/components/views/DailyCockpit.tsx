@@ -12,6 +12,7 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import TaskRow from '../panels/TaskRow'
+import NewTaskModal from '../modals/NewTaskModal'
 import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, firstContextOf, clearContextParent, convertToTask } from '../../utils/cajones'
 import ContextChip from '../panels/ContextChip'
 import type { Node } from '../../types'
@@ -33,6 +34,9 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   const [ctxClosing, setCtxClosing] = useState<{ id: string; action: 'close' | 'delete' } | null>(null)
   // Modal de fecha+recurrencia al tocar el badge de fecha de una tarea
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
+  // Modal de nueva tarea — «+» de la cabecera «Para hacer». Siempre HOY (esta
+  // sección solo existe para el día de hoy).
+  const [showNewTask, setShowNewTask] = useState(false)
   // Colapsado por bloque (cabecera clicable). Persistente.
   const [collapsedG, setCollapsedG] = useState<Set<string>>(() => {
     let set: Set<string>
@@ -108,9 +112,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       else rowEls.current.delete(id)
     }
   }
-
-  const total = data.overdue.length + data.today.length + data.seguimiento.length
-  if (total === 0) return null
 
   function openPlanner() {
     // En el panel del día NO se salta al planner al interactuar (el chevron solo
@@ -259,15 +260,18 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   const groups = (
     <>
       {/* PARA HACER — unifica atrasadas + hoy + contextos. Las tareas se agrupan
-          bajo su contexto; las que no tienen contexto, bajo «Sin contexto». */}
+          bajo su contexto; las que no tienen contexto, bajo «Sin contexto». Cabecera
+          SIEMPRE visible (aunque no haya tareas) para poder crear la primera con el «+». */}
       {(() => {
         // Lista PLANA: todas las tareas (atrasadas + hoy) en filas de una línea, cada una
         // con su contexto como chip al lado. Sin agrupar por contexto (más concentrado).
-        if (data.overdue.length + data.today.length === 0) return null
         const open = !collapsedG.has('porhacer')
         return (
           <div className="dc-group">
-            {gHeader('porhacer', 'Para hacer')}
+            <div className="dc-group-headrow">
+              {gHeader('porhacer', 'Para hacer')}
+              <button className="dc-group-add" onClick={() => setShowNewTask(true)} title={t('modal.newTask')}>+</button>
+            </div>
             {open && data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
             {open && data.today.map(n => renderTaskRow(n, { showDue: true }))}
           </div>
@@ -332,9 +336,12 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     ? <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />
     : null
 
+  // Modal de nueva tarea (siempre HOY — «Para hacer» solo vive en el día de hoy).
+  const newTaskModal = showNewTask ? <NewTaskModal onClose={() => setShowNewTask(false)} /> : null
+
   // Modo «bare»: sin caja blanca ni header — bloques sueltos (panel del día pizarra)
   if (bare) {
-    return <div className="daily-cockpit-bare" onMouseDown={openPlanner}>{groups}{propsModal}</div>
+    return <div className="daily-cockpit-bare" onMouseDown={openPlanner}>{groups}{propsModal}{newTaskModal}</div>
   }
 
   return (
@@ -354,6 +361,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
 
       {!collapsed && <div className="dc-body">{groups}</div>}
       {propsModal}
+      {newTaskModal}
     </div>
   )
 }

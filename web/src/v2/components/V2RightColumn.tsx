@@ -213,7 +213,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
             <button className="v2-iconbtn" onClick={onCloseDetail} title="Volver">‹</button>
             <EditableDetailTitle nodeId={detailNodeId} />
           </div>
-          <div className="v2-detail-body"><V2DetailView nodeId={detailNodeId} /></div>
+          <div className="v2-detail-body"><V2DetailView nodeId={detailNodeId} onSelectCtx={onSelectCtx} /></div>
         </div>
       )}
 

@@ -24,6 +24,7 @@ import { convertNoteToBlock } from '../../utils/noteBlocks'
 import { firstContextOf, setNodeContext, contextColor } from '../../utils/cajones'
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from '../../components/panels/ContextPicker'
+import V2TaskDetailView from './V2TaskDetailView'
 import { useRef, useEffect } from 'react'
 import type { Node } from '../../types'
 
@@ -91,7 +92,7 @@ function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: s
   )
 }
 
-function V2NoteBody({ node }: { node: Node }) {
+function V2NoteBody({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: string) => void }) {
   const { t } = useTranslation()
   const [canvas, setCanvas] = useState(parseExtraData(node.extraData)._v2canvas === '1' || parseExtraData(node.extraData)._v2view === 'lienzo')
   const doc = isDocNode(node)
@@ -146,7 +147,7 @@ function V2NoteBody({ node }: { node: Node }) {
       </div>
 
       {/* Contexto de la nota (chips + añadir) — opcional pero siempre disponible. */}
-      {!canvas && <V2NoteContext node={node} />}
+      {!canvas && <V2NoteContext node={node} onSelectCtx={onSelectCtx} />}
 
       {/* Barra de formato PLANA (iconos normales) — cuando se edita como documento. */}
       {asDoc && !canvas && (
@@ -214,7 +215,7 @@ function V2ResourceView({ node }: { node: Node }) {
   )
 }
 
-export default function V2DetailView({ nodeId }: { nodeId: string }) {
+export default function V2DetailView({ nodeId, onSelectCtx }: { nodeId: string; onSelectCtx: (id: string) => void }) {
   useStore()
   const node = store.getNode(nodeId)
   if (!node) return <div className="v2-right-empty">Elemento no encontrado.</div>
@@ -228,5 +229,8 @@ export default function V2DetailView({ nodeId }: { nodeId: string }) {
   // `isPdfResource` cubre los PDFs antiguos sin `_resourceType:'pdf'` (detecta por URL/nombre).
   if (isPdfResource(node, ed) || rt === 'image') return <V2ResourceView node={node} />
   if (node.isResource || node.resourceType) return <ResourcePanel node={node} />
-  return <V2NoteBody node={node} />
+  // TAREA/EVENTO: NUNCA como documento genérico — antes caía aquí abajo (V2NoteBody)
+  // con body vacío y el DocEditor le pisaba el título con «Documento» al guardar.
+  if (node.status != null || node.isEvent) return <V2TaskDetailView node={node} onSelectCtx={onSelectCtx} />
+  return <V2NoteBody node={node} onSelectCtx={onSelectCtx} />
 }

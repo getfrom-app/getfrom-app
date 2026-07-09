@@ -225,7 +225,12 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
       {/* Modales de creación rápida (mismos que la v1). Las tareas nacen en el
           contexto activo (o el diario de hoy si no hay); los eventos, en el diario. */}
       {showTask && <NewTaskModal parentId={currentNodeId ?? undefined} onClose={() => setShowTask(false)} />}
-      {showEvent && <NewEventModal onClose={() => setShowEvent(false)} />}
+      {showEvent && (
+        <NewEventModal
+          onClose={() => setShowEvent(false)}
+          onCreated={id => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: id } }))}
+        />
+      )}
     </main>
   )
 }

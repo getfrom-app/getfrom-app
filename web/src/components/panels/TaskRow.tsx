@@ -15,19 +15,22 @@ import { toggleTaskDone } from '../../utils/dailyCockpit'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
 
-function timeLabel(n: Node, lang: string): string | null {
+// Exportadas: las reutiliza V2TaskDetailView (chips de fecha/hora/repetición en el
+// detalle de una tarea/evento abierta en la columna derecha) — mismo cálculo, una
+// sola fuente de verdad.
+export function timeLabel(n: Node, lang: string): string | null {
   if (!n.due) return null
   const d = new Date(n.due)
   if (d.getHours() === 0 && d.getMinutes() === 0) return null
   return d.toLocaleTimeString(lang === 'en' ? 'en-US' : 'es-ES', { hour: '2-digit', minute: '2-digit' })
 }
-function dueLabel(n: Node, lang: string): string {
+export function dueLabel(n: Node, lang: string): string {
   if (!n.due) return ''
   const d = new Date(n.due)
   return d.toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { weekday: 'short', day: 'numeric' })
 }
 /** Color del chip de fecha: atrasada=rojo, hoy=ámbar, futura=azul. */
-function dueColor(n: Node): string {
+export function dueColor(n: Node): string {
   if (!n.due) return 'var(--text-tertiary)'
   const d = new Date(n.due); const now = new Date()
   const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
@@ -36,7 +39,7 @@ function dueColor(n: Node): string {
   if (dd === t0) return '#f59e0b'
   return '#3b82f6'
 }
-function recLabel(n: Node, t: (k: string) => string): string | null {
+export function recLabel(n: Node, t: (k: string) => string): string | null {
   if (!n.recurrence) return null
   const u = n.recurrence.split(':')[0]
   return ({ daily: t('tip.recDailyShort'), weekly: t('tip.recWeeklyShort'), monthly: t('tip.recMonthlyShort'), yearly: t('tip.recYearlyShort') } as Record<string, string>)[u] || t('tip.recShortGeneric')

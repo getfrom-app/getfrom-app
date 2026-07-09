@@ -13438,6 +13438,15 @@ textarea:focus-visible,
 .dc-chevron { font-size: 12px; color: var(--text-tertiary); }
 .dc-body { padding: 2px 8px 10px; }
 .dc-group { margin-top: 6px; }
+/* Fila de cabecera de grupo con un «+» de alta rápida al lado (Eventos/Para hacer). */
+.dc-group-headrow { display: flex; align-items: center; justify-content: space-between; }
+.dc-group-headrow .dc-group-toggle { flex: 1; }
+.dc-group-add {
+  flex-shrink: 0; width: 20px; height: 20px; margin-right: 4px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; background: none; cursor: pointer; color: var(--text-tertiary); font-size: 15px; line-height: 1;
+}
+.dc-group-add:hover { background: var(--bg-hover); color: var(--text-primary); }
 .dc-group-label {
   font-size: 10.5px;
   font-weight: 700;

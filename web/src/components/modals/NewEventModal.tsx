@@ -6,6 +6,16 @@ import { store } from '../../store/nodeStore'
 
 interface Props {
   onClose: () => void
+  /** Día al que cuelga el evento nuevo (por defecto: el diario de HOY). Lo usa la
+   *  columna de un día concreto (Agenda) para no crear siempre bajo hoy. */
+  parentId?: string | null
+  /** Fecha por defecto YYYY-MM-DD del formulario (por defecto: hoy). */
+  defaultDateStr?: string
+  /** Si se pasa, se llama con el id creado EN VEZ DE navegar a `/node/:id` — lo usa
+   *  Fromly 2.0 (chat-first, SPA propia bajo `/app/v2`): navegar por URL sacaría al
+   *  usuario del shell v2 hacia la v1. El caller decide qué hacer (p.ej. abrirlo en
+   *  su propia columna derecha vía `from:open-detail`). */
+  onCreated?: (id: string) => void
 }
 
 const EVENT_TYPES = [
@@ -37,10 +47,10 @@ function nowTimeStr() {
   return `${now.getHours().toString().padStart(2, '0')}:00`
 }
 
-export default function NewEventModal({ onClose }: Props) {
+export default function NewEventModal({ onClose, parentId, defaultDateStr, onCreated }: Props) {
   const { t } = useTranslation()
   const [title, setTitle] = useState('')
-  const [startDate, setStartDate] = useState(todayDateStr())  // siempre YYYY-MM-DD
+  const [startDate, setStartDate] = useState(defaultDateStr || todayDateStr())  // siempre YYYY-MM-DD
   const [startTime, setStartTime] = useState(nowTimeStr())    // HH:MM, solo si hasTime
   const [hasTime, setHasTime] = useState(false)
   const [duration, setDuration] = useState('60')
@@ -82,7 +92,7 @@ export default function NewEventModal({ onClose }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    const diaryNode = store.todayDiary()
+    const parent = parentId !== undefined ? parentId : (store.todayDiary()?.id ?? null)
 
     const body = [
       eventType ? EVENT_TYPES.find(t => t.id === eventType)?.label : '',
@@ -95,13 +105,14 @@ export default function NewEventModal({ onClose }: Props) {
 
     const node = store.createNode({
       text: title.trim(),
-      parentId: diaryNode?.id || null,
+      parentId: parent,
       due: dueISO,
     })
     store.updateNode(node.id, { isEvent: true })
     if (hasTime && endDate) store.updateNode(node.id, { dueEnd: new Date(endDate).toISOString() })
     if (body) store.updateNode(node.id, { body })
-    navigate(`/node/${node.id}`)
+    if (onCreated) onCreated(node.id)
+    else navigate(`/node/${node.id}`)
     onClose()
   }
 

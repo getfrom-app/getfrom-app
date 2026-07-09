@@ -42,6 +42,14 @@ function getOrCreateMonth(monthIdx: number, yearId: string): Node {
         extraData: { viewBlock: 'calendario', temporalType: 'month', temporalKey: `${yearText}-${monthIdx + 1}`, calScale: 'Mes' } })
 }
 
+/** Título canónico de un día-diario: «Viernes, 9 de julio de 2026». Único punto de
+ *  verdad — se usa al crear el día Y para auto-reparar uno cuyo título se corrompió. */
+export function diaryDayTitle(date: Date): string {
+  return date.toLocaleDateString('es-ES', {
+    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+  }).replace(/^\w/, c => c.toUpperCase())
+}
+
 function getOrCreateDay(date: Date, monthId: string): Node {
   const y = date.getFullYear(), m = date.getMonth(), d = date.getDate()
   const existing = store.children(monthId).find(c => {
@@ -50,9 +58,7 @@ function getOrCreateDay(date: Date, monthId: string): Node {
     return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d
   })
   const dayDate = new Date(y, m, d, 0, 0, 0, 0)
-  const dayText = dayDate.toLocaleDateString('es-ES', {
-    weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-  }).replace(/^\w/, c => c.toUpperCase())
+  const dayText = diaryDayTitle(dayDate)
   if (existing) {
     // Auto-reparación: si el editor de documento pisó el título del día con «Documento»
     // (body vacío) o se quedó sin texto, restaurar el título canónico de la fecha.

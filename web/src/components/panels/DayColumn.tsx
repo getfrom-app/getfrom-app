@@ -18,6 +18,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcalColor, getGcalEventId } from '../../utils/gcalNodesSync'
 import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
+import { diaryDayTitle } from '../../utils/agendaHelper'
 import { getCalendarEvents, type CalendarEvent } from '../../api/googleCalendar'
 import { gcalEventNodeId } from '../../utils/deterministicId'
 import { useUserStore } from '../../store/userStore'
@@ -26,6 +27,7 @@ import TaskHoverActions from './TaskHoverActions'
 import TaskRow from './TaskRow'
 import { firstContextOf, contextColor } from '../../utils/cajones'
 import { TaskPropsPopover, GCalEventEditor } from './DiaryPanelComponents'
+import NewEventModal from '../modals/NewEventModal'
 
 // Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
 const TrashIcon = (
@@ -88,6 +90,21 @@ export default function DayColumn({
     getCalendarEvents(new Date(node.diaryDate)).then(evs => { if (!cancelled) setGcalEvents(evs) }).catch(() => {})
     return () => { cancelled = true }
   }, [node.id, node.isDiaryEntry, node.diaryDate, us.googleConnected])
+
+  // Auto-reparación defensiva: si este día llegó con el título corrompido a
+  // «Documento» (el bug del editor pisando el título de un nodo que no debía) o
+  // vacío, se restaura aquí — sea cual sea la función que lo trajo hasta aquí
+  // (ensureDayPath ya repara, pero store.todayDiary()/getTodayDiaryUnderAgenda
+  // pueden devolver el nodo tal cual sin pasar por ese camino).
+  useEffect(() => {
+    if (!node.isDiaryEntry || !node.diaryDate) return
+    if (node.text && node.text !== 'Documento') return
+    store.updateNode(node.id, { text: diaryDayTitle(new Date(node.diaryDate)) })
+  }, [node.id, node.isDiaryEntry, node.diaryDate, node.text])
+
+  // Modal de nuevo evento — «+» de la cabecera «Eventos». Cuelga de ESTE día
+  // concreto (no siempre de hoy), con esa fecha como valor por defecto.
+  const [showNewEvent, setShowNewEvent] = useState(false)
 
   // Colapsado por bloque (cabecera clicable). Persistente.
   const [collapsed, setCollapsed] = useState<Set<string>>(() => {
@@ -152,11 +169,14 @@ export default function DayColumn({
 
   return (
     <>
-      {/* 1. Eventos de Google Calendar del día */}
-      {(eventNodes.length > 0 || extraEvents.length > 0) && (
-        <div className="dc-group">
+      {/* 1. Eventos de Google Calendar del día — cabecera SIEMPRE visible (aunque no
+          haya eventos aún) para poder crear el primero con el «+». */}
+      <div className="dc-group">
+        <div className="dc-group-headrow">
           {header('eventos', isToday ? t('tip.eventsToday') : t('tip.eventsDay'), 'dc-group-label--event')}
-          {!collapsed.has('eventos') && extraEvents.map(ev => {
+          <button className="dc-group-add" onClick={() => setShowNewEvent(true)} title={t('modal.newEvent')}>+</button>
+        </div>
+        {!collapsed.has('eventos') && extraEvents.map(ev => {
             const allDay = ev.allDay
             const timeLabel = allDay ? t('tip.allDay') : `${hhmm(ev.start)}–${hhmm(ev.end)}`
             return (
@@ -214,8 +234,7 @@ export default function DayColumn({
               </div>
             )
           })}
-        </div>
-      )}
+      </div>
 
       {/* 2-4. HOY → cockpit (Atrasadas · Para hoy · Bucles). */}
       {isToday && <DailyCockpit bare disablePlanner />}
@@ -349,6 +368,16 @@ export default function DayColumn({
           }}
           onUpdated={ev => { setGcalEvents(p => p.map(x => x.id === ev.id ? ev : x)); setEditingGcal(null) }}
           onDeleted={id => { setGcalEvents(p => p.filter(x => x.id !== id)); setEditingGcal(null) }} />
+      )}
+
+      {/* Nuevo evento del día — «+» de la cabecera «Eventos». Cuelga de ESTE día. */}
+      {showNewEvent && (
+        <NewEventModal
+          parentId={node.id}
+          defaultDateStr={node.diaryDate ? node.diaryDate.slice(0, 10) : undefined}
+          onClose={() => setShowNewEvent(false)}
+          onCreated={id => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: id } }))}
+        />
       )}
     </>
   )
