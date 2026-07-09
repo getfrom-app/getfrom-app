@@ -1,7 +1,26 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-06 (Web v9.6.716)
+> Última actualización: 2026-07-09 (Web v9.6.771)
+
+---
+
+## 🗓️ Sesión 2026-07-09 — v2 afinado + limpieza masiva + capacidad MCP completa
+
+**MCP / conector Claude (`server/src/routes/mcp.ts`).**
+- **Robustez de escritura**: se sustituyó el patrón de N inserts secuenciales (uno por nodo; ~40 en un árbol) por **bulk insert atómico** (`bulkInsertNodes`). Los inserts secuenciales, al superar el timeout del tool, quedaban huérfanos y agotaban el pool de conexiones (max 10) → el server dejaba de responder incluso a lecturas. Además: **pool 10→20** (`db/client.ts`), **timeout de tool 15→25s**.
+- Nuevas tools: **`from_upload_file`** (sube el archivo REAL en base64 a R2 como nodo-recurso), **`from_delete_node`** (a la Papelera, reversible, lote). `from_search`/`from_list_nodes` ahora devuelven **snippets** (antes bodies enteros → desbordaban al cliente) con `kind`, `parentId`, `bodyLen`, `childCount`, `total`, paginación `offset` y filtros `contains`/`parentId`; excluyen la Papelera.
+- **Notas en formato DOCUMENTO**: `from_create_node`/`from_create_tree` crean `_doc` con `body` HTML (markdown→HTML), ya no listas de bullets.
+- Centinelas en `from_update_node` (`parentId="__papelera__"`, `"__purge_dryrun__"`, `"__purge_fragments__"`) para operar/limpiar desde una sesión MCP cuya lista de tools se cacheó antes de existir los tools nuevos.
+
+**Limpieza de datos.** `toolPurgeFragments` (con dry-run) movió ~954 fragmentos heredados de la migración (párrafos/títulos sueltos sin cuerpo ni hijos) a la Papelera — vault 6.500→5.546 nodos. Reversible. Protege documentos, contextos, conversaciones, tareas, eventos, PDFs y la estructura del calendario.
+
+**Fromly 2.0 (web).**
+- Conversaciones fuera de Elementos/Buscador (viven en Historial). Fix: `trashNode` reparenta a Papelera SIN poner `deletedAt` → hay que filtrar `isInPapelera` en las listas sobre `allActive()`.
+- Adjuntar PDF: sube a R2, nodo-recurso, toast + aviso en el chat, miniatura de la 1ª página en Contexto (usa `resourceKey` porque R2 es privado), línea en Historial. Subir sin conversación NO crea chat (importa a Fromly). Arrastrar a la columna de contextos = "Importar a Fromly" (placeholder) vs "Importar a la conversación".
+- Markdown en el chat (`renderInline`); visor PDF real en el detalle (`PdfContainer`) con selección/subrayado; subrayados guardados = tipo `highlight` (listados en Elementos).
+- Tab contexto muestra TODOS los elementos (incl. PDF de conversaciones-miembro); nota diaria = editor documento + quick-add tarea/evento (sin bullets); contexto asignado visible y editable en el detalle (coordinado con Historial).
+- **Columna Hoy compacta**: tareas de una línea (texto truncado + fecha + chip de contexto al lado); "Para hacer" plano, sin cabeceras de contexto.
 
 ---
 

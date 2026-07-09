@@ -4,6 +4,17 @@
 
 ---
 
+## Novedades (julio 2026, Fromly 2.0)
+
+- **Archivos y PDF**: arrastra un PDF o imagen al chat y se incorpora a la conversación; suéltalo sobre la columna de contextos (izquierda) para importarlo a Fromly sin abrir conversación. Los PDF se abren con visor real: puedes **seleccionar texto y subrayar**; los subrayados se guardan y se listan como su propio tipo en Elementos. Cada PDF muestra una miniatura de su primera página.
+- **Conector con Claude (MCP)**: Claude puede buscar, crear, editar, **borrar y mover** tus notas, subir archivos reales y hacer limpiezas por lotes. Las notas que crea Claude son documentos normales (no listas de puntos).
+- **Columna "Hoy" más compacta**: cada tarea en una sola línea, con su contexto como etiqueta al lado.
+- **Nota diaria**: editor de documento (no bullets) y creación rápida de tarea/evento del día.
+- **Contexto de una nota**: siempre visible y editable desde la propia nota (chip + "Cambiar contexto").
+- **Historial global**: lista todas tus conversaciones y elementos, para saltar rápido a cualquier sitio.
+
+---
+
 ## 1. ¿Qué es Fromly?
 
 Fromly es tu segundo cerebro. Una app de notas, tareas y gestión de conocimiento personal que organiza todo lo que piensas, haces y quieres recordar en un único árbol jerarquizado, disponible en cualquier dispositivo y con IA integrada que realmente conoce tu información.
