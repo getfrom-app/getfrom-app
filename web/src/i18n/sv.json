@@ -2061,5 +2061,21 @@
   "ctxPanel.archive": "Arkivera",
   "ctxPanel.unarchive": "Återställ",
   "ctxPanel.subcontexts": "Underkontexter",
-  "ctxPanel.archivedPlural": "Arkiverade"
+  "ctxPanel.archivedPlural": "Arkiverade",
+  "v2Onboarding.next": "Nästa",
+  "v2Onboarding.start": "Kom igång",
+  "v2Onboarding.welcomeTitle": "Välkommen till Fromly",
+  "v2Onboarding.welcomeText": "Du organiserar inte längre en canvas — du pratar med din andra hjärna. Skriv vad du behöver så skapar AI:n uppgifter, anteckningar och händelser åt dig.",
+  "v2Onboarding.contextsTitle": "Dina kontexter, till vänster",
+  "v2Onboarding.contextsText": "Varje område eller projekt i ditt liv finns i sidofältet. Välj en eller skapa din egen för att börja organisera dina konversationer.",
+  "v2Onboarding.chatTitle": "Prata, skriv inte listor",
+  "v2Onboarding.chatTextBefore": "Prova att skriva något som",
+  "v2Onboarding.chatExample": "påminn mig om att ringa Ana på måndag",
+  "v2Onboarding.chatTextAfter": "och tryck Enter. AI:n skapar uppgiften åt dig.",
+  "v2Onboarding.rightTitle": "Högerkolumnen anpassar sig",
+  "v2Onboarding.rightText": "Kontext (vad AI:n vet om detta ämne), Element (allt ditt innehåll), Historik (dina konversationer) och Idag (din agenda) — växla mellan dem längst upp.",
+  "v2Onboarding.filesTitle": "Ladda upp en fil och fråga om den",
+  "v2Onboarding.filesText": "Dra en PDF, bild eller anteckning till konversationen. Fromly indexerar den så att du kan fråga om innehållet, markera det eller beskära ett område.",
+  "v2Onboarding.doneTitle": "Redo att börja",
+  "v2Onboarding.doneText": "Utforska manualen eller bloggen när du vill fördjupa dig."
 }

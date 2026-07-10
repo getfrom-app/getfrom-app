@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.788 — 10 julio 2026 · Onboarding nuevo para Fromly 2.0
+
+Fromly 2.0 (el chat) es ahora la app principal, pero hasta hoy no explicaba nada a quien entraba por primera vez.
+
+- **Bienvenida guiada**: al entrar por primera vez, un tour corto explica los contextos de la barra lateral, cómo hablarle al chat para crear tareas y notas, los modos de la columna derecha (Contexto/Elementos/Historial/Hoy) y cómo subir archivos para preguntarle sobre su contenido.
+- Disponible en los 12 idiomas de la app.
+
+---
+
 ## Web v9.6.787 — 9 julio 2026 · Corregido un bug importante + Agenda=Hoy + Notas con editor completo
 
 Corregimos un fallo serio en Fromly 2.0 y afinamos varias cosas de la columna derecha con feedback en vivo.

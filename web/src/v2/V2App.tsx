@@ -18,6 +18,7 @@ import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2RightColumn, { RightMode } from './components/V2RightColumn'
+import V2Onboarding from './components/V2Onboarding'
 import RightColMenu from '../components/panels/RightColMenu'
 import UnifiedCapture from '../components/modals/UnifiedCapture'
 import { ToastProvider } from '../components/Toast'
@@ -446,6 +447,7 @@ export default function V2App() {
           onSelectContext={id => { onSelectCtx(id); setShowCapture(false) }}
         />
       )}
+      <V2Onboarding />
     </div>
     </ToastProvider>
   )

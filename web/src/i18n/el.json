@@ -2061,5 +2061,21 @@
   "ctxPanel.archive": "Αρχειοθέτηση",
   "ctxPanel.unarchive": "Επαναφορά",
   "ctxPanel.subcontexts": "Υποπλαίσια",
-  "ctxPanel.archivedPlural": "Αρχειοθετημένα"
+  "ctxPanel.archivedPlural": "Αρχειοθετημένα",
+  "v2Onboarding.next": "Επόμενο",
+  "v2Onboarding.start": "Ξεκίνα",
+  "v2Onboarding.welcomeTitle": "Καλώς όρισες στο Fromly",
+  "v2Onboarding.welcomeText": "Δεν οργανώνεις πια έναν καμβά — μιλάς με τον δεύτερο εγκέφαλό σου. Γράψε ό,τι χρειάζεσαι και η IA δημιουργεί εργασίες, σημειώσεις και συμβάντα για σένα.",
+  "v2Onboarding.contextsTitle": "Τα πλαίσιά σου, αριστερά",
+  "v2Onboarding.contextsText": "Κάθε τομέας ή έργο της ζωής σου ζει στην πλαϊνή μπάρα. Διάλεξε ένα ή δημιούργησε το δικό σου για να αρχίσεις να οργανώνεις τις συνομιλίες σου.",
+  "v2Onboarding.chatTitle": "Μίλα, μη γράφεις λίστες",
+  "v2Onboarding.chatTextBefore": "Δοκίμασε να γράψεις κάτι όπως",
+  "v2Onboarding.chatExample": "θύμισέ μου να καλέσω την Άννα τη Δευτέρα",
+  "v2Onboarding.chatTextAfter": "και πάτησε Enter. Η IA δημιουργεί την εργασία για σένα.",
+  "v2Onboarding.rightTitle": "Η δεξιά στήλη προσαρμόζεται",
+  "v2Onboarding.rightText": "Πλαίσιο (τι ξέρει η IA για το θέμα), Στοιχεία (όλο το περιεχόμενό σου), Ιστορικό (οι συνομιλίες σου) και Σήμερα (η ατζέντα σου) — εναλλαγή από πάνω.",
+  "v2Onboarding.filesTitle": "Ανέβασε ένα αρχείο και ρώτησέ το",
+  "v2Onboarding.filesText": "Σύρε ένα PDF, μια εικόνα ή μια σημείωση στη συνομιλία. Το Fromly το ευρετηριάζει ώστε να ρωτάς για το περιεχόμενό του, να το επισημαίνεις ή να περικόπτεις μια περιοχή.",
+  "v2Onboarding.doneTitle": "Έτοιμος να ξεκινήσεις",
+  "v2Onboarding.doneText": "Εξερεύνησε το εγχειρίδιο ή το blog όποτε θες να εμβαθύνεις."
 }

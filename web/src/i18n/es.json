@@ -2062,5 +2062,21 @@
   "ctxPanel.archive": "Archivar",
   "ctxPanel.unarchive": "Desarchivar",
   "ctxPanel.subcontexts": "Subcontextos",
-  "ctxPanel.archivedPlural": "Archivados"
+  "ctxPanel.archivedPlural": "Archivados",
+  "v2Onboarding.next": "Siguiente",
+  "v2Onboarding.start": "Empezar",
+  "v2Onboarding.welcomeTitle": "Bienvenido a Fromly",
+  "v2Onboarding.welcomeText": "Ya no organizas un lienzo: hablas con tu segundo cerebro. Escribe lo que necesites y la IA crea tareas, notas y eventos por ti.",
+  "v2Onboarding.contextsTitle": "Tus contextos, a la izquierda",
+  "v2Onboarding.contextsText": "Cada área o proyecto de tu vida vive en la barra lateral. Elige uno o crea el tuyo para empezar a organizar tus conversaciones.",
+  "v2Onboarding.chatTitle": "Habla, no escribas listas",
+  "v2Onboarding.chatTextBefore": "Prueba a escribir algo como",
+  "v2Onboarding.chatExample": "recuérdame llamar a Ana el lunes",
+  "v2Onboarding.chatTextAfter": "y pulsa Enter. La IA crea la tarea por ti.",
+  "v2Onboarding.rightTitle": "La columna derecha se adapta",
+  "v2Onboarding.rightText": "Contexto (qué sabe la IA de este tema), Elementos (todo tu contenido), Historial (tus conversaciones) y Hoy (tu agenda) — cambia entre ellas arriba.",
+  "v2Onboarding.filesTitle": "Sube un archivo y pregúntale",
+  "v2Onboarding.filesText": "Arrastra un PDF, una imagen o una nota a la conversación. Fromly lo indexa y puedes preguntarle sobre su contenido, subrayarlo o recortar una región.",
+  "v2Onboarding.doneTitle": "Listo para empezar",
+  "v2Onboarding.doneText": "Explora el manual o el blog cuando quieras profundizar."
 }

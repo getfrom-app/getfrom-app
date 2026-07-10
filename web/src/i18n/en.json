@@ -2062,5 +2062,21 @@
   "ctxPanel.archive": "Archive",
   "ctxPanel.unarchive": "Unarchive",
   "ctxPanel.subcontexts": "Subcontexts",
-  "ctxPanel.archivedPlural": "Archived"
+  "ctxPanel.archivedPlural": "Archived",
+  "v2Onboarding.next": "Next",
+  "v2Onboarding.start": "Get started",
+  "v2Onboarding.welcomeTitle": "Welcome to Fromly",
+  "v2Onboarding.welcomeText": "You're no longer organizing a canvas — you're talking to your second brain. Write what you need and the AI creates tasks, notes and events for you.",
+  "v2Onboarding.contextsTitle": "Your contexts, on the left",
+  "v2Onboarding.contextsText": "Every area or project in your life lives in the sidebar. Pick one or create your own to start organizing your conversations.",
+  "v2Onboarding.chatTitle": "Talk, don't make lists",
+  "v2Onboarding.chatTextBefore": "Try typing something like",
+  "v2Onboarding.chatExample": "remind me to call Ana on Monday",
+  "v2Onboarding.chatTextAfter": "and hit Enter. The AI creates the task for you.",
+  "v2Onboarding.rightTitle": "The right column adapts",
+  "v2Onboarding.rightText": "Context (what the AI knows about this topic), Elements (all your content), History (your conversations) and Today (your agenda) — switch between them at the top.",
+  "v2Onboarding.filesTitle": "Upload a file and ask about it",
+  "v2Onboarding.filesText": "Drag a PDF, an image or a note into the conversation. Fromly indexes it so you can ask about its content, highlight it or crop a region.",
+  "v2Onboarding.doneTitle": "Ready to get started",
+  "v2Onboarding.doneText": "Explore the manual or the blog whenever you want to go deeper."
 }

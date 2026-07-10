@@ -2061,5 +2061,21 @@
   "ctxPanel.archive": "Archiwizuj",
   "ctxPanel.unarchive": "Przywróć",
   "ctxPanel.subcontexts": "Podkonteksty",
-  "ctxPanel.archivedPlural": "Zarchiwizowane"
+  "ctxPanel.archivedPlural": "Zarchiwizowane",
+  "v2Onboarding.next": "Dalej",
+  "v2Onboarding.start": "Zacznij",
+  "v2Onboarding.welcomeTitle": "Witaj w Fromly",
+  "v2Onboarding.welcomeText": "Nie organizujesz już płótna — rozmawiasz ze swoim drugim mózgiem. Napisz, czego potrzebujesz, a AI stworzy za Ciebie zadania, notatki i wydarzenia.",
+  "v2Onboarding.contextsTitle": "Twoje konteksty, po lewej",
+  "v2Onboarding.contextsText": "Każdy obszar lub projekt w Twoim życiu znajduje się na pasku bocznym. Wybierz jeden lub utwórz własny, aby zacząć organizować swoje rozmowy.",
+  "v2Onboarding.chatTitle": "Rozmawiaj, nie pisz list",
+  "v2Onboarding.chatTextBefore": "Spróbuj napisać coś w stylu",
+  "v2Onboarding.chatExample": "przypomnij mi zadzwonić do Any w poniedziałek",
+  "v2Onboarding.chatTextAfter": "i naciśnij Enter. AI stworzy zadanie za Ciebie.",
+  "v2Onboarding.rightTitle": "Prawa kolumna dostosowuje się",
+  "v2Onboarding.rightText": "Kontekst (co AI wie o tym temacie), Elementy (cała Twoja zawartość), Historia (Twoje rozmowy) i Dziś (Twój plan dnia) — przełączaj się między nimi na górze.",
+  "v2Onboarding.filesTitle": "Prześlij plik i zapytaj o niego",
+  "v2Onboarding.filesText": "Przeciągnij PDF, obraz lub notatkę do rozmowy. Fromly go zaindeksuje, dzięki czemu możesz pytać o jego treść, zaznaczać go lub przycinać fragment.",
+  "v2Onboarding.doneTitle": "Gotowy, aby zacząć",
+  "v2Onboarding.doneText": "Poznaj instrukcję lub bloga, gdy zechcesz zgłębić temat."
 }

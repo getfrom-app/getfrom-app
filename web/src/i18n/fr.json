@@ -2061,5 +2061,21 @@
   "ctxPanel.archive": "Archiver",
   "ctxPanel.unarchive": "Désarchiver",
   "ctxPanel.subcontexts": "Sous-contextes",
-  "ctxPanel.archivedPlural": "Archivés"
+  "ctxPanel.archivedPlural": "Archivés",
+  "v2Onboarding.next": "Suivant",
+  "v2Onboarding.start": "Commencer",
+  "v2Onboarding.welcomeTitle": "Bienvenue sur Fromly",
+  "v2Onboarding.welcomeText": "Vous n'organisez plus un tableau : vous parlez à votre second cerveau. Écrivez ce dont vous avez besoin et l'IA crée des tâches, notes et événements pour vous.",
+  "v2Onboarding.contextsTitle": "Vos contextes, à gauche",
+  "v2Onboarding.contextsText": "Chaque domaine ou projet de votre vie vit dans la barre latérale. Choisissez-en un ou créez le vôtre pour commencer à organiser vos conversations.",
+  "v2Onboarding.chatTitle": "Parlez, n'écrivez pas de listes",
+  "v2Onboarding.chatTextBefore": "Essayez d'écrire quelque chose comme",
+  "v2Onboarding.chatExample": "rappelle-moi d'appeler Ana lundi",
+  "v2Onboarding.chatTextAfter": "et appuyez sur Entrée. L'IA crée la tâche pour vous.",
+  "v2Onboarding.rightTitle": "La colonne de droite s'adapte",
+  "v2Onboarding.rightText": "Contexte (ce que l'IA sait sur ce sujet), Éléments (tout votre contenu), Historique (vos conversations) et Aujourd'hui (votre agenda) — changez entre eux en haut.",
+  "v2Onboarding.filesTitle": "Importez un fichier et posez-lui des questions",
+  "v2Onboarding.filesText": "Glissez un PDF, une image ou une note dans la conversation. Fromly l'indexe pour que vous puissiez l'interroger, le surligner ou recadrer une zone.",
+  "v2Onboarding.doneTitle": "Prêt à commencer",
+  "v2Onboarding.doneText": "Explorez le manuel ou le blog quand vous voudrez approfondir."
 }

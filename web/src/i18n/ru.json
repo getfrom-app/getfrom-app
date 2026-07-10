@@ -2061,5 +2061,21 @@
   "ctxPanel.archive": "Архивировать",
   "ctxPanel.unarchive": "Разархивировать",
   "ctxPanel.subcontexts": "Подконтексты",
-  "ctxPanel.archivedPlural": "В архиве"
+  "ctxPanel.archivedPlural": "В архиве",
+  "v2Onboarding.next": "Далее",
+  "v2Onboarding.start": "Начать",
+  "v2Onboarding.welcomeTitle": "Добро пожаловать в Fromly",
+  "v2Onboarding.welcomeText": "Вы больше не организуете холст — вы разговариваете со своим вторым мозгом. Напишите, что вам нужно, и ИИ создаст задачи, заметки и события за вас.",
+  "v2Onboarding.contextsTitle": "Ваши контексты слева",
+  "v2Onboarding.contextsText": "Каждая сфера или проект вашей жизни находится на боковой панели. Выберите один или создайте свой, чтобы начать организовывать разговоры.",
+  "v2Onboarding.chatTitle": "Говорите, а не пишите списки",
+  "v2Onboarding.chatTextBefore": "Попробуйте написать что-то вроде",
+  "v2Onboarding.chatExample": "напомни мне позвонить Ане в понедельник",
+  "v2Onboarding.chatTextAfter": "и нажмите Enter. ИИ создаст задачу за вас.",
+  "v2Onboarding.rightTitle": "Правая колонка адаптируется",
+  "v2Onboarding.rightText": "Контекст (что ИИ знает об этой теме), Элементы (весь ваш контент), История (ваши разговоры) и Сегодня (ваш план) — переключайтесь между ними наверху.",
+  "v2Onboarding.filesTitle": "Загрузите файл и задайте вопрос",
+  "v2Onboarding.filesText": "Перетащите PDF, изображение или заметку в разговор. Fromly проиндексирует его, и вы сможете спрашивать о содержимом, выделять его или обрезать область.",
+  "v2Onboarding.doneTitle": "Готовы начать",
+  "v2Onboarding.doneText": "Изучите руководство или блог, когда захотите узнать больше."
 }

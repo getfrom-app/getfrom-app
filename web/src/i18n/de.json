@@ -2061,5 +2061,21 @@
   "ctxPanel.archive": "Archivieren",
   "ctxPanel.unarchive": "Wiederherstellen",
   "ctxPanel.subcontexts": "Unterkontexte",
-  "ctxPanel.archivedPlural": "Archiviert"
+  "ctxPanel.archivedPlural": "Archiviert",
+  "v2Onboarding.next": "Weiter",
+  "v2Onboarding.start": "Loslegen",
+  "v2Onboarding.welcomeTitle": "Willkommen bei Fromly",
+  "v2Onboarding.welcomeText": "Du organisierst keine Leinwand mehr – du sprichst mit deinem zweiten Gehirn. Schreib, was du brauchst, und die KI erstellt Aufgaben, Notizen und Termine für dich.",
+  "v2Onboarding.contextsTitle": "Deine Kontexte, links",
+  "v2Onboarding.contextsText": "Jeder Bereich oder jedes Projekt in deinem Leben lebt in der Seitenleiste. Wähle einen aus oder erstelle deinen eigenen, um deine Gespräche zu organisieren.",
+  "v2Onboarding.chatTitle": "Sprich, statt Listen zu schreiben",
+  "v2Onboarding.chatTextBefore": "Versuch mal etwas wie",
+  "v2Onboarding.chatExample": "erinnere mich, Ana am Montag anzurufen",
+  "v2Onboarding.chatTextAfter": "zu schreiben und Enter zu drücken. Die KI erstellt die Aufgabe für dich.",
+  "v2Onboarding.rightTitle": "Die rechte Spalte passt sich an",
+  "v2Onboarding.rightText": "Kontext (was die KI über dieses Thema weiß), Elemente (dein gesamter Inhalt), Verlauf (deine Gespräche) und Heute (deine Agenda) — oben wechseln.",
+  "v2Onboarding.filesTitle": "Lade eine Datei hoch und frag danach",
+  "v2Onboarding.filesText": "Ziehe ein PDF, ein Bild oder eine Notiz in die Konversation. Fromly indexiert es, damit du nach seinem Inhalt fragen, es markieren oder einen Bereich zuschneiden kannst.",
+  "v2Onboarding.doneTitle": "Bereit loszulegen",
+  "v2Onboarding.doneText": "Entdecke das Handbuch oder den Blog, wenn du tiefer eintauchen möchtest."
 }

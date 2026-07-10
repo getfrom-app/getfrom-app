@@ -2061,5 +2061,21 @@
   "ctxPanel.archive": "Arşivle",
   "ctxPanel.unarchive": "Arşivden çıkar",
   "ctxPanel.subcontexts": "Alt bağlamlar",
-  "ctxPanel.archivedPlural": "Arşivlenmiş"
+  "ctxPanel.archivedPlural": "Arşivlenmiş",
+  "v2Onboarding.next": "İleri",
+  "v2Onboarding.start": "Başla",
+  "v2Onboarding.welcomeTitle": "Fromly'ye hoş geldin",
+  "v2Onboarding.welcomeText": "Artık bir tuval düzenlemiyorsun — ikinci beynin ile konuşuyorsun. İhtiyacını yaz, yapay zeka senin için görevler, notlar ve etkinlikler oluştursun.",
+  "v2Onboarding.contextsTitle": "Bağlamların, solda",
+  "v2Onboarding.contextsText": "Hayatındaki her alan veya proje kenar çubuğunda yaşar. Konuşmalarını düzenlemeye başlamak için birini seç ya da kendi bağlamını oluştur.",
+  "v2Onboarding.chatTitle": "Konuş, liste yazma",
+  "v2Onboarding.chatTextBefore": "Şöyle bir şey yazmayı dene:",
+  "v2Onboarding.chatExample": "pazartesi Ana'yı aramamı hatırlat",
+  "v2Onboarding.chatTextAfter": "ve Enter'a bas. Yapay zeka senin için görevi oluşturur.",
+  "v2Onboarding.rightTitle": "Sağ sütun uyum sağlar",
+  "v2Onboarding.rightText": "Bağlam (yapay zekanın bu konu hakkında bildikleri), Öğeler (tüm içeriğin), Geçmiş (konuşmaların) ve Bugün (ajandan) — üstten aralarında geçiş yap.",
+  "v2Onboarding.filesTitle": "Bir dosya yükle ve sor",
+  "v2Onboarding.filesText": "Bir PDF, görsel veya not sürükleyip konuşmaya bırak. Fromly onu dizinler, böylece içeriği hakkında soru sorabilir, vurgulayabilir veya bir bölge kırpabilirsin.",
+  "v2Onboarding.doneTitle": "Başlamaya hazır",
+  "v2Onboarding.doneText": "Daha derine inmek istediğinde kılavuzu veya blogu keşfet."
 }

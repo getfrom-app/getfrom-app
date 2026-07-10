@@ -2061,5 +2061,21 @@
   "ctxPanel.archive": "Archiveren",
   "ctxPanel.unarchive": "Herstellen",
   "ctxPanel.subcontexts": "Subcontexten",
-  "ctxPanel.archivedPlural": "Gearchiveerd"
+  "ctxPanel.archivedPlural": "Gearchiveerd",
+  "v2Onboarding.next": "Volgende",
+  "v2Onboarding.start": "Beginnen",
+  "v2Onboarding.welcomeTitle": "Welkom bij Fromly",
+  "v2Onboarding.welcomeText": "Je organiseert niet langer een canvas — je praat met je tweede brein. Schrijf wat je nodig hebt en de AI maakt taken, notities en afspraken voor je.",
+  "v2Onboarding.contextsTitle": "Jouw contexten, links",
+  "v2Onboarding.contextsText": "Elk gebied of project in je leven leeft in de zijbalk. Kies er een of maak je eigen contexten aan om je gesprekken te organiseren.",
+  "v2Onboarding.chatTitle": "Praat, schrijf geen lijstjes",
+  "v2Onboarding.chatTextBefore": "Probeer eens iets te typen als",
+  "v2Onboarding.chatExample": "herinner me eraan Ana maandag te bellen",
+  "v2Onboarding.chatTextAfter": "en druk op Enter. De AI maakt de taak voor je aan.",
+  "v2Onboarding.rightTitle": "De rechterkolom past zich aan",
+  "v2Onboarding.rightText": "Context (wat de AI over dit onderwerp weet), Elementen (al je content), Geschiedenis (je gesprekken) en Vandaag (je agenda) — wissel bovenaan tussen ze.",
+  "v2Onboarding.filesTitle": "Upload een bestand en stel er vragen over",
+  "v2Onboarding.filesText": "Sleep een PDF, afbeelding of notitie naar het gesprek. Fromly indexeert het zodat je vragen kunt stellen over de inhoud, kunt markeren of een gebied kunt uitsnijden.",
+  "v2Onboarding.doneTitle": "Klaar om te beginnen",
+  "v2Onboarding.doneText": "Verken de handleiding of de blog wanneer je dieper wilt duiken."
 }
