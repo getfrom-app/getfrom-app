@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Mac v9.5.78 — 10 julio 2026 · Fromly 2.0 llega a Mac
+
+El Mac llevaba desde el 1 de julio (v9.5.77) sin nada de lo nuevo. Publicado con el código actual:
+
+- **Fromly 2.0 chat-first**: sidebar de contextos, chat central, columna derecha (Contexto/Elementos/Historial/Hoy/Agenda).
+- **Onboarding guiado** la primera vez que abres la app.
+- **PDF**: subrayado en la propia página + recorte de región como imagen.
+- Eliminado el tipo "bucle" (ver entrada de web v9.6.789).
+
+---
+
 ## Web v9.6.789 — 10 julio 2026 · Eliminado el tipo "bucle"
 
 El bucle (⟲, abrir/cerrar) quedó a medias en una limpieza anterior: se quitó del menú "Convertir
