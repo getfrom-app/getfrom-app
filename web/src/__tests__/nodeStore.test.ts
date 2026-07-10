@@ -101,11 +101,6 @@ describe('NodeStore — flujos críticos', () => {
       expect(store.getNode(n.id)?.due).toBe('2026-05-27T15:00:00.000Z')
     })
 
-    it('scheduleNodeAt sobre nodo con types includes bucle lo rechaza', () => {
-      const n = store.createNode({ text: 'Tag bucle', parentId: null, types: ['bucle'] })
-      const r = store.scheduleNodeAt(n.id, '2026-05-27T10:00:00.000Z')
-      expect(r).toBeNull()
-    })
   })
 
   describe('liveContainers (auto-containers)', () => {

@@ -512,7 +512,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // 2. ¿El nodo tiene @mentions de contexto en el texto?
     if (/@\w/.test(node.text || '')) return true
     // 3. ¿El nodo tiene user-tags en types[] (contextos del árbol)?
-    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
     const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
     if (userTypes.length > 0) return true
     return false
@@ -524,7 +524,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   //   2. userTypes.length > 0 sin el flag (asignado por flujos anteriores: drag-to-context, etc.)
   // @mentions de texto no generan badge — el texto ya lo muestra visualmente.
   const manuallySetContextId = useMemo(() => {
-    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
     const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
     if (userTypes.length === 0) return null
     // Solo mostrar badge si el contexto viene de una asignación explícita (no @mention en texto)
@@ -954,8 +954,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
   const isDivider = blockType === 'divider'
   const isBullet = blockType === 'bullet'
   const isNota = (node.types || []).includes('nota')
-  const isBucle = (node.types || []).includes('bucle')
-  const isBucleClosed = isBucle && node.status === 'done'
   const isCaptura = (node.types || []).includes('captura')
   const nodeIcon = meta.icon ?? null
   // Color: deriva del primer tag que tenga color asignado (sin contar tags built-in)
@@ -966,7 +964,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       if (ed._gcalColor) return ed._gcalColor
     } catch { /* ignore */ }
     // Color de tag del usuario
-    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
     const userTags = (node.types || []).filter(t => !builtinTags.has(t))
     for (const tag of userTags) {
       const c = store.tagColor(tag)
@@ -1313,7 +1311,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     const text = (contentRef.current?.textContent || '').replace(/ /g, ' ')
     // Auto-sync bidireccional: types[] refleja los @contextos del texto.
     // Los #tags han sido eliminados de Fromly — solo @ para contextos.
-    const BUILTIN_TYPES = new Set(['bucle', 'captura', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
+    const BUILTIN_TYPES = new Set(['captura', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
     // `(?<!\w)` → un @ pegado a una palabra (p. ej. en un email manuel@dominio) NO
     // se interpreta como contexto. Mismo criterio que el render de InlineRenderer.
     const atTags = new Set([...(text.match(/(?<!\w)@([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.replace(/^@/, '')))
@@ -1775,7 +1773,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Auto-crear nodos en 🏷 Tags para tags completos escritos manualmente.
     // Se ejecuta aquí (blur) y no en handleInput para no crear un nodo por cada tecla.
     const finalText = contentRef.current?.textContent || ''
-    const BUILTIN = new Set(['bucle', 'captura', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
+    const BUILTIN = new Set(['captura', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
     const tags = [...(finalText.match(/#([\wÀ-ɏ\/\-]+)/g) || [])].map(t => t.slice(1))
     for (const tag of tags) {
       if (!BUILTIN.has(tag)) {
@@ -2211,7 +2209,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       if (applySmartDate(text)) { createSiblingBelow(); return }
 
       // Detect inline shortcuts at end of text: -t (tarea), -e (evento).
-      // -b (bucle) vive solo en la captura rápida (captureHelper), no en el outliner.
       const trimmed = text.trimEnd()
       if (trimmed.endsWith(' -t') || trimmed.endsWith(' -t')) {
         const cleanText = trimmed.slice(0, -3).trimEnd()
@@ -2756,11 +2753,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     }
   }
 
-  function toggleBucle(e: React.MouseEvent) {
-    e.stopPropagation()
-    store.updateNode(node.id, { status: node.status === 'done' ? null : 'done' })
-  }
-
   function openNode() {
     navigate(`/node/${node.id}`)
   }
@@ -3294,7 +3286,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     'node-row',
     isSelected ? 'selected' : '',
     isMultiSelected ? 'multi-selected' : '',
-    node.status === 'done' && !isBucle ? 'done' : '',
+    node.status === 'done' ? 'done' : '',
     isHeading ? `node-row--${blockType}` : '',
     isBullet ? 'node-row--bullet' : '',
     isDragOver ? 'drag-over' : '',
@@ -3453,29 +3445,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     <rect x="1.5" y="4.5" width="13" height="9" rx="1.5"/>
                     <path d="M1.5 4.5 4 1.8M6 4.5 8.5 1.8M10.5 4.5 13 1.8"/>
                   </svg>
-                </button>
-              </>
-            ) : isBucle ? (
-              // Bucle: nav-dot + icono de bucle. Abierto = arco violeta; cerrado = círculo gris.
-              <>
-                <button className={`bullet-nav-dot ${hasChildren ? 'bullet-nav-dot--has-children' : ''}`} onClick={e => { e.stopPropagation(); navigate(`/node/${navTargetId}`) }} tabIndex={-1} title={mirrorOfId ? t('tip.mirrorViewOriginal') : t('tip.zoomIn2')} />
-                <button
-                  className={`bullet-btn bullet-btn--bucle ${isBucleClosed ? 'bullet-btn--bucle-closed' : 'bullet-btn--bucle-open'}`}
-                  onClick={toggleBucle}
-                  tabIndex={-1}
-                  aria-label={t('aria.toggleLoop')}
-                  title={isBucleClosed ? t('tip.loopClosed') : t('tip.loopOpen')}
-                >
-                  {isBucleClosed ? (
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <circle cx="7" cy="7" r="4.5"/>
-                    </svg>
-                  ) : (
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M11.5 7a4.5 4.5 0 1 1-1.3-3.2"/>
-                      <path d="M11.5 1.8v2.7H8.8"/>
-                    </svg>
-                  )}
                 </button>
               </>
             ) : effectiveNode.status !== null ? (
@@ -4157,7 +4126,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               // No mostrar chips de contexto en nodos restringidos (los propios
               // contextos, perfil, plantillas/prompts/agentes, papelera).
               if (isContextNode || isInsideRestrictedAncestor) return null
-              const BUILTIN = new Set(['bucle','captura','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota'])
+              const BUILTIN = new Set(['captura','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota'])
               const textLower = (displayNode.text || '').toLowerCase()
               const ctxRoot = findContextRoot()
               if (!ctxRoot) return null

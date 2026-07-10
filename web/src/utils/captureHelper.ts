@@ -17,27 +17,23 @@ type Node = ReturnType<typeof store.createNode>
 import { extractDateFromEnd, recurrenceToString } from './naturalDate'
 import { buildTaskVerbRegex } from '../store/predictionStore'
 
-export type ForceType = 'task' | 'event' | 'note' | 'bucle' | null
+export type ForceType = 'task' | 'event' | 'note' | null
 
 const FORCE_SHORTCUTS: Record<string, Exclude<ForceType, null>> = {
-  '-t': 'task', '-e': 'event', '-n': 'note', '-b': 'bucle',
+  '-t': 'task', '-e': 'event', '-n': 'note',
 }
 
 function normalizeNFD(s: string) {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 }
 
-/** Detecta el tipo forzado por shortcut inline (-t/-e/-n/-b o "bucle" al final). */
+/** Detecta el tipo forzado por shortcut inline (-t/-e/-n). */
 export function detectForceType(t: string): { forceType: ForceType; cleanText: string } {
   const trimmed = t.trimEnd()
   for (const [shortcut, type] of Object.entries(FORCE_SHORTCUTS)) {
     if (trimmed.endsWith(' ' + shortcut) || trimmed === shortcut) {
       return { forceType: type, cleanText: trimmed.slice(0, -shortcut.length).trimEnd() }
     }
-  }
-  if (/\s+bucle$/i.test(trimmed) || /^bucle$/i.test(trimmed)) {
-    const clean = trimmed.replace(/\s*bucle$/i, '').trim()
-    return { forceType: 'bucle', cleanText: clean }
   }
   return { forceType: null, cleanText: t }
 }
@@ -55,7 +51,7 @@ export interface CreateFromTextOpts {
 
 export interface CreateFromTextResult {
   node: Node
-  type: 'task' | 'event' | 'note' | 'bucle'
+  type: 'task' | 'event' | 'note'
 }
 
 /**
@@ -80,8 +76,7 @@ export function createNodeFromText(rawTextInput: string, opts: CreateFromTextOpt
 
   const dp = extractDateFromEnd(effectiveText)
   const cleanText = dp ? dp.cleanText : effectiveText
-  const isBucle = effective === 'bucle'
-  const isTask = !isBucle && (
+  const isTask = (
     effective === 'task' ||
     (effective !== 'note' && effective !== 'event' &&
       ((opts.taskPredictionHint ?? false) || (dp !== null && buildTaskVerbRegex().test(normalizeNFD(effectiveText)))))
@@ -89,7 +84,6 @@ export function createNodeFromText(rawTextInput: string, opts: CreateFromTextOpt
   const isEvent = effective === 'event'
 
   const types: string[] = []
-  if (isBucle) types.push('bucle')
   for (const ctx of opts.assignedCtx ?? []) {
     if (ctx.slug && !types.includes(ctx.slug)) types.push(ctx.slug)
   }
@@ -144,7 +138,7 @@ export function createNodeFromText(rawTextInput: string, opts: CreateFromTextOpt
 
   if (opts.sync !== false) store.sync(true).catch(() => {})
 
-  const type: CreateFromTextResult['type'] = isEvent ? 'event' : isBucle ? 'bucle' : isTask ? 'task' : 'note'
+  const type: CreateFromTextResult['type'] = isEvent ? 'event' : isTask ? 'task' : 'note'
   return { node, type }
 }
 
@@ -152,7 +146,6 @@ export function createNodeFromText(rawTextInput: string, opts: CreateFromTextOpt
 export function labelForType(type: CreateFromTextResult['type']): string {
   switch (type) {
     case 'event': return 'Evento'
-    case 'bucle': return 'Bucle'
     case 'task': return 'Tarea'
     default: return 'Nota'
   }

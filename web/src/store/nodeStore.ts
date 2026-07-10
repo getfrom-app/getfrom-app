@@ -562,7 +562,7 @@ export class NodeStore {
 
   /** Todos los tags únicos: de types[] + #hashtags en títulos de nodos activos */
   allUsedTags(): string[] {
-    const builtins = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
+    const builtins = new Set(['agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
     const tagSet = new Set<string>()
     for (const n of this.nodes.values()) {
       if (n.deletedAt) continue
@@ -700,8 +700,7 @@ export class NodeStore {
 
   /** ¿Es una nota "container" (proyecto de facto)? Una nota normal que tiene
    *  ≥1 descendiente con status === 'pending'. No es ella misma tarea/evento/
-   *  recurso/diaria. (Concepto distinto del bucle, que es types:'bucle' con
-   *  estado abierto/cerrado explícito.) */
+   *  recurso/diaria. */
   isLiveContainer(node: Node, options?: { requireUnscheduled?: boolean }): boolean {
     if (!node || node.deletedAt) return false
     if (node.isDiaryEntry) return false
@@ -1364,8 +1363,6 @@ export class NodeStore {
   scheduleNodeAt(nodeId: string, iso: string): string | null {
     const node = this.getNode(nodeId)
     if (!node) return null
-    // Bucle: NO se puede agendar. Es un contenedor binario abierto/cerrado.
-    if ((node.types || []).includes('bucle')) return null
     const updates: Partial<Node> = { due: iso }
     // Limpiar dueEnd al reprogramar — si no, una duración antigua haría que el
     // bloque se extienda al día siguiente y aparezca duplicado en el calendario

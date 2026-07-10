@@ -3,7 +3,7 @@
 // Elementos: buscador global de todo lo guardado (notas, tareas, archivos…).
 // Historial: lista de conversaciones (chats) — clic retoma la conversación.
 // Hoy:       columna de referencia del día REAL de la v1 (DayColumn):
-//            eventos de Google Calendar, atrasadas, para hoy, bucles abiertos.
+//            eventos de Google Calendar, atrasadas, para hoy.
 import { useEffect, useMemo, useState } from 'react'
 import { useStore, store } from '../../store/nodeStore'
 import { useAIChat, isQuickCommandSession } from '../../store/aiChatStore'

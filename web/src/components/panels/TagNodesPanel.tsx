@@ -24,7 +24,6 @@ const TAG_COLORS = [
 
 function nodeIcon(n: Node): string {
   if (n.isEvent) return '📅'
-  if ((n.types || []).includes('bucle')) return '↺'
   if (n.status === 'done') return '✓'
   if (n.status !== null) return '○'
   return '📄'

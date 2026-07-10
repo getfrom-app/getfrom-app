@@ -9,7 +9,7 @@ export interface Node {
   status: 'pending' | 'done' | 'future' | null
   isActive: boolean
   isEvent: boolean
-  /** @deprecated Eliminado. Usar types.includes('bucle') para el estado bucle. */
+  /** @deprecated Eliminado. Una tarea de seguimiento es solo una tarea (status) sin fecha (due). */
   isSeguimiento?: boolean
   // ── Columnas promovidas de extraData en v8.24 ──────────────────────────
   /** Color de acento del nodo (hex). Antes vivía en extraData.color. */

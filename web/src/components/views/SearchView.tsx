@@ -32,7 +32,7 @@ const DSL_PATTERNS: Array<{ regex: RegExp; parse: (m: RegExpMatchArray) => Filte
     parse: m => ({ type: 'priority', value: m[1].toLowerCase(), raw: m[0] }),
   },
   {
-    regex: /tipo:(tarea|bucle|evento|favorito|nota|diario)/gi,
+    regex: /tipo:(tarea|evento|favorito|nota|diario)/gi,
     parse: m => ({ type: 'kind', value: m[1].toLowerCase(), raw: m[0] }),
   },
   {
@@ -122,8 +122,6 @@ function applyFilters(nodes: Node[], parsed: ParsedQuery): Node[] {
     } else if (f.type === 'kind') {
       if (f.value === 'tarea') {
         result = result.filter(n => n.status !== null)
-      } else if (f.value === 'bucle') {
-        result = result.filter(n => n.types.includes('bucle'))
       } else if (f.value === 'evento') {
         result = result.filter(n => n.isEvent)
       } else if (f.value === 'favorito') {
@@ -187,7 +185,6 @@ const NATURAL_PATTERNS: Array<[RegExp, string]> = [
   [/pendientes?/i, 'estado:pendiente'],
   [/complet[ao]d[oa]s?|hech[oa]s?/i, 'estado:hecho'],
   [/favorit[oa]s?/i, 'tipo:favorito'],
-  [/bucles?\s+(activ[oa]s?)?/i, 'tipo:bucle estado:pendiente'],
   [/event[oa]s?/i, 'tipo:evento'],
   [/alta\s+prioridad/i, 'prioridad:alta'],
   [/media\s+prioridad/i, 'prioridad:media'],
@@ -218,7 +215,6 @@ const QUICK_CHIPS: Array<{ labelKey: string; dsl: string; icon?: string }> = [
   { labelKey: 'search.quickThisWeek', dsl: 'fecha:esta-semana', icon: '📅' },
   { labelKey: 'search.quickFavorites', dsl: 'tipo:favorito', icon: '★' },
   { labelKey: 'search.quickTasks', dsl: 'tipo:tarea', icon: '✓' },
-  { labelKey: 'search.quickLoops', dsl: 'tipo:bucle', icon: '↺' },
   { labelKey: 'search.quickHighPriority', dsl: 'prioridad:alta', icon: '▲' },
   { labelKey: 'search.quickWithContent', dsl: 'tiene:cuerpo', icon: '📝' },
 ]
@@ -651,9 +647,6 @@ export default function SearchView() {
                 )}
                 {node.isEvent && (
                   <span className="result-badge event-badge">{t('search.chipEvent')}</span>
-                )}
-                {node.types.includes('bucle') && (
-                  <span className="result-badge loop-badge">{t('search.chipBucle')}</span>
                 )}
               </div>
             </div>

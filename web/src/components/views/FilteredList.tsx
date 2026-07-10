@@ -3,7 +3,7 @@
  *
  * Se usa para TODOS los filtros activos en Fromly:
  *   - Filtro por contexto (@La Isla, @Personal, etc.)
- *   - Filtro por tipo (tareas, notas, eventos, bucles)
+ *   - Filtro por tipo (tareas, notas, eventos)
  *   - Filtro "Sin clasificar"
  *   - Búsqueda de texto
  *   - Cualquier filtro futuro

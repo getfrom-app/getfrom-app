@@ -1754,7 +1754,7 @@ body.outliner-drag-active {
 
 /* LIENZO ÚNICO: el contenido es texto libre — no hay zoom-in, así que el nav-dot
    (punto de navegación) desaparece por completo. Los checkboxes/iconos de estado
-   (tarea, evento, bucle…) se conservan porque no navegan. */
+   (tarea, evento…) se conservan porque no navegan. */
 .node-row--canvas .bullet-nav-dot {
   display: none !important;
 }
@@ -1835,7 +1835,7 @@ body.outliner-drag-active {
 }
 .node-open-btn:hover { color: var(--text-primary); }
 
-/* Node badges (priority, bucle, event, fav) */
+/* Node badges (priority, event, fav) */
 .node-priority-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; cursor: pointer; transition: transform 0.1s; }
 .node-priority-dot:hover { transform: scale(1.4); }
 .node-priority-dot.high { background: #ef4444; }
@@ -1844,7 +1844,6 @@ body.outliner-drag-active {
 .node-priority-dot.add { background: transparent; border: 1.5px dashed var(--text-tertiary); opacity: 0; }
 .node-row:hover .node-priority-dot.add { opacity: 0.5; }
 .node-type-badge { font-size: 11px; opacity: 0.7; flex-shrink: 0; user-select: none; }
-.node-type-badge.bucle { color: var(--accent); }
 .node-type-badge.event { font-size: 12px; }
 .node-type-badge.recurrence { font-size: 11px; opacity: 0.6; display: inline-flex; align-items: center; gap: 1px; }
 /* × para quitar la recurrencia — oculto, aparece al pasar el ratón por el chip */
@@ -3084,7 +3083,6 @@ body.outliner-drag-active {
 .prop-icon-btn { display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: var(--radius); border: 1px solid var(--border); background: transparent; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.1s; font-family: inherit; }
 .prop-icon-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .prop-icon-btn.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
-.prop-icon-btn.active.bucle { background: rgba(139,92,246,0.15); color: #8b5cf6; border-color: rgba(139,92,246,0.4); }
 .prop-icon-btn.active.event { background: rgba(16,185,129,0.15); color: #10b981; border-color: rgba(16,185,129,0.4); }
 .prop-pills { display: flex; flex-wrap: wrap; gap: 4px; }
 .prop-pill { padding: 4px 8px; border-radius: 100px; border: 1px solid var(--border); background: transparent; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.1s; font-family: inherit; }
@@ -4369,13 +4367,6 @@ body.outliner-drag-active {
 .agenda-day-label.today { color: var(--accent); }
 .agenda-empty { font-size: 12px; color: var(--text-tertiary); padding: 2px 8px; }
 
-.diary-bucle-section { margin-bottom: 12px; border-left: 2px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; padding-left: 4px; }
-.diary-bucle-header { display: flex; align-items: center; gap: 6px; padding: 5px 8px; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; border-radius: var(--radius); transition: background 0.1s; }
-.diary-bucle-header:hover { background: var(--accent-soft); }
-.diary-bucle-icon { font-size: 14px; opacity: 0.8; }
-.diary-bucle-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.diary-bucle-children { padding-left: 4px; }
-
 /* ── Botón añadir bullet ─────────────────────────────────────────────────── */
 .diary-add-bullet { display: flex; align-items: center; gap: 4px; padding: 2px 8px; font-size: 12px; color: var(--text-tertiary); border: none; background: transparent; cursor: pointer; border-radius: var(--radius); transition: color 0.1s, background 0.1s; margin-left: 8px; }
 .diary-add-bullet:hover { color: var(--accent); background: var(--accent-soft); }
@@ -5278,22 +5269,6 @@ body.outliner-drag-active {
   margin-left: auto;
 }
 
-.followup-bucle {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--bg-secondary);
-  margin-bottom: 6px;
-  overflow: hidden;
-}
-
-.followup-bucle-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  cursor: default;
-}
-
 .followup-collapse-btn {
   background: none;
   border: none;
@@ -5315,33 +5290,6 @@ body.outliner-drag-active {
 
 .followup-loop-icon {
   font-size: 14px;
-  flex-shrink: 0;
-}
-
-.followup-bucle-title {
-  flex: 1;
-  background: none;
-  border: none;
-  color: var(--text-primary);
-  font-size: 13px;
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
-  padding: 0;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.followup-bucle-title:hover {
-  color: var(--accent);
-  text-decoration: underline;
-}
-
-.followup-bucle-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   flex-shrink: 0;
 }
 
@@ -6222,16 +6170,7 @@ body.outliner-drag-active {
   position: relative;
   top: 3px; /* compensar que los emojis tienden a renderizarse ligeramente altos */
 }
-.node-bucle-indicator {
-  font-size: 15px;
-  color: var(--accent);
-  opacity: 0.75;
-  flex-shrink: 0;
-  line-height: 1;
-  margin-left: 6px;
-  user-select: none;
-}
-/* Wrapper título + ⟲ en NodeView: toma el flex:1 del h1 anterior */
+/* Wrapper título en NodeView: toma el flex:1 del h1 anterior */
 .node-title-wrap {
   display: flex;
   align-items: center;
@@ -6242,14 +6181,6 @@ body.outliner-drag-active {
 .node-title-wrap .node-title {
   flex: 0 1 auto;  /* no crecer, sí encoger, tamaño natural */
   min-width: 0;
-}
-/* Versión para el título de NodeView — junto al texto, no en el extremo */
-.node-bucle-indicator--title {
-  font-size: 24px;
-  opacity: 0.65;
-  margin-left: 10px;
-  flex-shrink: 0;
-  align-self: center;
 }
 .diary-date-picker:focus { outline: none; border-color: var(--border-focus); opacity: 1; }
 
@@ -8789,11 +8720,6 @@ textarea:focus-visible,
 .bullet-btn.task.task-sq--future   { color: #60a5fa; } /* azul claro */
 .bullet-btn.task.task-sq--resource { color: #06b6d4; } /* cian — recurso pendiente */
 .bullet-btn.task:hover { opacity: 0.75; }
-/* Bucle: icono de loop. Abierto = violeta; cerrado = gris */
-.bullet-btn--bucle { cursor: pointer; }
-.bullet-btn--bucle-open   { color: #8b5cf6; }
-.bullet-btn--bucle-closed { color: var(--text-tertiary); }
-.bullet-btn--bucle:hover  { opacity: 0.75; }
 /* Evento: icono calendario azul como bullet */
 .bullet-btn--event {
   display: flex; align-items: center; justify-content: center;
@@ -13439,7 +13365,6 @@ textarea:focus-visible,
   color: var(--text-secondary);
 }
 .dc-count--overdue { background: rgba(239,68,68,0.12); color: #dc2626; }
-.dc-count--bucle { background: rgba(139,92,246,0.12); color: #8b5cf6; }
 .dc-chevron { font-size: 12px; color: var(--text-tertiary); }
 .dc-body { padding: 2px 8px 10px; }
 .dc-group { margin-top: 6px; }
@@ -13599,7 +13524,6 @@ textarea:focus-visible,
   display: inline-block;
 }
 .dc-group-label--overdue { color: #dc2626; }
-.dc-group-label--bucle { color: #8b5cf6; }
 .dc-row {
   position: relative;
   display: flex;
@@ -13717,20 +13641,6 @@ textarea:focus-visible,
   padding: 0;
 }
 .dc-check:hover { border-color: #8b5cf6; background: rgba(139,92,246,0.12); }
-.dc-bucle {
-  flex-shrink: 0;
-  width: 17px;
-  height: 17px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  color: #8b5cf6;
-  cursor: pointer;
-  padding: 0;
-}
-.dc-bucle:hover { color: #6d28d9; }
 .dc-text {
   font-size: 13.5px;
   color: var(--text-primary);

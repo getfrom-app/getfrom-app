@@ -740,7 +740,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     if (globalCanvas) return [] as Node[] // en el plano único solo aparece lo COLOCADO
     if (!flowUnpositioned) return [] as Node[]
     // En la diaria, todo lo que vive en la columna derecha (eventos, capturas y
-    // tareas/bucles del cockpit) NO se pinta en el lienzo (evita duplicados).
+    // tareas del cockpit) NO se pinta en el lienzo (evita duplicados).
     const parent = store.getNode(parentId)
     const isDiary = !!parent?.isDiaryEntry
     // REGLA: en el lienzo solo aparece lo CREADO en el lienzo o ARRASTRADO a él
@@ -2405,7 +2405,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
    contexto, placeholder, recuadro ni tiradores. Magic añade badges al escribir;
    el dot (zoom) y el tirador de ancho aparecen únicamente en hover. */
 .pizarra-node--cleantext .node-bullet-slot{display:none!important}
-/* Tarea/evento/bucle/captura limpios: SÍ muestran su marcador (checkbox/icono),
+/* Tarea/evento/captura limpios: SÍ muestran su marcador (checkbox/icono),
    pegado al texto, sin gutter. El resto del cromo (caja, tiradores) sigue oculto. */
 .pizarra-node--cleantext.pizarra-node--check .node-bullet-slot{display:inline-flex!important;width:auto!important;min-width:0!important;margin-right:4px!important}
 .pizarra-node--cleantext .collapse-btn,.pizarra-node--cleantext .node-collapse{display:none!important}
@@ -2787,9 +2787,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         const res = !isText && !elView ? readResource(node) : null
         // LIMPIO = nodo plano (ni doc, ni vista, ni recurso): se pinta vía OutlinerNode
         // pero SIN cromo (CSS `.pizarra-node--cleantext`): sin caja ni tiradores grandes.
-        // Una TAREA/evento/bucle/captura también va LIMPIA (mismo estilo que un nodo
+        // Una TAREA/evento/captura también va LIMPIA (mismo estilo que un nodo
         // normal), pero conserva su MARCADOR (checkbox/icono) → clase `--check`.
-        const hasChrome = node.status !== null || node.isEvent || (node.types || []).some(t => t === 'bucle' || t === 'captura')
+        const hasChrome = node.status !== null || node.isEvent || (node.types || []).some(t => t === 'captura')
         const isPlainText = !isText && !elView && !res && !hasChrome   // texto puro
         const isClean = !isText && !elView && !res                      // limpio (texto o tarea)
         // ¿Tiene nodos hijos? (como las notas): si los tiene, el dot se muestra SIEMPRE

@@ -127,12 +127,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     })
   }
 
-  function closeBucle(e: React.MouseEvent, n: Node) {
-    e.stopPropagation()
-    store.updateNode(n.id, { status: 'done' })
-  }
-
-
   function parentLabel(n: Node): string | null {
     if (!n.parentId) return null
     const p = store.getNode(n.parentId)
@@ -169,27 +163,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       dragProps={dragProps(n)}
       rowRef={registerRow(n.id)}
     />
-  )
-
-  const renderBucleRow = (n: Node) => (
-    <div key={n.id} className="dc-row" onClick={() => openNodeDetail(n.id)}
-      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
-      {...dragProps(n)}>
-      <button
-        className="dc-bucle"
-        onClick={e => closeBucle(e, n)}
-        title={t('daily.closeBucle')}
-        aria-label={t('daily.closeBucle')}
-      >
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M11.5 7a4.5 4.5 0 1 1-1.3-3.2" />
-          <path d="M11.5 1.8v2.7H8.8" />
-        </svg>
-      </button>
-      <span className="dc-text">{n.text ? renderInline(n.text) : t('common.noTitle')}</span>
-      {parentLabel(n) && <span className="dc-parent">{parentLabel(n)}</span>}
-      {delBtn(n)}
-    </div>
   )
 
   // ── Reparto de contextos ───────────────────────────────────────────────────

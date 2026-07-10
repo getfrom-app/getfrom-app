@@ -203,7 +203,7 @@ export default function NodeView() {
   // ID del contexto asignado manualmente al nodo (para badge en NodeView, igual que OutlinerNode)
   const nodeViewManualCtxId = useMemo(() => {
     if (!node) return null
-    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
     const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
     if (userTypes.length === 0) return null
     const tagsRoot = findContextRoot()
@@ -221,7 +221,7 @@ export default function NodeView() {
     if (!node) return false
     try { if (JSON.parse(node.extraData || '{}')._contextManuallySet === '1') return true } catch {}
     if (/@\w/.test(node.text || '')) return true
-    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
     const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
     return userTypes.length > 0
   }, [node?.types, node?.extraData, node?.text])
@@ -452,7 +452,7 @@ export default function NodeView() {
       // Si ya tiene _autoContextId persistido, no re-clasificar (evita bucle extraData→effect)
       if (ed._autoContextId !== undefined) return
     } catch { /* ignore */ }
-    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+    const builtinTags = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
     const userTypes = (node.types || []).filter(t => !builtinTags.has(t))
     if (userTypes.length > 0) return
     if (/@\w/.test(node.text || '')) return
@@ -1858,30 +1858,6 @@ export default function NodeView() {
                   <circle cx="16" cy="14" r="0.8" fill="#3b82f6"/>
                 </svg>
               </div>
-            ) : (node.types || []).includes('bucle') ? (
-              // Bucle: icono de loop que sustituye al de nota. Abierto = violeta; cerrado = gris.
-              (() => {
-                const closed = node.status === 'done'
-                return (
-                  <button
-                    className={`bullet-btn bullet-btn--bucle ${closed ? 'bullet-btn--bucle-closed' : 'bullet-btn--bucle-open'}`}
-                    onClick={() => store.updateNode(node!.id, { status: closed ? null : 'done' })}
-                    title={closed ? t('tip.loopClosed') : t('tip.loopOpen')}
-                    style={{ flexShrink: 0, marginRight: 10, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }}
-                  >
-                    {closed ? (
-                      <svg width="26" height="26" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <circle cx="7" cy="7" r="4.5"/>
-                      </svg>
-                    ) : (
-                      <svg width="26" height="26" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11.5 7a4.5 4.5 0 1 1-1.3-3.2"/>
-                        <path d="M11.5 1.8v2.7H8.8"/>
-                      </svg>
-                    )}
-                  </button>
-                )
-              })()
             ) : (() => {
               // Recurso pendiente (sin tarea ni evento): checkbox cian
               try {
@@ -2026,7 +2002,7 @@ export default function NodeView() {
                 </div>
               )
             })()}
-            {/* Wrapper título + indicador bucle — flex:1 para que ocupen el espacio izquierdo */}
+            {/* Wrapper título — flex:1 para que ocupe el espacio izquierdo */}
             <div
               className="node-title-wrap"
               style={!isLocked ? { cursor: 'text' } : undefined}
@@ -2346,10 +2322,9 @@ export default function NodeView() {
                 )}
               </div>
 
-              {/* Nodo normal → dot/bucle + título en la cabecera. El documento (isDoc)
+              {/* Nodo normal → dot + título en la cabecera. El documento (isDoc)
                   no pinta nada aquí: su editor (DocEditor) va en .view-body, porque
                   esta fila (.node-title-row) está oculta con display:none para docs. */}
-              {/* (Botón «bucle» eliminado: el seguimiento es ahora una tarea sin fecha.) */}
 
               {/* ── ··· Más opciones → NodeContextMenu (menú ÚNICO de nodo) ── */}
               <div style={{ position: 'relative' }}>
@@ -2884,7 +2859,7 @@ export default function NodeView() {
                 {/* GCal events son ahora nodos normales del outliner — no hay bloque especial */}
 
                 {/* ── Pizarra: lienzo infinito. En la nota diaria se abre con su
-                       COLUMNA DERECHA («Tu día»: tareas/bucles), dejando el lienzo
+                       COLUMNA DERECHA («Tu día»: tareas), dejando el lienzo
                        libre — como en iPad. En notas normales ocupa todo. ── */}
                 {viewKind === 'pizarra' && !isAgendaRoot && !isDoc && !temporalCalendar && !(nodeResourceMeta?.url && (nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url))) && <PizarraView parentId={node.id} flowUnpositioned globalCanvas={isCanvasRoot(node)} />}
 

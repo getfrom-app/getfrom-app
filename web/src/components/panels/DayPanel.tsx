@@ -1,5 +1,5 @@
 // DayPanel — pestaña del panel derecho «Día» (modo pizarra). Muestra la columna
-// unificada del día (eventos → atrasadas → hoy → bucles → nodos) vía DayColumn.
+// unificada del día (eventos → atrasadas → hoy → nodos) vía DayColumn.
 // En pizarra el outliner inline del centro está desmontado, así que esta es la
 // ÚNICA instancia del outliner del día (sin duplicar).
 //
@@ -39,7 +39,7 @@ export default function DayPanel({ nodeId }: { nodeId?: string }) {
   return (
     <div className="day-panel" style={{ height: '100%', overflowY: 'auto', padding: '6px 8px 88px' }} onClick={onPanelClick}>
       {node.isDiaryEntry ? (
-        // La columna del día persiste en pizarra Y en lista: eventos + atrasadas/hoy/bucles/
+        // La columna del día persiste en pizarra Y en lista: eventos + atrasadas/hoy/
         // capturas. Los NODOS del día NO van aquí (includeNodes=false): viven en el lienzo.
         <DayColumn node={node} includeNodes={false} />
       ) : (

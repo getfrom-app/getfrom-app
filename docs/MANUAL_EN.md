@@ -1,4 +1,4 @@
-# Fromly — User manual v9.6.788
+# Fromly — User manual v9.6.789
 
 > Web · Mac · iPhone · fromly.app · Last updated: July 10, 2026
 
@@ -240,31 +240,8 @@ There's no separate type for "what you have in progress": it's simply a **task w
 - **Close:** mark it done (its checkbox). To put it back into follow-up, add or remove its date from its triage menu.
 - The day's «Follow-up» section starts **collapsed with a counter** (there are usually many undated tasks); expand it whenever you want.
 
-> Don't confuse this with **Loop** (below): a follow-up task is a normal task with no date; a
-> loop is a different node type, with its own open/closed state.
-
-### Loop ⟲
-
-A loop is a node for work that's **in progress, undated, and you open/close yourself** —
-different from a task (which gets marked done) or a follow-up task (which is just a task with no
-date). Useful for things you keep circling back to without a clear end: an ongoing negotiation, a
-topic you track week over week, something you watch until it resolves.
-
-**How to create a loop:**
-
-- Type `-b` at the end of the text and confirm (same pattern as `-t` for task or `-e` for event).
-- Right-click a node → «Convert to» → Loop.
-
-**States:**
-
-- **Open** — purple ⟲ arrow where the checkbox would be. The default state when created.
-- **Closed** — grey circle, but **reopenable** at any time (unlike a done task, a loop doesn't
-  disappear from its place). Click the arrow or use the context menu → «Close loop» / «Reopen
-  loop».
-
-A loop **has no due date** and therefore never appears on the calendar or in the Planner. Filter
-for it with the `loop` operator (see section 12) or the «Loop» chip on iOS, which shows only the
-open ones.
+> The old «loop» node type (⟲, open/close) was removed on web. This same follow-up task now
+> covers that need: something "in progress" with no date that you mark done once it resolves.
 
 ### Mirror ⬡
 
@@ -752,7 +729,6 @@ Fromly uses AI (Haiku, free for all users) to interpret the query. It does not c
 | `pending` | Pending (uncompleted) tasks |
 | `done` | Completed tasks |
 | `overdue` | Tasks whose date has passed and aren't done |
-| `loop` | Open loops — loop-type nodes you haven't closed yet |
 | `note` | All note-type nodes |
 | `event` | All events |
 | `resource` | All resources |
@@ -774,15 +750,6 @@ Fromly uses AI (Haiku, free for all users) to interpret the query. It does not c
 - "today's or tomorrow's tasks" → `task today or task tomorrow`.
 
 Search ignores accents and case.
-
-### The `loop` operator — open loops
-
-The `loop` operator filters your **open loops**: loop-type nodes you haven't closed yet (see
-«Loop» in Node types). It's ideal for seeing everything you have in motion at a glance. A loop
-leaves the filter once you close it.
-
-> Note: don't confuse this with the 📁 «live container» icon — that's a visual cue for any note
-> that has pending tasks inside, independent of the loop node type.
 
 ### Filter from Magic Chat
 
@@ -1452,10 +1419,6 @@ From **Settings → Account → Subscription** or at [app.lemonsqueezy.com/billi
 
 **Can I use my own AI API keys?**
 Yes, on the Pro or Lifetime plan. Go to **Settings → AI** and add your Anthropic, OpenAI or Google keys. Usage goes to your account and doesn't draw from Fromly's tokens.
-
-**What is the `loop` filter?**
-The `loop` operator shows your open loops: loop-type nodes you have in progress and haven't
-closed yet. Useful for seeing everything you have in motion at a glance.
 
 **Are Space capture and ⌘K the same?**
 Yes. `Space` opens the unified capture modal when the cursor isn't editing text. `⌘K` does the same and always works, even when text is being edited. They're synonyms for the same modal.

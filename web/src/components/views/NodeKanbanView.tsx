@@ -6,7 +6,7 @@ import type { Node } from '../../types'
 
 interface Props { parentId: string }
 
-const NODE_BUILTIN_TYPES = new Set(['bucle','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec'])
+const NODE_BUILTIN_TYPES = new Set(['agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec'])
 
 function dateBucket(d: Date): string {
   const now = new Date()

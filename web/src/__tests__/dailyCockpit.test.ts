@@ -100,7 +100,7 @@ describe('dailyCockpit — sección «Tu día»', () => {
     expect(store.getNode(t.id)!.due).toBeNull()
   })
 
-  it('los bucles se ordenan alfabéticamente y las tareas por due', () => {
+  it('las atrasadas se ordenan por due', () => {
     store.createNode({ text: 'B muy atrasada', parentId: null, isTask: true, due: iso(-5) })
     store.createNode({ text: 'A poco atrasada', parentId: null, isTask: true, due: iso(-1) })
     const data = collectDailyCockpit()

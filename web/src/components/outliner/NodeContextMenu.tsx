@@ -105,7 +105,6 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
   const isTask = node.status !== null && node.status !== undefined
   const isEvent = !!node.isEvent
   const isFav = !!node.isFavorite
-  const isBucle = (node.types || []).includes('bucle')
   const meta = nodeMeta(node)
   const currentBlock = meta.block ?? null
   const isDiary = node.isDiaryEntry
@@ -359,7 +358,6 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
               <span className="context-menu-icon">📅</span>
               {isEvent ? t('context.removeEvent') : t('search.chipEvent')}
             </button>
-            {/* (Bucle eliminado del «Convertir en»: ahora seguimiento = tarea sin fecha.) */}
             <div className="context-menu-separator" style={{ margin: '3px 8px' }} />
             {(['h1','h2','h3'] as const).map(level => (
               <button key={level} className="context-menu-item context-menu-item--sub"
@@ -402,7 +400,6 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           <span className="context-menu-icon">{isFav ? '★' : '☆'}</span>
           {isFav ? t('context.removeFavorite') : t('context.addFavorite')}
         </button>
-        {/* (Bucle eliminado: el seguimiento es ahora una tarea sin fecha.) */}
       </div>
 
       <div className="context-menu-separator" />

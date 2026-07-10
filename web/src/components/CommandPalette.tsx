@@ -112,7 +112,7 @@ function parseNaturalDate(tokens: string[]): { date: Date | null; usedTokens: Se
 
 function parseQuery(raw: string): ParsedQuery {
   let isTask = false, isEvent = false, isFavorite = false
-  // v8.27: eliminados los flags -s y -a (campo isSeguimiento legacy, distinto del bucle actual).
+  // v8.27: eliminados los flags -s y -a (campo isSeguimiento legacy).
   const re = /\s*-(t|e|f)\b/gi
   let m: RegExpExecArray | null
   while ((m = re.exec(raw)) !== null) {

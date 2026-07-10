@@ -187,8 +187,6 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
       } catch { return false }
     }
     case 'activo':      return !!node.isActive
-    case 'bucle':
-    case 'loop':        return (node.types || []).includes('bucle') && node.status !== 'done'
     case 'captura':
     case 'capture':     return (node.types || []).includes('captura')
     case 'cajon':
@@ -350,12 +348,12 @@ const SMART_OPERATORS = [
   'hoy', 'mañana', 'semana', 'mes', 'pasado', 'futuro',
   'tarea', 'pendiente', 'hecho', 'vencido', 'overdue',
   'sin-fecha', 'sinfecha', 'con-fecha', 'confecha',
-  'nota', 'favorito', 'diario', 'recurso', 'archivo', 'enlace', 'activo', 'evento', 'tipo:', 'bucle', 'captura',
+  'nota', 'favorito', 'diario', 'recurso', 'archivo', 'enlace', 'activo', 'evento', 'tipo:', 'captura',
   'documento', 'pdf', 'imagen',
   // English
   'today', 'tomorrow', 'week', 'month', 'past', 'future',
   'task', 'pending', 'done', 'completed', 'scheduled', 'undated', 'dated',
-  'note', 'favorite', 'journal', 'diary', 'resource', 'file', 'link', 'event', 'loop',
+  'note', 'favorite', 'journal', 'diary', 'resource', 'file', 'link', 'event',
   'document', 'doc', 'image', 'img',
 ]
 

@@ -16,11 +16,11 @@ import { learningsStore } from '../store/learningsStore'
 import { buildClassifyContexts } from './autoClassify'
 import { PROFILE_KNOWLEDGE, isProfileKnowledge } from '../utils/knowledgeNodes'
 
-const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
 
 export interface TeachResult {
   contextId: string | null
-  setType: 'task' | 'event' | 'loop' | 'note' | null
+  setType: 'task' | 'event' | 'note' | null
   profileFact: string | null
   rule: string
 }
@@ -29,7 +29,6 @@ export interface TeachResult {
 function nodeTypeLabel(node: { status?: string | null; isEvent?: boolean; types?: string[] }): string {
   if (node.status !== null && node.status !== undefined) return 'tarea'
   if (node.isEvent) return 'evento'
-  if ((node.types || []).includes('bucle')) return 'bucle'
   return 'nota'
 }
 
@@ -89,25 +88,21 @@ function applyContext(nodeId: string, contextNodeId: string): string | null {
   return tagName
 }
 
-/** Cambia el tipo del nodo (tarea / evento / bucle / nota). */
+/** Cambia el tipo del nodo (tarea / evento / nota). */
 function applyType(nodeId: string, setType: NonNullable<TeachResult['setType']>): string {
   const node = store.getNode(nodeId)
   if (!node) return ''
-  const types = node.types || []
   switch (setType) {
     case 'task': {
       const due = new Date(); due.setHours(23, 59, 59, 0)
-      store.updateNode(nodeId, { status: 'pending', due: due.toISOString(), types: types.filter(t => t !== 'bucle'), isEvent: false })
+      store.updateNode(nodeId, { status: 'pending', due: due.toISOString(), isEvent: false })
       return 'tarea'
     }
     case 'event':
-      store.updateNode(nodeId, { isEvent: true, status: null, due: null, types: types.filter(t => t !== 'bucle') })
+      store.updateNode(nodeId, { isEvent: true, status: null, due: null })
       return 'evento'
-    case 'loop':
-      store.updateNode(nodeId, { types: types.includes('bucle') ? types : [...types, 'bucle'], isEvent: false })
-      return 'bucle'
     case 'note':
-      store.updateNode(nodeId, { status: null, due: null, isEvent: false, types: types.filter(t => t !== 'bucle') })
+      store.updateNode(nodeId, { status: null, due: null, isEvent: false })
       return 'nota'
   }
 }

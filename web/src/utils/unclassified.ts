@@ -4,7 +4,7 @@
  * Regla (acordada): un nodo está "sin clasificar" SOLO si:
  *   · está dentro de 📅 Agenda (no en Contexto, Prompts, Agentes, Atajos, Plantillas, Papelera)
  *   · no es estructura temporal (año/mes/semana) ni entrada de diario
- *   · es contenido real (tarea, bucle o contenedor con hijos) con texto ≥ 4
+ *   · es contenido real (tarea o contenedor con hijos) con texto ≥ 4
  *   · NO tiene contexto de ningún tipo: ni manual (types/@/_contextManuallySet)
  *     ni asignado por la IA (_autoContextId). Si muestra un chip de contexto,
  *     no es "sin clasificar".
@@ -16,7 +16,7 @@ import { store } from '../store/nodeStore'
 import { findAgendaRoot } from './agendaHelper'
 
 /** Tags de sistema — no cuentan como contexto de usuario. */
-const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','bucle','nota'])
+const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
 
 /** IDs de todos los descendientes de 📅 Agenda (sin incluir la raíz). */
 export function getAgendaDescendantIds(): Set<string> {
@@ -59,11 +59,10 @@ export function getUnclassifiedIds(): Set<string> {
     if ((n.text || '').trim().length < 4) continue
     // estructura temporal (año/mes/semana) — descartar
     try { if (JSON.parse(n.extraData || '{}').temporalType) continue } catch { /* */ }
-    // solo contenido: tareas, bucles o contenedores con hijos
+    // solo contenido: tareas o contenedores con hijos
     const hasChildren = store.children(n.id).some(c => !c.deletedAt)
     const isTask = n.status !== null && n.status !== undefined
-    const isLoop = (n.types || []).includes('bucle')
-    if (!hasChildren && !isTask && !isLoop) continue
+    if (!hasChildren && !isTask) continue
     if (hasAnyContext(n)) continue
     out.add(n.id)
   }

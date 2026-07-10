@@ -28,7 +28,6 @@ function getNodeIcon(n: Node): string {
   if (n.isEvent) return '📅'
   if (n.status === 'pending') return '○'
   if (n.status === 'done') return '✓'
-  if ((n.types || []).includes('bucle')) return '↺'
   if (n.isFavorite) return '★'
   return '📄'
 }

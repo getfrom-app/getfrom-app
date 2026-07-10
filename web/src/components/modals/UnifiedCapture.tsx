@@ -34,21 +34,16 @@ function normalizeNFD(s: string) {
 
 // ── Force type shortcuts inline ──────────────────────────────────────────────
 
-type ForceType = 'task' | 'event' | 'note' | 'bucle' | null
-const FORCE_SHORTCUTS: Record<string, ForceType> = { '-t': 'task', '-e': 'event', '-n': 'note', '-b': 'bucle' }
+type ForceType = 'task' | 'event' | 'note' | null
+const FORCE_SHORTCUTS: Record<string, ForceType> = { '-t': 'task', '-e': 'event', '-n': 'note' }
 
 function detectForceType(t: string): { forceType: ForceType; cleanText: string } {
   const trimmed = t.trimEnd()
-  // Shortcuts: -t, -e, -n, -b
+  // Shortcuts: -t, -e, -n
   for (const [shortcut, type] of Object.entries(FORCE_SHORTCUTS)) {
     if (trimmed.endsWith(' ' + shortcut) || trimmed === shortcut) {
       return { forceType: type, cleanText: trimmed.slice(0, -shortcut.length).trimEnd() }
     }
-  }
-  // Palabra "bucle" al final del texto (cualquier case): "Casa Alicante bucle"
-  if (/\s+bucle$/i.test(trimmed) || /^bucle$/i.test(trimmed)) {
-    const clean = trimmed.replace(/\s*bucle$/i, '').trim()
-    return { forceType: 'bucle', cleanText: clean }
   }
   return { forceType: null, cleanText: t }
 }
@@ -176,7 +171,7 @@ interface PaletteItem {
   score: number
 }
 
-type PaletteView = 'default' | 'filtros' | 'contextos' | 'bucles'
+type PaletteView = 'default' | 'filtros' | 'contextos'
 
 interface Props {
   onClose: () => void
@@ -613,32 +608,6 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       }))
     }
 
-    // ── Vista BUCLES ──────────────────────────────────────────────────────
-    if (view === 'bucles') {
-      // Solo bucles ABIERTOS (cerrado = status 'done')
-      const allBucles = store.allActive().filter(n =>
-        !n.deletedAt && (n.types || []).includes('bucle') && n.status !== 'done'
-      )
-      const filtered = q ? allBucles.filter(n => normalizeText(n.text || '').includes(qNorm)) : allBucles
-      if (filtered.length === 0) return [{
-        id: 'no-bucles',
-        label: q ? `Sin bucles para "${q}"` : 'No hay bucles abiertos',
-        type: 'wf-action', taskStatus: null, score: 0, action: () => {},
-      }]
-      return filtered.map(n => ({
-        id: `bucle-${n.id}`,
-        label: n.text || t('common.noTitle'),
-        sublabel: (() => {
-          const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
-          return parentText || 'Bucle abierto'
-        })(),
-        type: 'wf-action' as const,
-        taskStatus: null as null,
-        score: q ? scoreMatch(n.text || '', q) : 100,
-        action: () => { openNodeDetail(n.id); onClose() },
-      }))
-    }
-
     // ── Vista CONTEXTOS ────────────────────────────────────────────────────
     if (view === 'contextos') {
       // TODOS los contextos del árbol: RAÍZ (hijos de 🧠 Contexto, sin `_ctx`) +
@@ -711,18 +680,6 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           score: 170,
           action: () => { setView('contextos'); setActiveIdx(0) },
         },
-        {
-          id: 'cat-bucles',
-          label: 'Bucles',
-          sublabel: (() => {
-            const c = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes('bucle') && n.status !== 'done').length
-            return c > 0 ? `${c} bucles abiertos` : 'Sin bucles abiertos'
-          })(),
-          type: 'wf-action' as const,
-          taskStatus: null,
-          score: 160,
-          action: () => { setView('bucles'); setActiveIdx(0) },
-        },
       ]
     }
 
@@ -749,11 +706,6 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     // "contextos" → vista contextos
     if (['contextos', 'contexto', 'context'].some(kw => kw.startsWith(qNormStr) || qNormStr === kw)) {
       return [{ id: 'cat-contextos', label: 'Contextos', sublabel: 'Ver todos los contextos', type: 'wf-action', taskStatus: null, score: 300, action: () => { setView('contextos'); setText(''); if (inputRef.current) inputRef.current.textContent = ''; setActiveIdx(0) } }]
-    }
-
-    // "bucle/bucles" → vista bucles
-    if (['bucles', 'bucle'].some(kw => kw.startsWith(qNormStr) || qNormStr === kw)) {
-      return [{ id: 'cat-bucles', label: 'Bucles abiertos', sublabel: 'Ver todos los bucles', type: 'wf-action', taskStatus: null, score: 300, action: () => { setView('bucles'); setText(''); if (inputRef.current) inputRef.current.textContent = ''; setActiveIdx(0) } }]
     }
 
     // Búsqueda por nombre de contexto — TODOS los contextos (`_ctx='1'`), vivan donde
@@ -837,17 +789,14 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       if (!agendaIds.has(n.id) && !n.isFavorite) continue
       const sc = scoreMatch(n.text || '', searchTerm)
       if (sc === 0) continue
-      // Solo los bucles abiertos flotan arriba; uno cerrado se trata como nodo normal
-      const isBucleNode = (n.types || []).includes('bucle') && n.status !== 'done'
       const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
       results.push({
         id: `note-${n.id}`,
         label: n.text || t('common.noTitle'),
-        // Bucles: sublabel con indicador, score extra para aparecer primero
-        sublabel: isBucleNode ? `⟲ bucle${parentText ? ' · ' + parentText : ''}` : parentText,
+        sublabel: parentText,
         type: 'note' as const,
         taskStatus: (n.status as 'pending' | 'done' | null) ?? null,
-        score: isBucleNode ? sc + 30 : sc,  // bucles flotan arriba
+        score: sc,
         action: () => { recordRecentNode(n.id); openNodeDetail(n.id); onClose() },
       })
     }
@@ -1005,14 +954,13 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       return `${ctxSuggestion.cajonId ? '# ' : ''}${typed}${ctxSuggestion.ghost}`
     }
     if (newCajonName) return `# Crear «${newCajonName}»`
-    if (forceType === 'bucle') return '⟲ bucle'
     if (taskPrediction && datePrediction) return `☐ ${datePrediction.parsed.label}${datePrediction.timeStr ? ' · ' + datePrediction.timeStr : ''}`
     if (taskPrediction) return '☐ tarea'
     if (datePrediction) return datePrediction.parsed.label + (datePrediction.timeStr ? ' · ' + datePrediction.timeStr : '')
     return null
   })()
 
-  const ghostAcceptKey = ctxSuggestion ? '⇥' : newCajonName ? '↵' : (forceType === 'bucle' || (taskPrediction && !datePrediction)) ? '↵' : '⇥'
+  const ghostAcceptKey = ctxSuggestion ? '⇥' : newCajonName ? '↵' : (taskPrediction && !datePrediction) ? '↵' : '⇥'
 
   // ── Icon helper ────────────────────────────────────────────────────────────
   function itemIcon(item: PaletteItem): string {
@@ -1022,10 +970,8 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     if (item.taskStatus === 'done') return '✓'
     if (item.id.startsWith('ctx-')) return '🧠'
     if (item.id.startsWith('filtro-')) return '◈'
-    if (item.id.startsWith('bucle-')) return '⟲'
     if (item.id === 'cat-filtros') return '◈'
     if (item.id === 'cat-contextos') return '🧠'
-    if (item.id === 'cat-bucles') return '⟲'
     if (item.id.startsWith('quick-')) return '📅'
     if (item.id.startsWith('wf-')) return '⌘'
     return '•'
@@ -1072,7 +1018,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
               padding: '0 0 10px 0', alignSelf: 'flex-start',
             }}
           >
-            ← {view === 'filtros' ? 'Filtros' : view === 'contextos' ? 'Contextos' : 'Bucles'}
+            ← {view === 'filtros' ? 'Filtros' : 'Contextos'}
           </button>
         )}
 
@@ -1102,7 +1048,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
             color: (taskPrediction || forceType === 'task') ? 'var(--accent)' : forceType === 'event' ? '#3b82f6' : 'var(--text-tertiary)',
             fontSize: 14, flexShrink: 0,
           }}>
-            {forceType === 'event' ? '📅' : forceType === 'bucle' ? '⟲' : (taskPrediction || forceType === 'task') ? '☐' : '•'}
+            {forceType === 'event' ? '📅' : (taskPrediction || forceType === 'task') ? '☐' : '•'}
           </span>
           <div
             ref={inputRef}
@@ -1113,7 +1059,6 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
             data-placeholder={
               view === 'filtros' ? 'Buscar filtro…'
               : view === 'contextos' ? 'Buscar contexto…'
-              : view === 'bucles' ? 'Buscar bucle…'
               : 'Escribe un nodo, tarea o idea...'
             }
             style={{
@@ -1313,7 +1258,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
                       </div>
                     )}
                   </div>
-                  {(item.id === 'cat-filtros' || item.id === 'cat-contextos' || item.id === 'cat-bucles') && (
+                  {(item.id === 'cat-filtros' || item.id === 'cat-contextos') && (
                     <span style={{ color: 'var(--text-tertiary)', fontSize: 12, flexShrink: 0 }}>→</span>
                   )}
                 </button>

@@ -4,6 +4,20 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.789 — 10 julio 2026 · Eliminado el tipo "bucle"
+
+El bucle (⟲, abrir/cerrar) quedó a medias en una limpieza anterior: se quitó del menú "Convertir
+en" pero se podía seguir creando y usando por otros caminos. Terminado del todo.
+
+- **Ya no se puede crear un bucle** (antes: escribir `-b` o terminar el texto en "bucle").
+- Quitados el icono/toggle en el outliner y en el detalle de nota, la vista dedicada "Bucles" del
+  buscador rápido, el filtro `bucle`/`loop`, y su fila en la columna de hoy.
+- Si tenías bucles antiguos, ya se convirtieron solos en tareas de seguimiento (tareas sin fecha)
+  — la forma correcta de representarlos ahora.
+- Nota: en iPhone/iPad el bucle sigue existiendo por ahora (pendiente de una sesión dedicada).
+
+---
+
 ## Web v9.6.788 — 10 julio 2026 · Onboarding nuevo para Fromly 2.0
 
 Fromly 2.0 (el chat) es ahora la app principal, pero hasta hoy no explicaba nada a quien entraba por primera vez.

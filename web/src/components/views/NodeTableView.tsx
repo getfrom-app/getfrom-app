@@ -24,7 +24,7 @@ const BUILTIN_COLS = [
   { id: '__tags',     name: 'Tags' },
 ]
 
-const NODE_BUILTIN_TYPES = new Set(['bucle', 'agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
+const NODE_BUILTIN_TYPES = new Set(['agente', 'prompt', 'evento', 'tarea', 'enlace', 'archivo', 'panel', 'busqueda', 'chat', 'favorito', 'seguimiento', 'quick', 'magic', 'rec'])
 
 // ── Cell renderers/editors ───────────────────────────────────────────────────
 

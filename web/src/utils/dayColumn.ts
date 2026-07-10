@@ -1,7 +1,7 @@
 // dayColumn — qué nodos viven en la COLUMNA DERECHA de una nota diaria, para que
 // no se dupliquen en el lienzo (pizarra) ni en el centro (lista).
 //
-// Columna derecha = eventos GCal + tareas/bucles del cockpit (atrasadas/hoy/bucles)
+// Columna derecha = eventos GCal + tareas del cockpit (atrasadas/hoy)
 // + capturas (bandeja). El lienzo/centro muestra el RESTO de hijos del día.
 
 import { store } from '../store/nodeStore'
@@ -47,7 +47,7 @@ export interface DayColumnData {
   dayTasks: Node[]
   /** Vistas guardadas del lienzo (bloque «Áreas»). */
   areaNodes: Node[]
-  /** IDs de tareas/bucles que el cockpit/lista ya muestra. */
+  /** IDs de tareas que el cockpit/lista ya muestra. */
   cockpitIds: Set<string>
   /** IDs que viven SOLO en la columna derecha → excluir del lienzo y del centro. */
   rightColumnIds: Set<string>
@@ -71,7 +71,7 @@ export function getDayColumnData(dayNode: Node): DayColumnData {
     .filter(c => !c.deletedAt && (c.isEvent || getGcalEventId(c)) && sameDay(c.due))
     .sort((a, b) => (a.due || '').localeCompare(b.due || ''))
 
-  // HOY → cockpit (atrasadas/hoy/bucles). Otros días → tareas con due ese día.
+  // HOY → cockpit (atrasadas/hoy). Otros días → tareas con due ese día.
   const cockpitIds = new Set<string>()
   let dayTasks: Node[] = []
   if (isToday) {
@@ -83,7 +83,7 @@ export function getDayColumnData(dayNode: Node): DayColumnData {
   }
 
   // Capturas = bandeja de NOTAS sueltas: marcadas `_capture`, sin colocar, sin
-  // estado (una tarea/bucle vive en el cockpit, no aquí — al completarse no debe
+  // estado (una tarea vive en el cockpit, no aquí — al completarse no debe
   // reaparecer en capturas) y NO eventos ni ya mostradas en el cockpit.
   const captureNodes = children.filter(c =>
     isCaptureNode(c) && c.status == null && !c.isEvent && !nodeHasPin(c) && !getGcalEventId(c) && !cockpitIds.has(c.id)

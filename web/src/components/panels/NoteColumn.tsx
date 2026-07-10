@@ -16,7 +16,7 @@ import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../
 import RowContextChip from './RowContextChip'
 import { useTranslation } from 'react-i18next'
 
-const BUILTIN_TYPES = new Set(['bucle','captura','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota','proyecto'])
+const BUILTIN_TYPES = new Set(['captura','agente','prompt','evento','tarea','enlace','archivo','panel','busqueda','chat','favorito','seguimiento','quick','magic','rec','nota','proyecto'])
 
 /** Contextos a los que pertenece un nodo: por ID (_ctxRefs) y por slug @ en types[]
  *  (acepta slug COMPLETO «media-sector/app…» y HOJA «app…», robusto a anidados). */

@@ -1,4 +1,4 @@
-# Fromly — Manual de usuario v9.6.788
+# Fromly — Manual de usuario v9.6.789
 
 > Web · Mac · iPhone · fromly.app · Última actualización: 10 julio 2026
 
@@ -273,31 +273,9 @@ No hay un tipo aparte para «lo que tienes en curso»: es simplemente una **tare
 - **Cerrar:** márcala hecha (su checkbox). Para volver a tenerla en seguimiento, ponle o quítale la fecha desde su menú de triaje.
 - La sección «Seguimiento» del día arranca **colapsada con un contador** (suele haber muchas tareas sin fecha); despliégala cuando quieras.
 
-> No confundir con **Bucle** (más abajo): una tarea de seguimiento es una tarea normal sin fecha;
-> un bucle es un tipo de nodo distinto, con su propio estado abierto/cerrado.
-
-### Bucle ⟲
-
-Un bucle es un nodo para trabajo **en curso, sin fecha, que abres y cierras tú mismo** —
-distinto de una tarea (que se marca hecha) o de una tarea de seguimiento (que es solo una tarea
-sin fecha). Útil para lo que llevas "dando vueltas" sin un final claro: una negociación abierta,
-un tema que sigues semana a semana, algo que vigilas hasta que se resuelve.
-
-**Cómo crear un bucle:**
-
-- Escribe `-b` al final del texto y confirma (igual que `-t` para tarea o `-e` para evento).
-- Clic derecho sobre un nodo → «Convertir en» → Bucle.
-
-**Estados:**
-
-- **Abierto** — flecha violeta ⟲ en el lugar del checkbox. Es el estado por defecto al crearlo.
-- **Cerrado** — círculo gris, pero **reabrible** en cualquier momento (a diferencia de una tarea
-  hecha, el bucle no desaparece de su sitio). Clic en la flecha o menú contextual → «Cerrar
-  bucle» / «Reabrir bucle».
-
-Un bucle **no se agenda** (no tiene fecha de vencimiento) y por tanto no aparece en el
-calendario ni en el Planificador. Se filtra con el operador `bucle` (ver sección 12) o el chip
-«Bucle» en iOS, que muestra solo los abiertos.
+> El antiguo tipo de nodo «bucle» (⟲, abrir/cerrar) se eliminó. Su función la cubre esta misma
+> tarea de seguimiento: si quieres algo "en curso" sin fecha que marcas como hecho cuando se
+> resuelve, es exactamente esto.
 
 ### Espejo ⬡
 
@@ -814,7 +792,6 @@ Fromly usa IA (Haiku, gratuita para todos los usuarios) para interpretar la cons
 | `pendiente` | Tareas pendientes (no completadas) |
 | `hecho` | Tareas completadas |
 | `vencido` | Tareas cuya fecha ya pasó y no están hechas |
-| `bucle` | Bucles abiertos (nodos en curso sin cerrar) |
 | `nota` | Todos los nodos de tipo nota |
 | `evento` | Todos los eventos |
 | `recurso` | Todos los recursos |
@@ -836,12 +813,6 @@ Fromly usa IA (Haiku, gratuita para todos los usuarios) para interpretar la cons
 - "tareas de hoy o mañana" → `tarea hoy o tarea mañana`.
 
 La búsqueda ignora tildes y mayúsculas.
-
-### El operador `bucle` — nodos en curso
-
-El operador `bucle` filtra tus **bucles abiertos**: los nodos de tipo bucle que aún no has cerrado (ver «Bucle» en Tipos de nodo). Es ideal para ver de un vistazo todo lo que tienes en marcha sin terminar. Un bucle sale del filtro cuando lo cierras.
-
-> Nota: no confundir con el icono 📁 de «contenedor vivo» — ese es una pista visual de cualquier nota que tiene tareas pendientes dentro, independiente del tipo bucle.
 
 ### Filtrar desde Magic Chat
 
@@ -1517,9 +1488,6 @@ Desde **Ajustes → Cuenta → Suscripción** o en [app.lemonsqueezy.com/billing
 
 **¿Puedo usar mis propias claves de API de IA?**
 Sí, en el plan Pro o Lifetime. Ve a **Ajustes → IA** y añade tus claves de Anthropic, OpenAI o Google. El consumo irá a tu cuenta y no descuenta de los tokens de Fromly.
-
-**¿Qué es el filtro `bucle`?**
-El operador `bucle` muestra tus bucles abiertos: nodos de tipo bucle que tienes en curso y aún no has cerrado. Útil para ver de un vistazo todo lo que tienes en marcha.
 
 **¿La captura con Espacio y ⌘K son lo mismo?**
 Sí. `Espacio` abre el modal de captura unificada cuando el cursor no está editando texto. `⌘K` hace lo mismo y funciona siempre, aunque haya texto en edición. Son sinónimos del mismo modal.

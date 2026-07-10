@@ -1,6 +1,6 @@
 // DayColumn — columna unificada de una nota diaria, de arriba a abajo:
 //   1. Eventos de Google Calendar del día (sueltos, alineados a la izquierda)
-//   2. Atrasadas · 3. Para hoy · 4. Bucles abiertos  (cockpit «bare», sin caja)
+//   2. Atrasadas · 3. Para hoy  (cockpit «bare», sin caja)
 //   5. Nodos del día (outliner editable; excluye los eventos del bloque 1)
 //
 // Se reutiliza en el panel derecho «Día» (modo pizarra, sin el bloque de nodos
@@ -236,7 +236,7 @@ export default function DayColumn({
           })}
       </div>
 
-      {/* 2-4. HOY → cockpit (Atrasadas · Para hoy · Bucles). */}
+      {/* 2-3. HOY → cockpit (Atrasadas · Para hoy). */}
       {isToday && <DailyCockpit bare disablePlanner />}
 
       {/* Otros días → tareas con due en ESE día. TaskRow ÚNICO (mismo que Hoy/Elementos). */}
