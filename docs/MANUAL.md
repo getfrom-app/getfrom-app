@@ -1,6 +1,36 @@
-# Fromly — Manual de usuario v9.6.424
+# Fromly — Manual de usuario v9.6.788
 
-> Web · Mac · iPhone · fromly.app
+> Web · Mac · iPhone · fromly.app · Última actualización: 10 julio 2026
+
+---
+
+## Fromly 2.0 — lo que ves al entrar hoy
+
+Desde julio de 2026, **Fromly abre por defecto en el chat** (Fromly 2.0), no en el lienzo. La
+vista clásica (el lienzo infinito descrito en el resto de este manual) sigue disponible en
+[fromly.app/v1](https://fromly.app/v1) si la prefieres — el modelo de datos es el mismo (nodos,
+tareas, contextos, recursos), solo cambia la interfaz.
+
+Al entrar en Fromly 2.0 tienes **tres columnas**:
+
+- **Izquierda — Contextos**: tus áreas y proyectos, en jerarquía. Clic en uno para centrar la
+  conversación en él; **＋** al pasar el ratón abre una conversación nueva dentro de ese contexto.
+- **Centro — el chat**: tu forma principal de trabajar. Escribe lo que necesites en lenguaje
+  natural — «recuérdame llamar a Ana el lunes», «resume mi día», «busca en mis notas sobre X» —
+  y la IA crea tareas, notas y eventos o te responde con lo que ya guardas. Arrastra un PDF, una
+  imagen o un archivo de texto directamente al chat para incorporarlo a la conversación.
+- **Derecha — cinco modos** (pestañas arriba): **Contexto** (qué sabe la IA de este tema + sus
+  tareas y elementos), **Elementos** (buscador de todo tu contenido), **Historial** (tus
+  conversaciones anteriores, clic para retomarlas), **Hoy** (tu agenda del día) y **Agenda**
+  (cualquier día del calendario, misma vista que Hoy).
+
+**Archivos y RAG.** Cuando subes un archivo a una conversación, Fromly lo indexa: puedes
+preguntarle sobre su contenido en cualquier momento, no solo justo después de subirlo. Los PDF se
+abren con visor real (subrayado de texto + recorte de región como imagen).
+
+**Primera vez.** Un tour guiado de 6 pasos aparece automáticamente la primera vez que entras,
+explicando estas mismas piezas. Puedes saltarlo o revisarlo de nuevo borrando el localStorage del
+navegador si algún día quieres repasarlo.
 
 ---
 
@@ -243,7 +273,31 @@ No hay un tipo aparte para «lo que tienes en curso»: es simplemente una **tare
 - **Cerrar:** márcala hecha (su checkbox). Para volver a tenerla en seguimiento, ponle o quítale la fecha desde su menú de triaje.
 - La sección «Seguimiento» del día arranca **colapsada con un contador** (suele haber muchas tareas sin fecha); despliégala cuando quieras.
 
-> Nota: la idea anterior de «bucles» se sustituyó por esto. Tus bucles antiguos se convierten solos en tareas de seguimiento.
+> No confundir con **Bucle** (más abajo): una tarea de seguimiento es una tarea normal sin fecha;
+> un bucle es un tipo de nodo distinto, con su propio estado abierto/cerrado.
+
+### Bucle ⟲
+
+Un bucle es un nodo para trabajo **en curso, sin fecha, que abres y cierras tú mismo** —
+distinto de una tarea (que se marca hecha) o de una tarea de seguimiento (que es solo una tarea
+sin fecha). Útil para lo que llevas "dando vueltas" sin un final claro: una negociación abierta,
+un tema que sigues semana a semana, algo que vigilas hasta que se resuelve.
+
+**Cómo crear un bucle:**
+
+- Escribe `-b` al final del texto y confirma (igual que `-t` para tarea o `-e` para evento).
+- Clic derecho sobre un nodo → «Convertir en» → Bucle.
+
+**Estados:**
+
+- **Abierto** — flecha violeta ⟲ en el lugar del checkbox. Es el estado por defecto al crearlo.
+- **Cerrado** — círculo gris, pero **reabrible** en cualquier momento (a diferencia de una tarea
+  hecha, el bucle no desaparece de su sitio). Clic en la flecha o menú contextual → «Cerrar
+  bucle» / «Reabrir bucle».
+
+Un bucle **no se agenda** (no tiene fecha de vencimiento) y por tanto no aparece en el
+calendario ni en el Planificador. Se filtra con el operador `bucle` (ver sección 12) o el chip
+«Bucle» en iOS, que muestra solo los abiertos.
 
 ### Espejo ⬡
 
@@ -769,7 +823,7 @@ Fromly usa IA (Haiku, gratuita para todos los usuarios) para interpretar la cons
 | `diario` | Nodos de tipo diario (notas de día) |
 | `favorito` | Nodos marcados como favorito |
 | `@contexto` | Nodos con ese contexto asignado |
-| `#tag` | Nodos que contienen ese tag en el texto |
+| `#contexto` | Sinónimo de `@contexto` — mismo filtro, otra sintaxis |
 | `[[nombre]]` | Nodos que referencian ese nodo por nombre (wiki-link) |
 | `node:ID` | Nodo concreto y todos sus descendientes o referencias |
 

@@ -1,6 +1,36 @@
-# Fromly — User manual v9.6.424
+# Fromly — User manual v9.6.788
 
-> Web · Mac · iPhone · fromly.app
+> Web · Mac · iPhone · fromly.app · Last updated: July 10, 2026
+
+---
+
+## Fromly 2.0 — what you see when you open it today
+
+Since July 2026, **Fromly opens in the chat by default** (Fromly 2.0), not the canvas. The
+classic view (the infinite canvas described in the rest of this manual) is still available at
+[fromly.app/v1](https://fromly.app/v1) if you prefer it — the data model is the same (nodes,
+tasks, contexts, resources), only the interface changes.
+
+Fromly 2.0 has **three columns**:
+
+- **Left — Contexts**: your areas and projects, in a hierarchy. Click one to focus the
+  conversation on it; hover for **＋** to start a new conversation inside that context.
+- **Center — the chat**: your main way of working. Type what you need in plain language —
+  "remind me to call Ana on Monday", "summarize my day", "search my notes about X" — and the AI
+  creates tasks, notes and events or answers using what you've already saved. Drag a PDF, an
+  image or a text file straight into the chat to bring it into the conversation.
+- **Right — five modes** (tabs at the top): **Context** (what the AI knows about this topic +
+  its tasks and elements), **Elements** (search across all your content), **History** (your past
+  conversations, click to resume), **Today** (your day's agenda) and **Agenda** (any day on the
+  calendar, same view as Today).
+
+**Files and RAG.** When you upload a file to a conversation, Fromly indexes it: you can ask
+about its content at any later point, not just right after uploading. PDFs open with a real
+viewer (text highlighting + region crop as an image).
+
+**First time.** A guided 6-step tour appears automatically the first time you open it, walking
+through these same pieces. You can skip it or revisit it later by clearing your browser's
+localStorage.
 
 ---
 
@@ -210,7 +240,31 @@ There's no separate type for "what you have in progress": it's simply a **task w
 - **Close:** mark it done (its checkbox). To put it back into follow-up, add or remove its date from its triage menu.
 - The day's «Follow-up» section starts **collapsed with a counter** (there are usually many undated tasks); expand it whenever you want.
 
-> Note: the old idea of «loops» was replaced by this. Your old loops turn into follow-up tasks on their own.
+> Don't confuse this with **Loop** (below): a follow-up task is a normal task with no date; a
+> loop is a different node type, with its own open/closed state.
+
+### Loop ⟲
+
+A loop is a node for work that's **in progress, undated, and you open/close yourself** —
+different from a task (which gets marked done) or a follow-up task (which is just a task with no
+date). Useful for things you keep circling back to without a clear end: an ongoing negotiation, a
+topic you track week over week, something you watch until it resolves.
+
+**How to create a loop:**
+
+- Type `-b` at the end of the text and confirm (same pattern as `-t` for task or `-e` for event).
+- Right-click a node → «Convert to» → Loop.
+
+**States:**
+
+- **Open** — purple ⟲ arrow where the checkbox would be. The default state when created.
+- **Closed** — grey circle, but **reopenable** at any time (unlike a done task, a loop doesn't
+  disappear from its place). Click the arrow or use the context menu → «Close loop» / «Reopen
+  loop».
+
+A loop **has no due date** and therefore never appears on the calendar or in the Planner. Filter
+for it with the `loop` operator (see section 12) or the «Loop» chip on iOS, which shows only the
+open ones.
 
 ### Mirror ⬡
 
@@ -698,7 +752,7 @@ Fromly uses AI (Haiku, free for all users) to interpret the query. It does not c
 | `pending` | Pending (uncompleted) tasks |
 | `done` | Completed tasks |
 | `overdue` | Tasks whose date has passed and aren't done |
-| `loop` | Notes/nodes with pending tasks inside (📁 live container) |
+| `loop` | Open loops — loop-type nodes you haven't closed yet |
 | `note` | All note-type nodes |
 | `event` | All events |
 | `resource` | All resources |
@@ -707,7 +761,7 @@ Fromly uses AI (Haiku, free for all users) to interpret the query. It does not c
 | `diary` | Diary-type nodes (day notes) |
 | `favorite` | Nodes marked as favorite |
 | `@context` | Nodes with that context assigned |
-| `#tag` | Nodes containing that tag in the text |
+| `#context` | Synonym for `@context` — same filter, alternate syntax |
 | `[[name]]` | Nodes that reference that node by name (wiki-link) |
 | `node:ID` | A specific node and all its descendants or references |
 
@@ -721,13 +775,14 @@ Fromly uses AI (Haiku, free for all users) to interpret the query. It does not c
 
 Search ignores accents and case.
 
-### The `loop` operator — live containers
+### The `loop` operator — open loops
 
-The `loop` operator filters nodes that have pending tasks inside. These nodes show the 📁 icon (live container) in the tree even when collapsed.
+The `loop` operator filters your **open loops**: loop-type nodes you haven't closed yet (see
+«Loop» in Node types). It's ideal for seeing everything you have in motion at a glance. A loop
+leaves the filter once you close it.
 
-It's ideal for seeing which projects, areas or notes have unfinished work: filter by `loop` and you see all active containers at a glance. A node leaves the `loop` filter when all its internal tasks are marked done.
-
-It doesn't apply to: events, resources, diary entries or temporary nodes.
+> Note: don't confuse this with the 📁 «live container» icon — that's a visual cue for any note
+> that has pending tasks inside, independent of the loop node type.
 
 ### Filter from Magic Chat
 
@@ -1399,7 +1454,8 @@ From **Settings → Account → Subscription** or at [app.lemonsqueezy.com/billi
 Yes, on the Pro or Lifetime plan. Go to **Settings → AI** and add your Anthropic, OpenAI or Google keys. Usage goes to your account and doesn't draw from Fromly's tokens.
 
 **What is the `loop` filter?**
-The `loop` operator shows nodes (projects, areas, notes) that have pending tasks inside. Useful for seeing at a glance which containers have unfinished work. In the tree, these nodes show the 📁 icon even when collapsed.
+The `loop` operator shows your open loops: loop-type nodes you have in progress and haven't
+closed yet. Useful for seeing everything you have in motion at a glance.
 
 **Are Space capture and ⌘K the same?**
 Yes. `Space` opens the unified capture modal when the cursor isn't editing text. `⌘K` does the same and always works, even when text is being edited. They're synonyms for the same modal.
