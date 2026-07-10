@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fromly 2.0: why we moved from canvas to chat — Fromly Blog</title>
+  <meta name="description" content="After months polishing an infinite canvas, we changed Fromly's front door to a chat. Here's what we learned and why.">
+  <link rel="icon" type="image/svg+xml" href="../../icon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Inter, -apple-system, sans-serif; color: #1a1a1a; background: #fff; }
+    a { color: #7c3aed; }
+    nav.blog-nav { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid #f0f0f0; max-width: 1200px; margin: 0 auto; }
+    nav.blog-nav .logo { font-weight: 800; font-size: 18px; color: #7c3aed; text-decoration: none; }
+    nav.blog-nav .back { font-size: 13px; color: #888; text-decoration: none; }
+    nav.blog-nav .back:hover { color: #333; }
+    .blog-hero { background: linear-gradient(135deg, #f5f3ff 0%, #fff 100%); padding: 80px 24px 60px; text-align: center; }
+    .blog-hero .tag { display: inline-block; background: #7c3aed; color: #fff; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; letter-spacing: .5px; text-transform: uppercase; margin-bottom: 20px; }
+    .blog-hero h1 { font-size: clamp(26px, 4.5vw, 46px); font-weight: 800; color: #1a1a1a; max-width: 820px; margin: 0 auto 20px; line-height: 1.15; }
+    .blog-hero .subtitle { font-size: 18px; color: #555; max-width: 620px; margin: 0 auto 32px; line-height: 1.6; }
+    .blog-meta { display: flex; align-items: center; justify-content: center; gap: 20px; font-size: 13px; color: #aaa; }
+    .blog-body { max-width: 780px; margin: 0 auto; padding: 60px 24px 80px; }
+    .blog-body h2 { font-size: 26px; font-weight: 700; margin: 56px 0 16px; color: #111; }
+    .blog-body h3 { font-size: 20px; font-weight: 600; margin: 36px 0 12px; color: #222; }
+    .blog-body p { font-size: 17px; line-height: 1.8; color: #333; margin: 0 0 20px; }
+    .blog-body ul, .blog-body ol { font-size: 17px; line-height: 1.8; color: #333; padding-left: 24px; margin: 0 0 24px; }
+    .blog-body li { margin-bottom: 8px; }
+    .blog-body strong { color: #111; }
+    .callout { background: #f5f3ff; border-left: 4px solid #7c3aed; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 32px 0; }
+    .callout p { margin: 0; font-size: 16px; }
+    .cta-box { background: linear-gradient(135deg, #f5f3ff, #fff); border: 2px solid #7c3aed; border-radius: 16px; padding: 40px; text-align: center; margin-top: 64px; }
+    .cta-box h3 { font-size: 24px; font-weight: 800; margin-bottom: 12px; color: #111; }
+    .cta-box p { font-size: 16px; color: #555; margin-bottom: 24px; }
+    .cta-box a { display: inline-block; background: #7c3aed; color: #fff; font-weight: 700; font-size: 16px; padding: 14px 32px; border-radius: 8px; text-decoration: none; transition: background .15s; }
+    .cta-box a:hover { background: #6d28d9; }
+    footer { text-align: center; padding: 40px 24px; font-size: 13px; color: #aaa; border-top: 1px solid #f0f0f0; }
+    footer a { color: #aaa; }
+    @media (max-width: 640px) { .blog-hero { padding: 60px 16px 40px; } .blog-body { padding: 40px 16px 60px; } }
+  </style>
+</head>
+<body>
+<nav class="blog-nav">
+  <a href="/" class="logo">Fromly</a>
+  <a href="/blog/en/" class="back">← Blog</a>
+</nav>
+<header class="blog-hero">
+  <span class="tag">Fromly 2.0</span>
+  <h1>Why we moved from canvas to chat</h1>
+  <p class="subtitle">After months polishing an infinite canvas, we changed Fromly's front door. Here's what we learned.</p>
+  <div class="blog-meta">
+    <span>Fromly Blog</span>
+    <span>·</span>
+    <span>July 10, 2026</span>
+    <span>·</span>
+    <span>6 min read</span>
+  </div>
+</header>
+<article class="blog-body">
+
+<p>If you've used Fromly in the past few weeks, the first thing you see when you open it is no longer an infinite canvas. It's a chat. You type what you need and Fromly responds, creates the task, finds the note. This change wasn't a design whim — it was the conclusion of months watching how people actually used the canvas.</p>
+
+<h2>The canvas was powerful, but it had a cost</h2>
+
+<p>Fromly's infinite canvas was always one of its most-loved pieces: drawing, pinning notes, tables and calendars on the same plane, zooming from the big picture down to detail. It still exists — still available at <a href="https://fromly.app/v1">fromly.app/v1</a> for anyone who prefers it, because there are workflows (visual planning, brainstorming, project maps) nothing else replaces.</p>
+
+<p>But we noticed a pattern: most of the time someone opened Fromly, they didn't want to <em>organize</em> anything. They wanted to <em>say</em> something — "I need to call a client on Thursday", "summarize what we discussed yesterday", "where did I write down that quote?" — and have Fromly handle it. The canvas, for all its potential, stood between that need and the answer: you had to find the right place, the right node, the right view.</p>
+
+<div class="callout"><p>The question that made us change course: if 80% of the time you just want to say something and have it resolved, why is step one always "find where"?</p></div>
+
+<h2>What Fromly 2.0 looks like in practice</h2>
+
+<p>Fromly 2.0 now opens directly into three columns:</p>
+
+<ul>
+  <li><strong>Left — Contexts.</strong> Your areas and projects, in a hierarchy. One click centers the conversation on that topic.</li>
+  <li><strong>Center — the chat.</strong> Type in plain language and Fromly creates tasks, notes and events, or answers using what you've already saved. Drag a PDF, an image or a text file straight into the conversation to bring it in.</li>
+  <li><strong>Right — five modes.</strong> Context (what the AI knows about this topic, its tasks and elements), Elements (search across all your content), History (your past conversations), Today (your day's agenda) and Agenda (any day on the calendar).</li>
+</ul>
+
+<p>When you upload a file to a conversation, Fromly indexes it: you can ask about its content at any later point, not just right after uploading. And PDFs open with a real viewer — you can highlight text directly on the page and crop any region as an image.</p>
+
+<h2>The canvas isn't going anywhere</h2>
+
+<p>This isn't a forced migration. The data model is exactly the same — nodes, tasks, contexts, resources — so nothing you already had moves or gets reorganized. The only thing that changed is the front door. If tomorrow you need the canvas back to visually plan a big project, it's still there, with all your content intact.</p>
+
+<h2>What this means if you were already using Fromly</h2>
+
+<p>If you've been using Fromly since before July 2026, you'll notice the change as soon as you open it: the app now greets you with a blank chat instead of your context canvas. The first time, you'll also see a short guided tour explaining the new pieces — sidebar, chat, right column — which you can skip if it's already familiar.</p>
+
+<p>If you'd rather keep working like before, <a href="https://fromly.app/v1">fromly.app/v1</a> is still exactly the Fromly you knew. There's no rush or obligation to change your workflow overnight — just the option to try a more direct way of telling Fromly what you need.</p>
+
+  <div class="cta-box">
+    <h3>Try Fromly 2.0 for free</h3>
+    <p>Get started in 60 seconds. No card required.</p>
+    <a href="/app/register">Create a free account →</a>
+  </div>
+</article>
+<footer>
+  <p>© 2026 Fromly · <a href="/privacy.html">Privacy</a> · <a href="/terms.html">Terms</a></p>
+</footer>
+</body>
+</html>
