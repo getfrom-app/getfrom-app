@@ -4,6 +4,7 @@
 // El chat es el centro; la columna derecha reacciona; los contextos = proyectos.
 // ══════════════════════════════════════════════════════════════════════
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../store/nodeStore'
 import { userStore } from '../store/userStore'
 import { aiChatStore, useAIChat } from '../store/aiChatStore'
@@ -41,6 +42,7 @@ function findOriginSession(id: string): string | null {
 
 export default function V2App() {
   useStore()
+  const { t } = useTranslation()
   const chat = useAIChat()
   const [ready, setReady] = useState(store.isLoaded)
   const [selectedCtxId, setSelectedCtxId] = useState<string | null>(null)
@@ -147,7 +149,7 @@ export default function V2App() {
       return node.id
     } catch {
       store.deleteNode(node.id)
-      toast(`No se pudo subir ${f.name}`, 'error')
+      toast(t('v2.uploadFailed', 'No se pudo subir {{name}}', { name: f.name }), 'error')
       return null
     }
   }
@@ -161,7 +163,7 @@ export default function V2App() {
         try { const note = createMarkdownNode(parentId, await f.text(), f.name, false); if (note) lastId = note.id } catch { /* */ }
       } else {
         const id = await uploadResourceNode(f, parentId)
-        if (id) { lastId = id; toast(`📥 ${f.name} importado a Fromly`) }
+        if (id) { lastId = id; toast(t('v2.importedToFromly', '📥 {{name}} importado a Fromly', { name: f.name })) }
       }
     }
     return lastId
@@ -191,10 +193,10 @@ export default function V2App() {
       const sid = aiChatStore.sessionId
       setDetailNodeId(null); setViewingCtxFicha(false); setRightMode('contexto')
       let ok = 0
-      for (const f of otherFiles) { if (await uploadResourceNode(f, sid)) { ok++; toast(`📎 ${f.name} adjuntado a la conversación`) } }
+      for (const f of otherFiles) { if (await uploadResourceNode(f, sid)) { ok++; toast(t('v2.attachedToConversation', '📎 {{name}} adjuntado a la conversación', { name: f.name })) } }
       if (ok > 0) {
-        const label = ok === 1 ? `**${otherFiles[0].name}**` : `${ok} archivos`
-        aiChatStore.addNotice(`He incorporado ${label} a esta conversación. Ya puedes preguntarme sobre su contenido.`)
+        const label = ok === 1 ? `**${otherFiles[0].name}**` : t('v2.filesCount', '{{count}} archivos', { count: ok })
+        aiChatStore.addNotice(t('v2.filesIncorporatedNotice', 'He incorporado {{label}} a esta conversación. Ya puedes preguntarme sobre su contenido.', { label }))
       }
     } else {
       // Sin conversación → importar a Fromly (RAG), sin iniciar chat.
@@ -228,7 +230,7 @@ export default function V2App() {
   const onAudioSaved = (r: { audioKey: string; durationSec: number; transcript: string }) => {
     const parentId = captureParentId()
     if (!parentId || !r.audioKey) return
-    const title = (r.transcript || '').trim().slice(0, 60) || 'Nota de voz'
+    const title = (r.transcript || '').trim().slice(0, 60) || t('v2.voiceNote', 'Nota de voz')
     const n = store.createNode({ text: title, parentId })
     store.updateNode(n.id, {
       extraData: JSON.stringify({ _audios: [{ audioKey: r.audioKey, durationSec: r.durationSec, transcript: r.transcript }] }),
@@ -348,7 +350,7 @@ export default function V2App() {
       const quote = store.createNode({ text: '', parentId: sourceId, extraData: extra })
       const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       store.updateNode(quote.id, { body: `<blockquote><p>${esc(text)}</p></blockquote>` })
-      toast('Subrayado guardado')
+      toast(t('v2.highlightSaved', 'Subrayado guardado'))
     }
     window.addEventListener('from:pdf-send-to-canvas', h as EventListener)
     return () => window.removeEventListener('from:pdf-send-to-canvas', h as EventListener)
@@ -408,10 +410,10 @@ export default function V2App() {
   const currentNodeId = focusNodeId || selectedCtxId
   const focusNode = focusNodeId ? store.getNode(focusNodeId) : null
   const ctxNode = selectedCtxId ? store.getNode(selectedCtxId) : null
-  const contextLabel = focusNode?.text || ctxNode?.text || 'General'
+  const contextLabel = focusNode?.text || ctxNode?.text || t('v2.general', 'General')
 
   if (!ready) {
-    return <div className="v2-loading">Cargando Fromly 2.0…</div>
+    return <div className="v2-loading">{t('v2.loadingFromly', 'Cargando Fromly 2.0…')}</div>
   }
 
   return (

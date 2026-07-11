@@ -12,6 +12,7 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { firstContextOf, setNodeContext, convertToContext, convertToTask, isContextNode } from '../../utils/cajones'
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from './ContextPicker'
+import MoveNodeModal from '../modals/MoveNodeModal'
 
 // Asignar contexto A MANO es una señal fuerte: guarda un EJEMPLO para que la
 // auto-clasificación aprenda de los movimientos del usuario (mejora con el uso).
@@ -28,6 +29,7 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
   const [renaming, setRenaming] = useState(false)
   // Flyout SEPARADO del selector de contexto (no inline, para no confundir).
   const [ctxFlyout, setCtxFlyout] = useState<{ top: number; left: number } | null>(null)
+  const [showMove, setShowMove] = useState(false)
   // Reposiciona el menú dentro del viewport.
   useLayoutEffect(() => {
     const el = boxRef.current; if (!el) return
@@ -57,6 +59,20 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
   const isTask = node.status != null && node.status !== undefined
   const isEvent = !!node.isEvent
   const current = firstContextOf(node)
+
+  // Misma lógica que NodeContextMenu.duplicate() (outliner del lienzo): copia el nodo
+  // como hermano, justo después del original.
+  function duplicate() {
+    const dup = store.createNode({
+      text: node!.text,
+      parentId: node!.parentId,
+      siblingOrder: node!.siblingOrder + 0.25,
+      isTask: node!.status !== null,
+      types: node!.types,
+    })
+    store.updateNode(dup.id, { priority: node!.priority, status: node!.status })
+    onClose()
+  }
 
   function convertTask() {
     if (isTask) {
@@ -115,6 +131,9 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
           </button>
         )}
         <div className="node-ctx-sep" />
+        <button className="node-ctx-item" onClick={() => { duplicate() }}>{t('context.duplicate')}</button>
+        <button className="node-ctx-item" onClick={() => setShowMove(true)}>{t('context.moveTo')}</button>
+        <div className="node-ctx-sep" />
         <button className="node-ctx-item node-ctx-item--danger" onClick={() => {
           // Si es un ÁREA (contenedor), sus hijos vuelven a la nota antes de borrar: no se pierden.
           const isArea = JSON.parse(node.extraData || '{}')._area === '1'
@@ -128,6 +147,7 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
           <ContextPicker currentId={current?.id ?? null} onPick={id => { assignAndLearn(nodeId, id); onClose() }} />
         </div>
       )}
+      {showMove && <MoveNodeModal node={node} onClose={() => { setShowMove(false); onClose() }} />}
     </>
   ), document.body)
 }

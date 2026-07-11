@@ -3,6 +3,7 @@
 // contexto: lo selecciona (la app reacciona) Y hace zoom-in a sus subcontextos
 // en la misma columna, con botón de volver.
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent } from '../../utils/cajones'
@@ -38,6 +39,7 @@ function subContextsOf(id: string): Node[] {
 
 export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onFilesDropped, onDragStateChange }: Props) {
   useStore()
+  const { t } = useTranslation()
   const user = useUserStore()
   const [dragOver, setDragOver] = useState(false) // resaltado visual mientras se arrastra (ya no por-contexto)
   const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer.types || []).includes('Files')
@@ -113,17 +115,17 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
       <div className="v2-sidebar-head">
         <span className="v2-brand">Fromly <span className="v2-brand-badge">2.0</span></span>
       </div>
-      <button className="v2-newchat" onClick={onNewChat}>＋ Nueva conversación</button>
+      <button className="v2-newchat" onClick={onNewChat}>＋ {t('v2.newConversation', 'Nueva conversación')}</button>
 
       {/* Cabecera de nivel: raíz = «Contextos»; dentro = volver + nombre del contexto */}
       {currentParent ? (
         <div className="v2-section-label" style={{ cursor: 'pointer' }} onClick={back}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 14 }}>‹</span> Volver
+            <span style={{ fontSize: 14 }}>‹</span> {t('v2.back', 'Volver')}
           </span>
         </div>
       ) : (
-        <div className="v2-section-label">Contextos</div>
+        <div className="v2-section-label">{t('v2.contexts', 'Contextos')}</div>
       )}
 
       <div className="v2-ctx-list">
@@ -134,10 +136,10 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
             onClick={() => onSelectCtx(currentParent.id)}
           >
             <span className="v2-ctx-dot" style={{ background: contextColor(currentParent.id) }} />
-            <span className="v2-el-title" style={{ fontWeight: 600 }}>{currentParent.text || 'Contexto'}</span>
+            <span className="v2-el-title" style={{ fontWeight: 600 }}>{currentParent.text || t('v2.context', 'Contexto')}</span>
             <button
               className="v2-ctx-add"
-              title="Nueva conversación en este contexto"
+              title={t('v2.newConversationInThisContext', 'Nueva conversación en este contexto')}
               onClick={(e) => { e.stopPropagation(); onNewChatInCtx(currentParent.id) }}
             >＋</button>
           </div>
@@ -147,11 +149,11 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
             onClick={() => onSelectCtx(null)}
           >
             <span className="v2-ctx-dot" style={{ background: 'var(--text-tertiary)' }} />
-            <span className="v2-el-title">General</span>
+            <span className="v2-el-title">{t('v2.general', 'General')}</span>
           </div>
         )}
 
-        {currentParent && <div className="v2-section-label" style={{ padding: '10px 16px 4px' }}>Subcontextos</div>}
+        {currentParent && <div className="v2-section-label" style={{ padding: '10px 16px 4px' }}>{t('v2.subcontexts', 'Subcontextos')}</div>}
 
         {items.map(c => {
           const hasSubs = subContextsOf(c.id).length > 0
@@ -162,10 +164,10 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
               onClick={() => enter(c)}
             >
               <span className="v2-ctx-dot" style={{ background: contextColor(c.id) }} />
-              <span className="v2-el-title">{c.text || 'Sin título'}</span>
+              <span className="v2-el-title">{c.text || t('v2.untitled', 'Sin título')}</span>
               <button
                 className="v2-ctx-add"
-                title="Nueva conversación en este contexto"
+                title={t('v2.newConversationInThisContext', 'Nueva conversación en este contexto')}
                 onClick={(e) => { e.stopPropagation(); onNewChatInCtx(c.id) }}
               >＋</button>
               {hasSubs && <span className="v2-ctx-count">›</span>}
@@ -175,7 +177,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
 
         {items.length === 0 && (
           <div className="v2-right-empty" style={{ padding: '16px 14px' }}>
-            {currentParent ? 'Sin subcontextos.' : 'Aún no tienes contextos. Créalos en la v1 y aparecerán aquí.'}
+            {currentParent ? t('v2.noSubcontexts', 'Sin subcontextos.') : t('v2.noContextsYet', 'Aún no tienes contextos. Créalos en la v1 y aparecerán aquí.')}
           </div>
         )}
       </div>
@@ -183,28 +185,28 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
       <div className="v2-sidebar-foot" ref={userWrap}>
         {userMenu && (
           <div className="v2-usermenu">
-            <button className="v2-usermenu-item" onClick={() => { setShowSettings(true); setUserMenu(false) }}>⚙︎ Ajustes</button>
-            <button className="v2-usermenu-item" onClick={() => { setShowTrash(true); setUserMenu(false) }}>🗑 Papelera</button>
+            <button className="v2-usermenu-item" onClick={() => { setShowSettings(true); setUserMenu(false) }}>⚙︎ {t('v2.settings', 'Ajustes')}</button>
+            <button className="v2-usermenu-item" onClick={() => { setShowTrash(true); setUserMenu(false) }}>🗑 {t('v2.trash', 'Papelera')}</button>
             <div className="v2-usermenu-sep" />
-            <div className="v2-usermenu-label">Tema</div>
+            <div className="v2-usermenu-label">{t('v2.theme', 'Tema')}</div>
             <div className="v2-theme-seg">
               {(['light', 'dark', 'system'] as const).map(tk => (
                 <button
                   key={tk}
                   className={`v2-theme-opt ${theme === tk ? 'active' : ''}`}
                   onClick={() => setTheme(tk)}
-                >{tk === 'light' ? '☀︎ Claro' : tk === 'dark' ? '☾ Oscuro' : '⚙ Auto'}</button>
+                >{tk === 'light' ? `☀︎ ${t('v2.themeLight', 'Claro')}` : tk === 'dark' ? `☾ ${t('v2.themeDark', 'Oscuro')}` : `⚙ ${t('v2.themeAuto', 'Auto')}`}</button>
               ))}
             </div>
             <div className="v2-usermenu-sep" />
-            <a className="v2-usermenu-item" href="/app/v1">↩︎ Fromly clásico (v1)</a>
-            <button className="v2-usermenu-item v2-usermenu-item--danger" onClick={() => { clearTokens(); window.location.href = '/login' }}>Cerrar sesión</button>
+            <a className="v2-usermenu-item" href="/app/v1">↩︎ {t('v2.classicFromly', 'Fromly clásico (v1)')}</a>
+            <button className="v2-usermenu-item v2-usermenu-item--danger" onClick={() => { clearTokens(); window.location.href = '/login' }}>{t('v2.logOut', 'Cerrar sesión')}</button>
           </div>
         )}
-        <button className="v2-userchip" onClick={() => setUserMenu(o => !o)} title="Cuenta y ajustes">
+        <button className="v2-userchip" onClick={() => setUserMenu(o => !o)} title={t('v2.accountAndSettings', 'Cuenta y ajustes')}>
           <span className="v2-avatar">{initial}</span>
           <span className="v2-el-main">
-            <span className="v2-el-title">{user.user?.email || 'Invitado'}</span>
+            <span className="v2-el-title">{user.user?.email || t('v2.guest', 'Invitado')}</span>
             <span className="v2-el-meta">{user.planLabel}</span>
           </span>
           <span className="v2-userchip-caret">⌄</span>

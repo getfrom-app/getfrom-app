@@ -3,6 +3,7 @@
 // contexto padre, botón ARCHIVAR (mapea al flag _closed de la v1 → sale del árbol
 // pero sigue buscable + rastreable por el RAG), y «Lo que Fromly sabe» al final.
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import {
   contextColor, contextParent, isContextClosed, setContextClosed,
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props) {
+  const { t } = useTranslation()
   useStore()
   const node = store.getNode(ctxId)
   const parent = contextParent(ctxId)
@@ -89,7 +91,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
   // Migración de notas antiguas → documento del contexto.
   const legacyCount = legacyNotesOf(ctxId).length
   const doMigrate = () => {
-    if (!window.confirm(`¿Convertir ${legacyCount} nota(s) antigua(s) de este contexto en un documento?\n\nEs reversible: los originales van a la papelera.`)) return
+    if (!window.confirm(t('v2.context.confirmMigrate', '¿Convertir {{count}} nota(s) antigua(s) de este contexto en un documento?\n\nEs reversible: los originales van a la papelera.', { count: legacyCount }))) return
     const docId = migrateContextNotesToDoc(ctxId)
     if (docId) onOpenNode(docId)
   }
@@ -97,7 +99,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
   // Documento de «Notas» — get-or-create UNA vez por contexto (no en cada render).
   const notesNode = useMemo(() => getOrCreateContainerNotes(ctxId), [ctxId])
 
-  if (!node) return <div className="v2-right-empty">Contexto no encontrado.</div>
+  if (!node) return <div className="v2-right-empty">{t('v2.context.notFound', 'Contexto no encontrado.')}</div>
 
   return (
     <div>
@@ -109,7 +111,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
           </span>
         ) : null}
         <div className="v2-ctxpick-wrap" ref={parentPickWrap}>
-          <button className="v2-ctx-edit-btn" onClick={() => setParentPickerOpen(o => !o)} title={parent ? 'Cambiar contexto padre' : 'Añadir contexto padre'}>
+          <button className="v2-ctx-edit-btn" onClick={() => setParentPickerOpen(o => !o)} title={parent ? t('v2.context.changeParent', 'Cambiar contexto padre') : t('v2.context.addParent', 'Añadir contexto padre')}>
             <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2.5a1.5 1.5 0 0 1 2 2L6 15l-3 1 1-3L14.5 2.5z"/></svg>
           </button>
           {parentPickerOpen && (
@@ -126,23 +128,23 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
             </div>
           )}
         </div>
-        {!parent && <span className="v2-el-meta">Sin contexto padre</span>}
+        {!parent && <span className="v2-el-meta">{t('v2.context.noParent', 'Sin contexto padre')}</span>}
       </div>
 
       {/* Migración: notas antiguas del contexto → un documento colgado del contexto. */}
       {legacyCount > 0 && (
         <button className="v2-ctx-migrate-btn" onClick={doMigrate}>
-          Convertir {legacyCount} nota{legacyCount > 1 ? 's' : ''} antigua{legacyCount > 1 ? 's' : ''} en documento
+          {t('v2.context.convertLegacyNotes', 'Convertir {{count}} nota(s) antigua(s) en documento', { count: legacyCount })}
         </button>
       )}
 
       {/* Tareas del contexto — estilo Hoy. La acción «archivar» queda discreta a la derecha. */}
       <div className="v2-section-label" style={{ padding: '2px 0 6px' }}>
-        <span>Tareas</span>
+        <span>{t('v2.context.tasks', 'Tareas')}</span>
         {canArchive && (
           <button className="v2-ctx-archive-link" onClick={() => setContextClosed(ctxId, !closed)}
-            title={closed ? 'Devolver al árbol de contextos' : 'Sacar del árbol (sigue buscable y en el RAG)'}>
-            {closed ? 'Desarchivar' : 'Archivar'}
+            title={closed ? t('v2.context.restoreToTree', 'Devolver al árbol de contextos') : t('v2.context.removeFromTree', 'Sacar del árbol (sigue buscable y en el RAG)')}>
+            {closed ? t('v2.context.unarchive', 'Desarchivar') : t('v2.context.archive', 'Archivar')}
           </button>
         )}
       </div>
@@ -152,7 +154,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
       {/* Elementos del contexto (documentos, archivos, audios, enlaces) */}
       {elements.length > 0 && (
         <>
-          <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>Elementos ({elements.length})</div>
+          <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>{t('v2.context.elements', 'Elementos')} ({elements.length})</div>
           {elements.map(({ node: n, icon }) => (
             <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} hideContext />
           ))}
@@ -161,11 +163,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
 
       {/* Lo que Fromly sabe */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 6px' }}>🧠 Lo que Fromly sabe</div>
+        <div className="v2-section-label" style={{ padding: '0 0 6px' }}>🧠 {t('v2.context.whatFromlyKnows', 'Lo que Fromly sabe')}</div>
         <textarea
           className="v2-know-area"
           value={know}
-          placeholder="Describe este contexto para que Fromly lo entienda mejor… (Fromly también lo completa solo)"
+          placeholder={t('v2.context.knowledgePlaceholder', 'Describe este contexto para que Fromly lo entienda mejor… (Fromly también lo completa solo)')}
           onChange={(e) => setKnow(e.target.value)}
           onBlur={() => writeContextKnowledge(ctxId, know)}
         />
@@ -175,7 +177,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
           exportar, publicar…), no una versión reducida. Al final de todo, como el resto de
           información del contexto ya está arriba. */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 Notas</div>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('v2.context.notes', 'Notas')}</div>
         <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />
       </div>
     </div>

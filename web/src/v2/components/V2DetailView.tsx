@@ -37,6 +37,7 @@ const actBtn = { background: 'none', border: '1px solid var(--border,#e2e2e2)', 
 // Retroenlaces: elementos cuyo cuerpo enlaza a este nodo (/node/<id>). Enlace bidireccional.
 function V2Backlinks({ nodeId }: { nodeId: string }) {
   useStore()
+  const { t } = useTranslation()
   const links = useMemo(() => {
     const needle = `/node/${nodeId}`
     return store.allActive().filter(n => n.id !== nodeId && !n.deletedAt && (n.body || '').includes(needle))
@@ -45,11 +46,11 @@ function V2Backlinks({ nodeId }: { nodeId: string }) {
   if (!links.length) return null
   return (
     <div style={{ borderTop: '1px solid var(--border)', margin: '4px 20px 40px', paddingTop: 14 }}>
-      <div className="v2-section-label" style={{ padding: '0 0 6px' }}>Enlazado desde ({links.length})</div>
+      <div className="v2-section-label" style={{ padding: '0 0 6px' }}>{t('v2.linkedFromCount', 'Enlazado desde ({{count}})', { count: links.length })}</div>
       {links.map(n => (
         <div className="v2-el-row" key={n.id} onClick={() => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: n.id } }))}>
           <span className="v2-el-icon">📝</span>
-          <span className="v2-el-main"><span className="v2-el-title">{(n.text || '').replace(/^[✦💬]\s*/u, '') || 'Sin título'}</span></span>
+          <span className="v2-el-main"><span className="v2-el-title">{(n.text || '').replace(/^[✦💬]\s*/u, '') || t('v2.untitled', 'Sin título')}</span></span>
         </div>
       ))}
     </div>
@@ -61,6 +62,7 @@ function V2Backlinks({ nodeId }: { nodeId: string }) {
 // puede añadir desde aquí, así que una nota nueva ya no queda sin forma de asignarla.
 function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: string) => void }) {
   useStore()
+  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const wrap = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -77,7 +79,7 @@ function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: s
         <button className="v2-chip" onClick={() => onSelectCtx?.(current.id)} style={{ ['--chip' as string]: contextColor(current.id) }}>{current.text}</button>
       )}
       <div className="v2-ctxpick-wrap" ref={wrap}>
-        <button className="v2-ctx-edit-btn" onClick={() => setOpen(o => !o)} title={current ? 'Cambiar contexto' : 'Añadir a contexto'}>
+        <button className="v2-ctx-edit-btn" onClick={() => setOpen(o => !o)} title={current ? t('v2.changeContext', 'Cambiar contexto') : t('v2.addToContext', 'Añadir a contexto')}>
           <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2.5a1.5 1.5 0 0 1 2 2L6 15l-3 1 1-3L14.5 2.5z"/></svg>
         </button>
         {open && (
@@ -119,8 +121,8 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { nod
   // SILENCIO (el botón no hacía nada) cuando `isTopConvertible` decidía que el padre
   // debía absorberla; con feedback si de verdad no se puede (bloqueante real dentro).
   const convertToDoc = () => {
-    if (convertNoteToBlock(node.id, true)) toast('Convertido a documento')
-    else toast('No se pudo convertir: contiene algo que no se puede migrar (revisa su contenido).', 'warning')
+    if (convertNoteToBlock(node.id, true)) toast(t('v2.convertedToDocument', 'Convertido a documento'))
+    else toast(t('v2.convertFailed', 'No se pudo convertir: contiene algo que no se puede migrar (revisa su contenido).'), 'warning')
   }
 
   const setView = (c: boolean) => {
@@ -139,8 +141,12 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { nod
       {/* Fila única: toggle a la izquierda + acciones a la derecha */}
       <div className="v2-note-toolbar">
         <div className="v2-view-toggle">
-          <button className={!canvas ? 'active' : ''} onClick={() => setView(false)}>📝 Nota</button>
-          <button className={canvas ? 'active' : ''} onClick={() => setView(true)}>🎨 Lienzo</button>
+          <button title={t('tip.viewAsNote')} className={!canvas ? 'active' : ''} onClick={() => setView(false)}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+          </button>
+          <button title={t('tip.viewAsCanvas')} className={canvas ? 'active' : ''} onClick={() => setView(true)}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          </button>
         </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
           <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite} style={{ ...actBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
@@ -169,8 +175,8 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { nod
       {/* Nota clásica (outliner): aviso para migrarla al editor de documento unificado. */}
       {!asDoc && !canvas && (
         <div className="v2-convert-banner">
-          <span>Esta nota usa el formato clásico (listas).</span>
-          <button onClick={convertToDoc}>Convertir a documento</button>
+          <span>{t('v2.classicNoteFormat', 'Esta nota usa el formato clásico (listas).')}</span>
+          <button onClick={convertToDoc}>{t('v2.convertToDocument', 'Convertir a documento')}</button>
         </div>
       )}
 
@@ -184,7 +190,7 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { nod
                 <div style={{ padding: '18px 20px 12px' }}><DocEditorBoundary compact><DocEditor node={node} compact registerActive autofocus={false} /></DocEditorBoundary></div>
                 <V2Backlinks nodeId={node.id} />
               </>
-            : <Outliner parentId={node.id} autoFocusEmpty placeholder="Escribe aquí… (usa «/» para insertar tabla, kanban, calendario…)" />}
+            : <Outliner parentId={node.id} autoFocusEmpty placeholder={t('v2.outlinerPlaceholder', 'Escribe aquí… (usa «/» para insertar tabla, kanban, calendario…)')} />}
       </div>
     </div>
   )
@@ -226,8 +232,9 @@ function V2ResourceView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: s
 
 export default function V2DetailView({ nodeId, onSelectCtx }: { nodeId: string; onSelectCtx: (id: string) => void }) {
   useStore()
+  const { t } = useTranslation()
   const node = store.getNode(nodeId)
-  if (!node) return <div className="v2-right-empty">Elemento no encontrado.</div>
+  if (!node) return <div className="v2-right-empty">{t('v2.elementNotFound', 'Elemento no encontrado.')}</div>
 
   const ed = parseExtraData(node.extraData)
   const hasAudio = Array.isArray(ed._audios)

@@ -77,13 +77,12 @@
   display: flex; align-items: center; gap: 6px; padding: 8px 12px;
   border-bottom: 1px solid var(--border); flex: 0 0 auto;
 }
-/* Toggle Nota ⇄ Lienzo — MISMO estilo sutil que el resto de acciones del toolbar
-   (MD/HTML/PDF/🌐/🗑: borde fino, chico, discreto), y las dos MISMA anchura fija
-   (antes cada botón se ajustaba a su propio texto → «Nota» y «Lienzo» no medían
-   igual). */
+/* Toggle Nota ⇄ Lienzo — icono solo, MISMO estilo sutil que el resto de acciones
+   del toolbar (MD/HTML/PDF/🌐/🗑: borde fino, chico, discreto, cuadrado). */
 .v2-view-toggle { display: flex; gap: 4px; }
 .v2-view-toggle button {
-  width: 60px; font-size: 11px; font-weight: 500; padding: 4px 6px; border-radius: 6px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; padding: 0; border-radius: 6px; cursor: pointer;
   border: 1px solid var(--border,#e2e2e2); background: none; color: var(--text-secondary,#666); line-height: 1;
 }
 .v2-view-toggle button:hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -228,6 +227,29 @@
   border: 1px solid var(--color-error, #e0393e); background: transparent; color: var(--color-error, #e0393e);
 }
 .v2-trash-empty:hover { background: var(--color-error, #e0393e); color: #fff; }
+
+/* Planificador — overlay a pantalla completa que envuelve el PlannerPanel real de la
+   v1 (día/semana/mes/año, drag&drop, GCal). Necesita todo el ancho para el timeline
+   multi-columna, por eso NO usa el .v2-modal pequeño sino un overlay a pantalla completa.
+   Barra propia con el cierre, encima del pp-header (que ya está lleno de controles a
+   la derecha: hoy/reset zoom), para no solaparse con ellos. */
+.v2-planner-overlay {
+  position: fixed; inset: 0; z-index: 210;
+  background: var(--bg-primary);
+  display: flex; flex-direction: column;
+}
+.v2-planner-overlay .pp-root { border-left: none; flex: 1; min-height: 0; }
+.v2-planner-overlay-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.v2-planner-overlay-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.v2-planner-overlay-close {
+  width: 28px; height: 28px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary);
+  font-size: 14px; cursor: pointer; display: grid; place-items: center;
+}
+.v2-planner-overlay-close:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 /* ── Centro (chat) ─────────────────────────────────────────────────── */
 .v2-center-head {

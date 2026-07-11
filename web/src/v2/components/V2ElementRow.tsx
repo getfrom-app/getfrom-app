@@ -2,6 +2,7 @@
 // Conversación). Título a varias líneas (nunca se corta), y en lugar de la etiqueta
 // de tipo (el icono ya lo dice) muestra el CONTEXTO al que pertenece, si hay alguno.
 // El menú contextual (clic derecho) se añade aquí para todas las tabs a la vez.
+import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { firstContextOf, contextColor } from '../../utils/cajones'
 import type { Node } from '../../types'
@@ -20,12 +21,13 @@ interface Props {
 }
 
 export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext, onDetach }: Props) {
+  const { t } = useTranslation()
   const ctx = hideContext ? null : firstContextOf(node)
-  const title = (node.text || '').replace(/^(?:✦|💬)\s*/u, '').trim() || 'Sin título'
+  const title = (node.text || '').replace(/^(?:✦|💬)\s*/u, '').trim() || t('v2.elementRow.untitled', 'Sin título')
   const del = (e: React.MouseEvent) => {
     e.stopPropagation(); e.preventDefault()
     store.deleteNode(node.id)
-    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Movido a la papelera', type: 'success' } }))
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.elementRow.movedToTrash', 'Movido a la papelera'), type: 'success' } }))
   }
   return (
     <div
@@ -52,11 +54,11 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
       </span>
       {/* Quitar de la conversación (no borra, solo desengancha) + Eliminar — al hover. */}
       {onDetach && (
-        <button className="v2-el-del" title="Quitar de esta conversación" onClick={e => { e.stopPropagation(); e.preventDefault(); onDetach(node.id) }}>
+        <button className="v2-el-del" title={t('v2.elementRow.detach', 'Quitar de esta conversación')} onClick={e => { e.stopPropagation(); e.preventDefault(); onDetach(node.id) }}>
           <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l8 8M14 6l-8 8"/><rect x="2" y="14" width="16" height="4" rx="1"/></svg>
         </button>
       )}
-      <button className="v2-el-del" title="Eliminar" onClick={del}>
+      <button className="v2-el-del" title={t('tip.delete', 'Eliminar')} onClick={del}>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
       </button>
     </div>

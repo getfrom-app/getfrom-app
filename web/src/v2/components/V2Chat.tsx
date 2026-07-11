@@ -2,13 +2,16 @@
 // Reutiliza el motor REAL: aiChatStore.send() + streaming SSE + acciones.
 // currentNodeId = contexto seleccionado → buildPayload le inyecta ese contexto.
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAIChat, aiChatStore } from '../../store/aiChatStore'
 import type { ChatMessage } from '../../store/aiChatStore'
 import { store, useStore } from '../../store/nodeStore'
 import NewTaskModal from '../../components/modals/NewTaskModal'
 import NewEventModal from '../../components/modals/NewEventModal'
+import PlannerPanel from '../../components/panels/PlannerPanel'
 import { listTemplates } from '../../utils/tagsHelper'
 import { renderInline } from '../../components/outliner/InlineRenderer'
+import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 
 interface Props {
   currentNodeId: string | null
@@ -30,20 +33,21 @@ function stripActions(s: string): string {
     .trim()
 }
 
-const SUGGESTIONS = [
-  { t: 'Resume mi día', d: 'Tareas y eventos de hoy', p: '¿Qué tengo para hoy? Resume mis tareas y eventos.' },
-  { t: 'Busca en mis notas', d: 'Pregunta a todo lo guardado', p: 'Busca en mis notas lo que sé sobre ' },
-  { t: 'Organiza esto', d: 'Ordena y prioriza', p: 'Ayúdame a organizar y priorizar mis tareas pendientes.' },
-  { t: 'Crea una tarea', d: 'Captura rápida', p: 'Crea una tarea: ' },
-]
-
 export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, onNewDocument, recorder }: Props) {
+  const { t } = useTranslation()
+  const SUGGESTIONS = [
+    { t: t('v2.chat.suggestSummarizeDayTitle', 'Resume mi día'), d: t('v2.chat.suggestSummarizeDayDesc', 'Tareas y eventos de hoy'), p: t('v2.chat.suggestSummarizeDayPrompt', '¿Qué tengo para hoy? Resume mis tareas y eventos.') },
+    { t: t('v2.chat.suggestSearchNotesTitle', 'Busca en mis notas'), d: t('v2.chat.suggestSearchNotesDesc', 'Pregunta a todo lo guardado'), p: t('v2.chat.suggestSearchNotesPrompt', 'Busca en mis notas lo que sé sobre ') },
+    { t: t('v2.chat.suggestOrganizeTitle', 'Organiza esto'), d: t('v2.chat.suggestOrganizeDesc', 'Ordena y prioriza'), p: t('v2.chat.suggestOrganizePrompt', 'Ayúdame a organizar y priorizar mis tareas pendientes.') },
+    { t: t('v2.chat.suggestCreateTaskTitle', 'Crea una tarea'), d: t('v2.chat.suggestCreateTaskDesc', 'Captura rápida'), p: t('v2.chat.suggestCreateTaskPrompt', 'Crea una tarea: ') },
+  ]
   const chat = useAIChat()
   useStore()
   const [input, setInput] = useState('')
   const [dragOver, setDragOver] = useState(false)
   const [showTask, setShowTask] = useState(false)
   const [showEvent, setShowEvent] = useState(false)
+  const [showPlanner, setShowPlanner] = useState(false)
   const [docMenu, setDocMenu] = useState(false)
   const docMenuRef = useRef<HTMLDivElement>(null)
 
@@ -73,6 +77,14 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
     ta.style.height = 'auto'
     ta.style.height = Math.min(ta.scrollHeight, 200) + 'px'
   }, [input])
+
+  // Atajos de texto (Ajustes → Atajos): expande el trigger en cuanto coincide,
+  // igual que en el outliner de v1 (misma fuente en localStorage).
+  const onInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value
+    const expanded = tryExpand(text, getShortcuts())
+    setInput(expanded ?? text)
+  }
 
   const doSend = (text: string) => {
     const trimmed = text.trim()
@@ -115,35 +127,36 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
       <div className="v2-center-head">
         <span className="v2-center-title">
           {hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}
-          {chat.sessionId ? (convTitle || 'Conversación') : 'Nueva conversación'}
+          {chat.sessionId ? (convTitle || t('v2.chat.conversation', 'Conversación')) : t('v2.chat.newConversation', 'Nueva conversación')}
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
           {/* Crear contenido sin pasar por el chat: documento (con plantillas), tarea, evento o voz. */}
           <div style={{ position: 'relative' }} ref={docMenuRef}>
-            <button className="v2-head-action" title="Nuevo documento"
-              onClick={() => { const tpls = listTemplates(); if (tpls.length) setDocMenu(o => !o); else onNewDocument() }}>＋ Documento</button>
+            <button className="v2-head-action" title={t('v2.chat.newDocument', 'Nuevo documento')}
+              onClick={() => { const tpls = listTemplates(); if (tpls.length) setDocMenu(o => !o); else onNewDocument() }}>＋ {t('v2.chat.newDocument', 'Nuevo documento')}</button>
             {docMenu && (
               <div className="v2-doc-menu">
-                <button onClick={() => { onNewDocument(); setDocMenu(false) }}>📄 En blanco</button>
-                <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>Plantillas</div>
+                <button onClick={() => { onNewDocument(); setDocMenu(false) }}>📄 {t('v2.chat.blankDocument', 'En blanco')}</button>
+                <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.templates', 'Plantillas')}</div>
                 {listTemplates().map(tpl => (
-                  <button key={tpl.id} onClick={() => { onNewDocument(tpl.id); setDocMenu(false) }}>{(tpl.text || 'Plantilla').replace(/^[^\p{L}\p{N}]+/u, '')}</button>
+                  <button key={tpl.id} onClick={() => { onNewDocument(tpl.id); setDocMenu(false) }}>{(tpl.text || t('v2.chat.template', 'Plantilla')).replace(/^[^\p{L}\p{N}]+/u, '')}</button>
                 ))}
               </div>
             )}
           </div>
-          <button className="v2-head-action" title="Nueva tarea" onClick={() => setShowTask(true)}>＋ Tarea</button>
-          <button className="v2-head-action" title="Nuevo evento" onClick={() => setShowEvent(true)}>＋ Evento</button>
+          <button className="v2-head-action" title={t('v2.chat.newTask', 'Nueva tarea')} onClick={() => setShowTask(true)}>＋ {t('v2.chat.newTaskShort', 'Tarea')}</button>
+          <button className="v2-head-action" title={t('v2.chat.newEvent', 'Nuevo evento')} onClick={() => setShowEvent(true)}>＋ {t('v2.chat.newEventShort', 'Evento')}</button>
+          <button className="v2-head-action" title={t('v2.plannerOpen', 'Abrir el planificador')} onClick={() => setShowPlanner(true)}>📅 {t('wftopbar.planner', 'Planificador')}</button>
           <button
             className={`v2-head-action ${recorder.recording ? 'recording' : ''}`}
-            title={recorder.recording ? 'Detener y guardar' : 'Grabar audio (reunión o nota de voz)'}
+            title={recorder.recording ? t('v2.chat.stopAndSave', 'Detener y guardar') : t('v2.chat.recordAudio', 'Grabar audio (reunión o nota de voz)')}
             disabled={recorder.busy}
             onClick={() => (recorder.recording ? recorder.stop() : recorder.start())}
           >
-            {recorder.busy ? '⏳ Guardando…' : recorder.recording ? '⏹ Detener' : '🎙 Grabar'}
+            {recorder.busy ? `⏳ ${t('v2.chat.saving', 'Guardando…')}` : recorder.recording ? `⏹ ${t('v2.chat.stop', 'Detener')}` : `🎙 ${t('v2.chat.record', 'Grabar')}`}
           </button>
           {!isEmpty && (
-            <button className="v2-iconbtn" title="Nueva conversación" onClick={() => { aiChatStore.startNewSession() }}>＋</button>
+            <button className="v2-iconbtn" title={t('v2.chat.newConversation', 'Nueva conversación')} onClick={() => { aiChatStore.startNewSession() }}>＋</button>
           )}
         </div>
       </div>
@@ -151,8 +164,8 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
       <div className="v2-chat-scroll" ref={scrollRef}>
         {isEmpty ? (
           <div className="v2-empty">
-            <h1>Hola 👋</h1>
-            <p>Habla con Fromly. Pregúntale a todo lo que guardas, crea notas y tareas, o sube archivos arrastrándolos aquí.</p>
+            <h1>{t('v2.chat.greeting', 'Hola')} 👋</h1>
+            <p>{t('v2.chat.emptyHint', 'Habla con Fromly. Pregúntale a todo lo que guardas, crea notas y tareas, o sube archivos arrastrándolos aquí.')}</p>
             <div className="v2-suggest-grid">
               {SUGGESTIONS.map((s, i) => (
                 <button key={i} className="v2-suggest" onClick={() => { setInput(s.p); taRef.current?.focus() }}>
@@ -166,13 +179,13 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           <div className="v2-chat-inner">
             {messages.map((m: ChatMessage) => (
               <div key={m.id} className={`v2-msg ${m.role}`}>
-                <div className="v2-msg-avatar">{m.role === 'user' ? 'Tú' : '✦'}</div>
+                <div className="v2-msg-avatar">{m.role === 'user' ? t('v2.chat.you', 'Tú') : '✦'}</div>
                 <div className="v2-msg-body">
                   {(() => {
                     const disp = stripActions(m.content)
                     if (disp) return disp.split('\n').map((line, i) => <p key={i}>{line ? renderInline(line) : ' '}</p>)
                     if (streaming && m.role === 'assistant') {
-                      return <span className="v2-creating">✨ Creando<span className="v2-creating-dots" /></span>
+                      return <span className="v2-creating">✨ {t('v2.chat.creating', 'Creando')}<span className="v2-creating-dots" /></span>
                     }
                     return null
                   })()}
@@ -194,9 +207,9 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
       {pending && pending.length > 0 && (
         <div className="v2-composer">
           <div className="v2-composer-inner" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span className="v2-el-meta" style={{ flex: 1 }}>{pending.length} cambio(s) propuesto(s)</span>
-            <button className="v2-chip" onClick={() => aiChatStore.cancelActions()}>Descartar</button>
-            <button className="v2-chip active" onClick={() => aiChatStore.confirmActions().catch(() => {})}>Aplicar</button>
+            <span className="v2-el-meta" style={{ flex: 1 }}>{t('v2.chat.proposedChanges', '{{count}} cambio(s) propuesto(s)', { count: pending.length })}</span>
+            <button className="v2-chip" onClick={() => aiChatStore.cancelActions()}>{t('v2.chat.discard', 'Descartar')}</button>
+            <button className="v2-chip active" onClick={() => aiChatStore.confirmActions().catch(() => {})}>{t('v2.chat.apply', 'Aplicar')}</button>
           </div>
         </div>
       )}
@@ -208,19 +221,19 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
               ref={taRef}
               value={input}
               rows={1}
-              placeholder={`Escribe a Fromly${contextLabel && contextLabel !== 'General' ? ` · ${contextLabel}` : ''}…`}
-              onChange={(e) => setInput(e.target.value)}
+              placeholder={`${t('v2.chat.composerPlaceholder', 'Escribe a Fromly')}${contextLabel && contextLabel !== 'General' ? ` · ${contextLabel}` : ''}…`}
+              onChange={onInputChange}
               onKeyDown={onKeyDown}
             />
             <button className="v2-send" disabled={!input.trim() || streaming} onClick={() => doSend(input)}>↑</button>
           </div>
           <div className="v2-composer-hint">
-            {streaming ? 'Fromly está pensando…' : 'Enter para enviar · Shift+Enter salto de línea · arrastra archivos aquí'}
+            {streaming ? t('v2.chat.thinking', 'Fromly está pensando…') : t('v2.chat.composerHint', 'Enter para enviar · Shift+Enter salto de línea · arrastra archivos aquí')}
           </div>
         </div>
       </div>
 
-      {dragOver && <div className="v2-drop-overlay">{chat.sessionId ? '📎 Importar a la conversación' : '📥 Importar a Fromly'}</div>}
+      {dragOver && <div className="v2-drop-overlay">{chat.sessionId ? `📎 ${t('v2.chat.importToConversation', 'Importar a la conversación')}` : `📥 ${t('v2.chat.importToFromly', 'Importar a Fromly')}`}</div>}
 
       {/* Modales de creación rápida (mismos que la v1). Las tareas nacen en el
           contexto activo (o el diario de hoy si no hay); los eventos, en el diario. */}
@@ -230,6 +243,18 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           onClose={() => setShowEvent(false)}
           onCreated={id => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: id } }))}
         />
+      )}
+
+      {/* Planificador — reutiliza el PlannerPanel completo de la v1 (día/semana/mes/año,
+          drag&drop, GCal sync) a pantalla completa, sin recortar funcionalidad. */}
+      {showPlanner && (
+        <div className="v2-planner-overlay">
+          <div className="v2-planner-overlay-bar">
+            <span className="v2-planner-overlay-title">📅 {t('wftopbar.planner', 'Planificador')}</span>
+            <button className="v2-planner-overlay-close" title={t('common.close', 'Cerrar')} onClick={() => setShowPlanner(false)}>✕</button>
+          </div>
+          <PlannerPanel initialView="week" initialDays={7} onClose={() => setShowPlanner(false)} />
+        </div>
       )}
     </main>
   )

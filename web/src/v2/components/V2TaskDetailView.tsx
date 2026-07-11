@@ -67,13 +67,13 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
             {ctx.text}
           </button>
         ) : (
-          <span className="v2-el-meta">Sin contexto</span>
+          <span className="v2-el-meta">{t('v2.taskDetail.noContext', 'Sin contexto')}</span>
         )}
       </div>
 
       {/* Notas — EL MISMO editor completo que cualquier nota, NO es el título de la tarea. */}
       <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 Notas</div>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('v2.context.notes', 'Notas')}</div>
         <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />
       </div>
 

@@ -5,6 +5,7 @@
 // Hoy:       columna de referencia del día REAL de la v1 (DayColumn):
 //            eventos de Google Calendar, atrasadas, para hoy.
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import { useAIChat, isQuickCommandSession } from '../../store/aiChatStore'
 import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
@@ -56,12 +57,13 @@ function classify(n: Node): { icon: string; label: string } {
 // Título de la cabecera de detalle — clic para renombrar el nodo (fila 1).
 function EditableDetailTitle({ nodeId }: { nodeId: string }) {
   useStore()
+  const { t } = useTranslation()
   const [editing, setEditing] = useState(false)
   const node = store.getNode(nodeId)
   // Deriva el título: texto del nodo (sin ✦), o la 1ª línea del cuerpo si el texto está
   // vacío/solo-espacios (documentos con el título dentro del body), o «Elemento».
   const bodyTitle = (node?.body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80)
-  const title = ((node?.text || '').replace(/^✦\s*/, '').trim()) || bodyTitle || 'Elemento'
+  const title = ((node?.text || '').replace(/^✦\s*/, '').trim()) || bodyTitle || t('v2.rightColumn.element', 'Elemento')
   if (editing) {
     return (
       <input
@@ -78,16 +80,16 @@ function EditableDetailTitle({ nodeId }: { nodeId: string }) {
     )
   }
   return (
-    <span className="v2-center-title v2-detail-title" title="Clic para renombrar" onClick={() => setEditing(true)}
+    <span className="v2-center-title v2-detail-title" title={t('v2.rightColumn.clickToRename', 'Clic para renombrar')} onClick={() => setEditing(true)}
       style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'text' }}>
       {title}
     </span>
   )
 }
 
-function fmtDate(iso?: string): string {
+function fmtDate(iso: string | undefined, locale: string): string {
   if (!iso) return ''
-  try { return new Date(iso).toLocaleDateString('es', { day: 'numeric', month: 'short' }) } catch { return '' }
+  try { return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) } catch { return '' }
 }
 
 // Clasifica un nodo como ELEMENTO de historial (documento/nota/pdf/imagen/enlace/audio).
@@ -99,6 +101,7 @@ function classifyContent(n: Node): ReturnType<typeof classifyElement> {
 
 export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha }: Props) {
   useStore()
+  const { t, i18n } = useTranslation()
   const chat = useAIChat()
   const [today, setToday] = useState<Node | null>(() => store.todayDiary())
 
@@ -161,19 +164,19 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
 
   // Nivel superior del Historial: conversaciones + elementos sueltos, por reciente.
   const topLevel = useMemo(() => {
-    const chats = sessions.map(s => ({ node: s, icon: '💬', label: 'Conversación', isChat: true as const }))
+    const chats = sessions.map(s => ({ node: s, icon: '💬', label: t('v2.chat.conversation', 'Conversación'), isChat: true as const }))
     const alone = standalone.map(it => ({ ...it, isChat: false as const }))
     return [...chats, ...alone]
       .sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
       .slice(0, 200)
-  }, [sessions, standalone])
+  }, [sessions, standalone]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tabs: { id: RightMode; label: string }[] = [
-    { id: 'contexto', label: 'Contexto' },
-    { id: 'elementos', label: 'Elementos' },
-    { id: 'historial', label: 'Historial' },
-    { id: 'hoy', label: 'Hoy' },
-    { id: 'agenda', label: 'Agenda' },
+    { id: 'contexto', label: t('v2.rightColumn.tabContext', 'Contexto') },
+    { id: 'elementos', label: t('v2.rightColumn.tabElements', 'Elementos') },
+    { id: 'historial', label: t('v2.rightColumn.tabHistory', 'Historial') },
+    { id: 'hoy', label: t('v2.rightColumn.tabToday', 'Hoy') },
+    { id: 'agenda', label: t('v2.rightColumn.tabAgenda', 'Agenda') },
   ]
 
   // Arrastrar el borde izquierdo para ensanchar/estrechar la columna derecha.
@@ -195,8 +198,8 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
 
   return (
     <aside className="v2-col v2-right">
-      <div className="v2-resize-handle" onPointerDown={startResize} title="Arrastra para ensanchar" />
-      {importDragOver && <div className="v2-import-banner">📥 Importar a Fromly</div>}
+      <div className="v2-resize-handle" onPointerDown={startResize} title={t('v2.rightColumn.dragToWiden', 'Arrastra para ensanchar')} />
+      {importDragOver && <div className="v2-import-banner">📥 {t('v2.chat.importToFromly', 'Importar a Fromly')}</div>}
       <div className="v2-right-tabs">
         {tabs.map(tb => (
           <button
@@ -219,13 +222,13 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
         return (
           <div className="v2-right-fill">
             <div className="v2-detail-head">
-              <button className="v2-iconbtn" onClick={onCloseDetail} title="Volver">‹</button>
+              <button className="v2-iconbtn" onClick={onCloseDetail} title={t('v2.rightColumn.back', 'Volver')}>‹</button>
               <EditableDetailTitle nodeId={detailNodeId} />
               {isResourceLike && detailNode && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <PublishButton node={detailNode} />
                   <button
-                    title="Eliminar"
+                    title={t('tip.delete', 'Eliminar')}
                     onClick={() => { store.deleteNode(detailNode.id); onCloseDetail() }}
                     className="v2-iconbtn"
                   >
@@ -257,7 +260,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
               ? <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} />
               : activeSessionId
                 ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
-                : <div className="v2-right-empty">Elige un contexto a la izquierda, o empieza una conversación: aquí verás sus tareas y elementos.</div>
+                : <div className="v2-right-empty">{t('v2.rightColumn.chooseContextEmpty', 'Elige un contexto a la izquierda, o empieza una conversación: aquí verás sus tareas y elementos.')}</div>
         )}
 
         {mode === 'historial' && (
@@ -269,7 +272,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
                   node={it.node}
                   icon={it.icon}
                   onOpen={id => (it.isChat ? onOpenConversation(id) : onOpenNode(id))}
-                  extraMeta={fmtDate(it.node.updatedAt)}
+                  extraMeta={fmtDate(it.node.updatedAt, i18n.language)}
                 />
                 {/* Elementos DENTRO de la conversación, indentados. */}
                 {it.isChat && bySession.get(it.node.id)?.map(child => (
@@ -280,7 +283,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
 
             {topLevel.length === 0 && (
               <div className="v2-right-empty">
-                {selectedCtxId ? 'Este contexto no tiene conversaciones ni contenido todavía.' : 'Aún no hay nada. Empieza a hablar con Fromly.'}
+                {selectedCtxId ? t('v2.rightColumn.contextNoContentYet', 'Este contexto no tiene conversaciones ni contenido todavía.') : t('v2.rightColumn.nothingYet', 'Aún no hay nada. Empieza a hablar con Fromly.')}
               </div>
             )}
           </div>
@@ -289,7 +292,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
         {mode === 'hoy' && (
           today
             ? <DayColumn node={today} includeNodes={false} />
-            : <div className="v2-right-empty">Preparando la columna de hoy…</div>
+            : <div className="v2-right-empty">{t('v2.rightColumn.preparingToday', 'Preparando la columna de hoy…')}</div>
         )}
 
         {mode === 'agenda' && <V2AgendaView />}

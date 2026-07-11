@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n/config'
 import LanguageSelector from '../settings/LanguageSelector'
 import { isICloudBackupEnabled, setICloudBackupEnabled } from '../../utils/icloudBackup'
 import {
@@ -9,7 +10,7 @@ import {
   clearTokens, exportNodes, getToken, getApiToken, generateApiToken,
 } from '../../api/client'
 import { userStore, useUserStore } from '../../store/userStore'
-import { useTheme } from '../../hooks/useTheme'
+import { useTheme, type AccentColor } from '../../hooks/useTheme'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
@@ -32,7 +33,7 @@ function saveTemplates(ts: CustomTemplate[]) {
 // ── Tab definitions ───────────────────────────────────────────────────────────
 
 type Tab = 'cuenta' | 'apariencia' | 'ia' | 'magic' | 'estadisticas'
-  | 'atajos' | 'plantillas' | 'google' | 'mcp'
+  | 'atajos' | 'plantillas' | 'google' | 'mcp' | 'captura'
   | 'tags' | 'estados' | 'voz' | 'agentes' | 'timeline' | 'prompts'
   | 'backups' | 'exportar' | 'importar' | 'idioma'
 
@@ -71,6 +72,13 @@ export function CuentaPane() {
   const [passwordError, setPasswordError] = useState('')
   const [passwordSuccess, setPasswordSuccess] = useState('')
   const [passwordLoading, setPasswordLoading] = useState(false)
+
+  const [showEmailForm, setShowEmailForm] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [emailPassword, setEmailPassword] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [emailSuccess, setEmailSuccess] = useState('')
+  const [emailLoading, setEmailLoading] = useState(false)
 
   const [subLoading, setSubLoading] = useState(false)
   const [subError, setSubError] = useState('')
@@ -114,6 +122,19 @@ export function CuentaPane() {
       setShowPasswordForm(false)
     } catch (err: unknown) { setPasswordError(err instanceof Error ? err.message : 'Error') }
     finally { setPasswordLoading(false) }
+  }
+
+  async function handleChangeEmail(e: React.FormEvent) {
+    e.preventDefault(); setEmailError(''); setEmailSuccess('')
+    setEmailLoading(true)
+    try {
+      await updateMe({ newEmail, currentPassword: emailPassword })
+      await us.fetchMe()
+      setEmailSuccess(t('account.emailUpdatedSuccess'))
+      setNewEmail(''); setEmailPassword('')
+      setShowEmailForm(false)
+    } catch (err: unknown) { setEmailError(err instanceof Error ? err.message : t('auth.errorUnknown')) }
+    finally { setEmailLoading(false) }
   }
 
   async function handleSubscribe() {
@@ -182,8 +203,29 @@ export function CuentaPane() {
 
       <SectionTitle>{t('account.sectionProfile')}</SectionTitle>
 
-      {/* Email es solo lectura: cambiarlo rompería el login con Google/Apple. */}
-      <Row label={t('account.emailRow')} hint={user?.email ?? '—'} />
+      {/* Cambiar email solo si la cuenta tiene contraseña: en cuentas Google/Apple
+          el email es la identidad de login y cambiarlo la rompería. */}
+      {hasPassword ? (
+        <Row label={t('account.emailRow')} hint={user?.email ?? '—'}>
+          <button className="btn-secondary" onClick={() => { setShowEmailForm(v => !v); setEmailError(''); setEmailSuccess('') }}>
+            {t('account.changeEmailButton')}
+          </button>
+        </Row>
+      ) : (
+        <Row label={t('account.emailRow')} hint={user?.email ?? '—'} />
+      )}
+      {showEmailForm && (
+        <form className="st-form" onSubmit={handleChangeEmail}>
+          <div className="st-form-field"><label>{t('account.newEmailLabel')}</label><input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder={t('account.newEmailPlaceholder')} required /></div>
+          <div className="st-form-field"><label>{t('account.currentPasswordLabel')}</label><input type="password" value={emailPassword} onChange={e => setEmailPassword(e.target.value)} placeholder="••••••••" required /></div>
+          {emailError && <div className="auth-error">{emailError}</div>}
+          {emailSuccess && <div className="auth-success">{emailSuccess}</div>}
+          <div className="st-form-actions">
+            <button type="submit" className="btn-primary" disabled={emailLoading}>{emailLoading ? t('common.saving') : t('account.saveEmailButton')}</button>
+            <button type="button" className="btn-secondary" onClick={() => setShowEmailForm(false)}>{t('common.cancel')}</button>
+          </div>
+        </form>
+      )}
 
       <Row label={t('account.passwordRow')} hint="••••••••">
         <button className="btn-secondary" onClick={() => { setShowPasswordForm(v => !v); setPasswordError(''); setPasswordSuccess('') }}>
@@ -296,9 +338,48 @@ export function CuentaPane() {
   )
 }
 
+// Paleta de color de acento — compartida con SettingsView (v1 embebido).
+export const ACCENT_COLORS: { value: AccentColor; label: string; hex: string }[] = [
+  { value: 'purple', label: 'settingsView.colorPurple', hex: '#8b5cf6' },
+  { value: 'indigo', label: 'settingsView.colorIndigo', hex: '#6366f1' },
+  { value: 'blue',   label: 'settingsView.colorBlue',   hex: '#3b82f6' },
+  { value: 'cyan',   label: 'settingsView.colorCyan',   hex: '#06b6d4' },
+  { value: 'teal',   label: 'settingsView.colorTeal',   hex: '#14b8a6' },
+  { value: 'green',  label: 'settingsView.colorGreen',  hex: '#22c55e' },
+  { value: 'lime',   label: 'settingsView.colorLime',   hex: '#84cc16' },
+  { value: 'amber',  label: 'settingsView.colorAmber',  hex: '#f59e0b' },
+  { value: 'orange', label: 'settingsView.colorOrange', hex: '#f97316' },
+  { value: 'red',    label: 'settingsView.colorRed',    hex: '#ef4444' },
+  { value: 'rose',   label: 'settingsView.colorRose',   hex: '#f43f5e' },
+  { value: 'pink',   label: 'settingsView.colorPink',   hex: '#ec4899' },
+]
+
+// Fila de color del planner — mismo patrón que SettingsView (color propio o heredado del acento).
+function PlannerColorRow() {
+  const { t } = useTranslation()
+  const [color, setColor] = useState(() => localStorage.getItem('from_planner_color') || '')
+  const accentHex = (typeof document !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()) || '#8b5cf6'
+  const current = color || accentHex
+  function apply(v: string) { setColor(v); localStorage.setItem('from_planner_color', v) }
+  function reset() { setColor(''); localStorage.removeItem('from_planner_color') }
+  return (
+    <Row label={t('settingsView.plannerColorLabel')} hint={t('settingsView.plannerColorHint')}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <input type="color" value={current} onChange={e => apply(e.target.value)}
+          style={{ width: 32, height: 32, border: 'none', background: 'none', cursor: 'pointer', padding: 0 }} />
+        {color && (
+          <button onClick={reset} style={{ fontSize: 12, color: 'var(--text-tertiary)', background: 'none', border: 'none', cursor: 'pointer' }}>
+            {t('settingsView.useAccent')}
+          </button>
+        )}
+      </div>
+    </Row>
+  )
+}
+
 export function AparienciaPane() {
   const { t } = useTranslation()
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme, accent, setAccent } = useTheme()
 
   // Franja horaria visible (calendario + timeline diario)
   const [dayStart, setDayStartState] = useState<number>(() => {
@@ -345,6 +426,28 @@ export function AparienciaPane() {
           ))}
         </select>
       </Row>
+
+      <SectionTitle>{t('settingsView.accentColor')}</SectionTitle>
+      <Row label={t('settingsView.mainColor')} hint={t('settingsView.mainColorHint')}>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {ACCENT_COLORS.map(c => (
+            <button
+              key={c.value}
+              title={t(c.label)}
+              onClick={() => setAccent(c.value)}
+              style={{
+                width: 24, height: 24, borderRadius: '50%',
+                background: c.hex, border: 'none', cursor: 'pointer',
+                outline: accent === c.value ? `2px solid ${c.hex}` : '2px solid transparent',
+                outlineOffset: 2,
+                boxSizing: 'border-box',
+                transition: 'outline 0.15s',
+              }}
+            />
+          ))}
+        </div>
+      </Row>
+      <PlannerColorRow />
     </div>
   )
 }
@@ -1384,13 +1487,138 @@ function PromptsPane() {
   )
 }
 
-function BackupsPane() {
+function formatBackupAge(iso: string): string {
+  const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
+  if (m < 1) return i18n.t('settingsView.ageJustNow')
+  if (m < 60) return i18n.t('settingsView.ageMinutes', { n: m })
+  const h = Math.floor(m / 60)
+  if (h < 24) return i18n.t('settingsView.ageHours', { n: h })
+  const d = Math.floor(h / 24)
+  return i18n.t('settingsView.ageDays', { n: d })
+}
+
+export function BackupsPane() {
   const { t } = useTranslation()
+  const [snapshots, setSnapshots] = useState<import('../../api/backups').BackupSnapshot[]>([])
+  const [loading, setLoading] = useState(true)
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [info, setInfo] = useState<string | null>(null)
+
+  async function refresh() {
+    setLoading(true)
+    try {
+      const { listBackups } = await import('../../api/backups')
+      const list = await listBackups()
+      setSnapshots(list)
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { refresh() }, [])
+
+  async function handleCreate() {
+    setCreating(true); setError(null); setInfo(null)
+    try {
+      const { createBackup } = await import('../../api/backups')
+      const r = await createBackup('web')
+      setInfo(t('settingsView.snapshotCreated', { n: r.nodeCount }))
+      await refresh()
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    } finally {
+      setCreating(false)
+      setTimeout(() => setInfo(null), 3000)
+    }
+  }
+
+  async function handleRestore(id: string, createdAt: string) {
+    if (!confirm(t('settingsView.confirmRestore', { date: new Date(createdAt).toLocaleString('es-ES') }))) return
+    setBusyId(id); setError(null); setInfo(null)
+    try {
+      const { restoreBackup } = await import('../../api/backups')
+      const r = await restoreBackup(id)
+      setInfo(t('settingsView.restored', { n: r.restoredCount }))
+      await refresh()
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm(t('settingsView.confirmDeleteSnapshot'))) return
+    setBusyId(id); setError(null)
+    try {
+      const { deleteBackup } = await import('../../api/backups')
+      await deleteBackup(id)
+      await refresh()
+    } catch (e: any) {
+      setError(String(e?.message || e))
+    } finally {
+      setBusyId(null)
+    }
+  }
+
   return (
     <div className="st-pane">
-      <SectionTitle>{t('backups.sectionTitle')}</SectionTitle>
-      <Row label={t('backups.snapshotsLabel')} hint={t('backups.snapshotsHint')} />
-      <Row label={t('backups.restoreLabel')} hint={t('backups.restoreHint')} />
+      <SectionTitle>{t('settingsView.snapshots')}</SectionTitle>
+      <p style={{ opacity: 0.7, fontSize: 13, marginTop: 4 }}>
+        {t('settingsView.snapshotsIntro')}
+      </p>
+      <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 16 }}>
+        <button className="btn-primary btn-sm" onClick={handleCreate} disabled={creating}>
+          {creating ? t('settingsView.creating') : t('settingsView.createSnapshotNow')}
+        </button>
+      </div>
+      {error && <div style={{ color: '#ef4444', fontSize: 13, marginBottom: 8 }}>⚠️ {error}</div>}
+      {info && <div style={{ color: '#22c55e', fontSize: 13, marginBottom: 8 }}>✓ {info}</div>}
+      {loading ? (
+        <div style={{ opacity: 0.6, fontSize: 13 }}>{t('common.loading')}</div>
+      ) : snapshots.length === 0 ? (
+        <div style={{ opacity: 0.6, fontSize: 13 }}>{t('settingsView.noSnapshots')}</div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {snapshots.map(s => (
+            <div key={s.id} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 12px', border: '1px solid var(--border-subtle, #2a2a2a)', borderRadius: 8,
+            }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>
+                  {new Date(s.createdAt).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                  <span style={{ marginLeft: 8, opacity: 0.5, fontSize: 12, fontWeight: 400 }}>
+                    {formatBackupAge(s.createdAt)} · {s.source}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.6, marginTop: 2 }}>{t('settingsView.nodesCount', { n: s.nodeCount })}</div>
+              </div>
+              <button
+                className="btn-secondary btn-sm"
+                disabled={busyId === s.id}
+                onClick={() => handleRestore(s.id, s.createdAt)}
+                title={t('settingsView.restoreSnapshot')}
+              >
+                {t('settingsView.restore')}
+              </button>
+              <button
+                className="btn-secondary btn-sm"
+                disabled={busyId === s.id}
+                onClick={() => handleDelete(s.id)}
+                title={t('settingsView.deleteSnapshot')}
+                style={{ opacity: 0.6 }}
+              >
+                🗑
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -1432,6 +1660,7 @@ export default function SettingsModal({ onClose, initialTab = 'cuenta' }: Props)
       title: t('settings.groupIntegrations'),
       items: [
         { id: 'mcp', label: t('settings.tabMCP'), icon: '🔌' },
+        { id: 'captura', label: t('settings.tabAccessories'), icon: '⚡' },
       ],
     },
     {
@@ -1474,6 +1703,7 @@ export default function SettingsModal({ onClose, initialTab = 'cuenta' }: Props)
       case 'plantillas': return <PlantillasPane />
       case 'google': return <GooglePane />
       case 'mcp': return <ClaudeMcpPane />
+      case 'captura': return <CapturaRapidaPane />
       case 'tags': return <TagsPane />
       case 'estados': return <EstadosPane />
       case 'voz': return <VozPane />

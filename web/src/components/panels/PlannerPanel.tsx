@@ -109,10 +109,13 @@ function toMidnight(day: Date): string {
   const d = new Date(day); d.setHours(0,0,0,0); return d.toISOString()
 }
 
-const DAYS_S   = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']
-const MONTHS_S = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
-const MONTHS_L = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-function dayLabel(d: Date) { return `${DAYS_S[d.getDay()]} ${d.getDate()} ${MONTHS_S[d.getMonth()]}` }
+// Nombres de día/mes según el idioma activo de la interfaz (antes fijos en español).
+function dayLabel(d: Date, locale: string) {
+  const weekday = new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d)
+  const month = new Intl.DateTimeFormat(locale, { month: 'short' }).format(d)
+  return `${weekday} ${d.getDate()} ${month}`
+}
+function monthLabel(d: Date, locale: string) { return new Intl.DateTimeFormat(locale, { month: 'long' }).format(d) }
 
 // 'day' = solo hoy (1 col) · 'week' = multi-día · 'month' = rejilla mensual · 'year' = anual
 type ViewMode = 'day' | 'week' | 'month' | 'year'
@@ -202,7 +205,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
   const s        = useStore()
   const us       = useUserStore()
   const navigate = useNavigate()
-  const { t }    = useTranslation()
+  const { t, i18n } = useTranslation()
 
   const today = startOfDay(new Date())
   const [viewMode,      setViewMode]      = useState<ViewMode>(initialView ?? 'day')
@@ -740,7 +743,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
           for (let d = 1; d <= totalDays; d++) cells.push(d)
           return (
             <div key={monthIdx} className="pp-year-month">
-              <div className="pp-year-month-name">{MONTHS_L[monthIdx]}</div>
+              <div className="pp-year-month-name">{monthLabel(firstOfMonth, i18n.language)}</div>
               <div className="pp-year-dow-row">
                 {['L','M','X','J','V','S','D'].map(d => <div key={d} className="pp-year-dow">{d}</div>)}
               </div>
@@ -869,8 +872,8 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
   const navTitle = viewMode === 'year'
     ? `${centerDate.getFullYear()}`
     : viewMode === 'month'
-      ? `${MONTHS_L[centerDate.getMonth()]} ${centerDate.getFullYear()}`
-      : centerDate.toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' })
+      ? `${monthLabel(centerDate, i18n.language)} ${centerDate.getFullYear()}`
+      : centerDate.toLocaleDateString(i18n.language, { weekday:'short', day:'numeric', month:'short' })
 
   function navDelta(d: number) {
     setCenterDate(prev =>
@@ -942,7 +945,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
               {visibleDays.map(d => (
                 <div key={d.toISOString()} className={`pp-col-head ${sameDay(d,today)?'pp-col-head--today':''} ${sameDay(d,centerDate)?'pp-col-head--center':''}`}
                   style={{width:colW, flexShrink:0}}>
-                  {dayLabel(d)}
+                  {dayLabel(d, i18n.language)}
                 </div>
               ))}
             </div>

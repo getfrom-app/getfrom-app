@@ -4,6 +4,31 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.790 — 11 julio 2026 · Fromly 2.0: ajustes, planificador e i18n completos
+
+Auditoría profunda de paridad v1→v2 tras feedback directo de uso. Cuatro frentes:
+
+- **Icono Nota/Lienzo**: el toggle de la nota ya no lleva texto ("📝 Nota"/"🎨 Lienzo") — ahora
+  son dos iconos cuadrados, mismo estilo discreto que el resto de acciones del toolbar (MD/HTML/PDF/🌐).
+- **Planificador**: añadido botón "📅 Planificador" en la cabecera del chat — abre el planificador
+  completo de v1 (día/semana/mes/año, drag&drop, sync Google Calendar) en overlay a pantalla completa.
+  No existía ningún punto de acceso desde v2 hasta ahora.
+- **Ajustes**: v2 ya reutilizaba el modal completo de Ajustes de v1, pero varias piezas dentro de
+  ese modal compartido estaban incompletas o nunca montadas — cambio de email, selector de color de
+  acento y color del planificador, pestaña "Accesorios" (token API, Raycast, atajos, backup iCloud),
+  backups funcionales (listar/crear/restaurar), y expansión de texto (`;firma`) en el chat de v2.
+- **Idiomas**: causa raíz encontrada del síntoma "cambio de idioma y sigue en español" — 124 claves
+  nuevas de v2 usadas en el código con `t('clave', 'fallback en español')` no existían todavía en
+  ningún idioma (ni siquiera en español), así que siempre se mostraba el fallback sin importar el
+  idioma activo. Añadidas a los 12 idiomas con traducción real. También corregidos ~35 textos sueltos
+  sin pasar por `t()`, los nombres de día/mes del planificador (antes fijos en español,
+  ahora según el idioma de la interfaz), y 12 claves de `pt.json` que eran copia sin traducir del
+  español.
+- **Menú contextual de fila**: añadidas las opciones "Duplicar" y "Mover a…", que faltaban en el
+  único menú de fila de v2 (`RightColMenu`) aunque sí existían en el menú del lienzo de v1.
+
+---
+
 ## Mac v9.5.78 — 10 julio 2026 · Fromly 2.0 llega a Mac
 
 El Mac llevaba desde el 1 de julio (v9.5.77) sin nada de lo nuevo. Publicado con el código actual:

@@ -4,6 +4,7 @@
 // Sin «Volver al año» (un 2º clic en la tab Agenda ya vuelve al año); sin quick-add
 // aparte (los bloques de DayColumn tienen su propio «+» en la cabecera).
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import YearCalendarPanel from '../../components/panels/YearCalendarPanel'
@@ -12,6 +13,7 @@ import DocEditor from '../../components/views/DocEditor'
 import DocEditorBoundary from '../../components/DocEditorBoundary'
 
 export default function V2AgendaView() {
+  const { t } = useTranslation()
   useStore()
   const [dayId, setDayId] = useState<string | null>(null)
 
@@ -32,7 +34,7 @@ export default function V2AgendaView() {
   if (dayNode) {
     return (
       <div>
-        <div className="v2-panel-title">{dayNode.text || 'Día'}</div>
+        <div className="v2-panel-title">{dayNode.text || t('v2.agenda.day', 'Día')}</div>
         {/* Eventos + tareas del día — MISMO componente que la tab «Hoy», sin bullets. */}
         <DayColumn node={dayNode} includeNodes={false} />
         {/* Espacio para escribir lo que sea, al final de todo. */}
