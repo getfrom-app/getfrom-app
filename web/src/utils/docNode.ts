@@ -50,5 +50,5 @@ export function firstLineTitle(html: string | null | undefined): string {
     }
   }
   const first = (d.textContent || '').trim()
-  return first.slice(0, 120) || 'Documento'
+  return first.slice(0, 120)
 }

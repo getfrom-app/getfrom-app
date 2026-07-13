@@ -77,7 +77,7 @@ const TaskItemLinked = TaskItem.extend({
   },
 })
 
-export default function DocEditor({ node, compact, registerActive, autofocus }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean; registerActive?: boolean; autofocus?: boolean }) {
+export default function DocEditor({ node, compact, registerActive, autofocus }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean; registerActive?: boolean; autofocus?: boolean | 'start' | 'end' }) {
   useStore()
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -336,7 +336,9 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     // Por defecto: compact (tarjeta del lienzo) autoenfoca al montar; NO-compact (página en
     // solitario) no. `autofocus={false}` explícito lo desactiva SIEMPRE — lo usa
     // `LienzoDocPanel` para no robarle el foco a la tarjeta si esta también está editando.
-    autofocus: autofocus === false ? false : (compact ? 'end' : false),
+    // `autofocus="start"`/`"end"` explícitos pasan tal cual (p.ej. V2DetailView lo pide
+    // en 'start' para una nota recién creada, así se puede escribir al vuelo).
+    autofocus: autofocus === false ? false : (typeof autofocus === 'string' ? autofocus : (compact ? 'end' : false)),
     onUpdate: ({ editor }) => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
       const html = editor.getHTML()

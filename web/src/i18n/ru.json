@@ -2097,6 +2097,7 @@
   "v2.chat.newDocument": "Новый документ",
   "v2.chat.newNote": "Новая заметка",
   "v2.chat.newNoteShort": "Заметка",
+  "v2.chat.newNoteOptions": "Шаблоны и другое",
   "v2.chat.newCanvas": "Новый холст",
   "v2.chat.newCanvasShort": "Холст",
   "v2.chat.newEvent": "Новое событие",

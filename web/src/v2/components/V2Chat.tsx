@@ -205,10 +205,18 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           {chat.sessionId ? (convTitle || t('v2.chat.conversation', 'Conversación')) : t('v2.chat.newConversation', 'Nueva conversación')}
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {/* Crear contenido sin pasar por el chat: nota (con plantillas), lienzo, tarea, evento o voz. */}
-          <div style={{ position: 'relative' }} ref={docMenuRef}>
+          {/* Crear contenido sin pasar por el chat: nota (con plantillas), lienzo, tarea, evento o voz.
+              Botón partido: clic principal crea una nota en blanco AL VUELO (antes abría siempre
+              un menú, y con una nota ya abierta parecía que "no pasaba nada" — el usuario tenía que
+              reparar en el ítem "En blanco" del desplegable). La flechita aparte da acceso a
+              plantillas/gestión sin robarle la creación rápida al clic principal. */}
+          <div style={{ position: 'relative', display: 'flex' }} ref={docMenuRef}>
             <button className="v2-head-action" title={t('v2.chat.newNote', 'Nueva nota')}
-              onClick={() => setDocMenu(o => !o)}>＋ {t('v2.chat.newNoteShort', 'Nota')}</button>
+              style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRight: 'none' }}
+              onClick={() => onNewDocument()}>＋ {t('v2.chat.newNoteShort', 'Nota')}</button>
+            <button className="v2-head-action" title={t('v2.chat.newNoteOptions', 'Plantillas y más')}
+              style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, padding: '6px 7px' }}
+              onClick={() => setDocMenu(o => !o)}>▾</button>
             {docMenu && (
               <div className="v2-doc-menu">
                 <button onClick={() => { onNewDocument(); setDocMenu(false) }}>📄 {t('v2.chat.blankDocument', 'En blanco')}</button>

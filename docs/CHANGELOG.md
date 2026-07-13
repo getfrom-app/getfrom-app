@@ -4,6 +4,21 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.799 — 13 julio 2026 · 3 fixes en la creación de notas
+
+- **"+ Nota" volvía a abrir siempre un menú** en vez de crear directamente — con una nota ya
+  abierta, parecía que no pasaba nada al pulsar (el menú se abría detrás/encima sin que se notara
+  el cambio). Ahora es un botón partido: clic principal crea una nota en blanco al vuelo; la
+  flechita aparte da acceso a plantillas y a "Gestionar plantillas".
+- **Título "Documento" por defecto** — causa raíz: `firstLineTitle()` devolvía literalmente la
+  palabra "Documento" cuando el documento estaba vacío, en vez de cadena vacía, y un efecto la
+  escribía como título nada más abrir la nota. Corregido: el título se queda vacío hasta que
+  escribes tu primera frase, y entonces se usa esa frase.
+- **Cursor no se colocaba al abrir una nota nueva** — al crearla desde "+Nota", el editor ahora
+  autoenfoca al inicio del documento para poder escribir al vuelo.
+
+---
+
 ## Web v9.6.798 — 13 julio 2026 · Fix: lo recién creado no aparecía en Historial
 
 Bug real: `classifyElement()` (usada por Historial y por la vista de Contexto) descartaba

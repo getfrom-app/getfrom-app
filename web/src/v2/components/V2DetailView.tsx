@@ -112,7 +112,10 @@ function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: s
 // contexto de la nota-hija no tiene por qué coincidir con el de su contenedor).
 export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { node: Node; onSelectCtx: (id: string) => void; inlinePage?: boolean; hideContext?: boolean }) {
   const { t } = useTranslation()
-  const [canvas, setCanvas] = useState(parseExtraData(node.extraData)._v2canvas === '1' || parseExtraData(node.extraData)._v2view === 'lienzo')
+  // Nota y Lienzo son dos tipos separados desde su creación (botones "+Nota"/"+Lienzo"
+  // en la cabecera del chat) — ya NO se puede cambiar de uno a otro en un documento
+  // existente. `_v2canvas` se fija al crear el nodo y no cambia después.
+  const canvas = parseExtraData(node.extraData)._v2canvas === '1'
   const doc = isDocNode(node)
   // Editor UNIFICADO: todo se edita como DOCUMENTO (texto enriquecido). Las notas
   // «clásicas» (outliner con hijos, formato viejo) se abren en el outliner pero con un
@@ -129,46 +132,14 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { nod
     else toast(t('v2.convertFailed', 'No se pudo convertir: contiene algo que no se puede migrar (revisa su contenido).'), 'warning')
   }
 
-  // Nota y Lienzo comparten el mismo `body` en el nodo (el lienzo lo usa como bloque
-  // ```from-pizarra```, el documento como HTML) — sin guardarlos aparte, cambiar de
-  // modo pisaba uno con el otro (p.ej. abrir Lienzo y volver a Nota dejaba el JSON del
-  // lienzo como texto plano, y hasta como título). Al cambiar de modo, guardamos el
-  // `body` que dejamos atrás en extraData y restauramos el de la última vez en ese modo.
-  const setView = (c: boolean) => {
-    const e = parseExtraData(node.extraData)
-    delete e._v2view
-    const leftBehind = node.body || ''
-    if (c) {
-      e._v2docBody = leftBehind
-      e._v2canvas = '1'
-      const restored = typeof e._v2canvasBody === 'string' ? e._v2canvasBody : ''
-      delete e._v2canvasBody
-      store.updateNode(node.id, { extraData: JSON.stringify(e), body: restored })
-    } else {
-      e._v2canvasBody = leftBehind
-      delete e._v2canvas
-      const restored = typeof e._v2docBody === 'string' ? e._v2docBody : ''
-      delete e._v2docBody
-      store.updateNode(node.id, { extraData: JSON.stringify(e), body: restored })
-    }
-    setCanvas(c)
-  }
-
   const toggleFavorite = () => { const next = !node.isFavorite; store.updateNode(node.id, { isFavorite: next }); toast(next ? t('tip.addFavorite') : t('tip.removeFavorite')) }
   const deleteCard = () => { store.deleteNode(node.id); toast(t('context.toastMovedToTrash', 'Movido a la papelera')); window.dispatchEvent(new Event('from:close-detail')) }
 
   return (
     <div style={inlinePage ? undefined : { height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      {/* Fila única: toggle a la izquierda + acciones a la derecha */}
+      {/* Fila única de acciones (favorito, exportar, publicar, eliminar) — ya no hay
+          toggle Nota/Lienzo: son tipos separados desde su creación (ver arriba). */}
       <div className="v2-note-toolbar">
-        <div className="v2-view-toggle">
-          <button title={t('tip.viewAsNote')} className={!canvas ? 'active' : ''} onClick={() => setView(false)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
-          </button>
-          <button title={t('tip.viewAsCanvas')} className={canvas ? 'active' : ''} onClick={() => setView(true)}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-          </button>
-        </div>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
           <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite} style={{ ...actBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/></svg>
@@ -208,7 +179,7 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { nod
           ? <PizarraView parentId={node.id} flowUnpositioned globalCanvas={false} embedded />
           : asDoc
             ? <>
-                <div style={{ padding: '18px 20px 12px' }}><DocEditorBoundary compact><DocEditor node={node} compact registerActive autofocus={false} /></DocEditorBoundary></div>
+                <div style={{ padding: '18px 20px 12px' }}><DocEditorBoundary compact><DocEditor node={node} compact registerActive autofocus={(!node.body || node.body === '<p></p>') ? 'start' : false} /></DocEditorBoundary></div>
                 <V2Backlinks nodeId={node.id} />
               </>
             : <Outliner parentId={node.id} autoFocusEmpty placeholder={t('v2.outlinerPlaceholder', 'Escribe aquí… (usa «/» para insertar tabla, kanban, calendario…)')} />}

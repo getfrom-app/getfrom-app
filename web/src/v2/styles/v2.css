@@ -85,16 +85,6 @@
   display: flex; align-items: center; gap: 6px; padding: 8px 12px;
   border-bottom: 1px solid var(--border); flex: 0 0 auto;
 }
-/* Toggle Nota ⇄ Lienzo — icono solo, MISMO estilo sutil que el resto de acciones
-   del toolbar (MD/HTML/PDF/🌐/🗑: borde fino, chico, discreto, cuadrado). */
-.v2-view-toggle { display: flex; gap: 4px; }
-.v2-view-toggle button {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 26px; height: 26px; padding: 0; border-radius: 6px; cursor: pointer;
-  border: 1px solid var(--border,#e2e2e2); background: none; color: var(--text-secondary,#666); line-height: 1;
-}
-.v2-view-toggle button:hover { background: var(--bg-hover); color: var(--text-primary); }
-.v2-view-toggle button.active { background: var(--accent-soft); color: var(--text-accent); border-color: var(--accent); }
 /* Desplegable «Vistas» (Tabla / Kanban / Calendario). */
 .v2-view-more {
   position: absolute; top: calc(100% + 4px); left: 0; z-index: 60; min-width: 150px;
