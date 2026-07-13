@@ -2120,6 +2120,11 @@
   "v2.chat.suggestSummarizeDayPrompt": "Bugün ne var? Görevlerimi ve etkinliklerimi özetle.",
   "v2.chat.suggestSummarizeDayTitle": "Günümü özetle",
   "v2.chat.template": "Şablon",
+  "v2.templates.manageTitle": "Şablonları yönet",
+  "v2.templates.newTemplate": "Yeni şablon",
+  "v2.templates.newTemplateName": "Yeni şablon",
+  "v2.templates.emptyHint": "Henüz şablonunuz yok. Yeni notlar açarken içeriği yeniden kullanmak için bir tane oluşturun.",
+  "v2.templates.confirmDelete": "\"{{name}}\" şablonu silinsin mi?",
   "v2.chat.templates": "Şablonlar",
   "v2.chat.thinking": "Fromly düşünüyor…",
   "v2.chat.you": "Sen",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Çöp",
   "v2.untitled": "Başlıksız",
   "v2.uploadFailed": "{{name}} yüklenemedi",
-  "v2.voiceNote": "Sesli not"
+  "v2.voiceNote": "Sesli not",
+  "docSlash.table": "Tablo",
+  "docSlash.tableDesc": "Alt öğeleriyle satır içi tablo görünümü",
+  "docSlash.kanban": "Kanban",
+  "docSlash.kanbanDesc": "Satır içi kanban panosu",
+  "docSlash.calendar": "Takvim",
+  "docSlash.calendarDesc": "Satır içi takvim",
+  "docSlash.noResults": "Şunun için sonuç yok",
+  "docSlash.groupBlocks": "Bloklar"
 }

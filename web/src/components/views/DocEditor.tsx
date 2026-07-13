@@ -29,6 +29,11 @@ import TaskItemChip from './TaskItemChip'
 import { MagicTaskGhost } from './MagicTaskGhost'
 import type { MagicPrediction } from './MagicTaskGhost'
 import { useTranslation } from 'react-i18next'
+import DocSlashMenu from './DocSlashMenu'
+import type { DocSlashAction } from './DocSlashMenu'
+import NodeTableView from './NodeTableView'
+import NodeKanbanView from './NodeKanbanView'
+import NodeCalendarView from './NodeCalendarView'
 
 // ¿El texto pegado parece MARKDOWN? (encabezados, listas, code fence, cita, enlaces,
 // negritas). Basta un marcador claro para tratarlo como markdown y renderizarlo.
@@ -83,6 +88,80 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // en minúsculas). El ghost quita la fecha del título al aceptar; aquí la recuperamos cuando
   // `syncTasksToNodes` crea el nodo-tarea, para ponerle el `due` correcto.
   const pendingDueRef = useRef<Map<string, { due: string; isEvent: boolean }>>(new Map())
+
+  // ── Slash menu ("/tabla", "/kanban", "/calendario") ───────────────────────
+  // Equivalente reducido del SlashMenu.tsx del outliner clásico, solo para los 3
+  // bloques que hoy faltan en el documento nuevo (TipTap). MISMO modelo de datos:
+  // este nodo `_doc` se marca con extraData.viewBlock+_inline='1' y sus hijos reales
+  // (creados con el outliner o el propio doc) se renderizan como tabla/kanban/
+  // calendario en vez de HTML — ver bloque de render más abajo y OutlinerNode.tsx
+  // (~línea 2984) para el mismo mecanismo en el editor clásico.
+  const [slashAnchor, setSlashAnchor] = useState<HTMLElement | null>(null)
+  const [slashQuery, setSlashQuery] = useState('')
+  // Posición (en el doc de TipTap) donde empieza el '/': permite borrar "/query" al elegir.
+  const slashFromRef = useRef<number | null>(null)
+
+  const detectSlash = () => {
+    const ed = editorRef.current
+    if (!ed) { setSlashAnchor(null); return }
+    // Ya es un bloque-vista inline: no hay texto que editar, no hace falta detectar.
+    if (viewBlockKind) { setSlashAnchor(null); return }
+    const { $from } = ed.state.selection
+    if (!ed.state.selection.empty) { setSlashAnchor(null); return }
+    const para = $from.parent
+    if (!para.isTextblock) { setSlashAnchor(null); return }
+    const textBefore = para.textBetween(0, $from.parentOffset, undefined, ' ')
+    const m = /(?:^|\s)\/([a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]*)$/.exec(textBefore)
+    if (!m) { setSlashAnchor(null); return }
+    slashFromRef.current = $from.pos - m[1].length - 1 // posición del '/'
+    setSlashQuery(m[1])
+    // Ancla visual: coordenadas del cursor en pantalla (el menú se posiciona con getBoundingClientRect).
+    const coords = ed.view.coordsAtPos($from.pos)
+    let anchor = document.getElementById('doc-slash-anchor-ghost')
+    if (!anchor) {
+      anchor = document.createElement('div')
+      anchor.id = 'doc-slash-anchor-ghost'
+      anchor.style.position = 'fixed'
+      anchor.style.width = '0'
+      anchor.style.height = '0'
+      anchor.style.pointerEvents = 'none'
+      document.body.appendChild(anchor)
+    }
+    anchor.style.left = coords.left + 'px'
+    anchor.style.top = coords.top + 'px'
+    setSlashAnchor(anchor)
+  }
+
+  const closeSlashMenu = () => { setSlashAnchor(null); slashFromRef.current = null }
+
+  const selectSlashOption = (action: DocSlashAction, label: string) => {
+    const ed = editorRef.current
+    const from = slashFromRef.current
+    closeSlashMenu()
+    if (!ed || from == null) return
+    const to = ed.state.selection.from
+    const kind = action === 'view-table' ? 'tabla' : action === 'view-kanban' ? 'kanban' : 'calendario'
+    // Borra el "/query" escrito y marca ESTE nodo como bloque-vista inline — mismo
+    // extraData que usa el outliner clásico (viewBlock+_inline), para que
+    // NodeTableView/NodeKanbanView/NodeCalendarView (parentId=node.id) lo interpreten.
+    ed.chain().focus().deleteRange({ from, to }).run()
+    let ed2: Record<string, unknown> = {}
+    try { ed2 = JSON.parse(store.getNode(node.id)?.extraData || '{}') } catch { /* ignore */ }
+    ed2.viewBlock = kind
+    ed2._inline = '1'
+    store.updateNode(node.id, { extraData: JSON.stringify(ed2), text: node.text?.trim() || label })
+  }
+
+  // Kind del bloque-vista inline actual (si lo hay) — leído en vivo desde la store para
+  // reflejar el cambio nada más aplicarlo (sin esperar al próximo render por props).
+  const viewBlockKind = (() => {
+    const n = store.getNode(node.id)
+    try {
+      const parsed = JSON.parse(n?.extraData || '{}')
+      if (parsed._inline === '1' && parsed.viewBlock) return parsed.viewBlock as string
+    } catch { /* ignore */ }
+    return null
+  })()
 
   // Los nodos con título CANÓNICO (nota diaria = la fecha; TAREA/EVENTO = su texto)
   // NO deben perderlo cuando su body empieza vacío: `firstLineTitle('')` devuelve
@@ -266,9 +345,11 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         store.updateNode(node.id, bodySave(editor.getHTML()))
         syncTasksToNodes()
       }, 500)
+      detectSlash()
     },
     onSelectionUpdate: () => {
       notifyDocEditor()
+      detectSlash()
       // NOTA: al poner el cursor dentro de una casilla-tarea NO cambiamos la columna derecha.
       // Antes disparábamos `from:open-detail` → la columna saltaba a las PROPIEDADES DE LA TAREA
       // y se salía del texto que estabas editando. Ahora la columna se queda en el TEXTO y las
@@ -331,6 +412,11 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     editor.commands.setContent(node.body || '', false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, node.body])
+
+  // Limpieza del ancla fantasma del menú "/" (creada en detectSlash) al desmontar.
+  useEffect(() => () => {
+    document.getElementById('doc-slash-anchor-ghost')?.remove()
+  }, [])
   useEffect(() => () => {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     if (editor) {
@@ -423,6 +509,28 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         <EditorContent editor={editor} />
       </div>
       {editor && <DocMention editor={editor} selfId={node.id} />}
+
+      {/* Menú "/" — inserta Tabla/Kanban/Calendario, mismo modelo de datos que el
+          outliner clásico (ver detectSlash/selectSlashOption arriba). */}
+      {slashAnchor && (
+        <DocSlashMenu
+          anchorEl={slashAnchor}
+          query={slashQuery}
+          onSelect={selectSlashOption}
+          onClose={closeSlashMenu}
+        />
+      )}
+
+      {/* Bloque-vista inline: si este documento fue convertido en Tabla/Kanban/Calendario
+          por el menú "/", renderiza esa vista (con sus hijos reales) DEBAJO del texto,
+          en vez del HTML del body — igual que el outliner clásico (OutlinerNode.tsx ~4519). */}
+      {viewBlockKind && (
+        <div className="outliner-inline-view doc-editor-inline-view">
+          {viewBlockKind === 'tabla' && <NodeTableView parentId={node.id} />}
+          {viewBlockKind === 'kanban' && <NodeKanbanView parentId={node.id} />}
+          {viewBlockKind === 'calendario' && <NodeCalendarView parentId={node.id} />}
+        </div>
+      )}
     </div>
   )
 }

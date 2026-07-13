@@ -2120,6 +2120,11 @@
   "v2.chat.suggestSummarizeDayPrompt": "Was steht heute an? Fasse meine Aufgaben und Termine zusammen.",
   "v2.chat.suggestSummarizeDayTitle": "Meinen Tag zusammenfassen",
   "v2.chat.template": "Vorlage",
+  "v2.templates.manageTitle": "Vorlagen verwalten",
+  "v2.templates.newTemplate": "Neue Vorlage",
+  "v2.templates.newTemplateName": "Neue Vorlage",
+  "v2.templates.emptyHint": "Du hast noch keine Vorlagen. Erstelle eine, um Inhalte beim Öffnen neuer Notizen wiederzuverwenden.",
+  "v2.templates.confirmDelete": "Vorlage „{{name}}“ löschen?",
   "v2.chat.templates": "Vorlagen",
   "v2.chat.thinking": "Fromly denkt nach…",
   "v2.chat.you": "Du",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Papierkorb",
   "v2.untitled": "Ohne Titel",
   "v2.uploadFailed": "{{name}} konnte nicht hochgeladen werden",
-  "v2.voiceNote": "Sprachnotiz"
+  "v2.voiceNote": "Sprachnotiz",
+  "docSlash.table": "Tabelle",
+  "docSlash.tableDesc": "Inline-Tabellenansicht mit Unterelementen",
+  "docSlash.kanban": "Kanban",
+  "docSlash.kanbanDesc": "Inline-Kanban-Board",
+  "docSlash.calendar": "Kalender",
+  "docSlash.calendarDesc": "Inline-Kalender",
+  "docSlash.noResults": "Keine Ergebnisse für",
+  "docSlash.groupBlocks": "Blöcke"
 }

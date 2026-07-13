@@ -2120,6 +2120,11 @@
   "v2.chat.suggestSummarizeDayPrompt": "O que tenho hoje? Resume as minhas tarefas e eventos.",
   "v2.chat.suggestSummarizeDayTitle": "Resumir o meu dia",
   "v2.chat.template": "Modelo",
+  "v2.templates.manageTitle": "Gerir modelos",
+  "v2.templates.newTemplate": "Novo modelo",
+  "v2.templates.newTemplateName": "Novo modelo",
+  "v2.templates.emptyHint": "Ainda não tens modelos. Cria um para reutilizar conteúdo ao abrir novas notas.",
+  "v2.templates.confirmDelete": "Eliminar o modelo «{{name}}»?",
   "v2.chat.templates": "Modelos",
   "v2.chat.thinking": "O Fromly está a pensar…",
   "v2.chat.you": "Tu",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Lixo",
   "v2.untitled": "Sem título",
   "v2.uploadFailed": "Não foi possível carregar {{name}}",
-  "v2.voiceNote": "Nota de voz"
+  "v2.voiceNote": "Nota de voz",
+  "docSlash.table": "Tabela",
+  "docSlash.tableDesc": "Vista de tabela inline com filhos",
+  "docSlash.kanban": "Kanban",
+  "docSlash.kanbanDesc": "Quadro kanban inline",
+  "docSlash.calendar": "Calendário",
+  "docSlash.calendarDesc": "Calendário inline",
+  "docSlash.noResults": "Sem resultados para",
+  "docSlash.groupBlocks": "Blocos"
 }

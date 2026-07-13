@@ -2120,6 +2120,11 @@
   "v2.chat.suggestSummarizeDayPrompt": "Co mam dzisiaj? Podsumuj moje zadania i wydarzenia.",
   "v2.chat.suggestSummarizeDayTitle": "Podsumuj mój dzień",
   "v2.chat.template": "Szablon",
+  "v2.templates.manageTitle": "Zarządzaj szablonami",
+  "v2.templates.newTemplate": "Nowy szablon",
+  "v2.templates.newTemplateName": "Nowy szablon",
+  "v2.templates.emptyHint": "Nie masz jeszcze żadnych szablonów. Utwórz jeden, aby ponownie wykorzystać treść przy otwieraniu nowych notatek.",
+  "v2.templates.confirmDelete": "Usunąć szablon „{{name}}”?",
   "v2.chat.templates": "Szablony",
   "v2.chat.thinking": "Fromly myśli…",
   "v2.chat.you": "Ty",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Kosz",
   "v2.untitled": "Bez tytułu",
   "v2.uploadFailed": "Nie udało się przesłać {{name}}",
-  "v2.voiceNote": "Notatka głosowa"
+  "v2.voiceNote": "Notatka głosowa",
+  "docSlash.table": "Tabela",
+  "docSlash.tableDesc": "Wbudowany widok tabeli z elementami podrzędnymi",
+  "docSlash.kanban": "Kanban",
+  "docSlash.kanbanDesc": "Wbudowana tablica kanban",
+  "docSlash.calendar": "Kalendarz",
+  "docSlash.calendarDesc": "Wbudowany kalendarz",
+  "docSlash.noResults": "Brak wyników dla",
+  "docSlash.groupBlocks": "Bloki"
 }

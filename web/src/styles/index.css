@@ -7693,6 +7693,12 @@ textarea:focus-visible,
   background: var(--bg-secondary);
 }
 
+/* Mismo bloque-vista, pero en el documento nuevo (DocEditor/TipTap) — sin el
+   marginLeft por profundidad que usa el outliner clásico (no aplica aquí). */
+.doc-editor-inline-view {
+  margin-left: 0;
+}
+
 /* Sorting + interactive headers */
 .node-table-th { user-select: none; cursor: pointer; transition: background 0.08s; }
 .node-table-th:hover { background: var(--bg-hover); }

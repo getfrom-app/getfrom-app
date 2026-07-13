@@ -9,6 +9,7 @@ import { store, useStore } from '../../store/nodeStore'
 import NewTaskModal from '../../components/modals/NewTaskModal'
 import NewEventModal from '../../components/modals/NewEventModal'
 import PlannerPanel from '../../components/panels/PlannerPanel'
+import V2TemplatesModal from './V2TemplatesModal'
 import { listTemplates } from '../../utils/tagsHelper'
 import { renderInline } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
@@ -50,6 +51,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
   const [showEvent, setShowEvent] = useState(false)
   const [showPlanner, setShowPlanner] = useState(false)
   const [docMenu, setDocMenu] = useState(false)
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false)
   const docMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -134,14 +136,20 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           {/* Crear contenido sin pasar por el chat: nota (con plantillas), lienzo, tarea, evento o voz. */}
           <div style={{ position: 'relative' }} ref={docMenuRef}>
             <button className="v2-head-action" title={t('v2.chat.newNote', 'Nueva nota')}
-              onClick={() => { const tpls = listTemplates(); if (tpls.length) setDocMenu(o => !o); else onNewDocument() }}>＋ {t('v2.chat.newNoteShort', 'Nota')}</button>
+              onClick={() => setDocMenu(o => !o)}>＋ {t('v2.chat.newNoteShort', 'Nota')}</button>
             {docMenu && (
               <div className="v2-doc-menu">
                 <button onClick={() => { onNewDocument(); setDocMenu(false) }}>📄 {t('v2.chat.blankDocument', 'En blanco')}</button>
-                <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.templates', 'Plantillas')}</div>
-                {listTemplates().map(tpl => (
-                  <button key={tpl.id} onClick={() => { onNewDocument(tpl.id); setDocMenu(false) }}>{(tpl.text || t('v2.chat.template', 'Plantilla')).replace(/^[^\p{L}\p{N}]+/u, '')}</button>
-                ))}
+                {listTemplates().length > 0 && (
+                  <>
+                    <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.templates', 'Plantillas')}</div>
+                    {listTemplates().map(tpl => (
+                      <button key={tpl.id} onClick={() => { onNewDocument(tpl.id); setDocMenu(false) }}>{(tpl.text || t('v2.chat.template', 'Plantilla')).replace(/^[^\p{L}\p{N}]+/u, '')}</button>
+                    ))}
+                  </>
+                )}
+                <div className="v2-doc-menu-sep" />
+                <button onClick={() => { setShowTemplatesModal(true); setDocMenu(false) }}>⚙️ {t('v2.templates.manageTitle', 'Gestionar plantillas')}</button>
               </div>
             )}
           </div>
@@ -258,6 +266,9 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           <PlannerPanel initialView="week" initialDays={7} onClose={() => setShowPlanner(false)} />
         </div>
       )}
+
+      {/* Gestión de plantillas (crear/editar/eliminar) — reutiliza NodeConfigModal de v1. */}
+      {showTemplatesModal && <V2TemplatesModal onClose={() => setShowTemplatesModal(false)} />}
     </main>
   )
 }

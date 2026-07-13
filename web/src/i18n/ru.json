@@ -2120,6 +2120,11 @@
   "v2.chat.suggestSummarizeDayPrompt": "Что у меня сегодня? Подведи итог моих задач и событий.",
   "v2.chat.suggestSummarizeDayTitle": "Итоги моего дня",
   "v2.chat.template": "Шаблон",
+  "v2.templates.manageTitle": "Управление шаблонами",
+  "v2.templates.newTemplate": "Новый шаблон",
+  "v2.templates.newTemplateName": "Новый шаблон",
+  "v2.templates.emptyHint": "У вас пока нет шаблонов. Создайте шаблон, чтобы повторно использовать содержимое при открытии новых заметок.",
+  "v2.templates.confirmDelete": "Удалить шаблон «{{name}}»?",
   "v2.chat.templates": "Шаблоны",
   "v2.chat.thinking": "Fromly думает…",
   "v2.chat.you": "Вы",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Корзина",
   "v2.untitled": "Без названия",
   "v2.uploadFailed": "Не удалось загрузить {{name}}",
-  "v2.voiceNote": "Голосовая заметка"
+  "v2.voiceNote": "Голосовая заметка",
+  "docSlash.table": "Таблица",
+  "docSlash.tableDesc": "Встроенное табличное представление с дочерними элементами",
+  "docSlash.kanban": "Канбан",
+  "docSlash.kanbanDesc": "Встроенная канбан-доска",
+  "docSlash.calendar": "Календарь",
+  "docSlash.calendarDesc": "Встроенный календарь",
+  "docSlash.noResults": "Нет результатов для",
+  "docSlash.groupBlocks": "Блоки"
 }

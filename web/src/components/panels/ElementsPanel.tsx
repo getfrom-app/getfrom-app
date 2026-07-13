@@ -21,6 +21,8 @@ import TaskRow from './TaskRow'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
+import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
+import type { FilterView } from '../views/FilterResultsView'
 
 type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
@@ -72,6 +74,7 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
 
 const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️' }
 const ROW_H = 46
+const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
 
 export default function ElementsPanel() {
   const { t } = useTranslation()
@@ -80,6 +83,14 @@ export default function ElementsPanel() {
   const [taskSub, setTaskSub] = useState<TaskSub>('all')
   const [q, setQ] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
+  // Vista: lista (por defecto, virtualizada) o tabla/kanban/calendario (reutilizadas de la v1).
+  const [view, setView] = useState<FilterView>(
+    () => (localStorage.getItem(ELEMENTS_VIEW_KEY) as FilterView) || 'lista'
+  )
+  function changeView(v: FilterView) {
+    setView(v)
+    localStorage.setItem(ELEMENTS_VIEW_KEY, v)
+  }
 
   // TODOS los elementos del lienzo (globalmente), más recientes primero.
   const rows = useMemo(() => {
@@ -179,6 +190,10 @@ export default function ElementsPanel() {
   }
   const contexts = useMemo(() => { void s.nodesVersion; return listMarkedContexts().filter(c => (c.text || '').trim()) }, [s.nodesVersion])
 
+  // IDs filtrados (búsqueda + tipo + sub-filtro) para las vistas tabla/kanban/calendario —
+  // reutilizan TableView/KanbanView/CalendarView de la v1 tal cual (mismo Set<string>).
+  const filteredIds = useMemo(() => new Set(filtered.map(r => r.id)), [filtered])
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{ padding: '14px 14px 6px', flexShrink: 0 }}>
@@ -222,9 +237,27 @@ export default function ElementsPanel() {
             })}
           </div>
         )}
+        {/* Selector de vista — lista (por defecto) / tabla / kanban / calendario. Reutiliza
+            los componentes de la v1 (FilterResultsView) tal cual, sobre los ids ya filtrados. */}
+        <FilterViewSwitcher
+          view={view}
+          onChange={changeView}
+          count={filtered.length}
+          onClear={() => setQ('')}
+        />
       </div>
 
-      {filtered.length === 0 ? (
+      {view !== 'lista' ? (
+        filtered.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--text-tertiary,#999)', padding: '20px' }}>{t('elements.empty')}</div>
+        ) : view === 'tabla' ? (
+          <TableView matchIds={filteredIds} />
+        ) : view === 'kanban' ? (
+          <KanbanView matchIds={filteredIds} />
+        ) : (
+          <CalendarView matchIds={filteredIds} />
+        )
+      ) : filtered.length === 0 ? (
         <div style={{ fontSize: 13, color: 'var(--text-tertiary,#999)', padding: '20px' }}>{t('elements.empty')}</div>
       ) : (
         <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 12px 80px' }}>

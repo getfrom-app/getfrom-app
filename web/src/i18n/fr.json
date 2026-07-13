@@ -2120,6 +2120,11 @@
   "v2.chat.suggestSummarizeDayPrompt": "Qu'ai-je aujourd'hui ? Résume mes tâches et événements.",
   "v2.chat.suggestSummarizeDayTitle": "Résumer ma journée",
   "v2.chat.template": "Modèle",
+  "v2.templates.manageTitle": "Gérer les modèles",
+  "v2.templates.newTemplate": "Nouveau modèle",
+  "v2.templates.newTemplateName": "Nouveau modèle",
+  "v2.templates.emptyHint": "Vous n'avez pas encore de modèles. Créez-en un pour réutiliser du contenu lors de l'ouverture de nouvelles notes.",
+  "v2.templates.confirmDelete": "Supprimer le modèle « {{name}} » ?",
   "v2.chat.templates": "Modèles",
   "v2.chat.thinking": "Fromly réfléchit…",
   "v2.chat.you": "Toi",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Corbeille",
   "v2.untitled": "Sans titre",
   "v2.uploadFailed": "Impossible d'importer {{name}}",
-  "v2.voiceNote": "Note vocale"
+  "v2.voiceNote": "Note vocale",
+  "docSlash.table": "Tableau",
+  "docSlash.tableDesc": "Vue tableau intégrée avec éléments enfants",
+  "docSlash.kanban": "Kanban",
+  "docSlash.kanbanDesc": "Tableau kanban intégré",
+  "docSlash.calendar": "Calendrier",
+  "docSlash.calendarDesc": "Calendrier intégré",
+  "docSlash.noResults": "Aucun résultat pour",
+  "docSlash.groupBlocks": "Blocs"
 }

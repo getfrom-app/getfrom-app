@@ -23,6 +23,7 @@ import V2Onboarding from './components/V2Onboarding'
 import RightColMenu from '../components/panels/RightColMenu'
 import UnifiedCapture from '../components/modals/UnifiedCapture'
 import { ToastProvider } from '../components/Toast'
+import { WEB_VERSION } from '../components/layout/StatusBar'
 import './styles/v2.css'
 
 export const V2_VERSION = 'v2.0.0-beta.1'
@@ -460,6 +461,7 @@ export default function V2App() {
         />
       )}
       <V2Onboarding />
+      <span className="v2-version">{WEB_VERSION}</span>
     </div>
     </ToastProvider>
   )

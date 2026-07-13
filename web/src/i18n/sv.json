@@ -2120,6 +2120,11 @@
   "v2.chat.suggestSummarizeDayPrompt": "Vad har jag idag? Sammanfatta mina uppgifter och händelser.",
   "v2.chat.suggestSummarizeDayTitle": "Sammanfatta min dag",
   "v2.chat.template": "Mall",
+  "v2.templates.manageTitle": "Hantera mallar",
+  "v2.templates.newTemplate": "Ny mall",
+  "v2.templates.newTemplateName": "Ny mall",
+  "v2.templates.emptyHint": "Du har inga mallar än. Skapa en för att återanvända innehåll när du öppnar nya anteckningar.",
+  "v2.templates.confirmDelete": "Ta bort mallen \"{{name}}\"?",
   "v2.chat.templates": "Mallar",
   "v2.chat.thinking": "Fromly tänker…",
   "v2.chat.you": "Du",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Papperskorg",
   "v2.untitled": "Namnlös",
   "v2.uploadFailed": "Det gick inte att ladda upp {{name}}",
-  "v2.voiceNote": "Röstanteckning"
+  "v2.voiceNote": "Röstanteckning",
+  "docSlash.table": "Tabell",
+  "docSlash.tableDesc": "Infogad tabellvy med underelement",
+  "docSlash.kanban": "Kanban",
+  "docSlash.kanbanDesc": "Infogad kanbantavla",
+  "docSlash.calendar": "Kalender",
+  "docSlash.calendarDesc": "Infogad kalender",
+  "docSlash.noResults": "Inga resultat för",
+  "docSlash.groupBlocks": "Block"
 }

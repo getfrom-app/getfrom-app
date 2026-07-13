@@ -2120,6 +2120,11 @@
   "v2.chat.suggestSummarizeDayPrompt": "Τι έχω σήμερα; Σύνοψε τις εργασίες και τα συμβάντα μου.",
   "v2.chat.suggestSummarizeDayTitle": "Σύνοψη της ημέρας μου",
   "v2.chat.template": "Πρότυπο",
+  "v2.templates.manageTitle": "Διαχείριση προτύπων",
+  "v2.templates.newTemplate": "Νέο πρότυπο",
+  "v2.templates.newTemplateName": "Νέο πρότυπο",
+  "v2.templates.emptyHint": "Δεν έχεις ακόμα πρότυπα. Δημιούργησε ένα για να επαναχρησιμοποιείς περιεχόμενο όταν ανοίγεις νέες σημειώσεις.",
+  "v2.templates.confirmDelete": "Διαγραφή του προτύπου «{{name}}»;",
   "v2.chat.templates": "Πρότυπα",
   "v2.chat.thinking": "Το Fromly σκέφτεται…",
   "v2.chat.you": "Εσύ",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Κάδος",
   "v2.untitled": "Χωρίς τίτλο",
   "v2.uploadFailed": "Αποτυχία μεταφόρτωσης {{name}}",
-  "v2.voiceNote": "Φωνητική σημείωση"
+  "v2.voiceNote": "Φωνητική σημείωση",
+  "docSlash.table": "Πίνακας",
+  "docSlash.tableDesc": "Ενσωματωμένη προβολή πίνακα με θυγατρικά στοιχεία",
+  "docSlash.kanban": "Kanban",
+  "docSlash.kanbanDesc": "Ενσωματωμένος πίνακας kanban",
+  "docSlash.calendar": "Ημερολόγιο",
+  "docSlash.calendarDesc": "Ενσωματωμένο ημερολόγιο",
+  "docSlash.noResults": "Δεν βρέθηκαν αποτελέσματα για",
+  "docSlash.groupBlocks": "Μπλοκ"
 }

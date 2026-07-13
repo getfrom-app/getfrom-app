@@ -2104,6 +2104,11 @@
   "v2.chat.blankDocument": "En blanco",
   "v2.chat.templates": "Plantillas",
   "v2.chat.template": "Plantilla",
+  "v2.templates.manageTitle": "Gestionar plantillas",
+  "v2.templates.newTemplate": "Nueva plantilla",
+  "v2.templates.newTemplateName": "Nueva plantilla",
+  "v2.templates.emptyHint": "Aún no tienes plantillas. Crea una para reutilizar contenido al abrir notas nuevas.",
+  "v2.templates.confirmDelete": "¿Eliminar la plantilla «{{name}}»?",
   "v2.chat.newTask": "Nueva tarea",
   "v2.chat.newTaskShort": "Tarea",
   "v2.chat.newEvent": "Nuevo evento",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Papelera",
   "v2.trash.empty": "La papelera está vacía.",
   "v2.trash.restore": "Restaurar",
-  "v2.trash.emptyBtn": "Vaciar papelera ({{count}})"
+  "v2.trash.emptyBtn": "Vaciar papelera ({{count}})",
+  "docSlash.table": "Tabla",
+  "docSlash.tableDesc": "Vista tabla inline con hijos",
+  "docSlash.kanban": "Kanban",
+  "docSlash.kanbanDesc": "Tablero kanban inline",
+  "docSlash.calendar": "Calendario",
+  "docSlash.calendarDesc": "Calendario inline",
+  "docSlash.noResults": "Sin resultados para",
+  "docSlash.groupBlocks": "Bloques"
 }

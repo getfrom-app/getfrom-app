@@ -4,6 +4,24 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.792 — 13 julio 2026 · Vistas globales, plantillas, slash-commands y número de versión
+
+Tercera ronda de la auditoría de paridad v1→v2:
+
+- **Elementos**: nuevo selector de vista Lista/Tabla/Kanban/Calendario dentro de la pestaña
+  "Elementos" — antes solo había lista plana, ahora se puede ver el mismo conjunto filtrado como
+  tablero o calendario, igual que en v1.
+- **Plantillas**: gestión completa desde v2 (crear, editar, eliminar) — antes solo se podían
+  aplicar plantillas ya existentes, no crear ni editar ninguna. Nueva opción "Gestionar plantillas"
+  en el menú de "+ Nota".
+- **Slash-commands en el editor nuevo**: escribir "/" dentro de un documento ahora ofrece insertar
+  Tabla, Kanban o Calendario inline, igual que ya funcionaba en las notas clásicas — antes solo
+  existía en el outliner viejo, el editor nuevo no tenía ningún atajo de inserción.
+- **Número de versión**: visible en la esquina inferior derecha de la app, igual que en v1 (antes
+  v2 no mostraba ningún número de build).
+
+---
+
 ## Web v9.6.791 — 13 julio 2026 · Fix: Nota ⇄ Lienzo se pisaban entre sí
 
 Bug real reportado por Alberto: crear un documento, pasar a Lienzo y volver a Nota dejaba el JSON

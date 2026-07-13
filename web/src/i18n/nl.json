@@ -2120,6 +2120,11 @@
   "v2.chat.suggestSummarizeDayPrompt": "Wat heb ik vandaag? Vat mijn taken en gebeurtenissen samen.",
   "v2.chat.suggestSummarizeDayTitle": "Vat mijn dag samen",
   "v2.chat.template": "Sjabloon",
+  "v2.templates.manageTitle": "Sjablonen beheren",
+  "v2.templates.newTemplate": "Nieuw sjabloon",
+  "v2.templates.newTemplateName": "Nieuw sjabloon",
+  "v2.templates.emptyHint": "Je hebt nog geen sjablonen. Maak er een om inhoud te hergebruiken bij het openen van nieuwe notities.",
+  "v2.templates.confirmDelete": "Sjabloon \"{{name}}\" verwijderen?",
   "v2.chat.templates": "Sjablonen",
   "v2.chat.thinking": "Fromly denkt na…",
   "v2.chat.you": "Jij",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Prullenbak",
   "v2.untitled": "Zonder titel",
   "v2.uploadFailed": "Kon {{name}} niet uploaden",
-  "v2.voiceNote": "Spraaknotitie"
+  "v2.voiceNote": "Spraaknotitie",
+  "docSlash.table": "Tabel",
+  "docSlash.tableDesc": "Inline tabelweergave met onderliggende items",
+  "docSlash.kanban": "Kanban",
+  "docSlash.kanbanDesc": "Inline kanbanbord",
+  "docSlash.calendar": "Kalender",
+  "docSlash.calendarDesc": "Inline kalender",
+  "docSlash.noResults": "Geen resultaten voor",
+  "docSlash.groupBlocks": "Blokken"
 }

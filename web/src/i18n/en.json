@@ -2120,6 +2120,11 @@
   "v2.chat.suggestSummarizeDayPrompt": "What do I have today? Summarize my tasks and events.",
   "v2.chat.suggestSummarizeDayTitle": "Summarize my day",
   "v2.chat.template": "Template",
+  "v2.templates.manageTitle": "Manage templates",
+  "v2.templates.newTemplate": "New template",
+  "v2.templates.newTemplateName": "New template",
+  "v2.templates.emptyHint": "You don't have any templates yet. Create one to reuse content when opening new notes.",
+  "v2.templates.confirmDelete": "Delete the template \"{{name}}\"?",
   "v2.chat.templates": "Templates",
   "v2.chat.thinking": "Fromly is thinking…",
   "v2.chat.you": "You",
@@ -2199,5 +2204,13 @@
   "v2.trash.title": "Trash",
   "v2.untitled": "Untitled",
   "v2.uploadFailed": "Couldn't upload {{name}}",
-  "v2.voiceNote": "Voice note"
+  "v2.voiceNote": "Voice note",
+  "docSlash.table": "Table",
+  "docSlash.tableDesc": "Inline table view with children",
+  "docSlash.kanban": "Kanban",
+  "docSlash.kanbanDesc": "Inline kanban board",
+  "docSlash.calendar": "Calendar",
+  "docSlash.calendarDesc": "Inline calendar",
+  "docSlash.noResults": "No results for",
+  "docSlash.groupBlocks": "Blocks"
 }

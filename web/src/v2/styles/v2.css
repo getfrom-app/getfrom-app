@@ -19,6 +19,14 @@
 .v2-root.v2-right-collapsed { --v2-right: 0px; }
 .v2-root.v2-sidebar-collapsed { --v2-sidebar: 0px; }
 
+/* Número de versión — misma discreción que .footer-version de v1, esquina inferior
+   derecha (v2 no tiene barra de estado, solo el número). */
+.v2-version {
+  position: fixed; right: 10px; bottom: 6px; z-index: 5;
+  opacity: 0.4; font-size: 10px; letter-spacing: 0.03em; color: var(--text-tertiary);
+  pointer-events: none;
+}
+
 /* ── Columnas ──────────────────────────────────────────────────────── */
 .v2-col {
   min-width: 0;
@@ -110,6 +118,40 @@
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .v2-doc-menu > button:hover { background: var(--bg-hover); }
+.v2-doc-menu-sep { height: 1px; background: var(--border); margin: 5px 2px; }
+/* Modal «Gestionar plantillas» (crear/editar/eliminar) — mismo lenguaje visual que el resto de modales v2. */
+.v2-templates-modal {
+  position: relative; z-index: 1; width: 420px; max-width: 92vw; max-height: 80vh;
+  background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); display: flex; flex-direction: column; overflow: hidden;
+}
+.v2-templates-head {
+  display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.v2-templates-title { font-size: 14px; font-weight: 700; color: var(--text-primary); flex: 1; }
+.v2-templates-body { padding: 12px 16px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.v2-templates-empty { font-size: 12.5px; color: var(--text-tertiary); line-height: 1.5; padding: 4px 2px 8px; }
+.v2-templates-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.v2-templates-item {
+  display: flex; align-items: center; gap: 6px; border-radius: 8px;
+}
+.v2-templates-item:hover { background: var(--bg-hover); }
+.v2-templates-item-name {
+  flex: 1; text-align: left; background: none; border: none; cursor: pointer; padding: 8px 8px;
+  font-size: 13px; color: var(--text-primary); font-family: inherit;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.v2-templates-item-del {
+  background: none; border: none; cursor: pointer; font-size: 13px; color: var(--text-tertiary);
+  padding: 6px 8px; border-radius: 6px; flex-shrink: 0;
+}
+.v2-templates-item-del:hover { background: rgba(220,38,38,0.12); color: var(--danger, #dc2626); }
+.v2-templates-new {
+  align-self: flex-start; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; font-size: 12.5px; font-weight: 600; color: var(--text-primary); cursor: pointer; font-family: inherit;
+}
+.v2-templates-new:hover { background: var(--bg-hover); border-color: var(--border-focus); }
 /* Barra de formato PLANA del documento (iconos normales, no píldora flotante). */
 .v2-note-formatbar { flex: 0 0 auto; }
 /* Aviso para convertir una nota clásica (outliner) al editor de documento. */
