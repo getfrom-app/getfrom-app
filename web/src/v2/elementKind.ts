@@ -23,7 +23,12 @@ export function isPdfResource(n: Node, e: Record<string, unknown>): boolean {
 }
 
 export function classifyElement(n: Node): { kind: ElKind; icon: string; label: string } | null {
-  if (n.deletedAt || !n.text) return null
+  // OJO: antes también exigía `n.text` no vacío — eso descartaba un documento RECIÉN
+  // creado (nace con text:'' hasta que escribes algo), así que no aparecía en
+  // Historial/Contexto hasta tener título. Los nodos vacíos que de verdad no son un
+  // elemento (bullets sueltos sin marcar) siguen fuera: caen en 'note' más abajo, y
+  // los dos consumidores (V2RightColumn/V2ContextView) ya filtran `kind === 'note'`.
+  if (n.deletedAt) return null
   const e = parseExtraData(n.extraData)
   if (e._absorbedBy != null) return null                       // oculto dentro de un bloque
   if (e._aiSession === '1' || e._aiTranscript === '1' || e._aiMsgRole) return null

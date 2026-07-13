@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.798 — 13 julio 2026 · Fix: lo recién creado no aparecía en Historial
+
+Bug real: `classifyElement()` (usada por Historial y por la vista de Contexto) descartaba
+cualquier nodo con `text` vacío — y un documento recién creado nace así hasta que escribes algo.
+Por eso un documento nuevo no aparecía en el top de Historial nada más crearlo. Quitado ese filtro;
+los nodos vacíos que de verdad no son un elemento (bullets sueltos) siguen fuera por la vía
+existente (se clasifican como nota, y ya se filtran).
+
+---
+
 ## Web v9.6.797 — 13 julio 2026 · Lienzos como elemento visual propio
 
 En la pestaña Elementos, "Lienzo" ya es su propio filtro (icono 🎨), separado de los documentos de
