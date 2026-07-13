@@ -2222,5 +2222,12 @@
   "elements.conversations": "Konversationer",
   "v2.context.agents": "Agenter",
   "agents.promptLabel": "Agentinstruktion",
-  "agents.propertiesLabel": "Egenskaper"
+  "agents.propertiesLabel": "Egenskaper",
+  "elements.prompts": "Promptar",
+  "prompts.contentLabel": "Promptens innehåll",
+  "v2.chat.promptsTitle": "Promptar",
+  "v2.chat.promptsShort": "Prompt",
+  "v2.chat.noPrompts": "Inga promptar än",
+  "v2.chat.newPromptName": "Promptens namn:",
+  "v2.chat.newPrompt": "Ny prompt"
 }

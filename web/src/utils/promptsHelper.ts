@@ -72,12 +72,53 @@ export function listPrompts(): Node[] {
   return store.children(root.id).filter(n => !n.deletedAt && !(n.text || '').startsWith('🧠'))
 }
 
-/** ¿Es este nodo un prompt (hijo directo de la raíz ⚡ Prompts)? */
-export function isPromptNode(nodeId: string): boolean {
-  const root = getPromptsRoot()
-  if (!root) return false
-  const node = store.getNode(nodeId)
-  return !!node && node.parentId === root.id
+/**
+ * ¿Es este nodo un prompt? SIN mirar el padre (v2: «contexto padre libre» — un
+ * prompt puede colgar de cualquier contexto/nota, no solo de la raíz ⚡ Prompts).
+ * Mismo patrón que isAgentNode en agentesHelper.ts.
+ */
+export function isPromptNode(n: Node | null | undefined): boolean {
+  if (!n) return false
+  try { return JSON.parse(n.extraData || '{}')._promptDef === '1' } catch { return false }
+}
+
+/**
+ * createPromptUnder — crea un prompt colgado de CUALQUIER contexto/nota (v2:
+ * «contexto padre libre»). A diferencia de PromptListPanel.createPrompt (v1,
+ * siempre bajo el root único ⚡ Prompts), aquí `parentId` es el contexto activo —
+ * mismo patrón que createAgentUnder en agentesHelper.ts. El modelo de datos del
+ * prompt (extraData) es IDÉNTICO al de v1: solo cambia DÓNDE cuelga en el árbol.
+ */
+export function createPromptUnder(opts: {
+  parentId: string | null
+  label: string
+  icon?: string
+  activation?: PromptActivation
+}): Node {
+  const icon = opts.icon || '⚡'
+  const node = store.createNode({ text: opts.label.trim(), parentId: opts.parentId })
+  store.updateNode(node.id, {
+    extraData: JSON.stringify({
+      _promptDef:        '1',
+      _promptIcon:       icon,
+      _promptActivation: opts.activation || 'manual',
+    }),
+    isCollapsed: false,
+  })
+  // Semilla: un hijo vacío para que el usuario empiece a escribir el contenido
+  // (mismo patrón que PromptListPanel.createPrompt / createAgentUnder).
+  store.createNode({ text: '', parentId: node.id })
+  return store.getNode(node.id)!
+}
+
+/**
+ * listAllPrompts — escanea TODO el árbol activo buscando nodos prompt (v2: para
+ * el desplegable del chat, que debe ver prompts de CUALQUIER contexto, no solo
+ * los que cuelgan del root). NO reemplaza listPrompts() (v1 sigue usándola tal
+ * cual para el root único).
+ */
+export function listAllPrompts(): Node[] {
+  return store.allActive().filter(n => isPromptNode(n))
 }
 
 // ── Contenido del prompt (sus hijos) ──────────────────────────────────────────

@@ -4,6 +4,21 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.796 — 13 julio 2026 · Sistema de Prompts en v2
+
+Los prompts (plantillas de instrucciones reutilizables para la IA) llegan a v2, con el mismo
+patrón que los agentes:
+
+- **Contexto padre libre**: un prompt cuelga de cualquier contexto, como una tarea o nota — ya no
+  vive solo bajo el root único "⚡ Prompts" de v1.
+- **Aparece en Elementos** (icono ⚡) y se mezcla con el resto de elementos en la vista de Contexto.
+- **Detalle propio**: contenido editable (outliner, como en v1) + panel de propiedades de v1
+  reutilizado tal cual (activación automática, variables disponibles).
+- **Desplegable en el chat**: botón "⚡ Prompt" en la cabecera lista todos tus prompts — seleccionar
+  uno resuelve sus variables y lo envía directamente, sin paso intermedio. Incluye "+ Nuevo prompt".
+
+---
+
 ## Web v9.6.795 — 13 julio 2026 · Dictado por voz en el chat
 
 Botón de micrófono en el composer del chat — transcribe en vivo directamente sobre lo que escribes

@@ -2222,5 +2222,12 @@
   "elements.conversations": "Conversas",
   "v2.context.agents": "Agentes",
   "agents.promptLabel": "Instrução do agente",
-  "agents.propertiesLabel": "Propriedades"
+  "agents.propertiesLabel": "Propriedades",
+  "elements.prompts": "Prompts",
+  "prompts.contentLabel": "Conteúdo do prompt",
+  "v2.chat.promptsTitle": "Prompts",
+  "v2.chat.promptsShort": "Prompt",
+  "v2.chat.noPrompts": "Ainda sem prompts",
+  "v2.chat.newPromptName": "Nome do prompt:",
+  "v2.chat.newPrompt": "Novo prompt"
 }

@@ -21,6 +21,7 @@ import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
 import { isAgentNode, getAgentData } from '../../utils/agentesHelper'
+import { isPromptNode } from '../../utils/promptsHelper'
 import type { Node } from '../../types'
 
 interface Props {
@@ -78,6 +79,13 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
     const consider = (n: Node) => {
       if (seen.has(n.id) || n.deletedAt) return
       if (isAgentNode(n)) { seen.add(n.id); out.push({ node: n, icon: getAgentData(n.id)?.icon || '🤖' }); return }
+      if (isPromptNode(n)) {
+        seen.add(n.id)
+        let icon = '⚡'
+        try { icon = JSON.parse(n.extraData || '{}')._promptIcon || '⚡' } catch { /* ignore */ }
+        out.push({ node: n, icon })
+        return
+      }
       const c = classifyElement(n)
       if (!c || c.kind === 'note') return
       seen.add(n.id)

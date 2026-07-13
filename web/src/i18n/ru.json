@@ -2222,5 +2222,12 @@
   "elements.conversations": "Беседы",
   "v2.context.agents": "Агенты",
   "agents.promptLabel": "Инструкция агента",
-  "agents.propertiesLabel": "Свойства"
+  "agents.propertiesLabel": "Свойства",
+  "elements.prompts": "Промпты",
+  "prompts.contentLabel": "Содержимое промпта",
+  "v2.chat.promptsTitle": "Промпты",
+  "v2.chat.promptsShort": "Промпт",
+  "v2.chat.noPrompts": "Промптов пока нет",
+  "v2.chat.newPromptName": "Название промпта:",
+  "v2.chat.newPrompt": "Новый промпт"
 }

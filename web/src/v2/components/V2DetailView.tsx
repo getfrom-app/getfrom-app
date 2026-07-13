@@ -26,7 +26,9 @@ import { saveExample } from '../../api/autoClassify'
 import ContextPicker from '../../components/panels/ContextPicker'
 import V2TaskDetailView from './V2TaskDetailView'
 import V2AgentDetailView from './V2AgentDetailView'
+import V2PromptDetailView from './V2PromptDetailView'
 import { isAgentNode } from '../../utils/agentesHelper'
+import { isPromptNode } from '../../utils/promptsHelper'
 import { useRef, useEffect } from 'react'
 import type { Node } from '../../types'
 
@@ -263,6 +265,11 @@ export default function V2DetailView({ nodeId, onSelectCtx }: { nodeId: string; 
   // propiedades reales de AgentPropertiesPanel de v1). Se comprueba ANTES que el resto
   // de ramas porque un agente no es tarea/evento/recurso.
   if (isAgentNode(node)) return <V2AgentDetailView node={node} onSelectCtx={onSelectCtx} />
+
+  // PROMPT: nunca como nota genérica — vista propia (contenido outliner editable +
+  // propiedades reales de PromptPropertiesPanel de v1). Se comprueba junto al agente,
+  // antes que el resto de ramas.
+  if (isPromptNode(node)) return <V2PromptDetailView node={node} onSelectCtx={onSelectCtx} />
 
   // Cualquier tipo de RECURSO (audio, PDF/imagen, o el resto — enlaces, podcasts,
   // libros…) muestra su contexto arriba (chip + cambiar), igual que nota/tarea.

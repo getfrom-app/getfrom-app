@@ -25,7 +25,7 @@ import { isQuickCommandSession } from '../../store/aiChatStore'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
 import type { FilterView } from '../views/FilterResultsView'
 
-type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation'
+type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; due?: string | null; status?: string | null }
@@ -45,6 +45,7 @@ function classify(n: Node): ElemKind | null {
   if (e._containerNotes === '1') return null   // espacio de notas libres (estructural, no un elemento)
   if (e._pdfSelection != null) return 'highlight'   // subrayado guardado de un PDF (cita)
   if (e._agentDef === '1') return 'agent'           // agente (v2: puede colgar de cualquier contexto)
+  if (e._promptDef === '1') return 'prompt'         // prompt (v2: puede colgar de cualquier contexto)
   if (isMarkedContext(n)) return 'context'
   if (n.status != null) return 'task'
   if (n.isEvent) return 'event'
@@ -77,7 +78,7 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
   return true
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬' }
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡' }
 const ROW_H = 46
 const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
 
@@ -148,6 +149,7 @@ export default function ElementsPanel() {
     { key: 'image',   label: t('elements.images') },
     { key: 'context', label: t('elements.contexts') },
     { key: 'agent',   label: '🤖 ' + t('elements.agents', 'Agentes') },
+    { key: 'prompt',  label: '⚡ ' + t('elements.prompts', 'Prompts') },
     { key: 'conversation', label: '💬 ' + t('elements.conversations', 'Conversaciones') },
     { key: 'memory',  label: t('elements.memory', 'Memoria') },
   ]

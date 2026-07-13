@@ -2222,5 +2222,12 @@
   "elements.conversations": "Konuşmalar",
   "v2.context.agents": "Ajanlar",
   "agents.promptLabel": "Ajan talimatı",
-  "agents.propertiesLabel": "Özellikler"
+  "agents.propertiesLabel": "Özellikler",
+  "elements.prompts": "İstemler",
+  "prompts.contentLabel": "İstem içeriği",
+  "v2.chat.promptsTitle": "İstemler",
+  "v2.chat.promptsShort": "İstem",
+  "v2.chat.noPrompts": "Henüz istem yok",
+  "v2.chat.newPromptName": "İstem adı:",
+  "v2.chat.newPrompt": "Yeni istem"
 }

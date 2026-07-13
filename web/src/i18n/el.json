@@ -2222,5 +2222,12 @@
   "elements.conversations": "Συνομιλίες",
   "v2.context.agents": "Πράκτορες",
   "agents.promptLabel": "Οδηγία πράκτορα",
-  "agents.propertiesLabel": "Ιδιότητες"
+  "agents.propertiesLabel": "Ιδιότητες",
+  "elements.prompts": "Prompts",
+  "prompts.contentLabel": "Περιεχόμενο του prompt",
+  "v2.chat.promptsTitle": "Prompts",
+  "v2.chat.promptsShort": "Prompt",
+  "v2.chat.noPrompts": "Δεν υπάρχουν ακόμη prompts",
+  "v2.chat.newPromptName": "Όνομα prompt:",
+  "v2.chat.newPrompt": "Νέο prompt"
 }

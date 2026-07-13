@@ -14,6 +14,7 @@ import { listTemplates } from '../../utils/tagsHelper'
 import { renderInline } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
+import { listAllPrompts, createPromptUnder, resolvePrompt } from '../../utils/promptsHelper'
 
 interface Props {
   currentNodeId: string | null
@@ -52,10 +53,12 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
   const [showEvent, setShowEvent] = useState(false)
   const [showPlanner, setShowPlanner] = useState(false)
   const [docMenu, setDocMenu] = useState(false)
+  const [promptMenu, setPromptMenu] = useState(false)
   const [showTemplatesModal, setShowTemplatesModal] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const recognitionRef = useRef<unknown>(null)
   const docMenuRef = useRef<HTMLDivElement>(null)
+  const promptMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!docMenu) return
@@ -63,6 +66,13 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [docMenu])
+
+  useEffect(() => {
+    if (!promptMenu) return
+    const onDoc = (e: MouseEvent) => { if (promptMenuRef.current && !promptMenuRef.current.contains(e.target as HTMLElement)) setPromptMenu(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [promptMenu])
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
@@ -98,6 +108,18 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
     setInput('')
     chat.send(trimmed, currentNodeId || undefined).catch(() => {})
   }
+
+  // Prompt resuelto desde el detalle («Probar en Magic») o desde el propio desplegable:
+  // se coloca y se envía directamente, sin paso intermedio.
+  useEffect(() => {
+    const onSendPrompt = (e: Event) => {
+      const detail = (e as CustomEvent<{ text?: string }>).detail
+      if (detail?.text) doSend(detail.text)
+    }
+    window.addEventListener('from:send-prompt', onSendPrompt)
+    return () => window.removeEventListener('from:send-prompt', onSendPrompt)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentNodeId, streaming])
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -206,6 +228,36 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           <button className="v2-head-action" title={t('v2.chat.newCanvas', 'Nuevo lienzo')} onClick={onNewCanvas}>＋ {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
           <button className="v2-head-action" title={t('v2.chat.newTask', 'Nueva tarea')} onClick={() => setShowTask(true)}>＋ {t('v2.chat.newTaskShort', 'Tarea')}</button>
           <button className="v2-head-action" title={t('v2.chat.newEvent', 'Nuevo evento')} onClick={() => setShowEvent(true)}>＋ {t('v2.chat.newEventShort', 'Evento')}</button>
+          {/* Prompts: elegir uno para enviarlo directamente al chat, o crear uno nuevo. */}
+          <div style={{ position: 'relative' }} ref={promptMenuRef}>
+            <button className="v2-head-action" title={t('v2.chat.promptsTitle', 'Prompts')} onClick={() => setPromptMenu(o => !o)}>⚡ {t('v2.chat.promptsShort', 'Prompt')}</button>
+            {promptMenu && (
+              <div className="v2-doc-menu">
+                {listAllPrompts().map(p => {
+                  let picon = '⚡'
+                  try { picon = JSON.parse(p.extraData || '{}')._promptIcon || '⚡' } catch { /* ignore */ }
+                  return (
+                    <button key={p.id} onClick={() => {
+                      const text = resolvePrompt(p.id, { currentNodeId: currentNodeId || undefined })
+                      doSend(text)
+                      setPromptMenu(false)
+                    }}>{picon} {p.text || t('common.noTitle', 'Sin título')}</button>
+                  )
+                })}
+                {listAllPrompts().length === 0 && (
+                  <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.noPrompts', 'Sin prompts todavía')}</div>
+                )}
+                <div className="v2-doc-menu-sep" />
+                <button onClick={() => {
+                  const name = window.prompt(t('v2.chat.newPromptName', 'Nombre del prompt:'))
+                  if (!name || !name.trim()) return
+                  const created = createPromptUnder({ parentId: currentNodeId, label: name.trim(), icon: '⚡' })
+                  setPromptMenu(false)
+                  window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
+                }}>➕ {t('v2.chat.newPrompt', 'Nuevo prompt')}</button>
+              </div>
+            )}
+          </div>
           <button className="v2-head-action" title={t('v2.plannerOpen', 'Abrir el planificador')} onClick={() => setShowPlanner(true)}>📅 {t('wftopbar.planner', 'Planificador')}</button>
           <button
             className={`v2-head-action ${recorder.recording ? 'recording' : ''}`}
