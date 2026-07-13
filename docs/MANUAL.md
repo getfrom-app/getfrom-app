@@ -1,6 +1,6 @@
-# Fromly — Manual de usuario v9.6.789
+# Fromly — Manual de usuario v9.6.801
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 10 julio 2026
+> Web · Mac · iPhone · fromly.app · Última actualización: 13 julio 2026
 
 ---
 
@@ -47,8 +47,9 @@ navegador si algún día quieres repasarlo.
   vista que la columna "Hoy" (eventos, para hacer, seguimiento, por planificar), con botones "+"
   directos en cada bloque para crear un evento o una tarea de ese día.
 - **"Notas" en cualquier contexto, conversación o tarea**: un editor de nota completo (el mismo que
-  usas en cualquier nota — formato, favorito, exportar, publicar, e incluso cambiar a lienzo) para
-  apuntar lo que quieras, aparte de las tareas y elementos de ese sitio.
+  usas en cualquier nota — formato, favorito, exportar, publicar) para apuntar lo que quieras,
+  aparte de las tareas y elementos de ese sitio. Nota y Lienzo son dos tipos separados desde que los
+  creas ("+Nota"/"+Lienzo" en la cabecera del chat) — ya no se cambia uno por otro después.
 - **Contexto padre**: puedes asignar o cambiar el contexto padre de cualquier contexto directamente
   desde la columna derecha.
 - **Columna "Hoy" más compacta**: cada tarea en una sola línea, con chips de hora, fecha (color
@@ -57,6 +58,22 @@ navegador si algún día quieres repasarlo.
   enlace — con un chip y un botón para cambiarlo, y clic para navegar directamente a ese contexto.
 - **Historial global** más limpio: lista tus conversaciones y elementos para saltar rápido a
   cualquier sitio; los comandos rápidos de un solo turno («créame una tarea…») ya no lo saturan.
+- **Agentes y Prompts, ahora en cualquier contexto**: puedes crear un Agente (una automatización que
+  corre sola cada día en la nube) o un Prompt (una plantilla de instrucciones reutilizable)
+  colgando de cualquier contexto o proyecto, igual que una nota o una tarea — pídeselo a la IA por
+  chat ("quiero un informe diario de X") o créalo con el botón correspondiente. Empiezan
+  desactivados hasta que revisas y activas el prompt tú mismo. Aparecen junto al resto de elementos
+  del contexto, con su propio icono.
+- **Prompts en el chat**: el botón "⚡ Prompt" en la cabecera lista tus plantillas guardadas —
+  seleccionar una la envía directamente, con sus variables ya rellenas.
+- **Dictado por voz en el chat**: el micrófono junto al campo de escritura transcribe en vivo lo que
+  dices (atajo Alt+Espacio) — distinto de "Grabar audio", que guarda una nota de voz aparte.
+- **Elementos: Conversaciones y Lienzos por separado**: las conversaciones ya aparecen como un
+  elemento más (con su propio filtro), y los lienzos tienen su propio filtro con miniaturas visuales
+  reales de cada dibujo, en vez de listarse como texto.
+- **Un contexto nuevo ya sabe de qué habla**: cuando le pides a la IA crear un contexto para algo
+  concreto ("quiero llevar el análisis de mercado diario"), la primera conversación que abras ahí
+  ya continúa con naturalidad — antes empezaba con un saludo genérico.
 
 ---
 

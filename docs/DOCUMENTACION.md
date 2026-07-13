@@ -1,7 +1,84 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-09 (Web v9.6.787)
+> Última actualización: 2026-07-13 (Web v9.6.801)
+
+---
+
+## 🗓️ Sesión 2026-07-13 — Agentes+Prompts en v2, RAG verificado, 3 bugs reales de raíz
+
+Web **v9.6.789 → v9.6.801**. Log: `logs/2026-07-13.md`. Auditoría profunda de Fromly 2.0 a
+petición de Alberto, ejecutada en piezas SECUENCIALES (no en paralelo — feedback explícito de
+Alberto sobre forma de trabajo, guardado en memoria), cada una verificada (`tsc`+`build`+
+`build:tauri`+12 idiomas con paridad) y desplegada antes de pasar a la siguiente.
+
+**Sistema de Agentes portado a v2** (`utils/agentesHelper.ts`, `V2AgentDetailView.tsx`). En v1 los
+agentes cuelgan de un root único `🤖 Agentes`; en v2 ganan contexto padre libre
+(`createAgentUnder({parentId,...})`, `isAgentNode(n)` mira `_agentDef` directo sin depender del
+padre) — visibles en Elementos y fusionados en la vista de Contexto. **Bug real**: el editor de v2
+mostraba `getOrCreateContainerNotes(node.id)` vía `V2NoteBody`, pero el prompt REAL del agente son
+sus HIJOS DIRECTOS (`readAgentNote()`/`syncAgentUserMessage()` en `agentesHelper.ts`) — un nodo
+completamente distinto, así que el editor aparecía vacío y desconectado de lo que el cron
+realmente ejecuta. Corregido con `Outliner parentId={node.id}` (mismo patrón que
+`V2PromptDetailView`, que sí lo hizo bien desde el principio). Nuevas acciones de IA `create_agent`
+(siempre `enabled:false` al crear) y `update_agent` (activar/pausar/reprogramar/editar prompt por
+chat — antes la IA decía "activado" sin que ocurriera nada real).
+
+**Sistema de Prompts portado a v2** (`utils/promptsHelper.ts`, `V2PromptDetailView.tsx`) — mismo
+patrón exacto que Agentes (root único en v1 → contexto libre en v2, `isPromptNode`/
+`createPromptUnder`/`listAllPrompts`). Desplegable "⚡ Prompt" en la cabecera del chat: seleccionar
+uno resuelve variables (`resolvePrompt`) y envía directo, sin paso intermedio.
+
+**Bug de migración real — `getTagDefNode()` (`nodeStore.ts`)**: seguía buscando la raíz de
+contextos por su nombre histórico (`'🏷 Tags'`), migrada hace tiempo a `'🧠 Contexto'` — nunca
+encontraba el contexto real, así que "Lo que Fromly sabe" nunca llegaba a inyectarse en el chat
+(`enrichTag()` en `aiChatStore.ts`) aunque la lógica de inyección en sí fuera correcta. Síntoma
+reportado por Alberto: un contexto recién creado por la IA (nueva acción `create_context`) abría su
+primera conversación con saludo genérico, sin continuidad con lo acordado. Arreglado reconociendo
+ambos nombres de root + normalizando por slug; `create_context` ahora exige un campo `about`
+(resumen de 1-3 frases) que se siembra vía `appendContextFacts` al crear.
+
+**RAG verificado con datos reales, no solo lectura de código.** Confirmado en producción:
+`server/src/services/ragNodes.ts`, Postgres dedicada + pgvector + Voyage, indexado automático
+incremental vía hook del op-log (`enqueueReembed`, debounce 8s) — cualquier cambio reindexa solo.
+Búsqueda semántica real (`/admin/rag-query`) contra la cuenta de Alberto con la query "trading
+mercado" devolvió resultados correctos y relevantes de sus contextos reales. La subida de archivos
+a R2 es un paso independiente y previo al indexado — un fallo del RAG nunca implica pérdida de
+datos.
+
+**Conversaciones/Lienzos como elementos.** Conversaciones fusionadas con el resto de Elementos
+(antes bloque aparte en la vista de Contexto). Lienzo separado de Documento como tipo propio
+(`_v2canvas`), con rejilla de miniaturas reales (`PizarraThumbnail.tsx`, SVG a escala de
+strokes/texts) en vez de lista de títulos indistinguibles.
+
+**Bug real — Nota/Lienzo se pisaban al cambiar de modo.** Compartían el mismo `body` del nodo (uno
+como HTML, otro como bloque ```from-pizarra```); el toggle no guardaba/restauraba nada al cambiar
+de modo, así que abrir Lienzo y volver a Nota dejaba el JSON del lienzo como texto plano (incluso
+como título). Fix intermedio: guardar/restaurar por modo en extraData. Fix final (a petición
+explícita de Alberto): el propio TOGGLE se elimina — Nota y Lienzo son tipos separados desde su
+creación (botones "+Nota"/"+Lienzo"), ya no intercambiables en un documento existente.
+
+**Bug real — `firstLineTitle()` devolvía `'Documento'` para contenido vacío** (`utils/docNode.ts`).
+Un efecto de `DocEditor` ("sanear título al abrir") escribía ese fallback como `text` real nada más
+crear un documento en blanco, antes de que el usuario escribiera nada. Corregido: la función
+devuelve `''` (todos los llamadores ya encadenaban con `||` esperando exactamente eso). Además:
+"+Nota" volvía a abrir siempre un menú de plantillas en vez de crear directo (con una nota abierta
+parecía "no pasar nada") → botón partido (clic=crear, flecha=plantillas); autofocus al inicio del
+documento al crear.
+
+**i18n — causa raíz real, no cosmética.** 124 claves de v2 usadas en código con
+`t('clave','fallback')` no existían en NINGÚN idioma (ni español) → siempre se veía el fallback
+español sin importar el idioma elegido. `classifyElement()` (Historial/Contexto) descartaba
+cualquier nodo con `text` vacío (un documento recién creado nace así) — quitado ese filtro.
+
+**Paridad v1→v2 adicional**: Ajustes completados (email, acento, backups, pestaña Accesorios,
+expansión de texto), Planificador con acceso desde el chat, vistas globales Tabla/Kanban/Calendario
+en Elementos, gestión de plantillas, slash-commands en el editor nuevo, `RightColMenu` con
+Duplicar/Mover a, micrófono de dictado en vivo (Alt+Espacio).
+
+**2 auditorías de regresión independientes** (mismo resultado: sin problemas) confirmaron que los
+cambios en paralelo sobre archivos compartidos (`V2ContextView.tsx`, `ElementsPanel.tsx`,
+`aiChatStore.ts`, `aiChatExecutor.ts`) no se pisaron entre sí.
 
 ---
 
