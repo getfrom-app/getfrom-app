@@ -1,7 +1,42 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-13 (Web v9.6.801)
+> Última actualización: 2026-07-13 (Web v9.6.804)
+
+---
+
+## 🗓️ Sesión 2026-07-13 (cont.) — Agentes probados en vivo, 4 bugs reales más
+
+Web **v9.6.801 → v9.6.804**. Tras el primer cierre de sesión, Alberto creó un agente real
+("Informe de Mercado Diario") y probó el flujo completo, encontrando 4 problemas más:
+
+- **Instrucción del agente en `Outliner`** (viñetas de lista) en vez de documento — cambiado a
+  `DocEditor` normal. `getOrCreateAgentInstructionDoc()` migra automáticamente el contenido de
+  agentes ya existentes (formato antiguo de hijos-línea) la primera vez que se abren, sin perder
+  la instrucción ya escrita.
+- **Prompts de agente demasiado vagos**: la IA redactaba instrucciones tipo "genera el informe de
+  mercado" sin detalle suficiente para un buen resultado. `create_agent`/`update_agent` ganan una
+  regla explícita en `server/src/routes/ai.ts` con checklist (fuentes exactas, cifras concretas por
+  sección, formato y longitud del resultado) + un ejemplo mal/bien basado en el caso real de
+  Alberto, para calibrar al modelo.
+- **Resultado del agente troceado en outliner**: `AgentPropertiesPanel.handleRun()` (ejecución
+  manual) y `writeAgentResultToDiary()` en `server/src/services/serverAgenda.ts` (cron programado)
+  creaban un nodo por línea del resultado, siempre bajo el diario de hoy. Ahora ambos crean UN
+  documento (`markdownToHtml` del resultado, formato real) colgado del `parentId` real del agente
+  (su contexto), con fallback al diario solo si el agente no tiene padre.
+- **"Lo que Fromly sabe" y "Notas" unificados**: en `V2ContextView.tsx` había un `<textarea>`
+  estrecho ("Lo que Fromly sabe", hijos-línea vía `readContextKnowledge`/`writeContextKnowledge`)
+  y, separado, un editor de nota completo ("Notas", `getOrCreateContainerNotes`). Alberto: "creo
+  que deberíamos unir una cosa con la otra... que se pueda ampliar, escribir con comodidad, poner
+  cabeceras". `cajones.ts` gana `getOrCreateContextKnowledgeDoc()`: el nodo de conocimiento pasa a
+  ser un documento (`.body` HTML), migrando el formato antiguo automáticamente y fusionando
+  cualquier contenido que ya existiera en el bloque "Notas" separado (sin pérdida). `enrichTag()`
+  en `aiChatStore.ts` sigue funcionando igual — `readContextKnowledge()` mantiene su firma `string`.
+
+Todo verificado con `tsc --noEmit` + `npm run build` (el build en modo proyecto sacó 4 errores de
+tipo — `store.createNode()` sin el campo `text` requerido — que el `tsc` suelto no detectó; ya
+había pasado antes en la sesión, corregido cada vez) + `build:tauri`, 12 idiomas con paridad
+exacta, deploy de servidor verificado con "Starting Container" en Railway.
 
 ---
 

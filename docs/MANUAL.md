@@ -1,4 +1,4 @@
-# Fromly — Manual de usuario v9.6.801
+# Fromly — Manual de usuario v9.6.804
 
 > Web · Mac · iPhone · fromly.app · Última actualización: 13 julio 2026
 
