@@ -2215,6 +2215,7 @@
   "docSlash.noResults": "Sin resultados para",
   "docSlash.groupBlocks": "Bloques",
   "elements.agents": "Agentes",
+  "elements.conversations": "Conversaciones",
   "v2.context.agents": "Agentes",
   "agents.promptLabel": "Instrucción del agente",
   "agents.propertiesLabel": "Propiedades"

@@ -2215,6 +2215,7 @@
   "docSlash.noResults": "Şunun için sonuç yok",
   "docSlash.groupBlocks": "Bloklar",
   "elements.agents": "Ajanlar",
+  "elements.conversations": "Konuşmalar",
   "v2.context.agents": "Ajanlar",
   "agents.promptLabel": "Ajan talimatı",
   "agents.propertiesLabel": "Özellikler"

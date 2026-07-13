@@ -4,6 +4,18 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.794 — 13 julio 2026 · Conversaciones como elemento más
+
+Las conversaciones ya son un elemento como cualquier otro:
+
+- **Pestaña Elementos**: nuevo filtro "💬 Conversaciones" (antes se excluían a propósito de este
+  buscador global).
+- **Vista de Contexto**: ya no hay un bloque aparte de "Conversaciones" ni de "Agentes" —
+  documentos, archivos, agentes y conversaciones del contexto van todos juntos en un único
+  listado "Elementos", ordenado de más reciente a más antigua, cada uno con su icono.
+
+---
+
 ## Web v9.6.793 — 13 julio 2026 · Sistema de agentes en v2
 
 Los agentes (automatizaciones que corren en la nube, con prompt propio y horario) llegan a v2:

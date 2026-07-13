@@ -2215,6 +2215,7 @@
   "docSlash.noResults": "Δεν βρέθηκαν αποτελέσματα για",
   "docSlash.groupBlocks": "Μπλοκ",
   "elements.agents": "Πράκτορες",
+  "elements.conversations": "Συνομιλίες",
   "v2.context.agents": "Πράκτορες",
   "agents.promptLabel": "Οδηγία πράκτορα",
   "agents.propertiesLabel": "Ιδιότητες"

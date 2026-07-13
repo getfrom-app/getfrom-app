@@ -2215,6 +2215,7 @@
   "docSlash.noResults": "Inga resultat för",
   "docSlash.groupBlocks": "Block",
   "elements.agents": "Agenter",
+  "elements.conversations": "Konversationer",
   "v2.context.agents": "Agenter",
   "agents.promptLabel": "Agentinstruktion",
   "agents.propertiesLabel": "Egenskaper"

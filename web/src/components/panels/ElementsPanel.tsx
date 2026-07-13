@@ -21,10 +21,11 @@ import TaskRow from './TaskRow'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
+import { isQuickCommandSession } from '../../store/aiChatStore'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
 import type { FilterView } from '../views/FilterResultsView'
 
-type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent'
+type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; due?: string | null; status?: string | null }
@@ -35,9 +36,12 @@ function classify(n: Node): ElemKind | null {
   if (n.deletedAt) return null
   const e = ed(n)
   if (e._absorbedBy != null) return null       // oculto dentro de un bloque → no es elemento suelto
-  // Nodos de CONVERSACIÓN (sesión ✦, transcript 💬, mensajes) NO son elementos: viven en
-  // Historial, no en Elementos. Sin esto, los chats se colaban aquí como falsas «notas».
-  if (e._aiSession != null || e._aiTranscript != null || e._aiMsgRole != null) return null
+  // Mensajes/transcripciones DENTRO de una conversación no son elementos sueltos (solo
+  // la sesión en sí lo es, como tipo 'conversation' — ver más abajo).
+  if (e._aiTranscript != null || e._aiMsgRole != null) return null
+  // La conversación (sesión ✦) SÍ es un elemento — Alberto: "la conversación en sí también
+  // debería ser un elemento". Las sesiones de comando rápido (1 turno, sin continuidad) no cuentan.
+  if (e._aiSession === '1') return isQuickCommandSession(n.id) ? null : 'conversation'
   if (e._containerNotes === '1') return null   // espacio de notas libres (estructural, no un elemento)
   if (e._pdfSelection != null) return 'highlight'   // subrayado guardado de un PDF (cita)
   if (e._agentDef === '1') return 'agent'           // agente (v2: puede colgar de cualquier contexto)
@@ -73,7 +77,7 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
   return true
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖' }
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬' }
 const ROW_H = 46
 const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
 
@@ -144,6 +148,7 @@ export default function ElementsPanel() {
     { key: 'image',   label: t('elements.images') },
     { key: 'context', label: t('elements.contexts') },
     { key: 'agent',   label: '🤖 ' + t('elements.agents', 'Agentes') },
+    { key: 'conversation', label: '💬 ' + t('elements.conversations', 'Conversaciones') },
     { key: 'memory',  label: t('elements.memory', 'Memoria') },
   ]
   const SUB_CHIPS: { key: TaskSub; label: string }[] = [
