@@ -4,6 +4,23 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.791 — 13 julio 2026 · Fix: Nota ⇄ Lienzo se pisaban entre sí
+
+Bug real reportado por Alberto: crear un documento, pasar a Lienzo y volver a Nota dejaba el JSON
+interno del lienzo (`\`\`\`from-pizarra {...}\`\`\``) como texto plano — y hasta como título de la
+nota. Causa: ambos modos comparten el mismo campo `body` del nodo (el editor de texto lo usa como
+HTML, el lienzo como bloque de trazos), y el toggle no guardaba ni restauraba nada al cambiar de
+modo — un modo pisaba literalmente al otro.
+
+- El toggle ahora guarda el `body` que se deja atrás (en `extraData`) y restaura el de la última
+  vez que se estuvo en ese modo. Nota y Lienzo son un único documento con dos vistas: cambiar de
+  una a otra ya no destruye ni mezcla el contenido de ninguna de las dos.
+- Cabecera del chat: el botón "+ Nuevo documento" (con menú de plantillas) se separa en dos
+  botones directos, "+ Nota" y "+ Lienzo" — cada uno abre el documento nuevo ya en su modo, sin
+  pasar por un menú intermedio.
+
+---
+
 ## Web v9.6.790 — 11 julio 2026 · Fromly 2.0: ajustes, planificador e i18n completos
 
 Auditoría profunda de paridad v1→v2 tras feedback directo de uso. Cuatro frentes:

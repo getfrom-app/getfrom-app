@@ -125,12 +125,29 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { nod
     else toast(t('v2.convertFailed', 'No se pudo convertir: contiene algo que no se puede migrar (revisa su contenido).'), 'warning')
   }
 
+  // Nota y Lienzo comparten el mismo `body` en el nodo (el lienzo lo usa como bloque
+  // ```from-pizarra```, el documento como HTML) — sin guardarlos aparte, cambiar de
+  // modo pisaba uno con el otro (p.ej. abrir Lienzo y volver a Nota dejaba el JSON del
+  // lienzo como texto plano, y hasta como título). Al cambiar de modo, guardamos el
+  // `body` que dejamos atrás en extraData y restauramos el de la última vez en ese modo.
   const setView = (c: boolean) => {
-    setCanvas(c)
     const e = parseExtraData(node.extraData)
     delete e._v2view
-    if (c) e._v2canvas = '1'; else delete e._v2canvas
-    store.updateNode(node.id, { extraData: JSON.stringify(e) })
+    const leftBehind = node.body || ''
+    if (c) {
+      e._v2docBody = leftBehind
+      e._v2canvas = '1'
+      const restored = typeof e._v2canvasBody === 'string' ? e._v2canvasBody : ''
+      delete e._v2canvasBody
+      store.updateNode(node.id, { extraData: JSON.stringify(e), body: restored })
+    } else {
+      e._v2canvasBody = leftBehind
+      delete e._v2canvas
+      const restored = typeof e._v2docBody === 'string' ? e._v2docBody : ''
+      delete e._v2docBody
+      store.updateNode(node.id, { extraData: JSON.stringify(e), body: restored })
+    }
+    setCanvas(c)
   }
 
   const toggleFavorite = () => { const next = !node.isFavorite; store.updateNode(node.id, { isFavorite: next }); toast(next ? t('tip.addFavorite') : t('tip.removeFavorite')) }

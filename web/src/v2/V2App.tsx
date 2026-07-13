@@ -226,6 +226,15 @@ export default function V2App() {
     setDetailNodeId(n.id)
   }
 
+  // Crear un LIENZO desde el centro → mismo nodo _doc que un documento, pero abierto
+  // directamente en modo Lienzo (`_v2canvas`) en vez de en modo Nota.
+  const onNewCanvas = () => {
+    const parentId = captureParentId()
+    if (!parentId) return
+    const n = store.createNode({ text: '', parentId, extraData: { _doc: '1', _v2canvas: '1' } })
+    setDetailNodeId(n.id)
+  }
+
   // Guardar una nota de voz grabada en el centro → se abre en el reproductor a la derecha.
   const onAudioSaved = (r: { audioKey: string; durationSec: number; transcript: string }) => {
     const parentId = captureParentId()
@@ -425,6 +434,7 @@ export default function V2App() {
         contextLabel={contextLabel}
         onFilesDropped={onFilesDropped}
         onNewDocument={onNewDocument}
+        onNewCanvas={onNewCanvas}
         recorder={recorder}
       />
       <V2RightColumn

@@ -18,6 +18,7 @@ interface Props {
   contextLabel: string
   onFilesDropped: (files: File[]) => void
   onNewDocument: (templateId?: string) => void
+  onNewCanvas: () => void
   recorder: { recording: boolean; busy: boolean; start: () => void; stop: () => void }
 }
 
@@ -33,7 +34,7 @@ function stripActions(s: string): string {
     .trim()
 }
 
-export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, onNewDocument, recorder }: Props) {
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, onNewDocument, onNewCanvas, recorder }: Props) {
   const { t } = useTranslation()
   const SUGGESTIONS = [
     { t: t('v2.chat.suggestSummarizeDayTitle', 'Resume mi día'), d: t('v2.chat.suggestSummarizeDayDesc', 'Tareas y eventos de hoy'), p: t('v2.chat.suggestSummarizeDayPrompt', '¿Qué tengo para hoy? Resume mis tareas y eventos.') },
@@ -130,10 +131,10 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           {chat.sessionId ? (convTitle || t('v2.chat.conversation', 'Conversación')) : t('v2.chat.newConversation', 'Nueva conversación')}
         </span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {/* Crear contenido sin pasar por el chat: documento (con plantillas), tarea, evento o voz. */}
+          {/* Crear contenido sin pasar por el chat: nota (con plantillas), lienzo, tarea, evento o voz. */}
           <div style={{ position: 'relative' }} ref={docMenuRef}>
-            <button className="v2-head-action" title={t('v2.chat.newDocument', 'Nuevo documento')}
-              onClick={() => { const tpls = listTemplates(); if (tpls.length) setDocMenu(o => !o); else onNewDocument() }}>＋ {t('v2.chat.newDocument', 'Nuevo documento')}</button>
+            <button className="v2-head-action" title={t('v2.chat.newNote', 'Nueva nota')}
+              onClick={() => { const tpls = listTemplates(); if (tpls.length) setDocMenu(o => !o); else onNewDocument() }}>＋ {t('v2.chat.newNoteShort', 'Nota')}</button>
             {docMenu && (
               <div className="v2-doc-menu">
                 <button onClick={() => { onNewDocument(); setDocMenu(false) }}>📄 {t('v2.chat.blankDocument', 'En blanco')}</button>
@@ -144,6 +145,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
               </div>
             )}
           </div>
+          <button className="v2-head-action" title={t('v2.chat.newCanvas', 'Nuevo lienzo')} onClick={onNewCanvas}>＋ {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
           <button className="v2-head-action" title={t('v2.chat.newTask', 'Nueva tarea')} onClick={() => setShowTask(true)}>＋ {t('v2.chat.newTaskShort', 'Tarea')}</button>
           <button className="v2-head-action" title={t('v2.chat.newEvent', 'Nuevo evento')} onClick={() => setShowEvent(true)}>＋ {t('v2.chat.newEventShort', 'Evento')}</button>
           <button className="v2-head-action" title={t('v2.plannerOpen', 'Abrir el planificador')} onClick={() => setShowPlanner(true)}>📅 {t('wftopbar.planner', 'Planificador')}</button>
