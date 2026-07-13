@@ -4,6 +4,18 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.800 — 13 julio 2026 · Fix: contexto nuevo sin memoria en la primera conversación
+
+Causa raíz encontrada: `getTagDefNode()` seguía buscando la raíz de contextos por su nombre
+ANTIGUO ("🏷 Tags"), pero la app ya migró ese árbol a "🧠 Contexto" — así que nunca encontraba el
+contexto real, y "Lo que Fromly sabe" (aunque existiera) nunca llegaba a inyectarse en el chat.
+Arreglado: reconoce ambos nombres de raíz y normaliza la búsqueda por slug. Además, `create_context`
+ahora siempre pide a la IA un resumen de 1-3 frases de para qué es el contexto, y lo siembra en
+"Lo que Fromly sabe" nada más crearlo — así la primera conversación en un contexto nuevo ya sabe de
+qué va, en vez de saludar genérico.
+
+---
+
 ## Web v9.6.799 — 13 julio 2026 · 3 fixes en la creación de notas
 
 - **"+ Nota" volvía a abrir siempre un menú** en vez de crear directamente — con una nota ya

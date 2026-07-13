@@ -8,7 +8,7 @@ import type { ExecutedAction } from './aiChatStore'
 import { ensureDayPath } from '../utils/agendaHelper'
 import { pushEventToGcal } from '../utils/gcalNodesSync'
 import { createAgentUnder } from '../utils/agentesHelper'
-import { createContext } from '../utils/cajones'
+import { createContext, appendContextFacts } from '../utils/cajones'
 
 /** Quita prefijos de lista de un título de nodo: "1. ", "12) ", "- ", "* ", "• ".
  * (Magic a veces genera cada idea como "1. ..." → todos salían con un "1." delante.) */
@@ -183,6 +183,13 @@ function createContextAction(a: Record<string, unknown>): ExecutedAction {
   const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
 
   const created = createContext(name, explicitParent)
+
+  // Sembrar "Lo que Fromly sabe" con el resumen de para qué es el contexto, si la
+  // IA lo aportó — así la siguiente conversación abierta en este contexto ya sabe
+  // de qué va, en vez de saludar genérico (ver enrichTag en aiChatStore.ts).
+  const about = ((a.about as string) || (a.knowledge as string) || '').trim()
+  if (about) appendContextFacts(created.id, [about])
+
   return result('create_context', true, `Contexto «${name}» creado.`, [created.id])
 }
 

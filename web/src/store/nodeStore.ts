@@ -592,18 +592,25 @@ export class NodeStore {
 
   /** Nodo de definición de un tag (con _tagDefinition en extraData) o null */
   getTagDefNode(tagName: string): Node | null {
-    // 1. Buscar en árbol Tags por slug (nueva forma)
+    // Normaliza igual que textToTagSlug de tagsHelper.ts (mismo algoritmo, duplicado
+    // aquí para evitar import circular): "Análisis de Mercado" → "analisis-de-mercado"
+    const toSlug = (s: string) => (s || '').toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '')
+      .replace(/--+/g, '-').replace(/^-|-$/g, '')
+
+    // 1. Buscar en árbol Tags/Contexto por slug (nueva forma). El root se llamó
+    // '🏷 Tags' y se migró a '🧠 Contexto' (migrateTagsToContexto) — aceptar ambos.
     // Evitar import circular: buscar directamente sin usar tagsHelper
-    const tagsRoot = this.children(null).find(n => !n.deletedAt && n.text === '🏷 Tags')
+    const tagsRoot = this.children(null).find(n => !n.deletedAt && (n.text === '🧠 Contexto' || n.text === '🏷 Tags'))
     if (tagsRoot) {
-      const slug = tagName.toLowerCase()
+      const slug = toSlug(tagName)
       const parts = slug.split('/')
       let parent = tagsRoot
       let found: Node | null = null
       for (const part of parts) {
         const match = this.children(parent.id).find(c =>
-          !c.deletedAt &&
-          (c.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-\/]/g, '') === part
+          !c.deletedAt && toSlug(c.text || '') === part
         )
         if (!match) { found = null; break }
         found = match
@@ -611,12 +618,16 @@ export class NodeStore {
       }
       if (found && found.id !== tagsRoot.id) return found
     }
-    // 2. Fallback: _tagDefinition en extraData (legado)
+    // 2. Fallback: _tagDefinition en extraData (legado). _tagDefinition guarda el
+    // SLUG jerárquico (ver ensureTagDefinition en tagsHelper.ts), no el texto crudo:
+    // comparar contra el slug de tagName, no contra tagName.toLowerCase() directo.
+    const tagSlug = toSlug(tagName)
     for (const n of this.nodes.values()) {
       if (n.deletedAt) continue
       try {
         const ed = JSON.parse(n.extraData || '{}')
-        if (ed._tagDefinition?.toLowerCase() === tagName.toLowerCase()) return n
+        const def = (ed._tagDefinition || '').toLowerCase()
+        if (def && (def === tagName.toLowerCase() || def === tagSlug)) return n
       } catch {}
     }
     return null
