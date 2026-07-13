@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.802 — 13 julio 2026 · Instrucción de agente como documento + prompts más extensos
+
+- **La instrucción de un agente ya se edita como documento normal** (formato, párrafos) en vez de
+  outliner clásico con viñetas — migra automáticamente el contenido de agentes ya existentes la
+  primera vez que los abres, sin perder nada.
+- **La IA redacta instrucciones mucho más extensas y concretas** al crear o modificar un agente
+  (fuentes exactas, cifras a extraer, formato y longitud del resultado) — antes eran demasiado
+  escuetas para producir un buen informe.
+
+---
+
 ## Web v9.6.801 — 13 julio 2026 · 4 fixes en la vista de detalle de Agentes
 
 - **Prompt del agente ya visible y editable**: el editor apuntaba a un nodo distinto del que

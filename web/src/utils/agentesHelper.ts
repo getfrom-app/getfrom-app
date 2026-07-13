@@ -20,6 +20,8 @@
 import { store } from '../store/nodeStore'
 import { structuralId } from './deterministicId'
 import { findRootByKey } from './rootLookup'
+import { markdownToHtml } from './importMarkdown'
+import { htmlToMarkdown } from './htmlMarkdown'
 import type { Node } from '../types'
 
 const AGENTES_NAME = '🤖 Agentes'
@@ -120,6 +122,14 @@ export function isAgentNode(n: Node | null | undefined): boolean {
   try { return JSON.parse(n.extraData || '{}')._agentDef === '1' } catch { return false }
 }
 
+/** Convierte texto plano (una idea por línea o párrafos separados por blanco) en
+ *  HTML simple de párrafos, para guardarlo como `.body` de un nodo-documento.
+ *  Reutiliza `markdownToHtml` (importMarkdown.ts): sin sintaxis Markdown especial,
+ *  cada línea no vacía se envuelve en su propio `<p>`. */
+function userMessageToHtml(text: string): string {
+  return markdownToHtml(text || '')
+}
+
 /**
  * createAgentUnder — crea un agente colgado de CUALQUIER contexto/nota (v2: «contexto
  * padre libre»). A diferencia de AgentListPanel.createAgent (v1, siempre bajo el root
@@ -150,9 +160,32 @@ export function createAgentUnder(opts: {
       _agentSchedule:     opts.schedule ?? '',
     }),
   })
-  // La nota central del agente es el prompt del usuario (igual que ensureAgentesNode).
-  if (userMessage) store.createNode({ text: userMessage, parentId: node.id })
+  // La nota central del agente es un DOCUMENTO (editor de texto normal, sin viñetas
+  // de outliner) — un único hijo con `_doc='1'` y el prompt en `.body` como HTML.
+  if (userMessage) {
+    const doc = store.createNode({ text: '', parentId: node.id })
+    store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: userMessageToHtml(userMessage) })
+  }
   return store.getNode(node.id)!
+}
+
+/** Busca (o crea si no existe) el hijo-documento que es la instrucción editable del
+ *  agente. Un agente v2 tiene UN solo hijo documento (`_doc='1'`). Si el agente es
+ *  antiguo (v1, hijos de texto plano tipo outliner), MIGRA ese contenido al nuevo
+ *  documento la primera vez que se abre en el detalle (borra los hijos de texto
+ *  plano y crea el documento con el mismo contenido convertido a HTML) — así deja
+ *  de verse con viñetas de outliner sin perder la instrucción ya escrita, y
+ *  `readAgentNote` no duplica el texto al leer ambos. */
+export function getOrCreateAgentInstructionDoc(agentId: string): Node {
+  const kids = store.children(agentId).filter(n => !n.deletedAt)
+  const existingDoc = kids.find(n => { try { return JSON.parse(n.extraData || '{}')._doc === '1' } catch { return false } })
+  if (existingDoc) return existingDoc
+  // Agente v1: migra el texto plano existente (recursivo, mismo orden que readAgentNote).
+  const legacyText = readAgentNote(agentId)
+  for (const k of kids) store.deleteNode(k.id)
+  const doc = store.createNode({ text: '', parentId: agentId })
+  store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: legacyText ? userMessageToHtml(legacyText) : '<p></p>' })
+  return store.getNode(doc.id)!
 }
 
 /** Lee los datos de agente de un nodo */
@@ -177,12 +210,24 @@ export function getAgentData(nodeId: string): {
 }
 
 /** Lee la "nota" del agente: el texto de sus nodos hijos (recursivo, en orden),
- *  que es lo que el usuario edita en la ventana central. Esto ES la instrucción. */
+ *  que es lo que el usuario edita en la ventana central. Esto ES la instrucción.
+ *  Soporta AMBOS formatos: agentes nuevos (v2) tienen un hijo-documento (`_doc='1'`,
+ *  contenido en `.body` como HTML — se extrae a texto plano con `htmlToMarkdown`);
+ *  agentes antiguos (v1, creados antes de este cambio) tienen hijos de texto plano
+ *  tipo outliner — se leen recursivamente como antes. No romper esto = no perder la
+ *  instrucción de agentes ya creados. */
 export function readAgentNote(nodeId: string): string {
   const lines: string[] = []
   const walk = (parentId: string) => {
     const kids = store.children(parentId).filter(n => !n.deletedAt)
     for (const k of kids) {
+      let isDoc = false
+      try { isDoc = JSON.parse(k.extraData || '{}')._doc === '1' } catch { /* ignore */ }
+      if (isDoc) {
+        const t = htmlToMarkdown(k.body || '').trim()
+        if (t) lines.push(t)
+        continue // un documento no tiene hijos-instrucción propios que recorrer
+      }
       const t = (k.text || '').trim()
       if (t) lines.push(t)
       walk(k.id)
@@ -276,9 +321,13 @@ export function ensureAgentesNode(): void {
       isCollapsed: false,
     })
 
-    // La nota central es SOLO el prompt del usuario (lo que el agente debe hacer).
-    // El horario y el estado se muestran en la columna derecha, no como hijo.
-    store.createNode({ text: userMsg, parentId: node.id })
+    // La nota central es SOLO el prompt del usuario (lo que el agente debe hacer),
+    // como un DOCUMENTO editable normal (sin viñetas de outliner). El horario y el
+    // estado se muestran en la columna derecha, no como hijo.
+    if (userMsg) {
+      const doc = store.createNode({ text: '', parentId: node.id })
+      store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: userMessageToHtml(userMsg) })
+    }
   }
 }
 

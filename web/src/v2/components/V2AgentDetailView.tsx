@@ -1,19 +1,22 @@
 // Detalle de un AGENTE en la columna derecha de Fromly 2.0.
-// Sigue el patrón de V2PromptDetailView: la ventana central es el CONTENIDO real
-// del agente — el prompt de usuario se guarda como HIJOS DIRECTOS del nodo agente
-// (createAgentUnder/readAgentNote/syncAgentUserMessage en agentesHelper.ts), así
-// que se edita con Outliner directamente sobre parentId={node.id} — NUNCA con
-// getOrCreateContainerNotes/V2NoteBody (ese es OTRO nodo, por eso el editor salía
-// vacío). Las propiedades reales (activar/pausar, ejecutar ahora, programación)
-// viven en AgentPropertiesPanel de v1, reutilizado SIN reescribir.
-import { useEffect, useState } from 'react'
+// La ventana central es el CONTENIDO real del agente — el prompt de usuario se
+// guarda como UN hijo-DOCUMENTO del nodo agente (createAgentUnder/readAgentNote/
+// syncAgentUserMessage/getOrCreateAgentInstructionDoc en agentesHelper.ts), y se
+// edita con el mismo editor de documento que cualquier nota (DocEditor, con
+// formato/párrafos) — NUNCA con Outliner, que siempre muestra viñetas de lista
+// aunque solo haya un hijo. Las propiedades reales (activar/pausar, ejecutar
+// ahora, programación) viven en AgentPropertiesPanel de v1, reutilizado SIN
+// reescribir.
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { firstContextOf, contextColor } from '../../utils/cajones'
-import { getAgentData, syncAgentUserMessage } from '../../utils/agentesHelper'
+import { getAgentData, getOrCreateAgentInstructionDoc, syncAgentUserMessage } from '../../utils/agentesHelper'
 import { trashNode } from '../../utils/papeleraHelper'
-import Outliner from '../../components/outliner/Outliner'
+import DocEditor from '../../components/views/DocEditor'
+import DocEditorBoundary from '../../components/DocEditorBoundary'
+import DocInspector from '../../components/views/DocInspector'
 import AgentPropertiesPanel from '../../components/panels/AgentPropertiesPanel'
 
 interface Props {
@@ -32,8 +35,12 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
   const [showProps, setShowProps] = useState(true)
   const toggleFavorite = () => { const next = !node.isFavorite; store.updateNode(node.id, { isFavorite: next }) }
 
+  // Documento-instrucción del agente (get-or-create UNA vez por nodo, no en cada
+  // render — mismo patrón que getOrCreateContainerNotes en V2ContextView).
+  const docNode = useMemo(() => getOrCreateAgentInstructionDoc(node.id), [node.id])
+
   // Mantiene _agentUserMessage (lo que ejecuta el cron del servidor) sincronizado
-  // con lo que el usuario edita en los hijos del nodo (mismo patrón que
+  // con lo que el usuario edita en el documento-instrucción (mismo patrón que
   // AgentPropertiesPanel.handleRun/setSchedule, aquí en cada cambio del árbol).
   useEffect(() => { syncAgentUserMessage(node.id) }, [node.id, s.nodesVersion])
 
@@ -74,12 +81,16 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
         )}
       </div>
 
-      {/* Prompt del agente — los HIJOS del propio nodo agente SON la instrucción
-          (createAgentUnder/readAgentNote), igual que V2PromptDetailView: outliner
-          clásico sobre parentId={node.id}, sin barra de formato/MD/HTML/PDF. */}
+      {/* Prompt del agente — UN hijo-documento del propio nodo agente ES la
+          instrucción (createAgentUnder/readAgentNote/getOrCreateAgentInstructionDoc),
+          editado con el editor de documento normal (párrafos, formato), NUNCA con
+          viñetas de outliner. */}
       <div style={{ marginTop: 10 }}>
         <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('agents.promptLabel', 'Instrucción del agente')}</div>
-        <Outliner parentId={node.id} autoFocusEmpty placeholder={t('v2.outlinerPlaceholder', 'Escribe aquí… (usa «/» para insertar tabla, kanban, calendario…)')} />
+        <div className="v2-note-formatbar"><DocInspector bar /></div>
+        <DocEditorBoundary compact>
+          <DocEditor node={docNode} compact registerActive autofocus={false} />
+        </DocEditorBoundary>
       </div>
 
       {/* Propiedades reales del agente (activar/pausar, ejecutar, programación) —

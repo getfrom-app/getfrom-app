@@ -8,6 +8,7 @@ import type { ExecutedAction } from './aiChatStore'
 import { ensureDayPath } from '../utils/agendaHelper'
 import { pushEventToGcal } from '../utils/gcalNodesSync'
 import { createAgentUnder, getAgentData, setAgentEnabled, isAgentNode } from '../utils/agentesHelper'
+import { markdownToHtml } from '../utils/importMarkdown'
 import { createContext, appendContextFacts } from '../utils/cajones'
 import { userStore } from './userStore'
 
@@ -238,11 +239,13 @@ function updateAgentAction(a: Record<string, unknown>): ExecutedAction {
   if ('user_message' in a || 'userMessage' in a) {
     const userMessage = String((a.user_message as string) ?? (a.userMessage as string) ?? '').trim()
     if (userMessage) {
-      // Mismo patrón que createAgentUnder: la nota central = hijos del agente.
-      // Al ACTUALIZAR, se borran los hijos-instrucción viejos y se crea uno nuevo
+      // Mismo patrón que createAgentUnder: la nota central = UN hijo-documento
+      // (`_doc='1'`, editor de texto normal, sin viñetas de outliner). Al
+      // ACTUALIZAR, se borran los hijos-instrucción viejos y se crea uno nuevo
       // (evita mezclar el texto anterior con el nuevo en el editor).
       for (const child of store.children(nodeId)) store.deleteNode(child.id)
-      store.createNode({ text: userMessage, parentId: nodeId })
+      const doc = store.createNode({ text: '', parentId: nodeId })
+      store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: markdownToHtml(userMessage) })
       try {
         const ed = JSON.parse(node.extraData || '{}')
         ed._agentUserMessage = userMessage
