@@ -22,6 +22,8 @@ import { findContextRoot } from './rootLookup'
 import { ensureTagDefinition, getNodeTagSlug, textToTagSlug } from './tagsHelper'
 import { CONTEXT_KNOWLEDGE, isContextKnowledge } from './knowledgeNodes'
 import { isInPapelera } from './papeleraHelper'
+import { markdownToHtml } from './importMarkdown'
+import { htmlToMarkdown } from './htmlMarkdown'
 
 const CONTEXT_DEFAULT_COLOR = '#7c3aed'
 
@@ -453,14 +455,24 @@ export function nodesInContext(contextId: string): Node[] {
 }
 
 // ── Conocimiento del contexto ("🧠 Lo que Fromly sabe") ───────────────────────
-// Memoria que Fromly acumula de cada contexto. NO se muestra como un nodo dentro
-// del lienzo del contexto: vive como un bloque editable en la columna derecha
-// (ContextPropertiesPanel). Internamente sigue siendo un nodo hijo + sublíneas,
-// porque así lo lee el chat (aiChatStore.enrichTag) y lo escribe el extractor IA.
+// Memoria que Fromly acumula de cada contexto. Vive como un bloque editable en la
+// columna derecha, FUSIONADO con las notas libres del usuario (Alberto: "lo que
+// Fromly sabe debería quedarse, pero en formato nota... que se pueda ampliar,
+// escribir con comodidad, poner cabeceras... y que al mismo tiempo Fromly añade
+// contenido"). Por eso el nodo "🧠 Lo que Fromly sabe" es ahora un DOCUMENTO real
+// (`extraData._doc='1'`, contenido en `.body` como HTML) — mismo patrón que
+// `getOrCreateAgentInstructionDoc` en agentesHelper.ts. Formato ANTIGUO (antes de
+// este cambio): el nodo tenía un hijo por línea de texto plano; se migra
+// automáticamente a documento la primera vez que se lee/escribe, sin perder nada.
 
 /** Nodo "🧠 Lo que Fromly sabe" de un contexto, o null si aún no existe. */
 export function contextKnowledgeNode(contextId: string): Node | null {
   return store.children(contextId).find(n => !n.deletedAt && isContextKnowledge(n.text)) ?? null
+}
+
+/** ¿Es ya el nuevo formato documento? */
+function isKnowledgeDoc(n: Node): boolean {
+  return ed(n)._doc === '1'
 }
 
 /** ¿La línea es un andamio vacío («Palabras clave:», «Personas: —»…)? = una
@@ -473,15 +485,46 @@ function isEmptyKnowledgeLine(text: string): boolean {
   return value === '' || value === '—' || value === '-'
 }
 
-/** Conocimiento del contexto como texto (una línea por sublínea hija). Omite los
- *  andamios vacíos: si no hay contenido real, devuelve cadena vacía. */
-export function readContextKnowledge(contextId: string): string {
-  const kn = contextKnowledgeNode(contextId)
-  if (!kn) return ''
+/** Lee el texto plano del formato ANTIGUO (hijos-línea), sin migrar nada. */
+function readLegacyKnowledgeLines(kn: Node): string {
   return store.children(kn.id)
     .filter(n => !n.deletedAt && !isEmptyKnowledgeLine(n.text || ''))
     .map(n => (n.text || '').trim())
     .join('\n')
+}
+
+/** Busca (o crea) el nodo-documento "🧠 Lo que Fromly sabe" del contexto. Si el
+ *  nodo existe en formato ANTIGUO (hijos-línea de texto plano), lo MIGRA in situ:
+ *  convierte esas líneas a HTML en `.body` y borra los hijos-línea viejos — mismo
+ *  patrón que `getOrCreateAgentInstructionDoc` para agentes. Idempotente. */
+export function getOrCreateContextKnowledgeDoc(contextId: string): Node {
+  let kn = contextKnowledgeNode(contextId)
+  if (kn && isKnowledgeDoc(kn)) return kn
+  if (kn) {
+    // Formato antiguo → migrar: texto de los hijos-línea pasa a `.body` (HTML).
+    const legacyText = readLegacyKnowledgeLines(kn)
+    for (const child of store.children(kn.id).filter(c => !c.deletedAt)) store.deleteNode(child.id)
+    const merged = { _doc: '1' }
+    store.updateNode(kn.id, { extraData: JSON.stringify(merged), body: legacyText ? markdownToHtml(legacyText) : '<p></p>' })
+    return store.getNode(kn.id)!
+  }
+  const sibs = store.children(contextId).filter(n => !n.deletedAt)
+  const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
+  const created = store.createNode({ text: CONTEXT_KNOWLEDGE, parentId: contextId, siblingOrder: maxOrder + 1000 })
+  store.updateNode(created.id, { extraData: JSON.stringify({ _doc: '1' }), body: '<p></p>' })
+  return store.getNode(created.id)!
+}
+
+/** Conocimiento del contexto como texto plano. Soporta AMBOS formatos: si ya es
+ *  documento, extrae texto plano de `.body` (htmlToMarkdown); si es el formato
+ *  antiguo (hijos-línea), lo lee sin migrar (la migración ocurre al abrir/escribir
+ *  vía getOrCreateContextKnowledgeDoc, no en cada lectura). No cambia su firma: el
+ *  chat (aiChatStore.enrichTag) sigue llamando a esta función igual que siempre. */
+export function readContextKnowledge(contextId: string): string {
+  const kn = contextKnowledgeNode(contextId)
+  if (!kn) return ''
+  if (isKnowledgeDoc(kn)) return htmlToMarkdown(kn.body || '').trim()
+  return readLegacyKnowledgeLines(kn)
 }
 
 /** Añade hechos ESPECÍFICOS del contexto a su memoria ("Lo que Fromly sabe"),
@@ -503,29 +546,14 @@ export function appendContextFacts(contextId: string, facts: string[]): void {
   if (added) writeContextKnowledge(contextId, lines.join('\n'))
 }
 
-/** Sobrescribe el conocimiento del contexto: una línea = un nodo hijo. Crea el
- *  nodo "🧠 Lo que Fromly sabe" si hace falta; lo elimina si queda vacío. */
+/** Sobrescribe el conocimiento del contexto: el texto se guarda como HTML en el
+ *  `.body` del nodo-documento (migra el formato antiguo si hace falta). Si el
+ *  texto queda vacío, el documento se conserva vacío (no se borra el nodo): es el
+ *  mismo nodo que la UI muestra como bloque de nota, no debe desaparecer solo por
+ *  quedarse sin contenido momentáneamente. */
 export function writeContextKnowledge(contextId: string, text: string): void {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
-  let kn = contextKnowledgeNode(contextId)
-  if (lines.length === 0) {
-    if (kn) store.deleteNode(kn.id)
-    return
-  }
-  if (!kn) {
-    const sibs = store.children(contextId).filter(n => !n.deletedAt)
-    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
-    kn = store.createNode({ text: CONTEXT_KNOWLEDGE, parentId: contextId, siblingOrder: maxOrder + 1000 })
-  }
-  // Reconciliar hijos con las líneas: actualizar, crear los que falten, borrar el resto.
-  const existing = store.children(kn.id).filter(n => !n.deletedAt)
-  let order = 1000
-  for (let i = 0; i < lines.length; i++) {
-    if (existing[i]) store.updateNode(existing[i].id, { text: lines[i] })
-    else store.createNode({ text: lines[i], parentId: kn.id, siblingOrder: order })
-    order += 1000
-  }
-  for (let i = lines.length; i < existing.length; i++) store.deleteNode(existing[i].id)
+  const kn = getOrCreateContextKnowledgeDoc(contextId)
+  store.updateNode(kn.id, { body: text.trim() ? markdownToHtml(text) : '<p></p>' })
 }
 
 // ── Notas libres (del usuario, no de la IA) ────────────────────────────────────

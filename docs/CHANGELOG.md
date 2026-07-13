@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.804 — 13 julio 2026 · "Lo que Fromly sabe" y "Notas" unificados
+
+En la vista de Contexto había dos bloques separados y confusos: un textarea estrecho ("Lo que
+Fromly sabe") y un editor de nota aparte ("Notas"). Ahora es un único bloque en formato documento
+real (cabeceras, formato, se puede ampliar con comodidad) — Fromly sigue añadiendo y completando
+contenido ahí automáticamente, igual que antes. Si ya tenías contenido en ambos bloques, se fusionó
+sin perder nada.
+
+---
+
 ## Web v9.6.803 — 13 julio 2026 · El resultado de un agente ya es un documento en su contexto
 
 Al ejecutar un agente (manual o programado), el informe se creaba como un nodo por línea colgado

@@ -7,10 +7,11 @@ import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import {
   contextColor, contextParent, isContextClosed, setContextClosed,
-  readContextKnowledge, writeContextKnowledge, nodesInContext,
-  getOrCreateContainerNotes, reparentContext, clearContextParent,
+  getOrCreateContextKnowledgeDoc, nodesInContext,
+  containerNotesNode, reparentContext, clearContextParent,
   firstContextOf,
 } from '../../utils/cajones'
+import { htmlToMarkdown } from '../../utils/htmlMarkdown'
 import { isQuickCommandSession } from '../../store/aiChatStore'
 import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
@@ -56,9 +57,32 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
     return false
   }
 
-  // «Lo que Fromly sabe» — editable, se guarda al perder el foco.
-  const [know, setKnow] = useState('')
-  useEffect(() => { setKnow(readContextKnowledge(ctxId)) }, [ctxId])
+  // «Lo que Fromly sabe» — documento unificado (memoria de la IA + notas libres del
+  // usuario en un único bloque, Alberto: "debería quedarse, pero en formato nota").
+  // getOrCreateContextKnowledgeDoc migra automáticamente el formato antiguo (hijos-
+  // línea) la primera vez que se abre el contexto. Get-or-create UNA vez por
+  // contexto (no en cada render), igual que notesNode antes.
+  const knowledgeDoc = useMemo(() => {
+    const doc = getOrCreateContextKnowledgeDoc(ctxId)
+    // Fusión con las "Notas" antiguas (ahora eliminadas de la UI de contexto): si el
+    // usuario ya había escrito algo en el bloque "📝 Notas" separado y el nuevo
+    // documento de conocimiento está vacío, usamos las Notas como base (no perder lo
+    // ya escrito). Si AMBOS tienen contenido, se concatenan con un separador claro
+    // — decisión: preferimos no perder ningún texto ya escrito antes que decidir
+    // arbitrariamente cuál "gana". Se ejecuta una sola vez (idempotente: las Notas
+    // legado quedan vacías tras la fusión, así no se repite en próximas aperturas).
+    const legacyNotes = containerNotesNode(ctxId)
+    const legacyText = legacyNotes ? htmlToMarkdown(legacyNotes.body || '').trim() : ''
+    if (legacyText) {
+      const currentText = htmlToMarkdown(doc.body || '').trim()
+      const mergedHtml = currentText
+        ? `${doc.body || ''}<p>---</p>${legacyNotes!.body || ''}`
+        : (legacyNotes!.body || '<p></p>')
+      store.updateNode(doc.id, { body: mergedHtml })
+      store.updateNode(legacyNotes!.id, { body: '<p></p>' })
+    }
+    return store.getNode(doc.id)!
+  }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // TAREAS del contexto (hijas directas con estado/tipo tarea), estilo Hoy.
   const tasks = useMemo(() => {
@@ -123,9 +147,6 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
     const docId = migrateContextNotesToDoc(ctxId)
     if (docId) onOpenNode(docId)
   }
-
-  // Documento de «Notas» — get-or-create UNA vez por contexto (no en cada render).
-  const notesNode = useMemo(() => getOrCreateContainerNotes(ctxId), [ctxId])
 
   if (!node) return <div className="v2-right-empty">{t('v2.context.notFound', 'Contexto no encontrado.')}</div>
 
@@ -201,24 +222,14 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
         </>
       )}
 
-      {/* Lo que Fromly sabe */}
+      {/* Lo que Fromly sabe — bloque ÚNICO fusionado (memoria de la IA + notas libres
+          del usuario): EL MISMO editor completo que cualquier nota (toggle Nota/Lienzo,
+          favorito, exportar, cabeceras, formato…), no una versión reducida. Fromly
+          añade hechos aquí automáticamente (appendContextFacts) y el usuario puede
+          escribir con la misma comodidad que en cualquier documento. */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 6px' }}>🧠 {t('v2.context.whatFromlyKnows', 'Lo que Fromly sabe')}</div>
-        <textarea
-          className="v2-know-area"
-          value={know}
-          placeholder={t('v2.context.knowledgePlaceholder', 'Describe este contexto para que Fromly lo entienda mejor… (Fromly también lo completa solo)')}
-          onChange={(e) => setKnow(e.target.value)}
-          onBlur={() => writeContextKnowledge(ctxId, know)}
-        />
-      </div>
-
-      {/* Notas — EL MISMO editor completo que cualquier nota (toggle Nota/Lienzo, favorito,
-          exportar, publicar…), no una versión reducida. Al final de todo, como el resto de
-          información del contexto ya está arriba. */}
-      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('v2.context.notes', 'Notas')}</div>
-        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>🧠 {t('v2.context.whatFromlyKnows', 'Lo que Fromly sabe')}</div>
+        <V2NoteBody node={knowledgeDoc} onSelectCtx={onSelectCtx} inlinePage hideContext />
       </div>
     </div>
   )
