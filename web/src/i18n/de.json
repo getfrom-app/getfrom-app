@@ -2137,6 +2137,7 @@
   "v2.context.confirmMigrate": "{{count}} alte Notiz(en) in diesem Kontext in ein Dokument umwandeln?\n\nDies ist reversibel: Die Originale werden in den Papierkorb verschoben.",
   "v2.context.convertLegacyNotes": "{{count}} alte Notiz(en) in ein Dokument umwandeln",
   "v2.context.elements": "Elemente",
+  "v2.context.conversations": "Unterhaltungen",
   "v2.context.knowledgePlaceholder": "Beschreibe diesen Kontext, damit Fromly ihn besser versteht… (Fromly ergänzt ihn auch selbstständig)",
   "v2.context.noParent": "Kein übergeordneter Kontext",
   "v2.context.notFound": "Kontext nicht gefunden.",
@@ -2212,5 +2213,9 @@
   "docSlash.calendar": "Kalender",
   "docSlash.calendarDesc": "Inline-Kalender",
   "docSlash.noResults": "Keine Ergebnisse für",
-  "docSlash.groupBlocks": "Blöcke"
+  "docSlash.groupBlocks": "Blöcke",
+  "elements.agents": "Agenten",
+  "v2.context.agents": "Agenten",
+  "agents.promptLabel": "Agentenanweisung",
+  "agents.propertiesLabel": "Eigenschaften"
 }

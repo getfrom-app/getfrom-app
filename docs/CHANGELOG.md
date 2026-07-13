@@ -4,6 +4,29 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.793 — 13 julio 2026 · Sistema de agentes en v2
+
+Los agentes (automatizaciones que corren en la nube, con prompt propio y horario) llegan a v2:
+
+- **Contexto padre libre**: un agente cuelga de cualquier contexto, como una tarea o nota — ya no
+  vive solo bajo un root único como en v1.
+- **Aparece en Elementos** (icono 🤖) y como bloque "AGENTES" en la pestaña Contexto.
+- **Detalle propio**: prompt editable (mismo editor que cualquier nota) + panel de propiedades de
+  v1 reutilizado tal cual (activar/pausar, ejecutar ahora, programar, última ejecución).
+- **Creación por IA desde el chat**: pide una automatización recurrente y la IA redacta el prompt,
+  infiere el horario y crea el agente — siempre DESACTIVADO por defecto, para que lo revises antes
+  de encender.
+- **Gate Pro**: activar un agente en una cuenta no-Pro dispara el paywall.
+- **La IA ya puede crear contextos** desde el chat (antes solo tareas/notas/eventos).
+- **La columna derecha se abre sola** al crear algo por chat (contexto, nota, agente…), mostrando
+  sus propiedades directamente.
+- **Bloque "Conversaciones"** en la pestaña Contexto — las conversaciones de ese contexto,
+  ordenadas de más reciente a más antigua.
+- Reforzada la regla de preguntar antes de crear un contexto o un agente cuando hay más de un
+  enfoque razonable — decisiones estructurales primero, prompts sueltos directo.
+
+---
+
 ## Web v9.6.792 — 13 julio 2026 · Vistas globales, plantillas, slash-commands y número de versión
 
 Tercera ronda de la auditoría de paridad v1→v2:

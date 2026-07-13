@@ -25,6 +25,8 @@ import { firstContextOf, setNodeContext, contextColor } from '../../utils/cajone
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from '../../components/panels/ContextPicker'
 import V2TaskDetailView from './V2TaskDetailView'
+import V2AgentDetailView from './V2AgentDetailView'
+import { isAgentNode } from '../../utils/agentesHelper'
 import { useRef, useEffect } from 'react'
 import type { Node } from '../../types'
 
@@ -256,6 +258,11 @@ export default function V2DetailView({ nodeId, onSelectCtx }: { nodeId: string; 
   const ed = parseExtraData(node.extraData)
   const hasAudio = Array.isArray(ed._audios)
   const rt = ((node.resourceType || ed._resourceType || '') as string).toLowerCase()
+
+  // AGENTE: nunca como nota genérica ni como tarea — vista propia (prompt editable +
+  // propiedades reales de AgentPropertiesPanel de v1). Se comprueba ANTES que el resto
+  // de ramas porque un agente no es tarea/evento/recurso.
+  if (isAgentNode(node)) return <V2AgentDetailView node={node} onSelectCtx={onSelectCtx} />
 
   // Cualquier tipo de RECURSO (audio, PDF/imagen, o el resto — enlaces, podcasts,
   // libros…) muestra su contexto arriba (chip + cambiar), igual que nota/tarea.

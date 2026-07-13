@@ -2137,6 +2137,7 @@
   "v2.context.confirmMigrate": "Convertire {{count}} nota/e vecchia/e di questo contesto in un documento?\n\nÈ reversibile: gli originali vanno nel cestino.",
   "v2.context.convertLegacyNotes": "Converti {{count}} nota/e vecchia/e in un documento",
   "v2.context.elements": "Elementi",
+  "v2.context.conversations": "Conversazioni",
   "v2.context.knowledgePlaceholder": "Descrivi questo contesto affinché Fromly lo comprenda meglio… (Fromly lo completa anche da solo)",
   "v2.context.noParent": "Nessun contesto padre",
   "v2.context.notFound": "Contesto non trovato.",
@@ -2212,5 +2213,9 @@
   "docSlash.calendar": "Calendario",
   "docSlash.calendarDesc": "Calendario inline",
   "docSlash.noResults": "Nessun risultato per",
-  "docSlash.groupBlocks": "Blocchi"
+  "docSlash.groupBlocks": "Blocchi",
+  "elements.agents": "Agenti",
+  "v2.context.agents": "Agenti",
+  "agents.promptLabel": "Istruzione dell'agente",
+  "agents.propertiesLabel": "Proprietà"
 }

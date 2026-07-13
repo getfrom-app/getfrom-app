@@ -2137,6 +2137,7 @@
   "v2.context.confirmMigrate": "{{count}} oude notitie(s) van deze context omzetten naar een document?\n\nDit is omkeerbaar: de originelen gaan naar de prullenbak.",
   "v2.context.convertLegacyNotes": "{{count}} oude notitie(s) omzetten naar een document",
   "v2.context.elements": "Elementen",
+  "v2.context.conversations": "Gesprekken",
   "v2.context.knowledgePlaceholder": "Beschrijf deze context zodat Fromly het beter begrijpt… (Fromly vult het ook zelf aan)",
   "v2.context.noParent": "Geen bovenliggende context",
   "v2.context.notFound": "Context niet gevonden.",
@@ -2212,5 +2213,9 @@
   "docSlash.calendar": "Kalender",
   "docSlash.calendarDesc": "Inline kalender",
   "docSlash.noResults": "Geen resultaten voor",
-  "docSlash.groupBlocks": "Blokken"
+  "docSlash.groupBlocks": "Blokken",
+  "elements.agents": "Agenten",
+  "v2.context.agents": "Agenten",
+  "agents.promptLabel": "Instructie van de agent",
+  "agents.propertiesLabel": "Eigenschappen"
 }

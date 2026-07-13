@@ -425,7 +425,7 @@ class AIChatStore {
       if (allActions.length === 0) break
 
       const readActions  = allActions.filter(a => READ_ACTIONS.has(a.action as string))
-      const KNOWN_WRITE_ACTIONS = new Set(['create_note','create_document','create_task','create_event','create_resource','update_node','add_column','fill_column','add_row','change_view','run_prompt'])
+      const KNOWN_WRITE_ACTIONS = new Set(['create_note','create_document','create_task','create_event','create_context','create_resource','update_node','add_column','fill_column','add_row','change_view','run_prompt'])
       const writeActions = allActions.filter(a => {
         if (READ_ACTIONS.has(a.action as string)) return false
         // Ignorar update_node que solo modifica body (body desactivado en Fromly)
@@ -498,6 +498,12 @@ class AIChatStore {
           this.persistActionsOnNode(assistantMsgId, allWriteResults)
         }
         this.notify()
+        // Si se creó UN solo elemento (evita ambigüedad con creaciones múltiples,
+        // p.ej. un dictado que genera nota+tareas), abre su ficha en la columna derecha
+        // — mismo evento que usan los botones manuales «+Nota»/«+Tarea» (V2App.tsx).
+        if (undoBundle.createdIds.length === 1 && typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: undoBundle.createdIds[0] } }))
+        }
         // Acumular resultados y continuar el loop
         accumulatedReadResults = [...accumulatedReadResults, ...writeResults]
       }

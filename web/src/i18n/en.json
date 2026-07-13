@@ -2137,6 +2137,7 @@
   "v2.context.confirmMigrate": "Convert {{count}} old note(s) in this context into a document?\n\nThis is reversible: the originals go to the trash.",
   "v2.context.convertLegacyNotes": "Convert {{count}} old note(s) into a document",
   "v2.context.elements": "Elements",
+  "v2.context.conversations": "Conversations",
   "v2.context.knowledgePlaceholder": "Describe this context so Fromly understands it better… (Fromly also fills it in on its own)",
   "v2.context.noParent": "No parent context",
   "v2.context.notFound": "Context not found.",
@@ -2212,5 +2213,9 @@
   "docSlash.calendar": "Calendar",
   "docSlash.calendarDesc": "Inline calendar",
   "docSlash.noResults": "No results for",
-  "docSlash.groupBlocks": "Blocks"
+  "docSlash.groupBlocks": "Blocks",
+  "elements.agents": "Agents",
+  "v2.context.agents": "Agents",
+  "agents.promptLabel": "Agent instruction",
+  "agents.propertiesLabel": "Properties"
 }

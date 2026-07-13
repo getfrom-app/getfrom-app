@@ -12,6 +12,7 @@ import { getAgentData, setAgentEnabled, syncAgentUserMessage } from '../../utils
 import { apiRequest, getToken, TokensError } from '../../api/client'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { scheduleNextLabel } from '../../utils/scheduleHelper'
+import { userStore } from '../../store/userStore'
 
 const SCHEDULE_OPTIONS = [
   { value: '',               labelEs: 'Sin programar',            labelEn: 'Not scheduled' },
@@ -74,6 +75,14 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
   function toggleEnabled() {
     if (!data) return
     const next = !data.enabled
+    // Gate Pro: solo al ACTIVAR (crear/editar/pausar siempre está permitido). Reutiliza
+    // el paywall genérico ya existente (mismo evento/razón 'ai_limit' que ya dispara
+    // handleRun más abajo y client.ts/nodeStore.ts) — PaywallModal solo distingue
+    // 'node_limit' de todo lo demás, así que 'ai_limit' ya renderiza el caso "free sin IA".
+    if (next && !userStore.isPremium) {
+      window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'ai_limit' } }))
+      return
+    }
     setAgentEnabled(nodeId, next)
     if (data.schedule && isLoggedIn) {
       const userMessage = syncAgentUserMessage(nodeId)

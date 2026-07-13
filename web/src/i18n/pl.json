@@ -2137,6 +2137,7 @@
   "v2.context.confirmMigrate": "Przekonwertować {{count}} starą(-e) notatkę(-i) z tego kontekstu na dokument?\n\nTo odwracalne: oryginały trafią do kosza.",
   "v2.context.convertLegacyNotes": "Przekonwertuj {{count}} starą(-e) notatkę(-i) na dokument",
   "v2.context.elements": "Elementy",
+  "v2.context.conversations": "Rozmowy",
   "v2.context.knowledgePlaceholder": "Opisz ten kontekst, aby Fromly lepiej go rozumiał… (Fromly również uzupełnia go samodzielnie)",
   "v2.context.noParent": "Brak kontekstu nadrzędnego",
   "v2.context.notFound": "Nie znaleziono kontekstu.",
@@ -2212,5 +2213,9 @@
   "docSlash.calendar": "Kalendarz",
   "docSlash.calendarDesc": "Wbudowany kalendarz",
   "docSlash.noResults": "Brak wyników dla",
-  "docSlash.groupBlocks": "Bloki"
+  "docSlash.groupBlocks": "Bloki",
+  "elements.agents": "Agenci",
+  "v2.context.agents": "Agenci",
+  "agents.promptLabel": "Instrukcja agenta",
+  "agents.propertiesLabel": "Właściwości"
 }

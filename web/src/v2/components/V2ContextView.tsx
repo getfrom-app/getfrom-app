@@ -9,8 +9,10 @@ import {
   contextColor, contextParent, isContextClosed, setContextClosed,
   readContextKnowledge, writeContextKnowledge, nodesInContext,
   getOrCreateContainerNotes, reparentContext, clearContextParent,
+  firstContextOf,
 } from '../../utils/cajones'
-import { parseExtraData } from '../../utils/papeleraHelper'
+import { isQuickCommandSession } from '../../store/aiChatStore'
+import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
 import { V2NoteBody } from './V2DetailView'
@@ -18,15 +20,17 @@ import ContextPicker from '../../components/panels/ContextPicker'
 import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
+import { isAgentNode, getAgentData } from '../../utils/agentesHelper'
 import type { Node } from '../../types'
 
 interface Props {
   ctxId: string
   onSelectCtx: (id: string) => void
   onOpenNode: (id: string) => void
+  onOpenConversation?: (id: string) => void
 }
 
-export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props) {
+export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenConversation }: Props) {
   const { t } = useTranslation()
   useStore()
   const node = store.getNode(ctxId)
@@ -86,6 +90,29 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
       }
     }
     return out.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
+  }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // AGENTES del contexto (v2: cuelgan del contexto activo, contexto padre libre —
+  // no confinados al root único "🤖 Agentes" de v1). Hijos directos con _agentDef='1'.
+  const agents = useMemo(() => {
+    void store.nodesVersion
+    return store.children(ctxId).filter(n => !n.deletedAt && isAgentNode(n))
+  }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // CONVERSACIONES del contexto: mismas reglas que el Historial (_aiSession='1',
+  // fuera de papelera, sin sesiones de comando rápido de 1 turno), pero filtradas
+  // a las que pertenecen a ESTE contexto (firstContextOf). Más reciente primero.
+  const conversations = useMemo(() => {
+    void store.nodesVersion
+    const list = store.allActive().filter(n => {
+      const ed = parseExtraData(n.extraData)
+      if (ed._aiSession !== '1') return false
+      if (isInPapelera(n.id)) return false
+      if (isQuickCommandSession(n.id)) return false
+      return firstContextOf(n)?.id === ctxId
+    })
+    list.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
+    return list
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Migración de notas antiguas → documento del contexto.
@@ -157,6 +184,51 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
           <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>{t('v2.context.elements', 'Elementos')} ({elements.length})</div>
           {elements.map(({ node: n, icon }) => (
             <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} hideContext />
+          ))}
+        </>
+      )}
+
+      {/* Agentes del contexto — icono + estado (activo/pausado) + enlace a su detalle. */}
+      {agents.length > 0 && (
+        <>
+          <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>🤖 {t('v2.context.agents', 'Agentes')} ({agents.length})</div>
+          {agents.map(a => {
+            const data = getAgentData(a.id)
+            const enabled = data?.enabled ?? false
+            const label = (a.text || '').replace(/^\p{Emoji_Presentation}\s*/u, '').trim() || a.text || t('common.noTitle', 'Sin título')
+            return (
+              <div key={a.id} className="v2-el-row" onClick={() => onOpenNode(a.id)} style={{ cursor: 'pointer' }}>
+                <span className="v2-el-icon">{data?.icon || '🤖'}</span>
+                <span className="v2-el-main">
+                  <span className="v2-el-title">{label}</span>
+                </span>
+                <span
+                  style={{
+                    fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20, flexShrink: 0,
+                    color: enabled ? '#22c55e' : 'var(--text-tertiary)',
+                    background: enabled ? 'rgba(34,197,94,0.10)' : 'var(--bg-secondary)',
+                  }}
+                >
+                  {enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')}
+                </span>
+              </div>
+            )
+          })}
+        </>
+      )}
+
+      {/* Conversaciones del contexto — de más reciente a más antigua. */}
+      {conversations.length > 0 && (
+        <>
+          <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>{t('v2.context.conversations', 'Conversaciones')} ({conversations.length})</div>
+          {conversations.map(n => (
+            <V2ElementRow
+              key={n.id}
+              node={n}
+              icon="💬"
+              onOpen={id => (onOpenConversation ? onOpenConversation(id) : onOpenNode(id))}
+              hideContext
+            />
           ))}
         </>
       )}

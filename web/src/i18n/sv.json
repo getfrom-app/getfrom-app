@@ -2137,6 +2137,7 @@
   "v2.context.confirmMigrate": "Konvertera {{count}} gammal/gamla anteckning(ar) i den här kontexten till ett dokument?\n\nDetta går att ångra: originalen flyttas till papperskorgen.",
   "v2.context.convertLegacyNotes": "Konvertera {{count}} gammal/gamla anteckning(ar) till ett dokument",
   "v2.context.elements": "Element",
+  "v2.context.conversations": "Konversationer",
   "v2.context.knowledgePlaceholder": "Beskriv den här kontexten så att Fromly förstår den bättre… (Fromly fyller också i den själv)",
   "v2.context.noParent": "Ingen överordnad kontext",
   "v2.context.notFound": "Kontexten hittades inte.",
@@ -2212,5 +2213,9 @@
   "docSlash.calendar": "Kalender",
   "docSlash.calendarDesc": "Infogad kalender",
   "docSlash.noResults": "Inga resultat för",
-  "docSlash.groupBlocks": "Block"
+  "docSlash.groupBlocks": "Block",
+  "elements.agents": "Agenter",
+  "v2.context.agents": "Agenter",
+  "agents.promptLabel": "Agentinstruktion",
+  "agents.propertiesLabel": "Egenskaper"
 }

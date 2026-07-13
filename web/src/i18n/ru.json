@@ -2137,6 +2137,7 @@
   "v2.context.confirmMigrate": "Преобразовать {{count}} старую(-ых) заметку(-и) этого контекста в документ?\n\nЭто обратимо: оригиналы попадут в корзину.",
   "v2.context.convertLegacyNotes": "Преобразовать {{count}} старую(-ых) заметку(-и) в документ",
   "v2.context.elements": "Элементы",
+  "v2.context.conversations": "Разговоры",
   "v2.context.knowledgePlaceholder": "Опишите этот контекст, чтобы Fromly лучше его понимал… (Fromly также дополняет его самостоятельно)",
   "v2.context.noParent": "Нет родительского контекста",
   "v2.context.notFound": "Контекст не найден.",
@@ -2212,5 +2213,9 @@
   "docSlash.calendar": "Календарь",
   "docSlash.calendarDesc": "Встроенный календарь",
   "docSlash.noResults": "Нет результатов для",
-  "docSlash.groupBlocks": "Блоки"
+  "docSlash.groupBlocks": "Блоки",
+  "elements.agents": "Агенты",
+  "v2.context.agents": "Агенты",
+  "agents.promptLabel": "Инструкция агента",
+  "agents.propertiesLabel": "Свойства"
 }

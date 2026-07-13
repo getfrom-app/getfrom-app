@@ -2137,6 +2137,7 @@
   "v2.context.confirmMigrate": "Μετατροπή {{count}} παλαιάς(-ών) σημείωσης(-εων) αυτού του πλαισίου σε έγγραφο;\n\nΕίναι αναστρέψιμο: τα πρωτότυπα μεταφέρονται στον κάδο.",
   "v2.context.convertLegacyNotes": "Μετατροπή {{count}} παλαιάς(-ών) σημείωσης(-εων) σε έγγραφο",
   "v2.context.elements": "Στοιχεία",
+  "v2.context.conversations": "Συνομιλίες",
   "v2.context.knowledgePlaceholder": "Περιέγραψε αυτό το πλαίσιο ώστε το Fromly να το κατανοήσει καλύτερα… (το Fromly το συμπληρώνει και μόνο του)",
   "v2.context.noParent": "Χωρίς γονικό πλαίσιο",
   "v2.context.notFound": "Το πλαίσιο δεν βρέθηκε.",
@@ -2212,5 +2213,9 @@
   "docSlash.calendar": "Ημερολόγιο",
   "docSlash.calendarDesc": "Ενσωματωμένο ημερολόγιο",
   "docSlash.noResults": "Δεν βρέθηκαν αποτελέσματα για",
-  "docSlash.groupBlocks": "Μπλοκ"
+  "docSlash.groupBlocks": "Μπλοκ",
+  "elements.agents": "Πράκτορες",
+  "v2.context.agents": "Πράκτορες",
+  "agents.promptLabel": "Οδηγία πράκτορα",
+  "agents.propertiesLabel": "Ιδιότητες"
 }

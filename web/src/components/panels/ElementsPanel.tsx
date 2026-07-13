@@ -24,7 +24,7 @@ import { isInPapelera } from '../../utils/papeleraHelper'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
 import type { FilterView } from '../views/FilterResultsView'
 
-type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight'
+type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; due?: string | null; status?: string | null }
@@ -40,6 +40,7 @@ function classify(n: Node): ElemKind | null {
   if (e._aiSession != null || e._aiTranscript != null || e._aiMsgRole != null) return null
   if (e._containerNotes === '1') return null   // espacio de notas libres (estructural, no un elemento)
   if (e._pdfSelection != null) return 'highlight'   // subrayado guardado de un PDF (cita)
+  if (e._agentDef === '1') return 'agent'           // agente (v2: puede colgar de cualquier contexto)
   if (isMarkedContext(n)) return 'context'
   if (n.status != null) return 'task'
   if (n.isEvent) return 'event'
@@ -72,7 +73,7 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
   return true
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️' }
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖' }
 const ROW_H = 46
 const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
 
@@ -142,6 +143,7 @@ export default function ElementsPanel() {
     { key: 'highlight', label: '🖍️ ' + t('elements.highlights', 'Subrayados') },
     { key: 'image',   label: t('elements.images') },
     { key: 'context', label: t('elements.contexts') },
+    { key: 'agent',   label: '🤖 ' + t('elements.agents', 'Agentes') },
     { key: 'memory',  label: t('elements.memory', 'Memoria') },
   ]
   const SUB_CHIPS: { key: TaskSub; label: string }[] = [

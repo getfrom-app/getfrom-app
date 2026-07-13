@@ -257,7 +257,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
           (activeSessionId && !viewingCtxFicha)
             ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
             : selectedCtxId
-              ? <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} />
+              ? <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} onOpenConversation={onOpenConversation} />
               : activeSessionId
                 ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
                 : <div className="v2-right-empty">{t('v2.rightColumn.chooseContextEmpty', 'Elige un contexto a la izquierda, o empieza una conversación: aquí verás sus tareas y elementos.')}</div>

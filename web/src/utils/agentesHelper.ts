@@ -114,6 +114,47 @@ export function getAgentesNode(): Node | undefined {
   return findRootByKey('agentes', AGENTES_NAME)
 }
 
+/** ¿Es este nodo un agente? (mismo criterio que getAgentData, sin parsear el resultado completo) */
+export function isAgentNode(n: Node | null | undefined): boolean {
+  if (!n) return false
+  try { return JSON.parse(n.extraData || '{}')._agentDef === '1' } catch { return false }
+}
+
+/**
+ * createAgentUnder — crea un agente colgado de CUALQUIER contexto/nota (v2: «contexto
+ * padre libre»). A diferencia de AgentListPanel.createAgent (v1, siempre bajo el root
+ * único 🤖 Agentes), aquí `parentId` es el contexto activo — mismo patrón que
+ * `onNewDocument` en V2App.tsx. El modelo de datos del agente (extraData) es IDÉNTICO
+ * al de v1: solo cambia DÓNDE cuelga en el árbol.
+ */
+export function createAgentUnder(opts: {
+  parentId: string | null
+  label: string
+  icon?: string
+  systemPrompt?: string
+  userMessage?: string
+  schedule?: string
+  enabled?: boolean
+}): Node {
+  const icon = opts.icon || '🤖'
+  const node = store.createNode({ text: `${icon} ${opts.label}`.trim(), parentId: opts.parentId })
+  const userMessage = opts.userMessage || ''
+  store.updateNode(node.id, {
+    extraData: JSON.stringify({
+      _agentDef:          '1',
+      _agentId:           node.id,
+      _agentIcon:         icon,
+      _agentSystemPrompt: opts.systemPrompt || '',
+      _agentUserMessage:  userMessage,
+      _agentEnabled:      opts.enabled ? 'true' : 'false',
+      _agentSchedule:     opts.schedule ?? '',
+    }),
+  })
+  // La nota central del agente es el prompt del usuario (igual que ensureAgentesNode).
+  if (userMessage) store.createNode({ text: userMessage, parentId: node.id })
+  return store.getNode(node.id)!
+}
+
 /** Lee los datos de agente de un nodo */
 export function getAgentData(nodeId: string): {
   icon: string; systemPrompt: string; userMessage: string

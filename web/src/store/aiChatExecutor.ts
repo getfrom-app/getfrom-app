@@ -7,6 +7,8 @@ import { store } from './nodeStore'
 import type { ExecutedAction } from './aiChatStore'
 import { ensureDayPath } from '../utils/agendaHelper'
 import { pushEventToGcal } from '../utils/gcalNodesSync'
+import { createAgentUnder } from '../utils/agentesHelper'
+import { createContext } from '../utils/cajones'
 
 /** Quita prefijos de lista de un título de nodo: "1. ", "12) ", "- ", "* ", "• ".
  * (Magic a veces genera cada idea como "1. ..." → todos salían con un "1." delante.) */
@@ -36,6 +38,8 @@ export async function executeChatAction(
     case 'create_note':    return createNote(action, sessionId, currentNodeId)
     case 'create_document':return createDocument(action, sessionId, currentNodeId)
     case 'create_task':    return createTask(action, sessionId, currentNodeId)
+    case 'create_context': return createContextAction(action)
+    case 'create_agent':   return createAgentAction(action, sessionId, currentNodeId)
     case 'create_event':   return createEvent(action, sessionId)
     case 'update_node':    return updateNode(action)
     case 'read_node':      return readNode(action)
@@ -171,6 +175,38 @@ function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeI
   store.updateNode(created.id, updates)
   const datePart = due ? ` para ${new Date(due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}` : ''
   return result('create_task', true, `Tarea «${text}»${datePart} creada.`, [created.id])
+}
+
+function createContextAction(a: Record<string, unknown>): ExecutedAction {
+  const name = cleanNodeTitle((a.name as string) || (a.text as string) || 'Contexto')
+  const rawParent = (a.parent_context_id as string | undefined) || null
+  const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
+
+  const created = createContext(name, explicitParent)
+  return result('create_context', true, `Contexto «${name}» creado.`, [created.id])
+}
+
+/** create_agent — crea una automatización recurrente (agente) colgada del contexto
+ *  activo (contexto padre libre, v2), SIEMPRE desactivada: el usuario la revisa y
+ *  activa explícitamente (gate de seguridad, no de suscripción — el gate Pro actúa
+ *  al ACTIVAR, en AgentPropertiesPanel/setAgentEnabled). Mismo patrón de result()
+ *  que create_task/create_note, con tarjeta de confirmación en el chat. */
+function createAgentAction(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
+  const label = cleanNodeTitle((a.text as string) || (a.title as string) || 'Agente')
+  const systemPrompt = (a.system_prompt as string) || (a.systemPrompt as string) || ''
+  const userMessage = (a.user_message as string) || (a.userMessage as string) || ''
+  const schedule = (a.schedule as string) || ''
+  const rawParent = (a.parent_id as string | undefined) || null
+  const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
+  const parentId = explicitParent ?? sessionId ?? currentNodeId ?? null
+
+  const created = createAgentUnder({
+    parentId, label, systemPrompt, userMessage, schedule, enabled: false,
+  })
+  const schedulePart = schedule ? ` (programado: ${schedule})` : ' (sin programar todavía)'
+  return result('create_agent', true,
+    `Agente «${label}» creado${schedulePart}. Está DESACTIVADO — revísalo y actívalo cuando estés listo.`,
+    [created.id])
 }
 
 function createEvent(a: Record<string, unknown>, sessionId?: string): ExecutedAction {

@@ -2142,6 +2142,7 @@
   "v2.context.unarchive": "Desarchivar",
   "v2.context.archive": "Archivar",
   "v2.context.elements": "Elementos",
+  "v2.context.conversations": "Conversaciones",
   "v2.context.whatFromlyKnows": "Lo que Fromly sabe",
   "v2.context.knowledgePlaceholder": "Describe este contexto para que Fromly lo entienda mejor… (Fromly también lo completa solo)",
   "v2.context.notes": "Notas",
@@ -2212,5 +2213,9 @@
   "docSlash.calendar": "Calendario",
   "docSlash.calendarDesc": "Calendario inline",
   "docSlash.noResults": "Sin resultados para",
-  "docSlash.groupBlocks": "Bloques"
+  "docSlash.groupBlocks": "Bloques",
+  "elements.agents": "Agentes",
+  "v2.context.agents": "Agentes",
+  "agents.promptLabel": "Instrucción del agente",
+  "agents.propertiesLabel": "Propiedades"
 }

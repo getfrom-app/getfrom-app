@@ -24,6 +24,7 @@ import RightColMenu from '../components/panels/RightColMenu'
 import UnifiedCapture from '../components/modals/UnifiedCapture'
 import { ToastProvider } from '../components/Toast'
 import { WEB_VERSION } from '../components/layout/StatusBar'
+import PaywallModal from '../components/paywall/PaywallModal'
 import './styles/v2.css'
 
 export const V2_VERSION = 'v2.0.0-beta.1'
@@ -366,6 +367,17 @@ export default function V2App() {
     return () => window.removeEventListener('from:pdf-send-to-canvas', h as EventListener)
   }, [])
 
+  // Paywall genérico — reutilizado tal cual (v1 lo monta en MainLayout; v2 no tenía
+  // ningún listener/render todavía, así que el gate Pro de agentes no llegaba a mostrar
+  // nada). Mismo evento `from:paywall` que dispara TokensError/límite de nodos en
+  // client.ts, nodeStore.ts y ahora AgentPropertiesPanel al intentar ACTIVAR un agente.
+  const [paywallReason, setPaywallReason] = useState<'node_limit' | 'ai_limit' | null>(null)
+  useEffect(() => {
+    const h = (e: Event) => setPaywallReason((e as CustomEvent).detail?.reason ?? 'ai_limit')
+    window.addEventListener('from:paywall', h)
+    return () => window.removeEventListener('from:paywall', h)
+  }, [])
+
   // Menú contextual (clic derecho) de cualquier fila/elemento → RightColMenu de la v1.
   // Las filas disparan `from:open-rowmenu` con { nodeId, x, y }.
   const [rowMenu, setRowMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
@@ -461,6 +473,7 @@ export default function V2App() {
         />
       )}
       <V2Onboarding />
+      {paywallReason && <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />}
       <span className="v2-version">{WEB_VERSION}</span>
     </div>
     </ToastProvider>

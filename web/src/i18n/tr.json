@@ -2137,6 +2137,7 @@
   "v2.context.confirmMigrate": "Bu bağlamdaki {{count}} eski not bir belgeye dönüştürülsün mü?\n\nBu geri alınabilir: orijinaller çöpe gider.",
   "v2.context.convertLegacyNotes": "{{count}} eski notu belgeye dönüştür",
   "v2.context.elements": "Öğeler",
+  "v2.context.conversations": "Konuşmalar",
   "v2.context.knowledgePlaceholder": "Fromly'nin daha iyi anlaması için bu bağlamı açıkla… (Fromly bunu kendi başına da tamamlar)",
   "v2.context.noParent": "Üst bağlam yok",
   "v2.context.notFound": "Bağlam bulunamadı.",
@@ -2212,5 +2213,9 @@
   "docSlash.calendar": "Takvim",
   "docSlash.calendarDesc": "Satır içi takvim",
   "docSlash.noResults": "Şunun için sonuç yok",
-  "docSlash.groupBlocks": "Bloklar"
+  "docSlash.groupBlocks": "Bloklar",
+  "elements.agents": "Ajanlar",
+  "v2.context.agents": "Ajanlar",
+  "agents.promptLabel": "Ajan talimatı",
+  "agents.propertiesLabel": "Özellikler"
 }
