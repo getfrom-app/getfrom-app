@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.803 — 13 julio 2026 · El resultado de un agente ya es un documento en su contexto
+
+Al ejecutar un agente (manual o programado), el informe se creaba como un nodo por línea colgado
+siempre del diario de hoy. Ahora se crea como UN documento con formato real (encabezados, negritas,
+tablas si el resultado los trae en markdown), colgado del mismo contexto donde vive el agente — no
+del diario. Corregido tanto en la ejecución manual ("▶ Ejecutar") como en el cron programado del
+servidor.
+
+---
+
 ## Web v9.6.802 — 13 julio 2026 · Instrucción de agente como documento + prompts más extensos
 
 - **La instrucción de un agente ya se edita como documento normal** (formato, párrafos) en vez de

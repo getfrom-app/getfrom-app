@@ -13,6 +13,8 @@ import { apiRequest, getToken, TokensError } from '../../api/client'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { scheduleNextLabel } from '../../utils/scheduleHelper'
 import { userStore } from '../../store/userStore'
+import { firstContextOf } from '../../utils/cajones'
+import { markdownToHtml } from '../../utils/importMarkdown'
 
 const SCHEDULE_OPTIONS = [
   { value: '',               labelEs: 'Sin programar',            labelEn: 'Not scheduled' },
@@ -112,18 +114,21 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
         }),
       })
       if (res.ok && res.result) {
-        const today = getTodayDiaryUnderAgenda()
-        const resultParent = store.createNode({ text: `▶ ${node!.text}`, parentId: today.id })
-        for (const line of res.result.split('\n').map(l => l.trim()).filter(Boolean)) {
-          store.createNode({ text: line, parentId: resultParent.id })
-        }
+        // El resultado cuelga del CONTEXTO del agente (no siempre del diario de hoy —
+        // Alberto: "los agentes deben crear lo que sea que creen como nota, que se
+        // añadiría a ese contexto"), y es un DOCUMENTO normal (formato real: encabezados,
+        // negritas, tablas si el resultado los trae en markdown), no un nodo por línea.
+        const ctx = firstContextOf(node!)
+        const parentId = ctx ? ctx.id : getTodayDiaryUnderAgenda().id
+        const resultDoc = store.createNode({ text: `▶ ${node!.text}`, parentId, extraData: { _doc: '1' } })
+        store.updateNode(resultDoc.id, { body: markdownToHtml(res.result) })
         try {
           const ed = JSON.parse(node!.extraData || '{}')
           ed._agentLastRun = new Date().toISOString()
           store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
         } catch { /* ignore */ }
         setSaved(true)
-        openNodeDetail(resultParent.id)
+        openNodeDetail(resultDoc.id)
       } else {
         setError(res.error || (isEn ? 'Run failed' : 'Error al ejecutar'))
       }
