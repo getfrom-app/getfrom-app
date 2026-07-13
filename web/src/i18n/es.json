@@ -2008,6 +2008,8 @@
   "elements.title": "Elementos",
   "elements.all": "Todos",
   "elements.texts": "Textos",
+  "elements.canvases": "Lienzos",
+  "elements.emptyCanvas": "Lienzo vacío",
   "elements.showing": "{{count}} elementos",
   "elements.subAll": "Todas",
   "elements.subToday": "Hoy",

@@ -2008,6 +2008,8 @@
   "elements.title": "Στοιχεία",
   "elements.all": "Όλα",
   "elements.texts": "Κείμενα",
+  "elements.canvases": "Καμβάδες",
+  "elements.emptyCanvas": "Κενός καμβάς",
   "elements.showing": "{{count}} στοιχεία",
   "elements.subAll": "Όλες",
   "elements.subToday": "Σήμερα",

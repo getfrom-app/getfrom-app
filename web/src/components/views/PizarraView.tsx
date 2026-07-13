@@ -307,14 +307,14 @@ type CanvasTool = 'select' | 'pen' | 'marker' | 'highlighter' | 'eraser' | 'text
 const isShapeTool = (t: CanvasTool) => t === 'line' || t === 'rect' || t === 'ellipse' || t === 'arrow'
 const isInkTool = (t: CanvasTool) => t === 'pen' || t === 'marker' || t === 'highlighter'
 const FENCE = '```from-pizarra'
-interface WBStroke { id: string; pts: number[]; w: number; c: string; e?: boolean; a?: number; k?: string; g?: string }
+export interface WBStroke { id: string; pts: number[]; w: number; c: string; e?: boolean; a?: number; k?: string; g?: string }
 // Texto LIBRE del lienzo (compatible iPad): x,y mundo; size=fuente; w=ancho; md=texto.
-interface WBText { id: string; x: number; y: number; size: number; w: number; md: string; c?: string; nodeId?: string }
+export interface WBText { id: string; x: number; y: number; size: number; w: number; md: string; c?: string; nodeId?: string }
 
 // Conector: flecha que une DOS elementos (nodos). a/b = ids de nodo; c = punto de
 // control (mundo) para curvar. Se redibuja según la posición actual de cada nodo.
 interface WBConnector { id: string; a: string; b: string; c?: [number, number] }
-interface WBData { version: number; strokes: WBStroke[]; texts?: WBText[]; tasks?: unknown[]; connectors?: WBConnector[]; camX?: number; camY?: number; camScale?: number }
+export interface WBData { version: number; strokes: WBStroke[]; texts?: WBText[]; tasks?: unknown[]; connectors?: WBConnector[]; camX?: number; camY?: number; camScale?: number }
 
 // Portapapeles EN MEMORIA del lienzo: copiar/pegar la selección (trazos + cards)
 // entre pizarras de la misma sesión. Coords relativas al origen (min x,y) de la
@@ -324,7 +324,7 @@ type PizClipCard = { text: string; body: string | null; types: string[]; dx: num
 type PizClip = { strokes: WBStroke[]; cards: PizClipCard[]; text: string; ts: number }
 let pizarraClipboard: PizClip | null = null
 
-function parsePizarra(body: string | null | undefined): WBData {
+export function parsePizarra(body: string | null | undefined): WBData {
   const def: WBData = { version: 1, strokes: [], texts: [], tasks: [] }
   if (!body) return def
   const i = body.indexOf(FENCE)

@@ -2008,6 +2008,8 @@
   "elements.title": "Elementi",
   "elements.all": "Tutti",
   "elements.texts": "Testi",
+  "elements.canvases": "Lavagne",
+  "elements.emptyCanvas": "Lavagna vuota",
   "elements.showing": "{{count}} elementi",
   "elements.subAll": "Tutte",
   "elements.subToday": "Oggi",

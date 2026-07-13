@@ -2008,6 +2008,8 @@
   "elements.title": "Elementen",
   "elements.all": "Alle",
   "elements.texts": "Teksten",
+  "elements.canvases": "Canvassen",
+  "elements.emptyCanvas": "Leeg canvas",
   "elements.showing": "{{count}} items",
   "elements.subAll": "Alle",
   "elements.subToday": "Vandaag",

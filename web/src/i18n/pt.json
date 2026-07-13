@@ -2008,6 +2008,8 @@
   "elements.title": "Elementos",
   "elements.all": "Todos",
   "elements.texts": "Textos",
+  "elements.canvases": "Telas",
+  "elements.emptyCanvas": "Tela vazia",
   "elements.showing": "{{count}} itens",
   "elements.subAll": "Todas",
   "elements.subToday": "Hoje",

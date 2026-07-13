@@ -24,8 +24,9 @@ import { isInPapelera } from '../../utils/papeleraHelper'
 import { isQuickCommandSession } from '../../store/aiChatStore'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
 import type { FilterView } from '../views/FilterResultsView'
+import PizarraThumbnail from '../views/PizarraThumbnail'
 
-type ElemKind = 'text' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt'
+type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; due?: string | null; status?: string | null }
@@ -53,6 +54,7 @@ function classify(n: Node): ElemKind | null {
   if (rt === 'image' || e._imageUrl) return 'image'
   if (rt === 'pdf') return 'pdf'
   if (n.isResource || e._resourceUrl || e._resource) return 'link'
+  if (e._v2canvas === '1') return 'canvas'          // nodo-documento en modo Lienzo (pizarra)
   if (isDocNode(n) || store.isNote(n)) return 'text'
   // Memoria IA ANTIGUA (oculta del lienzo pero BUSCABLE aquí): línea de conocimiento con texto.
   if (e._tagDefinition != null && (n.text || '').trim()) return 'memory'
@@ -78,7 +80,7 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
   return true
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡' }
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', canvas: '🎨', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡' }
 const ROW_H = 46
 const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
 
@@ -141,6 +143,7 @@ export default function ElementsPanel() {
     { key: 'all',      label: t('elements.all') },
     { key: 'favorite', label: '★ ' + t('elements.favorites', 'Favoritos') },
     { key: 'text',    label: t('elements.texts') },
+    { key: 'canvas',  label: '🎨 ' + t('elements.canvases', 'Lienzos') },
     { key: 'task',    label: t('elements.tasks') },
     { key: 'event',   label: t('elements.events') },
     { key: 'link',    label: t('elements.links') },
@@ -268,6 +271,26 @@ export default function ElementsPanel() {
         )
       ) : filtered.length === 0 ? (
         <div style={{ fontSize: 13, color: 'var(--text-tertiary,#999)', padding: '20px' }}>{t('elements.empty')}</div>
+      ) : filter === 'canvas' ? (
+        // Lienzos: NO tiene sentido listarlos como filas de texto — se ven como
+        // miniaturas visuales de su contenido (trazos/dibujos), en rejilla.
+        <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 10 }}>
+            {filtered.map(r => (
+              <div
+                key={r.id}
+                onClick={() => open(r.id)}
+                onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openMenu(r.id, e.clientX, e.clientY) }}
+                style={{ cursor: 'pointer' }}
+              >
+                <PizarraThumbnail body={store.getNode(r.id)?.body} />
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text,#222)', marginTop: 5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {r.title}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       ) : (
         <div ref={scrollRef} style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '0 12px 80px' }}>
           <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>

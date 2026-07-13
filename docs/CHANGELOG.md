@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.797 — 13 julio 2026 · Lienzos como elemento visual propio
+
+En la pestaña Elementos, "Lienzo" ya es su propio filtro (icono 🎨), separado de los documentos de
+texto. Al seleccionarlo, en vez de una lista de títulos aparece una rejilla de miniaturas — cada
+tarjeta dibuja en miniatura los trazos y textos reales de ese lienzo (o un aviso de "lienzo vacío"
+si no tiene contenido), para poder identificarlo de un vistazo. Clic en una miniatura lo abre en la
+columna derecha.
+
+---
+
 ## Web v9.6.796 — 13 julio 2026 · Sistema de Prompts en v2
 
 Los prompts (plantillas de instrucciones reutilizables para la IA) llegan a v2, con el mismo

@@ -2008,6 +2008,8 @@
   "elements.title": "Element",
   "elements.all": "Alla",
   "elements.texts": "Texter",
+  "elements.canvases": "Canvasar",
+  "elements.emptyCanvas": "Tom canvas",
   "elements.showing": "{{count}} objekt",
   "elements.subAll": "Alla",
   "elements.subToday": "Idag",

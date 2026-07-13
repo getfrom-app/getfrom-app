@@ -2008,6 +2008,8 @@
   "elements.title": "Öğeler",
   "elements.all": "Tümü",
   "elements.texts": "Metinler",
+  "elements.canvases": "Tuvaller",
+  "elements.emptyCanvas": "Boş tuval",
   "elements.showing": "{{count}} öğe",
   "elements.subAll": "Tümü",
   "elements.subToday": "Bugün",

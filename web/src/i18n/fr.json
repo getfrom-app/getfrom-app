@@ -2008,6 +2008,8 @@
   "elements.title": "Éléments",
   "elements.all": "Tous",
   "elements.texts": "Textes",
+  "elements.canvases": "Tableaux",
+  "elements.emptyCanvas": "Tableau vide",
   "elements.showing": "{{count}} éléments",
   "elements.subAll": "Toutes",
   "elements.subToday": "Aujourd'hui",

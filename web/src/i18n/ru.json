@@ -2008,6 +2008,8 @@
   "elements.title": "Элементы",
   "elements.all": "Все",
   "elements.texts": "Тексты",
+  "elements.canvases": "Холсты",
+  "elements.emptyCanvas": "Пустой холст",
   "elements.showing": "{{count}} элементов",
   "elements.subAll": "Все",
   "elements.subToday": "Сегодня",

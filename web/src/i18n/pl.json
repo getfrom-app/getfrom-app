@@ -2008,6 +2008,8 @@
   "elements.title": "Elementy",
   "elements.all": "Wszystkie",
   "elements.texts": "Teksty",
+  "elements.canvases": "Płótna",
+  "elements.emptyCanvas": "Puste płótno",
   "elements.showing": "{{count}} elementów",
   "elements.subAll": "Wszystkie",
   "elements.subToday": "Dziś",

@@ -2008,6 +2008,8 @@
   "elements.title": "Elemente",
   "elements.all": "Alle",
   "elements.texts": "Texte",
+  "elements.canvases": "Leinwände",
+  "elements.emptyCanvas": "Leere Leinwand",
   "elements.showing": "{{count}} Elemente",
   "elements.subAll": "Alle",
   "elements.subToday": "Heute",
