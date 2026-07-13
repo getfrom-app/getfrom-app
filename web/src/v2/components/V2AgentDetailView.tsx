@@ -1,37 +1,41 @@
 // Detalle de un AGENTE en la columna derecha de Fromly 2.0.
-// Sigue el patrón de V2TaskDetailView: la ventana central es la NOTA del agente
-// (su prompt de usuario, editable con el mismo editor que cualquier nota —
-// V2NoteBody, reutilizado tal cual) + su contexto (clic navega). Las propiedades
-// reales (activar/pausar, ejecutar ahora, programación) viven en
-// AgentPropertiesPanel de v1, reutilizado SIN reescribir (mismo patrón que
-// SettingsModal/PlannerPanel/RightColMenu ya reutilizados en v2).
-import { useState } from 'react'
+// Sigue el patrón de V2PromptDetailView: la ventana central es el CONTENIDO real
+// del agente — el prompt de usuario se guarda como HIJOS DIRECTOS del nodo agente
+// (createAgentUnder/readAgentNote/syncAgentUserMessage en agentesHelper.ts), así
+// que se edita con Outliner directamente sobre parentId={node.id} — NUNCA con
+// getOrCreateContainerNotes/V2NoteBody (ese es OTRO nodo, por eso el editor salía
+// vacío). Las propiedades reales (activar/pausar, ejecutar ahora, programación)
+// viven en AgentPropertiesPanel de v1, reutilizado SIN reescribir.
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
-import { firstContextOf, contextColor, getOrCreateContainerNotes } from '../../utils/cajones'
-import { getAgentData } from '../../utils/agentesHelper'
+import { firstContextOf, contextColor } from '../../utils/cajones'
+import { getAgentData, syncAgentUserMessage } from '../../utils/agentesHelper'
 import { trashNode } from '../../utils/papeleraHelper'
+import Outliner from '../../components/outliner/Outliner'
 import AgentPropertiesPanel from '../../components/panels/AgentPropertiesPanel'
-import { V2NoteBody } from './V2DetailView'
 
 interface Props {
   node: Node
   onSelectCtx: (id: string) => void
+  onOpenElementsFiltered?: (kind: 'agent' | 'prompt') => void
 }
 
-export default function V2AgentDetailView({ node, onSelectCtx }: Props) {
-  useStore()
+export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFiltered }: Props) {
+  const s = useStore()
   const { t } = useTranslation()
   const ctx = firstContextOf(node)
   const data = getAgentData(node.id)
-  // La "nota" del agente = su prompt de usuario: se edita como cualquier nota
-  // (mismo editor V2NoteBody), aquí sobre un contenedor de notas dedicado del
-  // agente (igual patrón que V2TaskDetailView con getOrCreateContainerNotes).
-  const notesNode = getOrCreateContainerNotes(node.id)
   // Propiedades a la derecha, dentro de la misma columna (debajo, ya que v2 no
   // tiene una columna extra): panel plegable con el control real de v1.
   const [showProps, setShowProps] = useState(true)
+  const toggleFavorite = () => { const next = !node.isFavorite; store.updateNode(node.id, { isFavorite: next }) }
+
+  // Mantiene _agentUserMessage (lo que ejecuta el cron del servidor) sincronizado
+  // con lo que el usuario edita en los hijos del nodo (mismo patrón que
+  // AgentPropertiesPanel.handleRun/setSchedule, aquí en cada cambio del árbol).
+  useEffect(() => { syncAgentUserMessage(node.id) }, [node.id, s.nodesVersion])
 
   return (
     <div style={{ padding: '4px 18px 18px' }}>
@@ -43,9 +47,16 @@ export default function V2AgentDetailView({ node, onSelectCtx }: Props) {
           {data?.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')}
         </span>
         <button
+          title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')}
+          onClick={toggleFavorite}
+          style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: node.isFavorite ? '#f59e0b' : 'var(--text-tertiary,#999)', padding: 4 }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/></svg>
+        </button>
+        <button
           title={t('tip.delete', 'Eliminar')}
           onClick={() => { trashNode(node.id); window.dispatchEvent(new Event('from:close-detail')) }}
-          style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: 4 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: 4 }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
         </button>
@@ -63,10 +74,12 @@ export default function V2AgentDetailView({ node, onSelectCtx }: Props) {
         )}
       </div>
 
-      {/* Prompt del agente — EL MISMO editor completo que cualquier nota. */}
+      {/* Prompt del agente — los HIJOS del propio nodo agente SON la instrucción
+          (createAgentUnder/readAgentNote), igual que V2PromptDetailView: outliner
+          clásico sobre parentId={node.id}, sin barra de formato/MD/HTML/PDF. */}
       <div style={{ marginTop: 10 }}>
         <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('agents.promptLabel', 'Instrucción del agente')}</div>
-        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />
+        <Outliner parentId={node.id} autoFocusEmpty placeholder={t('v2.outlinerPlaceholder', 'Escribe aquí… (usa «/» para insertar tabla, kanban, calendario…)')} />
       </div>
 
       {/* Propiedades reales del agente (activar/pausar, ejecutar, programación) —
@@ -81,7 +94,7 @@ export default function V2AgentDetailView({ node, onSelectCtx }: Props) {
         </button>
         {showProps && (
           <div style={{ minHeight: 260, border: '1px solid var(--border)', borderRadius: 8 }}>
-            <AgentPropertiesPanel nodeId={node.id} onBack={() => setShowProps(false)} />
+            <AgentPropertiesPanel nodeId={node.id} onBack={() => onOpenElementsFiltered ? onOpenElementsFiltered('agent') : setShowProps(false)} />
           </div>
         )}
       </div>

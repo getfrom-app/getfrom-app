@@ -19,6 +19,7 @@ import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2RightColumn, { RightMode } from './components/V2RightColumn'
+import type { ElemKind } from '../components/panels/ElementsPanel'
 import V2Onboarding from './components/V2Onboarding'
 import RightColMenu from '../components/panels/RightColMenu'
 import UnifiedCapture from '../components/modals/UnifiedCapture'
@@ -56,6 +57,7 @@ export default function V2App() {
   const [viewingCtxFicha, setViewingCtxFicha] = useState(false)
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // elemento abierto en la columna derecha
+  const [elementsFilter, setElementsFilter] = useState<ElemKind | 'all' | 'favorite' | null>(null) // filtro inicial pedido para la tab Elementos (p.ej. «← Agentes»)
   const [rightWidth, setRightWidth] = useState(() => {
     const v = Number(localStorage.getItem('v2_right_w'))
     return v >= 320 && v <= 900 ? v : 440
@@ -130,6 +132,15 @@ export default function V2App() {
     })
     setRightMode('contexto')
     setDetailNodeId(content.length === 1 ? content[0].id : null)
+  }
+
+  // «← Agentes»/«← Prompts» desde el detalle: cierra el detalle y abre la tab
+  // Elementos ya filtrada por ese tipo (kind = ElemKind de ElementsPanel, p.ej.
+  // 'agent'|'prompt').
+  const onOpenElementsFiltered = (kind: ElemKind) => {
+    setDetailNodeId(null)
+    setElementsFilter(kind)
+    setRightMode('elementos')
   }
 
   // «Empezar una conversación a partir de un contenido existente»: nueva sesión
@@ -464,6 +475,8 @@ export default function V2App() {
         onOpenConversation={onOpenConversation}
         viewingCtxFicha={viewingCtxFicha}
         importDragOver={importDragOver}
+        elementsFilter={elementsFilter}
+        onOpenElementsFiltered={onOpenElementsFiltered}
       />
       {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
       {showCapture && (

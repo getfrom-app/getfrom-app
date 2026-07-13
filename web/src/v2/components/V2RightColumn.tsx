@@ -12,7 +12,7 @@ import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import PublishButton from '../../components/PublishButton'
 import DayColumn from '../../components/panels/DayColumn'
-import ElementsPanel from '../../components/panels/ElementsPanel'
+import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
 import V2ContextView from './V2ContextView'
 import V2ConversationView from './V2ConversationView'
 import V2DetailView from './V2DetailView'
@@ -37,6 +37,10 @@ interface Props {
   activeSessionId: string | null
   onOpenConversation: (id: string) => void
   viewingCtxFicha: boolean
+  /** Filtro inicial pedido para la tab Elementos (p.ej. «← Agentes» → 'agent'). */
+  elementsFilter?: ElemKind | 'all' | 'favorite' | null
+  /** Cierra el detalle y abre la tab Elementos filtrada por ese tipo. */
+  onOpenElementsFiltered?: (kind: ElemKind) => void
 }
 
 // Clasificación ligera de un nodo → icono + etiqueta de tipo.
@@ -99,7 +103,7 @@ function classifyContent(n: Node): ReturnType<typeof classifyElement> {
   return classifyElement(n)
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha, elementsFilter, onOpenElementsFiltered }: Props) {
   useStore()
   const { t, i18n } = useTranslation()
   const chat = useAIChat()
@@ -237,7 +241,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
                 </div>
               )}
             </div>
-            <div className="v2-detail-body"><V2DetailView nodeId={detailNodeId} onSelectCtx={onSelectCtx} /></div>
+            <div className="v2-detail-body"><V2DetailView nodeId={detailNodeId} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} /></div>
           </div>
         )
       })()}
@@ -245,7 +249,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
       {/* Elementos: el buscador universal REAL de la v1 (filtros por tipo, virtualizado). */}
       {!detailNodeId && mode === 'elementos' && (
         <div className="v2-right-fill">
-          <ElementsPanel />
+          <ElementsPanel initialFilter={elementsFilter ?? undefined} />
         </div>
       )}
 

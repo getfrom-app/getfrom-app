@@ -17,9 +17,10 @@ import PromptPropertiesPanel from '../../components/panels/PromptPropertiesPanel
 interface Props {
   node: Node
   onSelectCtx: (id: string) => void
+  onOpenElementsFiltered?: (kind: 'agent' | 'prompt') => void
 }
 
-export default function V2PromptDetailView({ node, onSelectCtx }: Props) {
+export default function V2PromptDetailView({ node, onSelectCtx, onOpenElementsFiltered }: Props) {
   useStore()
   const { t } = useTranslation()
   const ctx = firstContextOf(node)
@@ -79,7 +80,7 @@ export default function V2PromptDetailView({ node, onSelectCtx }: Props) {
         </button>
         {showProps && (
           <div style={{ minHeight: 260, border: '1px solid var(--border)', borderRadius: 8 }}>
-            <PromptPropertiesPanel nodeId={node.id} onBack={() => setShowProps(false)} onTestInMagic={onTestInMagic} />
+            <PromptPropertiesPanel nodeId={node.id} onBack={() => onOpenElementsFiltered ? onOpenElementsFiltered('prompt') : setShowProps(false)} onTestInMagic={onTestInMagic} />
           </div>
         )}
       </div>

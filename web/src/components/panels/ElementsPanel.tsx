@@ -6,7 +6,7 @@
  * en el lienzo y abre su panel. Lista VIRTUALIZADA → escala a miles de elementos (años de
  * trabajo) sin pegarse.
  */
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { store, useStore } from '../../store/nodeStore'
@@ -26,7 +26,7 @@ import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../view
 import type { FilterView } from '../views/FilterResultsView'
 import PizarraThumbnail from '../views/PizarraThumbnail'
 
-type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt'
+export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; due?: string | null; status?: string | null }
@@ -84,10 +84,18 @@ const KIND_ICON: Record<ElemKind, string> = { text: '📝', canvas: '🎨', task
 const ROW_H = 46
 const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
 
-export default function ElementsPanel() {
+interface Props {
+  /** Filtro inicial (p.ej. al llegar desde «← Agentes»/«← Prompts» en el detalle). */
+  initialFilter?: ElemKind | 'all' | 'favorite'
+}
+
+export default function ElementsPanel({ initialFilter }: Props = {}) {
   const { t } = useTranslation()
   const s = useStore()
-  const [filter, setFilter] = useState<ElemKind | 'all' | 'favorite'>('all')
+  const [filter, setFilter] = useState<ElemKind | 'all' | 'favorite'>(initialFilter || 'all')
+  // Si llegamos aquí ya con el panel montado (p.ej. «← Agentes» tras «← Prompts»
+  // sin pasar por otro modo), re-aplica el filtro pedido en vez de ignorarlo.
+  useEffect(() => { if (initialFilter) setFilter(initialFilter) }, [initialFilter])
   const [taskSub, setTaskSub] = useState<TaskSub>('all')
   const [q, setQ] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)

@@ -222,7 +222,7 @@ function V2ResourceView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: s
   )
 }
 
-export default function V2DetailView({ nodeId, onSelectCtx }: { nodeId: string; onSelectCtx: (id: string) => void }) {
+export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFiltered }: { nodeId: string; onSelectCtx: (id: string) => void; onOpenElementsFiltered?: (kind: 'agent' | 'prompt') => void }) {
   useStore()
   const { t } = useTranslation()
   const node = store.getNode(nodeId)
@@ -235,12 +235,12 @@ export default function V2DetailView({ nodeId, onSelectCtx }: { nodeId: string; 
   // AGENTE: nunca como nota genérica ni como tarea — vista propia (prompt editable +
   // propiedades reales de AgentPropertiesPanel de v1). Se comprueba ANTES que el resto
   // de ramas porque un agente no es tarea/evento/recurso.
-  if (isAgentNode(node)) return <V2AgentDetailView node={node} onSelectCtx={onSelectCtx} />
+  if (isAgentNode(node)) return <V2AgentDetailView node={node} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
 
   // PROMPT: nunca como nota genérica — vista propia (contenido outliner editable +
   // propiedades reales de PromptPropertiesPanel de v1). Se comprueba junto al agente,
   // antes que el resto de ramas.
-  if (isPromptNode(node)) return <V2PromptDetailView node={node} onSelectCtx={onSelectCtx} />
+  if (isPromptNode(node)) return <V2PromptDetailView node={node} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
 
   // Cualquier tipo de RECURSO (audio, PDF/imagen, o el resto — enlaces, podcasts,
   // libros…) muestra su contexto arriba (chip + cambiar), igual que nota/tarea.

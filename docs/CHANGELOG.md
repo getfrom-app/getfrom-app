@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.801 — 13 julio 2026 · 4 fixes en la vista de detalle de Agentes
+
+- **Prompt del agente ya visible y editable**: el editor apuntaba a un nodo distinto del que
+  realmente ejecuta el agente — ahora edita directamente sus instrucciones reales.
+- **La IA ya puede gestionar un agente existente** (activar/pausar, reprogramar, cambiar el
+  prompt) — nueva acción `update_agent`, con el mismo gate Pro que el botón manual.
+- **Toolbar simplificada**: solo favorito y eliminar — sin MD/HTML/PDF/publicar/formato, que no
+  aplican a una instrucción de agente.
+- **"← Agentes"/"← Prompts" ya navegan**: abren la pestaña Elementos con el filtro correspondiente
+  ya aplicado, en vez de no hacer nada.
+
+---
+
 ## Web v9.6.800 — 13 julio 2026 · Fix: contexto nuevo sin memoria en la primera conversación
 
 Causa raíz encontrada: `getTagDefNode()` seguía buscando la raíz de contextos por su nombre

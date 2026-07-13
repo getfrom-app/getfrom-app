@@ -7,8 +7,9 @@ import { store } from './nodeStore'
 import type { ExecutedAction } from './aiChatStore'
 import { ensureDayPath } from '../utils/agendaHelper'
 import { pushEventToGcal } from '../utils/gcalNodesSync'
-import { createAgentUnder } from '../utils/agentesHelper'
+import { createAgentUnder, getAgentData, setAgentEnabled, isAgentNode } from '../utils/agentesHelper'
 import { createContext, appendContextFacts } from '../utils/cajones'
+import { userStore } from './userStore'
 
 /** Quita prefijos de lista de un título de nodo: "1. ", "12) ", "- ", "* ", "• ".
  * (Magic a veces genera cada idea como "1. ..." → todos salían con un "1." delante.) */
@@ -40,6 +41,7 @@ export async function executeChatAction(
     case 'create_task':    return createTask(action, sessionId, currentNodeId)
     case 'create_context': return createContextAction(action)
     case 'create_agent':   return createAgentAction(action, sessionId, currentNodeId)
+    case 'update_agent':   return updateAgentAction(action)
     case 'create_event':   return createEvent(action, sessionId)
     case 'update_node':    return updateNode(action)
     case 'read_node':      return readNode(action)
@@ -214,6 +216,68 @@ function createAgentAction(a: Record<string, unknown>, sessionId?: string, curre
   return result('create_agent', true,
     `Agente «${label}» creado${schedulePart}. Está DESACTIVADO — revísalo y actívalo cuando estés listo.`,
     [created.id])
+}
+
+/** update_agent — activa/pausa, reprograma o cambia el prompt de un agente YA
+ *  EXISTENTE (la IA solo tenía create_agent, no podía gestionar uno creado —
+ *  antes contestaba "listo, activado" sin tocar nada). Reutiliza setAgentEnabled
+ *  (mismo gate Pro que AgentPropertiesPanel.toggleEnabled) y, si llega
+ *  user_message, reemplaza los HIJOS-instrucción del nodo (mismo lugar que edita
+ *  el usuario a mano en V2AgentDetailView/Outliner) para que el cambio se vea
+ *  también en el editor de la columna derecha. */
+function updateAgentAction(a: Record<string, unknown>): ExecutedAction {
+  const nodeId = (a.node_id as string | undefined) || (a.nodeId as string | undefined) || ''
+  const node = nodeId ? store.nodes.get(nodeId) : undefined
+  if (!node || !isAgentNode(node)) return result('update_agent', false, 'Agente no encontrado (node_id inválido).')
+
+  const data = getAgentData(nodeId)
+  if (!data) return result('update_agent', false, 'Agente no encontrado.')
+
+  const changes: string[] = []
+
+  if ('user_message' in a || 'userMessage' in a) {
+    const userMessage = String((a.user_message as string) ?? (a.userMessage as string) ?? '').trim()
+    if (userMessage) {
+      // Mismo patrón que createAgentUnder: la nota central = hijos del agente.
+      // Al ACTUALIZAR, se borran los hijos-instrucción viejos y se crea uno nuevo
+      // (evita mezclar el texto anterior con el nuevo en el editor).
+      for (const child of store.children(nodeId)) store.deleteNode(child.id)
+      store.createNode({ text: userMessage, parentId: nodeId })
+      try {
+        const ed = JSON.parse(node.extraData || '{}')
+        ed._agentUserMessage = userMessage
+        store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+      } catch { /* ignore */ }
+      changes.push('instrucción')
+    }
+  }
+
+  if ('schedule' in a) {
+    const schedule = String(a.schedule ?? '')
+    try {
+      const ed = JSON.parse((store.nodes.get(nodeId)?.extraData) || '{}')
+      ed._agentSchedule = schedule
+      store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+      changes.push(schedule ? `programación: ${schedule}` : 'programación eliminada')
+    } catch { /* ignore */ }
+  }
+
+  if ('enabled' in a) {
+    const enabled = !!a.enabled
+    // Gate Pro: solo al ACTIVAR, mismo criterio que AgentPropertiesPanel.toggleEnabled.
+    if (enabled && !userStore.isPremium) {
+      return result('update_agent', false,
+        'No se pudo activar: activar agentes requiere Fromly Pro. El agente sigue pausado.')
+    }
+    setAgentEnabled(nodeId, enabled)
+    changes.push(enabled ? 'activado' : 'pausado')
+  }
+
+  if (!changes.length) return result('update_agent', false, 'No se especificó ningún cambio (enabled/schedule/user_message).')
+
+  return result('update_agent', true,
+    `Agente «${node.text}» actualizado: ${changes.join(', ')}.`,
+    [nodeId])
 }
 
 function createEvent(a: Record<string, unknown>, sessionId?: string): ExecutedAction {
