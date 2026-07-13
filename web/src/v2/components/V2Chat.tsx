@@ -13,6 +13,7 @@ import V2TemplatesModal from './V2TemplatesModal'
 import { listTemplates } from '../../utils/tagsHelper'
 import { renderInline } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
+import { aiLangBCP47 } from '../../utils/aiLang'
 
 interface Props {
   currentNodeId: string | null
@@ -52,6 +53,8 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
   const [showPlanner, setShowPlanner] = useState(false)
   const [docMenu, setDocMenu] = useState(false)
   const [showTemplatesModal, setShowTemplatesModal] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const recognitionRef = useRef<unknown>(null)
   const docMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -102,6 +105,53 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
       doSend(input)
     }
   }
+
+  // Dictado por voz (Web Speech API) — mismo motor que el chat de v1 (AIChatModal.tsx):
+  // transcribe en vivo directamente sobre el input, sin pasar por grabación+Whisper
+  // (eso es la "Nota de voz" aparte, para audios largos). Alt+Espacio activa/desactiva.
+  const toggleVoice = () => {
+    if (isRecording) {
+      try { (recognitionRef.current as { stop?: () => void } | null)?.stop?.() } catch { /* ignore */ }
+      setIsRecording(false)
+      return
+    }
+    const SR = (window as unknown as Record<string, unknown>).webkitSpeechRecognition
+      || (window as unknown as Record<string, unknown>).SpeechRecognition
+    if (!SR) {
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.chat.voiceUnsupported', 'Tu navegador no soporta dictado por voz. Prueba Chrome o Safari.'), type: 'warning' } }))
+      return
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rec: any = new (SR as any)()
+    rec.lang = aiLangBCP47()
+    rec.continuous = true
+    rec.interimResults = true
+    const capturedStart = input.trim()
+    let finalTranscript = ''
+    rec.onresult = (event: { resultIndex: number; results: { length: number; [key: number]: { 0: { transcript: string }; isFinal: boolean } } }) => {
+      let interimTranscript = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const txt = event.results[i][0].transcript
+        if (event.results[i].isFinal) finalTranscript += txt + ' '
+        else interimTranscript += txt
+      }
+      const combined = [capturedStart, (finalTranscript + interimTranscript).trim()].filter(Boolean).join(' ')
+      setInput(combined.trim())
+    }
+    rec.onend = () => setIsRecording(false)
+    rec.start()
+    recognitionRef.current = rec
+    setIsRecording(true)
+  }
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey && e.code === 'Space') { e.preventDefault(); toggleVoice() }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRecording, input])
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault()
@@ -231,10 +281,16 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
               ref={taRef}
               value={input}
               rows={1}
-              placeholder={`${t('v2.chat.composerPlaceholder', 'Escribe a Fromly')}${contextLabel && contextLabel !== 'General' ? ` · ${contextLabel}` : ''}…`}
+              placeholder={isRecording ? t('v2.chat.voiceRecording', 'Escuchando…') : `${t('v2.chat.composerPlaceholder', 'Escribe a Fromly')}${contextLabel && contextLabel !== 'General' ? ` · ${contextLabel}` : ''}…`}
               onChange={onInputChange}
               onKeyDown={onKeyDown}
             />
+            <button
+              className="v2-iconbtn"
+              title={isRecording ? t('v2.chat.voiceStop', 'Detener dictado') : t('v2.chat.voiceStart', 'Dictar por voz (Alt+Espacio)')}
+              onClick={toggleVoice}
+              style={isRecording ? { color: '#ef4444' } : undefined}
+            >{isRecording ? '🎙' : '🎤'}</button>
             <button className="v2-send" disabled={!input.trim() || streaming} onClick={() => doSend(input)}>↑</button>
           </div>
           <div className="v2-composer-hint">

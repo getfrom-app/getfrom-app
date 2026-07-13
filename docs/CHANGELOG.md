@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.795 — 13 julio 2026 · Dictado por voz en el chat
+
+Botón de micrófono en el composer del chat — transcribe en vivo directamente sobre lo que escribes
+(Web Speech API, mismo motor que el chat de v1), sin pasar por grabación+Whisper. Atajo Alt+Espacio
+para activar/desactivar. Distinto de "Grabar audio": esto es para dictar el mensaje, no para dejar
+una nota de voz aparte.
+
+---
+
 ## Web v9.6.794 — 13 julio 2026 · Conversaciones como elemento más
 
 Las conversaciones ya son un elemento como cualquier otro:
