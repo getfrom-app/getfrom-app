@@ -1,7 +1,80 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-13 (Web v9.6.804)
+> Última actualización: 2026-07-14 (Web v9.6.815)
+
+---
+
+## 🗓️ Sesión 2026-07-14 — Pérdida de datos arreglada, contenido reescrito, MCP corregido, Elementos pulido
+
+Web **v9.6.804 → v9.6.815**. Sesión larga con varios bloques independientes.
+
+**Crítico: pérdida de datos real (notas "Sin título" + "Lo que Fromly sabe" borrado).** Alberto
+detectó notas vaciándose al abrir varias desde la columna derecha de un contexto. Causa raíz:
+`getOrCreateContextKnowledgeDoc`/`getOrCreateAgentInstructionDoc` migraban destructivamente cuando
+el flag `extraData._doc` no se reconocía por un shadow de sync incompleto (reconstrucción parcial
+desde otro dispositivo en `opsClient.ts`) — sin hijos-línea que leer, `.body` se sobrescribía a
+`<p></p>`, borrando contenido real. Arreglado distinguiendo por el BODY, no solo por el flag: si ya
+hay contenido real, nunca se toca (solo se repara el flag que falta). 9 notas huérfanas borradas y
+"Lo que Fromly sabe" de Casa Alicante regenerado fielmente desde las fuentes intactas. De paso,
+`shadowToNode()` tenía `createdAt`/`updatedAt` clavados a 1970 — corregido derivando el timestamp
+real del HLC.
+
+**UX: Planificador + columna Hoy juntos, botón Archivar reubicado.** El Planificador cubría toda la
+columna derecha en vez de dejar la pestaña Hoy visible al lado para arrastrar tareas (comportamiento
+de v1). `.v2-planner-overlay` pasa de `inset:0` a `right: var(--v2-right)`. Botón Archivar movido a
+la fila de PERSONAL; fila de contexto + acciones fusionada en una sola.
+
+**Reescritura completa de contenido de cara al usuario.** Todo el copy (mails de nurturing, blog,
+web, manual) seguía describiendo el producto v1 (outliner-first) tras el pivote a chat-first del 8
+de julio. Auditoría y reescritura de: ~35+34 posts de blog (ES+EN), landing/pricing/comparativas,
+`MANUAL.md`/`MANUAL_EN.md` (1515→830 líneas, mecánica v1 movida a apéndice histórico), `i18n.js`
+(diccionario runtime que sobrescribía el HTML corregido — 0 discrepancias verificadas
+programáticamente). Fixes de precio reales: Lifetime €49→€149, Pro ~€10/mes→€7/mes, ahorro anual
+30%→~42% (error de cálculo). Lifetime ahora concede 3.000.000 tokens al comprar (antes no concedía
+nada) vía `addTokens(..., "license_grant", ...)` en el webhook de LemonSqueezy, idempotente
+(`licenseGrantKey(eventId)`). Lifetime añadido como 3ª tarjeta en `PricingView.tsx` (in-app).
+`requireTokens()` bloqueaba agentes en la nube a usuarios Lifetime-only (solo miraba
+`subscriptionStatus`, no `licenseStatus`) — corregido.
+
+**Las 52 plantillas de email de nurturing, traducidas a 9 idiomas.** Antes solo ES/EN. Añadidos
+fr/de/zh/ja/pt/it/ko en `email-nurturing-XX.ts` (uno por idioma, agentes en paralelo). Bug real de
+runtime encontrado y arreglado: dependencia circular entre `email-nurturing.ts` y los 7 archivos de
+idioma (el principal importa `TEMPLATES_XX` de cada uno; cada uno importaba los helpers compartidos
+de vuelta desde el principal) rompía en caliente con `Cannot access '...' before initialization` en
+cuanto un archivo de idioma usaba un valor importado en una constante de nivel de módulo — solo se
+manifestaba en ejecución real, no en `tsc`. Solución: helpers extraídos a `email-nurturing-shared.ts`
+sin dependencias, todos importan de ahí, nadie importa de vuelta. Verificado con 468 combinaciones
+(52 claves × 9 locales) sin fallos antes de desplegar.
+
+**MCP: corregida una afirmación falsa sobre el directorio de Claude.** Ajustes → Claude (MCP),
+`claude.html` y `MANUAL.md` afirmaban "ya disponible en el directorio oficial · conector verificado
+de Anthropic" — Alberto lo buscó en Claude y no aparece; el envío (5 jun) nunca se confirmó como
+aprobado. El servidor SÍ implementa un authorization server OAuth 2.0 completo e independiente de
+cualquier directorio (`/.well-known/oauth-authorization-server` + `/auth/claude/authorize` +
+`/token` sobre el endpoint `/mcp`) — exactamente lo que necesita "Añadir conector personalizado" en
+Claude. Copia reescrita (12 idiomas + claude.html + manual) para guiar a ese flujo en vez del
+directorio no confirmado, con la URL del MCP visible y copiable en Ajustes.
+
+**Elementos: fecha visible + orden, creación de agentes/prompts sin chat.** Pedido explícito de
+Alberto que nunca se había implementado (solo se arregló el bug de datos subyacente): cada fila
+ahora muestra su fecha (tooltip con creación+modificación completas), icono nuevo junto al buscador
+para ordenar por modificación/creación/título (`utils/formatDate.ts` centraliza el formato). Botón
+"+ Nuevo agente"/"+ Nuevo prompt" visible al filtrar por esos tipos — antes crear un agente sin
+chat no era posible en ningún sitio de la interfaz, y crear un prompt exigía encontrar un icono
+escondido en el composer.
+
+**Notas vacías huérfanas (no era el bug crítico de arriba).** Alberto reportó 12 notas "Sin título"
+más bajo Casa Alicante. Verificado en BD que ninguna tuvo nunca contenido real (body vacío desde su
+`created_at`) — causa distinta: el botón "+Nota" (cambiado ayer, commit `b2530c73`, a crear y abrir
+una nota en blanco al vuelo) no limpiaba la nota si el usuario no escribía nada y navegaba a otro
+sitio. Ahora, al cerrar una nota creada así (sin plantilla) que sigue completamente vacía, se
+descarta sola — solo afecta a notas creadas en esa sesión, nunca a notas existentes. Los 12
+huérfanos movidos a la papelera; confirmado por consulta directa a toda la BD que no hay más
+orphans de este tipo en ningún otro contexto de la cuenta.
+
+Todo verificado con `tsc --noEmit` + `npm run build` limpios en cada commit, servidor con `bun test`
+(74 pass) + verificación real de contenedor en Railway ("Starting Container").
 
 ---
 

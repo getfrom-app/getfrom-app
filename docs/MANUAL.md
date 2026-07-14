@@ -260,6 +260,10 @@ La columna derecha cambia de contenido según la pestaña que elijas arriba:
 Dentro de cada contexto puedes tener distintos tipos de elemento. Todos comparten el mismo chip de
 contexto (siempre visible y editable) y quedan indexados para el chat y la búsqueda.
 
+**Fecha y orden.** Cada elemento muestra su fecha (pasa el ratón por encima para ver creación y
+última modificación completas). En la pestaña Elementos, el icono junto al buscador cambia el
+orden entre última modificación, fecha de creación o título.
+
 ### Documento
 
 Un documento es una nota de texto enriquecido — el mismo editor tipo Notion en cualquier sitio
@@ -350,7 +354,7 @@ lienzos.
 
 Un agente es una automatización con instrucción propia, fuentes y horario propio, que cuelga de
 cualquier contexto (no de una raíz única). Se crea pidiéndoselo a la IA por chat ("quiero un
-informe diario de X") o con el botón correspondiente en el contexto.
+informe diario de X") o con **+ Nuevo agente** en la pestaña Elementos (filtra por 🤖 Agentes).
 
 **Empiezan desactivados.** Tienes que revisar el prompt generado y activarlo tú mismo antes de que
 corra. El resultado de cada ejecución es un documento real, colgado del contexto del agente.
@@ -367,8 +371,8 @@ con el botón ▶).
 ### Prompt
 
 Un prompt es una plantilla de instrucciones reutilizable, con variables, que cuelga de cualquier
-contexto igual que una nota o una tarea. Se crea pidiéndoselo a la IA o con el botón correspondiente
-del contexto.
+contexto igual que una nota o una tarea. Se crea pidiéndoselo a la IA, con **+ Nuevo prompt** en la
+pestaña Elementos (filtra por ⚡ Prompts), o desde el propio menú del composer del chat.
 
 **Cómo se usa:** el botón **⚡ Prompt** de la cabecera del chat lista tus plantillas guardadas;
 elegir una resuelve sus variables (fecha, contexto actual, etc.) y la envía directamente.
