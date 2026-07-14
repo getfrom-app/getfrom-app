@@ -14,6 +14,7 @@ import {
 import { htmlToMarkdown } from '../../utils/htmlMarkdown'
 import { isQuickCommandSession } from '../../store/aiChatStore'
 import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
+import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
 import { V2NoteBody } from './V2DetailView'
@@ -103,6 +104,14 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
     const seen = new Set<string>()
     const consider = (n: Node) => {
       if (seen.has(n.id) || n.deletedAt) return
+      // "Lo que Fromly sabe" ya tiene su propia sección fija más abajo (knowledgeDoc) —
+      // no debe duplicarse como una fila más en Elementos. classifyElement() lo clasifica
+      // como 'document' (tiene _doc:'1'), no 'note', así que sin esta exclusión explícita
+      // se colaba en la lista (Alberto, 14 jul).
+      if (isContextKnowledge(n.text)) return
+      // Defensa extra: un nodo movido a la papelera por una vía que no reparenta (además
+      // del caso normal, ya cubierto porque deja de ser hijo directo) nunca debe listarse.
+      if (isInPapelera(n.id)) return
       if (isAgentNode(n)) { seen.add(n.id); out.push({ node: n, icon: getAgentData(n.id)?.icon || '🤖' }); return }
       if (isPromptNode(n)) {
         seen.add(n.id)
