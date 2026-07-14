@@ -322,7 +322,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
           view={view}
           onChange={changeView}
           count={filtered.length}
-          onClear={() => setQ('')}
+          onClear={() => { setQ(''); setFilter('all'); setTaskSub('all') }}
         />
       </div>
 
