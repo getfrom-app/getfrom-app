@@ -110,7 +110,7 @@ function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: s
 // un contexto/conversación/tarea concretos, ese contexto ya se muestra arriba en
 // esa misma vista (mostrarlo también aquí es redundante, o incluso otra cosa: el
 // contexto de la nota-hija no tiene por qué coincidir con el de su contenedor).
-export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { node: Node; onSelectCtx: (id: string) => void; inlinePage?: boolean; hideContext?: boolean }) {
+export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerLabel }: { node: Node; onSelectCtx: (id: string) => void; inlinePage?: boolean; hideContext?: boolean; headerLabel?: string }) {
   const { t } = useTranslation()
   // Nota y Lienzo son dos tipos separados desde su creación (botones "+Nota"/"+Lienzo"
   // en la cabecera del chat) — ya NO se puede cambiar de uno a otro en un documento
@@ -140,6 +140,7 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext }: { nod
       {/* Fila única de acciones (favorito, exportar, publicar, eliminar) — ya no hay
           toggle Nota/Lienzo: son tipos separados desde su creación (ver arriba). */}
       <div className="v2-note-toolbar">
+        {headerLabel && <div className="v2-section-label" style={{ padding: 0 }}>{headerLabel}</div>}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
           <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite} style={{ ...actBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/></svg>

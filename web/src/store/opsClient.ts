@@ -342,7 +342,16 @@ class OpsClient {
       return Array.isArray(x) ? (x as string[]) : []
     }
     const s = (v: unknown): string | null => (v == null ? null : String(v))
-    const now = "1970-01-01T00:00:00.000Z"
+    // updatedAt REAL = wall-clock del HLC más reciente entre los campos/estructura/vida
+    // del nodo (NO la hora de conversión). Antes era una constante fija 1970-01-01: los
+    // nodos creados por OTRO dispositivo (p.ej. el MCP de Claude) llegaban aquí con la
+    // fecha más antigua posible → siempre al fondo de cualquier lista ordenada por
+    // updatedAt (Elementos), aunque fueran los más recientes. hlcSend/hlcReceive usan
+    // Date.now() como wall, así que el wall del HLC ganador ES el momento real del cambio.
+    let maxClock = n.moveClock || ""
+    if (hlcCompare(n.lifeClock || "", maxClock) > 0) maxClock = n.lifeClock
+    for (const c of Object.values(n.fieldClocks)) { if (hlcCompare(c, maxClock) > 0) maxClock = c }
+    const now = maxClock ? new Date(parseHLC(maxClock).wall).toISOString() : "1970-01-01T00:00:00.000Z"
     return {
       id: n.id,
       parentId: n.parentId,

@@ -73,6 +73,16 @@
   color: var(--text-tertiary); padding: 0;
 }
 .v2-ctx-archive-link:hover { color: var(--text-accent); }
+/* Archivar — misma altura/estilo que .v2-ctx-edit-btn (rectángulo con borde), en la
+   fila superior junto al contexto padre y el lápiz de editar (antes discreto en la
+   línea de «Tareas», sin relación visual con el resto de acciones del contexto). */
+.v2-ctx-archive-btn-inline {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 20px; padding: 0 8px; border-radius: 3px; font-family: inherit;
+  border: 1px solid var(--border); background: transparent; color: var(--text-tertiary); cursor: pointer;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+}
+.v2-ctx-archive-btn-inline:hover { border-color: var(--accent); color: var(--text-accent); }
 .v2-ctx-list { flex: 1; overflow-y: auto; padding-bottom: 12px; }
 /* Título de panel (Historial / Contexto) — mismo estilo que «ELEMENTOS» del resto de tabs. */
 .v2-panel-title {

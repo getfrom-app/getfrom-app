@@ -178,6 +178,12 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           )}
         </div>
         {!parent && <span className="v2-el-meta">{t('v2.context.noParent', 'Sin contexto padre')}</span>}
+        {canArchive && (
+          <button className="v2-ctx-archive-btn-inline" style={{ marginLeft: 'auto' }} onClick={() => setContextClosed(ctxId, !closed)}
+            title={closed ? t('v2.context.restoreToTree', 'Devolver al árbol de contextos') : t('v2.context.removeFromTree', 'Sacar del árbol (sigue buscable y en el RAG)')}>
+            {closed ? t('v2.context.unarchive', 'Desarchivar') : t('v2.context.archive', 'Archivar')}
+          </button>
+        )}
       </div>
 
       {/* Migración: notas antiguas del contexto → un documento colgado del contexto. */}
@@ -187,15 +193,9 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
         </button>
       )}
 
-      {/* Tareas del contexto — estilo Hoy. La acción «archivar» queda discreta a la derecha. */}
+      {/* Tareas del contexto — estilo Hoy. */}
       <div className="v2-section-label" style={{ padding: '2px 0 6px' }}>
         <span>{t('v2.context.tasks', 'Tareas')}</span>
-        {canArchive && (
-          <button className="v2-ctx-archive-link" onClick={() => setContextClosed(ctxId, !closed)}
-            title={closed ? t('v2.context.restoreToTree', 'Devolver al árbol de contextos') : t('v2.context.removeFromTree', 'Sacar del árbol (sigue buscable y en el RAG)')}>
-            {closed ? t('v2.context.unarchive', 'Desarchivar') : t('v2.context.archive', 'Archivar')}
-          </button>
-        )}
       </div>
       <V2TaskList tasks={tasks} />
       <V2QuickAddTask parentId={ctxId} />
@@ -228,8 +228,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           añade hechos aquí automáticamente (appendContextFacts) y el usuario puede
           escribir con la misma comodidad que en cualquier documento. */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>🧠 {t('v2.context.whatFromlyKnows', 'Lo que Fromly sabe')}</div>
-        <V2NoteBody node={knowledgeDoc} onSelectCtx={onSelectCtx} inlinePage hideContext />
+        <V2NoteBody node={knowledgeDoc} onSelectCtx={onSelectCtx} inlinePage hideContext headerLabel={`🧠 ${t('v2.context.whatFromlyKnows', 'Lo que Fromly sabe')}`} />
       </div>
     </div>
   )

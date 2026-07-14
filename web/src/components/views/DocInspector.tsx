@@ -18,7 +18,7 @@ export default function DocInspector({ compact, bar }: { compact?: boolean; bar?
   const { t } = useTranslation()
   const editor = useActiveDocEditor()
   const fileRef = useRef<HTMLInputElement | null>(null)
-  const [showColors, setShowColors] = useState(false)
+  const [barMode, setBarMode] = useState<'main' | 'colors' | 'headings'>('main')
   if (!editor) return null
 
   const setLink = () => {
@@ -46,13 +46,17 @@ export default function DocInspector({ compact, bar }: { compact?: boolean; bar?
   if (compact || bar) {
     // `bar`: barra PLANA de una fila (iconos normales, sin píldora flotante) para el
     // panel de nota de v2. `compact`: la píldora estilo BubbleMenu del lienzo.
+    // H1/H2/H3 van en UN desplegable (antes 3 botones sueltos) para que la barra quepa
+    // en una sola línea sin saltar (Alberto: se partía en dos filas en la columna
+    // derecha, más estrecha que la página de nota en solitario).
+    const headingLevel = editor.isActive('heading', { level: 1 }) ? 1 : editor.isActive('heading', { level: 2 }) ? 2 : editor.isActive('heading', { level: 3 }) ? 3 : 0
+    const headingLabel = headingLevel ? `H${headingLevel}` : '¶'
+    const setHeading = (level: 1 | 2 | 3) => { editor.chain().focus().toggleHeading({ level }).run(); setBarMode('main') }
     return (
       <div className={bar ? 'v2-doc-toolbar' : 'wf-format-toolbar'} style={bar ? undefined : { position: 'static', width: 'auto' }} onMouseDown={e => e.preventDefault()}>
-        {!showColors ? (
+        {barMode === 'main' && (
           <>
-            <button className="ft-btn" title="H1" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 1 }).run() }}><span style={{ fontWeight: 800, fontSize: 10 }}>H1</span></button>
-            <button className="ft-btn" title="H2" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 2 }).run() }}><span style={{ fontWeight: 800, fontSize: 10 }}>H2</span></button>
-            <button className="ft-btn" title="H3" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleHeading({ level: 3 }).run() }}><span style={{ fontWeight: 800, fontSize: 10 }}>H3</span></button>
+            <button className="ft-btn" title={t('tip.paragraphStyle')} onMouseDown={e => { e.preventDefault(); setBarMode('headings') }}><span style={{ fontWeight: 800, fontSize: 10 }}>{headingLabel}</span></button>
             <div className="ft-sep" />
             <button className="ft-btn" title={t('tip.bold')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleBold().run() }}><strong style={{ fontSize: 13 }}>B</strong></button>
             <button className="ft-btn" title={t('tip.italic')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleItalic().run() }}><em style={{ fontSize: 13 }}>I</em></button>
@@ -67,26 +71,41 @@ export default function DocInspector({ compact, bar }: { compact?: boolean; bar?
             <div className="ft-sep" />
             <button className="ft-btn" title={t('format.link')} onMouseDown={e => { e.preventDefault(); setLink() }}><span style={{ fontSize: 12 }}>🔗</span></button>
             <button className="ft-btn" title={t('tip.image')} onMouseDown={e => { e.preventDefault(); fileRef.current?.click() }}><span style={{ fontSize: 12 }}>🖼</span></button>
-            <button className="ft-btn" title={t('tip.color')} onMouseDown={e => { e.preventDefault(); setShowColors(true) }}><span style={{ fontWeight: 700, fontSize: 13, borderBottom: '2.5px solid #ef4444', lineHeight: 1 }}>A</span></button>
+            <button className="ft-btn" title={t('tip.color')} onMouseDown={e => { e.preventDefault(); setBarMode('colors') }}><span style={{ fontWeight: 700, fontSize: 13, borderBottom: '2.5px solid #ef4444', lineHeight: 1 }}>A</span></button>
             <div className="ft-sep" />
             <button className="ft-btn" title={t('tip.undo')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().undo().run() }}><span style={{ fontSize: 13 }}>↶</span></button>
             <button className="ft-btn" title={t('tip.redo')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().redo().run() }}><span style={{ fontSize: 13 }}>↷</span></button>
           </>
-        ) : (
+        )}
+        {barMode === 'headings' && (
+          <div className="ft-color-panel">
+            <div className="ft-color-row">
+              <span className="ft-color-label">{t('tip.paragraphStyle')}</span>
+              <button className="ft-btn" title={t('tip.normalText')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().setParagraph().run(); setBarMode('main') }}><span style={{ fontSize: 12 }}>¶</span></button>
+              <button className="ft-btn" title="H1" onMouseDown={e => { e.preventDefault(); setHeading(1) }}><span style={{ fontWeight: 800, fontSize: 10 }}>H1</span></button>
+              <button className="ft-btn" title="H2" onMouseDown={e => { e.preventDefault(); setHeading(2) }}><span style={{ fontWeight: 800, fontSize: 10 }}>H2</span></button>
+              <button className="ft-btn" title="H3" onMouseDown={e => { e.preventDefault(); setHeading(3) }}><span style={{ fontWeight: 800, fontSize: 10 }}>H3</span></button>
+            </div>
+            <div className="ft-color-footer">
+              <button className="ft-back-btn" onMouseDown={e => { e.preventDefault(); setBarMode('main') }}>‹ {t('common.back', 'Volver')}</button>
+            </div>
+          </div>
+        )}
+        {barMode === 'colors' && (
           <div className="ft-color-panel">
             <div className="ft-color-row">
               <span className="ft-color-label">{t('tip.color')}</span>
-              <button className="ft-btn ft-erase-btn" title={t('tip.noColor')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().unsetColor().run(); setShowColors(false) }}>
+              <button className="ft-btn ft-erase-btn" title={t('tip.noColor')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().unsetColor().run(); setBarMode('main') }}>
                 <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><line x1="2" y1="10" x2="10" y2="2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
               </button>
               {COLORS.map(c => (
-                <button key={c} className="ft-color-swatch" title={c} onMouseDown={e => { e.preventDefault(); editor.chain().focus().setColor(c).run(); setShowColors(false) }}>
+                <button key={c} className="ft-color-swatch" title={c} onMouseDown={e => { e.preventDefault(); editor.chain().focus().setColor(c).run(); setBarMode('main') }}>
                   <span style={{ color: c, fontWeight: 700, fontSize: 13 }}>A</span>
                 </button>
               ))}
             </div>
             <div className="ft-color-footer">
-              <button className="ft-back-btn" onMouseDown={e => { e.preventDefault(); setShowColors(false) }}>‹ {t('common.back', 'Volver')}</button>
+              <button className="ft-back-btn" onMouseDown={e => { e.preventDefault(); setBarMode('main') }}>‹ {t('common.back', 'Volver')}</button>
             </div>
           </div>
         )}
