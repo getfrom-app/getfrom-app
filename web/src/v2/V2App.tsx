@@ -78,6 +78,26 @@ export default function V2App() {
   // cajones.ts/agentesHelper.ts — ver commit 5cbda04d): la reescritura por IA
   // nunca fue la causa, era la migración destructiva del documento cuando el
   // flag `_doc` no se reconocía por el shadow incompleto.
+  // Descarta notas creadas en blanco (botón "+Nota") si el usuario cierra el detalle
+  // sin escribir nada — antes se quedaban huérfanas para siempre como "Sin título"
+  // (Alberto, 14 jul: 12 notas vacías bajo Casa Alicante; confirmado en BD que ninguna
+  // tuvo nunca contenido real — no es el bug de pérdida de datos de antes, es que un
+  // borrador vacío abandonado nunca se limpiaba). Solo actúa sobre nodos creados por
+  // onNewDocument en ESTA sesión (blankDraftIds) — nunca sobre notas ya existentes.
+  const blankDraftIds = useRef(new Set<string>())
+  useEffect(() => {
+    if (!detailNodeId) return
+    const id = detailNodeId
+    return () => {
+      if (!blankDraftIds.current.has(id)) return
+      blankDraftIds.current.delete(id)
+      const node = store.getNode(id)
+      if (!node || node.deletedAt) return
+      const blank = !(node.text || '').trim() && (!node.body || node.body === '<p></p>' || !htmlToMarkdown(node.body).trim())
+      if (blank && store.children(id).every(c => c.deletedAt)) store.deleteNode(id)
+    }
+  }, [detailNodeId])
+
   const knowledgeUpdateInFlight = useRef(new Set<string>())
   useEffect(() => {
     if (!detailNodeId) return
@@ -276,6 +296,7 @@ export default function V2App() {
     const n = store.createNode({ text: '', parentId, extraData: { _doc: '1' } })
     store.updateNode(n.id, { body: '<p></p>' })
     if (templateId) { try { applyTemplate(templateId, n.id) } catch { /* noop */ } }
+    else blankDraftIds.current.add(n.id) // sin plantilla → sigue en blanco, candidato a descarte si se cierra sin escribir
     setDetailNodeId(n.id)
   }
 
