@@ -52,3 +52,24 @@ export function firstLineTitle(html: string | null | undefined): string {
   const first = (d.textContent || '').trim()
   return first.slice(0, 120)
 }
+
+// Nodos de LIENZO (`_v2canvas`): su `body` es la representación interna del
+// dibujo (bloque ```from-pizarra {"version":1,"strokes":[]...}`), no prosa —
+// nunca debe usarse como fuente de título.
+export function isV2Canvas(node: Node | null | undefined): boolean {
+  if (!node) return false
+  try { return JSON.parse(node.extraData || '{}')._v2canvas === '1' } catch { return false }
+}
+
+// Título a mostrar para cualquier elemento: su texto propio, o la 1ª línea de su
+// body — SALVO que sea un lienzo, cuyo body es código de dibujo y NO texto
+// legible (antes se colaba como título literal, p.ej. al crear un lienzo nuevo
+// vacío: "```from-pizarra {\"version\":1..."). Devuelve '' si no hay nada — el
+// llamador decide el fallback final ("Sin título"/"Elemento"/vacío para rellenar).
+export function elementDisplayTitle(node: Node | null | undefined): string {
+  if (!node) return ''
+  const own = (node.text || '').trim()
+  if (own) return own
+  if (isV2Canvas(node)) return ''
+  return firstLineTitle(node.body)
+}

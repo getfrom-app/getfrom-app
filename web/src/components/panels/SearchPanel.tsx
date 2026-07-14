@@ -8,7 +8,7 @@ import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
-import { isDocNode, firstLineTitle } from '../../utils/docNode'
+import { isDocNode, elementDisplayTitle } from '../../utils/docNode'
 import { isMarkedContext } from '../../utils/cajones'
 
 // Props se mantienen por compatibilidad con MainLayout; solo se usa onClose.
@@ -60,7 +60,7 @@ export default function SearchPanel({ onClose }: Props) {
       const kind = classify(n); if (!kind) continue
       if (kind === 'context') continue // los contextos no son "recientes" útiles aquí
       const snippet = (n.body || '').trimStart().startsWith('```from-pizarra') ? '' : stripHtml(n.body)
-      const title = (n.text || firstLineTitle(n.body) || snippet.slice(0, 60) || t('common.noTitle'))
+      const title = (elementDisplayTitle(n) || snippet.slice(0, 60) || t('common.noTitle'))
       out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '' })
     }
     out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))

@@ -5,7 +5,7 @@
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { isMarkedContext } from './cajones'
-import { isDocNode, firstLineTitle } from './docNode'
+import { isDocNode, elementDisplayTitle } from './docNode'
 import { nodeAsMarkdown } from './nodeExport'
 
 function breadcrumb(node: Node): string {
@@ -52,7 +52,7 @@ export function buildFullTextExport(): { markdown: string; count: number } {
       if (!seen.has(n.id)) {
         seen.add(n.id)
         if (isDocNode(n)) {
-          const title = n.text || firstLineTitle(n.body) || '(sin título)'
+          const title = elementDisplayTitle(n) || '(sin título)'
           const path = breadcrumb(n)
           const md = nodeAsMarkdown(n).trim()
           if (md) {

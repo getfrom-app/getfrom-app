@@ -64,7 +64,7 @@ function V2Backlinks({ nodeId }: { nodeId: string }) {
 // Contexto de una nota: chips de los contextos asignados + «Añadir a contexto» (opcional).
 // Si no se añade ninguno, la nota queda sin contexto (no pasa nada) — pero SIEMPRE se
 // puede añadir desde aquí, así que una nota nueva ya no queda sin forma de asignarla.
-function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: string) => void }) {
+function V2NoteContext({ node, onSelectCtx, inline }: { node: Node; onSelectCtx?: (id: string) => void; inline?: boolean }) {
   useStore()
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
@@ -77,8 +77,11 @@ function V2NoteContext({ node, onSelectCtx }: { node: Node; onSelectCtx?: (id: s
   }, [open])
   // Mismo criterio que el chip del Historial/columnas (RowContextChip): firstContextOf.
   const current = firstContextOf(node)
+  // `inline`: vive DENTRO de la fila de acciones (v2-note-toolbar) — sin su propio
+  // padding/borde, para que contexto + acciones quepan en una sola línea (antes dos
+  // filas separadas y desalineadas).
   return (
-    <div className="v2-notectx-row">
+    <div className={inline ? undefined : 'v2-notectx-row'} style={inline ? { display: 'flex', alignItems: 'center', gap: 6 } : undefined}>
       {current && (
         <button className="v2-chip" onClick={() => onSelectCtx?.(current.id)} style={{ ['--chip' as string]: contextColor(current.id) }}>{current.text}</button>
       )}
@@ -141,6 +144,7 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
           toggle Nota/Lienzo: son tipos separados desde su creación (ver arriba). */}
       <div className="v2-note-toolbar">
         {headerLabel && <div className="v2-section-label" style={{ padding: 0 }}>{headerLabel}</div>}
+        {!canvas && !hideContext && <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
           <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite} style={{ ...actBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/></svg>
@@ -156,9 +160,6 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
           </button>
         </div>
       </div>
-
-      {/* Contexto de la nota (chips + añadir) — opcional pero siempre disponible. */}
-      {!canvas && !hideContext && <V2NoteContext node={node} onSelectCtx={onSelectCtx} />}
 
       {/* Barra de formato PLANA (iconos normales) — cuando se edita como documento. */}
       {asDoc && !canvas && (

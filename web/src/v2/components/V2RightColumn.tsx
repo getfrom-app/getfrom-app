@@ -19,6 +19,7 @@ import V2DetailView from './V2DetailView'
 import V2AgendaView from './V2AgendaView'
 import V2ElementRow from './V2ElementRow'
 import { classifyElement } from '../elementKind'
+import { elementDisplayTitle } from '../../utils/docNode'
 import type { Node } from '../../types'
 
 export type RightMode = 'contexto' | 'elementos' | 'historial' | 'hoy' | 'agenda'
@@ -74,9 +75,10 @@ function EditableDetailTitle({ nodeId }: { nodeId: string }) {
   const [editing, setEditing] = useState(false)
   const node = store.getNode(nodeId)
   // Deriva el título: texto del nodo (sin ✦), o la 1ª línea del cuerpo si el texto está
-  // vacío/solo-espacios (documentos con el título dentro del body), o «Elemento».
-  const bodyTitle = (node?.body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 80)
-  const title = ((node?.text || '').replace(/^✦\s*/, '').trim()) || bodyTitle || t('v2.rightColumn.element', 'Elemento')
+  // vacío/solo-espacios (documentos con el título dentro del body) — SALVO un lienzo
+  // recién creado, cuyo body es código de dibujo, no prosa (elementDisplayTitle lo
+  // excluye) — o «Elemento».
+  const title = elementDisplayTitle(node).replace(/^✦\s*/, '').trim().slice(0, 80) || t('v2.rightColumn.element', 'Elemento')
   if (editing) {
     return (
       <input
