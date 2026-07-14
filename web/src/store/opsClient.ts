@@ -246,11 +246,28 @@ class OpsClient {
     if (!this.isEnabled() || !getToken()) return
     const myDevice = deviceId()
     try {
-      for (let guard = 0; guard < 20; guard++) {
+      // ⚠️ BUG DE PÉRDIDA DE DATOS (encontrado 14 jul 2026, cuentas con >40.000 ops
+      // — la de Alberto tenía ~41.500 en ese momento y sigue creciendo): el guard
+      // ANTES cortaba a las 20 iteraciones (20×2000=40.000 ops) y marcaba
+      // `initialPullDone = true` SIEMPRE al salir del bucle, aunque `hasMore`
+      // siguiera en true (shadow a medias, faltaban las ops MÁS RECIENTES). Con
+      // initialPullDone ya en true, la siguiente op EXTERNA (otro dispositivo/
+      // pestaña/MCP) para un nodo cuyo historial aún no estaba completo en el
+      // shadow se reconstruía con `shadowToNode()` con los campos que faltaban
+      // VACÍOS — y esa reconstrucción incompleta SE APLICABA AL ESTADO REAL,
+      // borrando texto/body ya guardados (notas "Sin título", "Lo que Fromly
+      // sabe" recortado). Fix: `initialPullDone` solo pasa a true cuando el pull
+      // termina de verdad (`hasMore === false`), nunca por agotar el guard — si
+      // el guard corta, el shadow sigue incompleto y NO se aplican deltas
+      // externos todavía; el siguiente ciclo (cada 20s) continúa desde
+      // `pulledSeq` hasta terminar. Guard subido a 300 (600.000 ops) como margen,
+      // pero la garantía real es la condición `hasMore`, no el número de vueltas.
+      let hasMore = true
+      for (let guard = 0; guard < 300 && hasMore; guard++) {
         const res = await apiRequest<{ ops: Op[]; hasMore: boolean; latestSeq: number }>(
           `/ops/pull?since=${this.pulledSeq}&limit=2000`, { method: "GET" },
         )
-        if (res.ops.length === 0) break
+        if (res.ops.length === 0) { hasMore = false; break }
         let maxRemote: HLC | null = null
         const changed = new Set<string>()
         for (const op of res.ops) {
@@ -258,8 +275,9 @@ class OpsClient {
           const h = parseHLC(op.hlc)
           if (!maxRemote || hlcCompare(op.hlc, hlcToString(maxRemote)) > 0) maxRemote = h
           // Modo-live: aplicar al estado REAL sólo los DELTAS de OTROS dispositivos
-          // y sólo TRAS el primer pull (el estado base ya está cargado por /sync).
-          // Esto evita el rebuild completo cada ciclo (que causaba el parpadeo).
+          // y sólo TRAS el primer pull COMPLETO (el estado base ya está cargado por
+          // /sync). Esto evita el rebuild completo cada ciclo (que causaba el
+          // parpadeo) — Y evita reconstruir nodos desde un shadow a medias.
           if (this.live && this.initialPullDone && op.deviceId !== myDevice) changed.add(op.nodeId)
         }
         if (maxRemote) { this.hlc = hlcReceive(this.hlc, maxRemote, deviceId(), Date.now()); saveHlc(this.hlc) }
@@ -272,9 +290,9 @@ class OpsClient {
         }
         this.pulledSeq = res.latestSeq
         saveSeq(this.pulledSeq)
-        if (!res.hasMore) break
+        hasMore = res.hasMore
       }
-      this.initialPullDone = true // tras el primer pull completo, lo siguiente son deltas
+      if (!hasMore) this.initialPullDone = true // solo si el pull terminó de verdad
     } catch (e) {
       console.warn("[ops] pull falló:", e)
     }

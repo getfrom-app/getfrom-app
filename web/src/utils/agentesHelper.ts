@@ -180,6 +180,20 @@ export function getOrCreateAgentInstructionDoc(agentId: string): Node {
   const kids = store.children(agentId).filter(n => !n.deletedAt)
   const existingDoc = kids.find(n => { try { return JSON.parse(n.extraData || '{}')._doc === '1' } catch { return false } })
   if (existingDoc) return existingDoc
+  // ⚠️ Mismo bug de pérdida de datos que getOrCreateContextKnowledgeDoc (cajones.ts,
+  // 14 jul 2026): un hijo puede SER YA el documento moderno pero con
+  // `extraData._doc` temporalmente no reconocido en este cliente (reconstrucción
+  // desde un op-log parcial de otro dispositivo — ver opsClient.ts
+  // pullAndApply). Antes esto borraba TODOS los hijos del agente y creaba uno
+  // nuevo vacío, perdiendo las instrucciones reales. Si algún hijo ya tiene body
+  // real, se repara su flag en vez de borrar nada.
+  const candidateWithBody = kids.find(n => (n.body || '').trim() && (n.body || '').trim() !== '<p></p>')
+  if (candidateWithBody) {
+    let ed2: Record<string, unknown> = {}
+    try { ed2 = JSON.parse(candidateWithBody.extraData || '{}') } catch { /* ignore */ }
+    if (ed2._doc !== '1') { ed2._doc = '1'; store.updateNode(candidateWithBody.id, { extraData: JSON.stringify(ed2) }) }
+    return store.getNode(candidateWithBody.id)!
+  }
   // Agente v1: migra el texto plano existente (recursivo, mismo orden que readAgentNote).
   const legacyText = readAgentNote(agentId)
   for (const k of kids) store.deleteNode(k.id)

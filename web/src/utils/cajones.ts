@@ -501,7 +501,24 @@ export function getOrCreateContextKnowledgeDoc(contextId: string): Node {
   let kn = contextKnowledgeNode(contextId)
   if (kn && isKnowledgeDoc(kn)) return kn
   if (kn) {
-    // Formato antiguo → migrar: texto de los hijos-línea pasa a `.body` (HTML).
+    // ⚠️ CAUSA REAL de pérdida de datos (14 jul 2026): un nodo con el título de
+    // conocimiento pero SIN `extraData._doc='1'` puede ser el formato antiguo de
+    // verdad (hijos-línea, body vacío) — O puede ser un documento MODERNO cuyo
+    // `extraData` se vio temporalmente incompleto en este cliente (reconstrucción
+    // desde un op-log parcial de otro dispositivo, ver opsClient.ts pullAndApply).
+    // Antes esto SIEMPRE "migraba": sin hijos-línea que leer, `legacyText` salía
+    // vacío y se sobrescribía `.body` a `<p></p>` — BORRANDO contenido real ya
+    // escrito. Ahora se distingue por el BODY, no solo por el flag: si ya tiene
+    // contenido real, nunca se toca (solo se repara el flag que falta).
+    const hasRealBody = !!(kn.body && kn.body.trim() && kn.body.trim() !== '<p></p>')
+    if (hasRealBody) {
+      let ed2: Record<string, unknown> = {}
+      try { ed2 = JSON.parse(kn.extraData || '{}') } catch { /* ignore */ }
+      if (ed2._doc !== '1') { ed2._doc = '1'; store.updateNode(kn.id, { extraData: JSON.stringify(ed2) }) }
+      return store.getNode(kn.id)!
+    }
+    // Formato antiguo de verdad (sin body real) → migrar: texto de los hijos-línea
+    // pasa a `.body` (HTML).
     const legacyText = readLegacyKnowledgeLines(kn)
     for (const child of store.children(kn.id).filter(c => !c.deletedAt)) store.deleteNode(child.id)
     const merged = { _doc: '1' }
