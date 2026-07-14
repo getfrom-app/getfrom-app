@@ -200,7 +200,7 @@ This section describes the complete state of the Fromly application as implement
 - **Plans:**
   - Free: no account, unlimited bullets, no sync or AI.
   - Subscription €7/month: sync + 2M AI tokens/month (managed Anthropic/Gemini).
-  - Lifetime license €59: sync + AI with the user's own API key.
+  - Lifetime license €149: sync + AI with 3M tokens included (or the user's own API key).
 - **LemonSqueezy** for payments. Variants: subscription (`1553200`), license (`1553210`), topup 5M tokens (`1553900`).
 - **Automatic local backup:** `NodeBackupService` exports all nodes to Markdown every 2 hours to `~/Library/Application Support/Fromly/Backups/`.
 
@@ -492,7 +492,7 @@ JWT HS256 with Railway `JWT_SECRET`. Expiry: 15 min (access) + 30 days (refresh)
 |------|-----------|------------|
 | `.free` | No account | Bullets + Workspaces + Files. No sync, no AI |
 | `.subscription` | Login + `subscriptionStatus: active` | Everything — sync + managed AI (tokens) |
-| `.license` | Login + `licenseStatus: active` | Sync + AI with own API key |
+| `.license` | Login + `licenseStatus: active` | Sync + AI with 3M tokens included (or own API key) |
 | `.expired` | Login + lapsed subscription/license | Bullets + files only |
 
 **Convenience flags:** `canSync` (≠ free), `canUseAI` (== subscription)
@@ -500,7 +500,7 @@ JWT HS256 with Railway `JWT_SECRET`. Expiry: 15 min (access) + 30 days (refresh)
 ### Monetization
 
 - **Free mode:** No account, no time limit. Unlimited bullets and files.
-- **Manual mode (license €59):** Own API key + Railway sync
+- **Lifetime mode (license €149):** Railway sync + 3M AI tokens included (or own API key)
 - **Automatic mode (subscription €7/month):** Prepaid tokens + Railway sync
   - LemonSqueezy variants: subscription (`1553200`), license (`1553210`), topup 5M (`1553900`)
 

@@ -34,7 +34,7 @@
 |---|---|---|
 | Free | €0 | Up to 1,000 synced nodes, no AI |
 | Pro | €7/month or €49/year (~€4.08/mo) | Unlimited nodes, full AI, agents, 2M AI tokens/month |
-| Lifetime | €149 one-time | Everything in Pro, forever, no subscription |
+| Lifetime | €149 one-time | Everything in Pro, forever, no subscription, 3M AI tokens included |
 
 Payments processed securely by [Lemon Squeezy](https://lemonsqueezy.com).
 

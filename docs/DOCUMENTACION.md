@@ -649,7 +649,7 @@ Esta sección describe el estado completo de la aplicación Fromly tal como est�
 - **Planes:**
   - Gratis: sin cuenta, bullets ilimitados, sin sync ni IA.
   - Suscripción €7/mes: sync + 2M tokens IA/mes (Anthropic/Gemini gestionados).
-  - Licencia perpetua €59: sync + IA con API key propia del usuario.
+  - Licencia perpetua €149: sync + IA con 3M tokens de IA incluidos (o API key propia del usuario).
 - **LemonSqueezy** para pagos. Variants: suscripción (`1553200`), licencia (`1553210`), topup 5M tokens (`1553900`).
 **Backups unificados Mac+web (servidor):**
 - Tabla `node_snapshots(id, user_id, created_at, node_count, source, payload)` en PostgreSQL.
@@ -985,7 +985,7 @@ JWT HS256 con `JWT_SECRET` de Railway. Expiración: 15 min (access) + 30 días (
 |------|-----------|-------------|
 | `.free` | Sin cuenta | Bullets + Workspaces + Archivos. Sin sync ni IA |
 | `.subscription` | Login + `subscriptionStatus: active` | Todo — sync + IA automática (tokens) |
-| `.license` | Login + `licenseStatus: active` | Sync + IA con API key propia |
+| `.license` | Login + `licenseStatus: active` | Sync + IA con 3M tokens incluidos (o API key propia) |
 | `.expired` | Login + suscripción/licencia caducada | Solo bullets + archivos |
 
 **Flags de conveniencia:** `canSync` (≠ free), `canUseAI` (== subscription)
@@ -993,7 +993,7 @@ JWT HS256 con `JWT_SECRET` de Railway. Expiración: 15 min (access) + 30 días (
 ### Monetización
 
 - **Modo gratuito:** Sin cuenta, sin límite de tiempo. Bullets y archivos ilimitados.
-- **Modo manual (licencia €59):** API key propia del usuario + sync Railway
+- **Modo Lifetime (licencia €149):** sync Railway + 3M tokens de IA incluidos (o API key propia del usuario)
 - **Modo automático (suscripción €7/mes):** Tokens prepago + sync Railway
   - Variantes LemonSqueezy: suscripción (`1553200`), licencia (`1553210`), topup 5M (`1553900`)
 
