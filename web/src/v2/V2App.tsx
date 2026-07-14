@@ -74,15 +74,12 @@ export default function V2App() {
   // y duradero (puede acotar/reescribir/fusionar, no solo añadir al final) — si no
   // aporta nada, no toca el documento. Alberto: "cada vez que se guarda un
   // elemento, si es significativo, debe aportar algo... si no, no hace nada".
-  // ⚠️ DESACTIVADO 14 jul — Alberto reportó pérdida de contenido en "Lo que Fromly
-  // sabe" de Casa Alicante justo tras activarse esta función. Investigando si la
-  // causa es esta reescritura por IA (puede acortar de más) o el bug de fondo del
-  // modo-live (shadow incompleto sobreescribe nodos reales — ver DIAGNOSTICO.md).
-  // No reactivar sin confirmar la causa raíz y verificar que no trunca contenido.
-  const AUTO_KNOWLEDGE_UPDATE_ENABLED = false
+  // Reactivado 14 jul tras encontrar y arreglar la causa raíz real (opsClient.ts +
+  // cajones.ts/agentesHelper.ts — ver commit 5cbda04d): la reescritura por IA
+  // nunca fue la causa, era la migración destructiva del documento cuando el
+  // flag `_doc` no se reconocía por el shadow incompleto.
   const knowledgeUpdateInFlight = useRef(new Set<string>())
   useEffect(() => {
-    if (!AUTO_KNOWLEDGE_UPDATE_ENABLED) return
     if (!detailNodeId) return
     const id = detailNodeId
     const openNode = store.getNode(id)
