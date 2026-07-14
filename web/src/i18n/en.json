@@ -2232,6 +2232,7 @@
   "elements.newAgentPrompt": "Agent name:",
   "elements.newPrompt": "New prompt",
   "elements.newPromptPrompt": "Prompt name:",
+  "elements.allContexts": "All contexts",
   "elements.conversations": "Conversations",
   "v2.context.agents": "Agents",
   "agents.promptLabel": "Agent instruction",

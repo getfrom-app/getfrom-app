@@ -2232,6 +2232,7 @@
   "elements.newAgentPrompt": "Όνομα πράκτορα:",
   "elements.newPrompt": "Νέο prompt",
   "elements.newPromptPrompt": "Όνομα prompt:",
+  "elements.allContexts": "Όλα τα πλαίσια",
   "elements.conversations": "Συνομιλίες",
   "v2.context.agents": "Πράκτορες",
   "agents.promptLabel": "Οδηγία πράκτορα",

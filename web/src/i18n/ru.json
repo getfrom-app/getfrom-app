@@ -2232,6 +2232,7 @@
   "elements.newAgentPrompt": "Имя агента:",
   "elements.newPrompt": "Новый промпт",
   "elements.newPromptPrompt": "Имя промпта:",
+  "elements.allContexts": "Все контексты",
   "elements.conversations": "Беседы",
   "v2.context.agents": "Агенты",
   "agents.promptLabel": "Инструкция агента",

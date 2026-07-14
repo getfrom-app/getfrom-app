@@ -113,7 +113,7 @@ function V2NoteContext({ node, onSelectCtx, inline }: { node: Node; onSelectCtx?
 // un contexto/conversación/tarea concretos, ese contexto ya se muestra arriba en
 // esa misma vista (mostrarlo también aquí es redundante, o incluso otra cosa: el
 // contexto de la nota-hija no tiene por qué coincidir con el de su contenedor).
-export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerLabel }: { node: Node; onSelectCtx: (id: string) => void; inlinePage?: boolean; hideContext?: boolean; headerLabel?: string }) {
+export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerLabel, hideToolbar }: { node: Node; onSelectCtx: (id: string) => void; inlinePage?: boolean; hideContext?: boolean; headerLabel?: string; hideToolbar?: boolean }) {
   const { t } = useTranslation()
   // Nota y Lienzo son dos tipos separados desde su creación (botones "+Nota"/"+Lienzo"
   // en la cabecera del chat) — ya NO se puede cambiar de uno a otro en un documento
@@ -141,25 +141,30 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
   return (
     <div style={inlinePage ? undefined : { height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       {/* Fila única de acciones (favorito, exportar, publicar, eliminar) — ya no hay
-          toggle Nota/Lienzo: son tipos separados desde su creación (ver arriba). */}
-      <div className="v2-note-toolbar">
-        {headerLabel && <div className="v2-section-label" style={{ padding: 0 }}>{headerLabel}</div>}
-        {!canvas && !hideContext && <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />}
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
-          <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite} style={{ ...actBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/></svg>
-          </button>
-          {asDoc && !canvas && <>
-            <button title={t('export.markdown')} onClick={() => { exportNodeMarkdown(node); toast(t('context.toastExportedMarkdown')) }} style={actBtn}>MD</button>
-            <button title={t('export.html')} onClick={() => { exportNodeHtml(node); toast(t('context.toastExportedHtml')) }} style={actBtn}>HTML</button>
-            <button title={t('export.pdf')} onClick={() => exportNodePdf(node)} style={actBtn}>PDF</button>
-            <PublishButton node={node} />
-          </>}
-          <button title={t('tip.delete', 'Eliminar')} onClick={deleteCard} style={{ ...actBtn, color: 'var(--text-tertiary,#999)' }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-          </button>
+          toggle Nota/Lienzo: son tipos separados desde su creación (ver arriba).
+          `hideToolbar`: para usos "incrustados" donde el editor es solo un bloque de
+          texto dentro de otra vista (p.ej. "Lo que Fromly sabe" en V2ContextView) —
+          ni cabecera, ni chip de contexto, ni acciones propias. */}
+      {!hideToolbar && (
+        <div className="v2-note-toolbar">
+          {headerLabel && <div className="v2-section-label" style={{ padding: 0 }}>{headerLabel}</div>}
+          {!canvas && !hideContext && <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />}
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite} style={{ ...actBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/></svg>
+            </button>
+            {asDoc && !canvas && <>
+              <button title={t('export.markdown')} onClick={() => { exportNodeMarkdown(node); toast(t('context.toastExportedMarkdown')) }} style={actBtn}>MD</button>
+              <button title={t('export.html')} onClick={() => { exportNodeHtml(node); toast(t('context.toastExportedHtml')) }} style={actBtn}>HTML</button>
+              <button title={t('export.pdf')} onClick={() => exportNodePdf(node)} style={actBtn}>PDF</button>
+              <PublishButton node={node} />
+            </>}
+            <button title={t('tip.delete', 'Eliminar')} onClick={deleteCard} style={{ ...actBtn, color: 'var(--text-tertiary,#999)' }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Barra de formato PLANA (iconos normales) — cuando se edita como documento. */}
       {asDoc && !canvas && (

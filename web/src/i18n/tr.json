@@ -2232,6 +2232,7 @@
   "elements.newAgentPrompt": "Ajan adı:",
   "elements.newPrompt": "Yeni prompt",
   "elements.newPromptPrompt": "Prompt adı:",
+  "elements.allContexts": "Tüm bağlamlar",
   "elements.conversations": "Konuşmalar",
   "v2.context.agents": "Ajanlar",
   "agents.promptLabel": "Ajan talimatı",

@@ -214,16 +214,22 @@ interface SwitcherProps {
   onChange: (v: FilterView) => void
   count: number
   onClear: () => void
+  /** Kanban (agrupa por estado) y Calendario (agrupa por fecha) solo tienen sentido
+   *  para tareas — para notas, lienzos u otros elementos no hay estado ni fecha que
+   *  organizar. Por defecto true (comportamiento previo, usado también por WFHomeView
+   *  con filtros libres tipo `estado:` que sí pueden mezclar tareas). */
+  allowBoardViews?: boolean
 }
 
-export function FilterViewSwitcher({ view, onChange, count, onClear }: SwitcherProps) {
+export function FilterViewSwitcher({ view, onChange, count, onClear, allowBoardViews = true }: SwitcherProps) {
   const { t } = useTranslation()
-  const modes: { id: FilterView; title: string }[] = [
+  const allModes: { id: FilterView; title: string }[] = [
     { id: 'lista',     title: 'Árbol' },
     { id: 'tabla',     title: 'Tabla' },
     { id: 'kanban',    title: 'Kanban' },
     { id: 'calendario',title: 'Calendario' },
   ]
+  const modes = allowBoardViews ? allModes : allModes.filter(m => m.id !== 'kanban' && m.id !== 'calendario')
   return (
     <div className="filter-results-bar">
       <span className="filter-results-count">

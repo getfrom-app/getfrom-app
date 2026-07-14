@@ -24,6 +24,7 @@ import { CONTEXT_KNOWLEDGE, isContextKnowledge } from './knowledgeNodes'
 import { isInPapelera } from './papeleraHelper'
 import { markdownToHtml } from './importMarkdown'
 import { htmlToMarkdown } from './htmlMarkdown'
+import { updateContextKnowledgeFromElement } from '../api/autoClassify'
 
 const CONTEXT_DEFAULT_COLOR = '#7c3aed'
 
@@ -571,6 +572,33 @@ export function appendContextFacts(contextId: string, facts: string[]): void {
 export function writeContextKnowledge(contextId: string, text: string): void {
   const kn = getOrCreateContextKnowledgeDoc(contextId)
   store.updateNode(kn.id, { body: text.trim() ? markdownToHtml(text) : '<p></p>' })
+}
+
+// ── Auto-actualización de "Lo que Fromly sabe" a partir de un elemento nuevo ──────
+// Compartida entre el cierre manual de una nota (V2App.tsx, al editar y cerrar el
+// detalle) y la creación de contenido POR CHAT (aiChatExecutor.ts: create_document,
+// create_note) — antes solo el primero disparaba la actualización, así que cualquier
+// documento creado por la IA (la mayoría del contenido real en un producto chat-first)
+// nunca alimentaba la memoria del contexto, aunque el contexto tuviera muchos
+// elementos (Alberto, 14 jul: Casa Alicante con 12 elementos y "Lo que Fromly sabe"
+// vacío). Fire-and-forget: no bloquea a quien la llama.
+const knowledgeUpdateInFlight = new Set<string>()
+
+export function maybeUpdateContextKnowledge(node: Node | null | undefined): void {
+  if (!node || node.deletedAt) return
+  if (isContextKnowledge(node.text)) return // no auto-resumir el propio documento de memoria
+  const ctx = firstContextOf(node)
+  if (!ctx) return
+  const elementTitle = (node.text || '').replace(/^✦\s*/, '').trim()
+  const elementText = htmlToMarkdown(node.body || '').trim()
+  if (!elementTitle && elementText.length < 20) return // demasiado trivial
+  if (knowledgeUpdateInFlight.has(ctx.id)) return // ya hay una actualización en curso para este contexto
+  knowledgeUpdateInFlight.add(ctx.id)
+  const currentKnowledge = readContextKnowledge(ctx.id)
+  updateContextKnowledgeFromElement(ctx.text || '', currentKnowledge, elementTitle, elementText)
+    .then(res => { if (res.updated && res.knowledge) writeContextKnowledge(ctx.id, res.knowledge) })
+    .catch(() => { /* silencioso: mismo criterio que appendContextFacts */ })
+    .finally(() => { knowledgeUpdateInFlight.delete(ctx.id) })
 }
 
 // ── Notas libres (del usuario, no de la IA) ────────────────────────────────────

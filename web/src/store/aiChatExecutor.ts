@@ -9,7 +9,7 @@ import { ensureDayPath } from '../utils/agendaHelper'
 import { pushEventToGcal } from '../utils/gcalNodesSync'
 import { createAgentUnder, getAgentData, setAgentEnabled, isAgentNode } from '../utils/agentesHelper'
 import { markdownToHtml } from '../utils/importMarkdown'
-import { createContext, appendContextFacts } from '../utils/cajones'
+import { createContext, appendContextFacts, maybeUpdateContextKnowledge } from '../utils/cajones'
 import { userStore } from './userStore'
 
 /** Quita prefijos de lista de un título de nodo: "1. ", "12) ", "- ", "* ", "• ".
@@ -104,6 +104,7 @@ function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeI
     }
   }
   const tagPart = tags.length > 0 ? ` con tags #${tags.join(' #')}` : ''
+  maybeUpdateContextKnowledge(store.getNode(created.id))
   return result('create_note', true, `Nota «${text}» creada${tagPart}.`, [created.id])
 }
 
@@ -147,6 +148,7 @@ function createDocument(a: Record<string, unknown>, sessionId?: string, currentN
     extraData: { _doc: '1' },
   })
   store.updateNode(created.id, { body: mdToHtml(content) })
+  maybeUpdateContextKnowledge(store.getNode(created.id))
   return result('create_document', true, `Documento «${title}» creado.`, [created.id])
 }
 

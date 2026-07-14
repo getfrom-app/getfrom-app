@@ -2232,6 +2232,7 @@
   "elements.newAgentPrompt": "Naam van de agent:",
   "elements.newPrompt": "Nieuwe prompt",
   "elements.newPromptPrompt": "Naam van de prompt:",
+  "elements.allContexts": "Alle contexten",
   "elements.conversations": "Gesprekken",
   "v2.context.agents": "Agenten",
   "agents.promptLabel": "Instructie van de agent",

@@ -11,13 +11,11 @@ import { aiChatStore, useAIChat } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
-import { isMarkedContext, isRootContext, firstContextOf, readContextKnowledge, writeContextKnowledge } from '../utils/cajones'
-import { isContextKnowledge } from '../utils/knowledgeNodes'
+import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge } from '../utils/cajones'
 import { htmlToMarkdown } from '../utils/htmlMarkdown'
 import { applyTemplate } from '../utils/tagsHelper'
 import { createMarkdownNode } from '../utils/importMarkdown'
 import { uploadFile } from '../api/client'
-import { updateContextKnowledgeFromElement } from '../api/autoClassify'
 import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
@@ -101,7 +99,10 @@ export default function V2App() {
     }
   }, [detailNodeId])
 
-  const knowledgeUpdateInFlight = useRef(new Set<string>())
+  // maybeUpdateContextKnowledge (cajones.ts) — compartida con aiChatExecutor.ts, que la
+  // dispara también al crear contenido por chat (antes SOLO se disparaba aquí, al cerrar
+  // una nota editada a mano; la mayoría del contenido de un producto chat-first se crea
+  // por chat, así que la memoria del contexto casi nunca se alimentaba).
   useEffect(() => {
     if (!detailNodeId) return
     const id = detailNodeId
@@ -111,21 +112,9 @@ export default function V2App() {
       const node = store.getNode(id)
       if (!node || node.deletedAt) return
       if (node.text === snapshot.text && node.body === snapshot.body) return // nada cambió
-      if (isContextKnowledge(node.text)) return // no auto-resumir el propio documento de memoria
-      const ctx = firstContextOf(node)
-      if (!ctx) return
-      const elementTitle = (node.text || '').replace(/^✦\s*/, '').trim()
-      const elementText = htmlToMarkdown(node.body || '').trim()
-      if (!elementTitle && elementText.length < 20) return // demasiado trivial, ni molestar a la IA
-      if (knowledgeUpdateInFlight.current.has(ctx.id)) return // ya hay una actualización en curso para este contexto
-      knowledgeUpdateInFlight.current.add(ctx.id)
-      const currentKnowledge = readContextKnowledge(ctx.id)
-      updateContextKnowledgeFromElement(ctx.text || '', currentKnowledge, elementTitle, elementText)
-        .then(res => { if (res.updated && res.knowledge) writeContextKnowledge(ctx.id, res.knowledge) })
-        .catch(() => { /* silencioso: mismo criterio que appendContextFacts */ })
-        .finally(() => { knowledgeUpdateInFlight.current.delete(ctx.id) })
+      maybeUpdateContextKnowledge(node)
     }
-  }, [detailNodeId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [detailNodeId])
 
   // Arranque del motor SOLO si la v1 no lo cargó ya en esta sesión SPA.
   // NO re-ejecutamos las migraciones estructurales de v1 (algunas destructivas):

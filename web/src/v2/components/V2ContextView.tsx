@@ -162,6 +162,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
 
   return (
     <div>
+      {/* Título del contexto — antes no se mostraba en ningún sitio de esta tab (solo
+          el chip del padre). Alberto: "como título en la parte superior del tab pon el
+          nombre del contexto". */}
+      <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8, lineHeight: 1.3 }}>{node.text}</div>
+
       {/* Contexto PADRE — chip navegable + cambiar/quitar (mismo patrón que el resto). */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
         {parent ? (
@@ -203,8 +208,18 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
         </button>
       )}
 
+      {/* Lo que Fromly sabe — bloque ÚNICO fusionado (memoria de la IA + notas libres
+          del usuario): EL MISMO editor completo que cualquier nota (favorito, exportar,
+          cabeceras, formato…), no una versión reducida. Fromly añade hechos aquí
+          automáticamente (maybeUpdateContextKnowledge) y el usuario puede escribir con
+          la misma comodidad que en cualquier documento. Sin cabecera ni fila de acciones
+          propia (Alberto: no hace falta título "Lo que Fromly sabe" ni sus botones) —
+          es la descripción viva del contexto, va justo debajo del título y antes de
+          tareas/elementos, no al final. */}
+      <V2NoteBody node={knowledgeDoc} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
+
       {/* Tareas del contexto — estilo Hoy. */}
-      <div className="v2-section-label" style={{ padding: '2px 0 6px' }}>
+      <div className="v2-section-label" style={{ padding: '18px 0 6px' }}>
         <span>{t('v2.context.tasks', 'Tareas')}</span>
       </div>
       <V2TaskList tasks={tasks} />
@@ -231,15 +246,6 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           })}
         </>
       )}
-
-      {/* Lo que Fromly sabe — bloque ÚNICO fusionado (memoria de la IA + notas libres
-          del usuario): EL MISMO editor completo que cualquier nota (toggle Nota/Lienzo,
-          favorito, exportar, cabeceras, formato…), no una versión reducida. Fromly
-          añade hechos aquí automáticamente (appendContextFacts) y el usuario puede
-          escribir con la misma comodidad que en cualquier documento. */}
-      <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 14 }}>
-        <V2NoteBody node={knowledgeDoc} onSelectCtx={onSelectCtx} inlinePage hideContext headerLabel={`🧠 ${t('v2.context.whatFromlyKnows', 'Lo que Fromly sabe')}`} />
-      </div>
     </div>
   )
 }

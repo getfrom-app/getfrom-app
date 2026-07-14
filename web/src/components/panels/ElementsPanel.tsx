@@ -13,7 +13,7 @@ import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { isDocNode, elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
-import { isMarkedContext, listMarkedContexts, contextColor, assignContext } from '../../utils/cajones'
+import { isMarkedContext, listMarkedContexts, contextColor, assignContext, firstContextOf } from '../../utils/cajones'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { renderInline } from '../outliner/InlineRenderer'
 import RowContextChip from './RowContextChip'
@@ -32,7 +32,7 @@ import PizarraThumbnail from '../views/PizarraThumbnail'
 export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
-interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; due?: string | null; status?: string | null }
+interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; ctxId: string | null; due?: string | null; status?: string | null }
 type SortBy = 'updated' | 'created' | 'title'
 
 const ed = (n: Node): Record<string, unknown> => { try { return JSON.parse(n.extraData || '{}') } catch { return {} } }
@@ -112,6 +112,12 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     setView(v)
     localStorage.setItem(ELEMENTS_VIEW_KEY, v)
   }
+  // Kanban/Calendario solo tienen sentido filtrando Tareas — si el filtro cambia a
+  // cualquier otra cosa mientras esa vista está activa, vuelve a Lista (el interruptor
+  // ya no muestra esos botones, pero sin esto la vista se quedaría "atascada").
+  useEffect(() => {
+    if (filter !== 'task' && (view === 'kanban' || view === 'calendario')) changeView('lista')
+  }, [filter]) // eslint-disable-line react-hooks/exhaustive-deps
   const [sortBy, setSortBy] = useState<SortBy>(() => (localStorage.getItem(ELEMENTS_SORT_KEY) as SortBy) || 'updated')
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
   function changeSort(v: SortBy) {
@@ -131,7 +137,8 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
       // Quita el prefijo decorativo (✦ sesión / 💬 transcripción) para no duplicar
       // icono: la fila ya muestra el icono de tipo (KIND_ICON) a la izquierda.
       const title = (elementDisplayTitle(n) || snippet.slice(0, 60) || t('common.noTitle')).replace(/^(?:✦|💬)\s*/u, '')
-      out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '', createdAt: n.createdAt || '', due: n.due, status: n.status })
+      const ctxId = firstContextOf(n)?.id ?? null
+      out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '', createdAt: n.createdAt || '', ctxId, due: n.due, status: n.status })
     }
     return out
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,20 +146,39 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
 
   const nq = q.trim().toLowerCase()
   const showTaskSub = filter === 'task' || filter === 'event'
+  // Capa 1: tipo + búsqueda + sub-filtro de tareas — sin el contexto todavía, porque
+  // los chips de contexto disponibles (abajo) deben reflejar ESTE conjunto, no el ya
+  // recortado por contexto (si no, al elegir un contexto desaparecerían los demás chips).
+  const byTypeAndSearch = useMemo(() => rows.filter(r => {
+    if (filter === 'favorite') { if (!store.getNode(r.id)?.isFavorite) return false }
+    else if (filter === 'all') { if (r.kind === 'memory') return false } // memoria IA solo con su propio chip
+    else if (r.kind !== filter) return false
+    if (showTaskSub && !matchesTaskSub(r, taskSub)) return false
+    if (!nq) return true
+    return r.title.toLowerCase().includes(nq) || r.snippet.toLowerCase().includes(nq)
+  }), [rows, filter, taskSub, showTaskSub, nq])
+
+  // Sub-filtro por CONTEXTO — segundo nivel, para CUALQUIER tipo (no solo tareas).
+  // Solo ofrece contextos que de verdad tienen algo en el conjunto ya filtrado arriba.
+  const [ctxFilter, setCtxFilter] = useState<string | 'all'>('all')
+  const availableContexts = useMemo(() => {
+    const ids = new Set<string>()
+    for (const r of byTypeAndSearch) if (r.ctxId) ids.add(r.ctxId)
+    return [...ids].map(id => store.getNode(id)).filter((n): n is Node => !!n && !!(n.text || '').trim())
+      .sort((a, b) => a.text.localeCompare(b.text))
+  }, [byTypeAndSearch])
+  useEffect(() => {
+    if (ctxFilter !== 'all' && !availableContexts.some(c => c.id === ctxFilter)) setCtxFilter('all')
+  }, [availableContexts, ctxFilter])
+
   const filtered = useMemo(() => {
-    const out = rows.filter(r => {
-      if (filter === 'favorite') { if (!store.getNode(r.id)?.isFavorite) return false }
-      else if (filter === 'all') { if (r.kind === 'memory') return false } // memoria IA solo con su propio chip
-      else if (r.kind !== filter) return false
-      if (showTaskSub && !matchesTaskSub(r, taskSub)) return false
-      if (!nq) return true
-      return r.title.toLowerCase().includes(nq) || r.snippet.toLowerCase().includes(nq)
-    })
-    if (sortBy === 'title') out.sort((a, b) => a.title.localeCompare(b.title))
-    else if (sortBy === 'created') out.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    else out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
-    return out
-  }, [rows, filter, taskSub, showTaskSub, nq, sortBy])
+    const out = ctxFilter === 'all' ? byTypeAndSearch : byTypeAndSearch.filter(r => r.ctxId === ctxFilter)
+    const sorted = [...out]
+    if (sortBy === 'title') sorted.sort((a, b) => a.title.localeCompare(b.title))
+    else if (sortBy === 'created') sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    else sorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    return sorted
+  }, [byTypeAndSearch, ctxFilter, sortBy])
 
   const counts = useMemo(() => rows.reduce((acc, r) => { acc[r.kind] = (acc[r.kind] || 0) + 1; return acc }, {} as Record<ElemKind, number>), [rows])
   const favCount = useMemo(() => { void s.nodesVersion; return rows.filter(r => store.getNode(r.id)?.isFavorite).length }, [rows, s.nodesVersion])
@@ -316,6 +342,33 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             })}
           </div>
         )}
+        {/* Sub-filtro por CONTEXTO — segundo nivel, para cualquier tipo (no solo tareas). */}
+        {availableContexts.length > 0 && (
+          <div className="el-filterbar" style={{ marginTop: 4 }}>
+            <button onClick={() => setCtxFilter('all')}
+              style={{
+                flex: '0 0 auto', border: 'none', background: 'transparent', cursor: 'pointer', padding: '2px 0',
+                fontSize: 11.5, fontWeight: ctxFilter === 'all' ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
+                color: ctxFilter === 'all' ? 'var(--accent,#6c5ce7)' : 'var(--text-tertiary,#999)',
+              }}>
+              {t('elements.allContexts', 'Todos los contextos')}
+            </button>
+            {availableContexts.map(c => {
+              const active = ctxFilter === c.id
+              return (
+                <button key={c.id} onClick={() => setCtxFilter(c.id)}
+                  style={{
+                    flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', cursor: 'pointer', padding: '2px 0',
+                    fontSize: 11.5, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
+                    color: active ? 'var(--accent,#6c5ce7)' : 'var(--text-tertiary,#999)',
+                  }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: contextColor(c.id), flexShrink: 0 }} />
+                  {c.text}
+                </button>
+              )
+            })}
+          </div>
+        )}
         {/* Selector de vista — lista (por defecto) / tabla / kanban / calendario. Reutiliza
             los componentes de la v1 (FilterResultsView) tal cual, sobre los ids ya filtrados. */}
         <FilterViewSwitcher
@@ -323,6 +376,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
           onChange={changeView}
           count={filtered.length}
           onClear={() => { setQ(''); setFilter('all'); setTaskSub('all') }}
+          allowBoardViews={filter === 'task'}
         />
       </div>
 
