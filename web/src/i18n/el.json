@@ -548,7 +548,7 @@
   "pricing.subtitleLoggedIn": "Μπορείτε να χρησιμοποιήσετε το Fromly δωρεάν τώρα. Αναβαθμίστε όποτε θέλετε.",
   "pricing.planFree": "Δωρεάν",
   "pricing.planLifetime": "Pro · Ισόβιο",
-  "pricing.planLifetimePrice": "49€",
+  "pricing.planLifetimePrice": "149€",
   "pricing.planLifetimePriceDetail": "εφάπαξ πληρωμή · ισόβια πρόσβαση",
   "pricing.planLifetimeBadge": "Καλύτερη αξία",
   "pricing.featureOutliner": "Outliner + ημερολόγιο",
@@ -2234,5 +2234,11 @@
   "v2.chat.newPromptName": "Όνομα prompt:",
   "v2.chat.newPrompt": "Νέο prompt",
   "v2.chat.processingAudio": "Επεξεργασία…",
-  "v2.chat.recordingListening": "Ακούω…"
+  "v2.chat.recordingListening": "Ακούω…",
+  "pricing.lifetimeEverythingPro": "Όλα του Pro, για πάντα",
+  "pricing.lifetimeTokens": "3.000.000 tokens IA συμπεριλαμβάνονται",
+  "pricing.lifetimeNoSub": "Εφάπαξ πληρωμή — χωρίς συνδρομή",
+  "pricing.lifetimeLabel": "για πάντα",
+  "pricing.lifetimeNote": "Εφάπαξ πληρωμή, χωρίς συνδρομή",
+  "pricing.ctaGoLifetime": "Αγορά Lifetime"
 }

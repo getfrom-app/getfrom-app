@@ -548,7 +548,7 @@
   "pricing.subtitleLoggedIn": "Możesz używać Fromly za darmo już teraz. Przejdź na wyższy plan, kiedy chcesz.",
   "pricing.planFree": "Darmowy",
   "pricing.planLifetime": "Pro · Dożywotnio",
-  "pricing.planLifetimePrice": "49 €",
+  "pricing.planLifetimePrice": "149 €",
   "pricing.planLifetimePriceDetail": "płatność jednorazowa · dostęp dożywotni",
   "pricing.planLifetimeBadge": "Najlepsza wartość",
   "pricing.featureOutliner": "Outliner + dziennik",
@@ -2234,5 +2234,11 @@
   "v2.chat.newPromptName": "Nazwa promptu:",
   "v2.chat.newPrompt": "Nowy prompt",
   "v2.chat.processingAudio": "Przetwarzanie…",
-  "v2.chat.recordingListening": "Słucham…"
+  "v2.chat.recordingListening": "Słucham…",
+  "pricing.lifetimeEverythingPro": "Wszystko z Pro, na zawsze",
+  "pricing.lifetimeTokens": "3 000 000 tokenów AI w cenie",
+  "pricing.lifetimeNoSub": "Jednorazowa płatność — bez subskrypcji",
+  "pricing.lifetimeLabel": "na zawsze",
+  "pricing.lifetimeNote": "Jednorazowa płatność, bez subskrypcji",
+  "pricing.ctaGoLifetime": "Kup Lifetime"
 }

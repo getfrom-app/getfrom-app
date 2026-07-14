@@ -548,7 +548,7 @@
   "pricing.subtitleLoggedIn": "Du kan använda Fromly gratis just nu. Uppgradera när du vill.",
   "pricing.planFree": "Gratis",
   "pricing.planLifetime": "Pro · Livstid",
-  "pricing.planLifetimePrice": "49 €",
+  "pricing.planLifetimePrice": "149 €",
   "pricing.planLifetimePriceDetail": "engångsbetalning · livstidsåtkomst",
   "pricing.planLifetimeBadge": "Bäst värde",
   "pricing.featureOutliner": "Outliner + dagbok",
@@ -2234,5 +2234,11 @@
   "v2.chat.newPromptName": "Promptens namn:",
   "v2.chat.newPrompt": "Ny prompt",
   "v2.chat.processingAudio": "Bearbetar…",
-  "v2.chat.recordingListening": "Lyssnar…"
+  "v2.chat.recordingListening": "Lyssnar…",
+  "pricing.lifetimeEverythingPro": "Allt i Pro, för alltid",
+  "pricing.lifetimeTokens": "3 000 000 AI-tokens ingår",
+  "pricing.lifetimeNoSub": "Engångsbetalning — ingen prenumeration",
+  "pricing.lifetimeLabel": "för alltid",
+  "pricing.lifetimeNote": "Engångsbetalning, ingen prenumeration",
+  "pricing.ctaGoLifetime": "Köp Lifetime"
 }

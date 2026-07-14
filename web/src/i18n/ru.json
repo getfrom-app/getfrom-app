@@ -548,7 +548,7 @@
   "pricing.subtitleLoggedIn": "Вы можете пользоваться Fromly бесплатно прямо сейчас. Переходите на Pro когда захотите.",
   "pricing.planFree": "Бесплатно",
   "pricing.planLifetime": "Pro · Навсегда",
-  "pricing.planLifetimePrice": "€49",
+  "pricing.planLifetimePrice": "€149",
   "pricing.planLifetimePriceDetail": "разовый платёж · пожизненный доступ",
   "pricing.planLifetimeBadge": "Лучшая цена",
   "pricing.featureOutliner": "Аутлайнер + дневник",
@@ -2234,5 +2234,11 @@
   "v2.chat.newPromptName": "Название промпта:",
   "v2.chat.newPrompt": "Новый промпт",
   "v2.chat.processingAudio": "Обработка…",
-  "v2.chat.recordingListening": "Слушаю…"
+  "v2.chat.recordingListening": "Слушаю…",
+  "pricing.lifetimeEverythingPro": "Всё из Pro, навсегда",
+  "pricing.lifetimeTokens": "3 000 000 токенов ИИ включено",
+  "pricing.lifetimeNoSub": "Разовый платёж — без подписки",
+  "pricing.lifetimeLabel": "навсегда",
+  "pricing.lifetimeNote": "Разовый платёж, без подписки",
+  "pricing.ctaGoLifetime": "Купить Lifetime"
 }

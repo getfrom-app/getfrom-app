@@ -548,7 +548,7 @@
   "pricing.subtitleLoggedIn": "Fromly'yi şu anda ücretsiz kullanabilirsiniz. İstediğiniz zaman yükseltin.",
   "pricing.planFree": "Ücretsiz",
   "pricing.planLifetime": "Pro · Ömür boyu",
-  "pricing.planLifetimePrice": "49 €",
+  "pricing.planLifetimePrice": "149 €",
   "pricing.planLifetimePriceDetail": "tek seferlik ödeme · ömür boyu erişim",
   "pricing.planLifetimeBadge": "En iyi değer",
   "pricing.featureOutliner": "Outliner + günlük",
@@ -2234,5 +2234,11 @@
   "v2.chat.newPromptName": "İstem adı:",
   "v2.chat.newPrompt": "Yeni istem",
   "v2.chat.processingAudio": "İşleniyor…",
-  "v2.chat.recordingListening": "Dinliyor…"
+  "v2.chat.recordingListening": "Dinliyor…",
+  "pricing.lifetimeEverythingPro": "Pro'nun her şeyi, sonsuza kadar",
+  "pricing.lifetimeTokens": "3.000.000 yapay zekâ tokeni dahil",
+  "pricing.lifetimeNoSub": "Tek seferlik ödeme — abonelik yok",
+  "pricing.lifetimeLabel": "sonsuza kadar",
+  "pricing.lifetimeNote": "Tek seferlik ödeme, abonelik yok",
+  "pricing.ctaGoLifetime": "Lifetime Satın Al"
 }

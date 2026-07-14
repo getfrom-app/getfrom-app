@@ -548,7 +548,7 @@
   "pricing.subtitleLoggedIn": "Je kunt Fromly nu gratis gebruiken. Upgrade wanneer je wilt.",
   "pricing.planFree": "Gratis",
   "pricing.planLifetime": "Pro · Levenslang",
-  "pricing.planLifetimePrice": "€49",
+  "pricing.planLifetimePrice": "€149",
   "pricing.planLifetimePriceDetail": "eenmalige betaling · levenslange toegang",
   "pricing.planLifetimeBadge": "Beste prijs-kwaliteit",
   "pricing.featureOutliner": "Outliner + dagboek",
@@ -2234,5 +2234,11 @@
   "v2.chat.newPromptName": "Naam van de prompt:",
   "v2.chat.newPrompt": "Nieuwe prompt",
   "v2.chat.processingAudio": "Verwerken…",
-  "v2.chat.recordingListening": "Luisteren…"
+  "v2.chat.recordingListening": "Luisteren…",
+  "pricing.lifetimeEverythingPro": "Alles van Pro, voor altijd",
+  "pricing.lifetimeTokens": "3.000.000 AI-tokens inbegrepen",
+  "pricing.lifetimeNoSub": "Eenmalige betaling — geen abonnement",
+  "pricing.lifetimeLabel": "voor altijd",
+  "pricing.lifetimeNote": "Eenmalige betaling, geen abonnement",
+  "pricing.ctaGoLifetime": "Lifetime kopen"
 }

@@ -548,7 +548,7 @@
   "pricing.subtitleLoggedIn": "Pode usar o Fromly gratuitamente agora mesmo. Mude para Pro quando quiser.",
   "pricing.planFree": "Gratuito",
   "pricing.planLifetime": "Pro · Vitalício",
-  "pricing.planLifetimePrice": "49 €",
+  "pricing.planLifetimePrice": "149 €",
   "pricing.planLifetimePriceDetail": "pagamento único · acesso vitalício",
   "pricing.planLifetimeBadge": "Melhor valor",
   "pricing.featureOutliner": "Outliner + diário",
@@ -2234,5 +2234,11 @@
   "v2.chat.newPromptName": "Nome do prompt:",
   "v2.chat.newPrompt": "Novo prompt",
   "v2.chat.processingAudio": "Processando…",
-  "v2.chat.recordingListening": "Ouvindo…"
+  "v2.chat.recordingListening": "Ouvindo…",
+  "pricing.lifetimeEverythingPro": "Tudo do Pro, para sempre",
+  "pricing.lifetimeTokens": "3.000.000 tokens de IA incluídos",
+  "pricing.lifetimeNoSub": "Pagamento único — sem assinatura",
+  "pricing.lifetimeLabel": "para sempre",
+  "pricing.lifetimeNote": "Pagamento único, sem assinatura",
+  "pricing.ctaGoLifetime": "Comprar Lifetime"
 }

@@ -2,10 +2,13 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUserStore } from '../../store/userStore'
-import { getToken, changePlan, changePlanAnnual } from '../../api/client'
+import { getToken, changePlan, changePlanAnnual, changePlanLifetime } from '../../api/client'
 
 // Pricing rediseñado (jun 2026, v4): toggle FUERA de la caja (encima de Pro) →
-// ambas tarjetas con estructura idéntica y alineadas. Precio en una sola línea.
+// tarjetas con estructura idéntica y alineadas. Precio en una sola línea.
+// Lifetime (jul 2026): antes solo se vendía desde la landing estática
+// (pricing.html), sin ningún botón dentro de la propia app — `changePlanLifetime()`
+// ya existía en api/client.ts pero no lo llamaba nadie. Restaurada la 3ª tarjeta.
 export default function PricingView() {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -13,8 +16,10 @@ export default function PricingView() {
   const isGuest = !getToken()
   const [annual, setAnnual] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [loadingLifetime, setLoadingLifetime] = useState(false)
 
   const isPaid = !!us.isPremium
+  const isLifetime = us.user?.licenseStatus === 'active'
 
   async function startPro() {
     if (isGuest) { navigate('/register'); return }
@@ -26,6 +31,19 @@ export default function PricingView() {
       console.error('Error al iniciar checkout Pro:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function startLifetime() {
+    if (isGuest) { navigate('/register'); return }
+    setLoadingLifetime(true)
+    try {
+      const res = await changePlanLifetime()
+      if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
+    } catch (err) {
+      console.error('Error al iniciar checkout Lifetime:', err)
+    } finally {
+      setLoadingLifetime(false)
     }
   }
 
@@ -43,6 +61,11 @@ export default function PricingView() {
   ]
 
   const proBig = annual ? '€4,08' : '€7'
+  const lifetimeFeatures = [
+    t('pricing.lifetimeEverythingPro', 'Todo lo de Pro, para siempre'),
+    t('pricing.lifetimeTokens', '3.000.000 tokens de IA incluidos'),
+    t('pricing.lifetimeNoSub', 'Pago único — sin suscripción'),
+  ]
 
   return (
     <div className="pricing2">
@@ -51,7 +74,7 @@ export default function PricingView() {
         <p className="pricing2-sub">{t('pricing.subtitleFree', 'Pasa a Pro cuando lo necesites')}</p>
       </div>
 
-      {/* Toggle mes/año FUERA de la caja, alineado encima de la tarjeta Pro */}
+      {/* Toggle mes/año FUERA de la caja, alineado encima de la tarjeta Pro (columna central) */}
       <div className="pricing2-togglerow">
         <div aria-hidden="true" />
         <div className="pricing2-togglecell">
@@ -65,9 +88,10 @@ export default function PricingView() {
             </button>
           </div>
         </div>
+        <div aria-hidden="true" />
       </div>
 
-      <div className="pricing2-grid">
+      <div className="pricing2-grid pricing2-grid--3">
         {/* ── Gratis ── */}
         <div className="pcard">
           <span className="pcard-name">{t('pricing.free', 'Gratis')}</span>
@@ -113,6 +137,29 @@ export default function PricingView() {
             disabled={loading || isPaid}
           >
             {isPaid ? t('pricing.ctaCurrentPlan', 'Tu plan actual') : (loading ? '…' : t('pricing.ctaGoPro2', 'Pasar a Pro'))}
+          </button>
+        </div>
+
+        {/* ── Lifetime ── */}
+        <div className="pcard">
+          <span className="pcard-name">Lifetime</span>
+          <div className="pcard-hero">
+            <span className="pcard-hero-num">∞</span>
+            <span className="pcard-hero-label">{t('pricing.lifetimeLabel', 'para siempre')}</span>
+          </div>
+          <p className="pcard-note">{t('pricing.lifetimeNote', 'Pago único, sin suscripción')}</p>
+          <ul className="pcard-feats">
+            {lifetimeFeatures.map((f, i) => <li key={i}><span className="pcard-check">✓</span>{f}</li>)}
+          </ul>
+          <div className="pcard-price-row">
+            <span className="pcard-price">€149</span>
+          </div>
+          <button
+            className="pcard-cta pcard-cta--ghost"
+            onClick={startLifetime}
+            disabled={loadingLifetime || isLifetime}
+          >
+            {isLifetime ? t('pricing.ctaCurrentPlan', 'Tu plan actual') : (loadingLifetime ? '…' : t('pricing.ctaGoLifetime', 'Comprar Lifetime'))}
           </button>
         </div>
       </div>
