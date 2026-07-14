@@ -32,7 +32,8 @@ import { isPromptNode } from '../../utils/promptsHelper'
 import { useRef, useEffect } from 'react'
 import type { Node } from '../../types'
 
-const toast = (message: string, type: 'success' | 'warning' = 'success') => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type } }))
+const toast = (message: string, type: 'success' | 'warning' = 'success', action?: { label: string; onClick: () => void }) =>
+  window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type, action } }))
 const actBtn = { background: 'none', border: '1px solid var(--border,#e2e2e2)', borderRadius: 6, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px 6px', color: 'var(--text-secondary,#666)', fontSize: 11, lineHeight: 1 } as const
 
 // Nota o documento: se puede ver como TEXTO o como LIENZO (mismo nodo). El toggle
@@ -136,7 +137,13 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
   }
 
   const toggleFavorite = () => { const next = !node.isFavorite; store.updateNode(node.id, { isFavorite: next }); toast(next ? t('tip.addFavorite') : t('tip.removeFavorite')) }
-  const deleteCard = () => { store.deleteNode(node.id); toast(t('context.toastMovedToTrash', 'Movido a la papelera')); window.dispatchEvent(new Event('from:close-detail')) }
+  const deleteCard = () => {
+    const deletedIds = store.deleteNode(node.id)
+    if (deletedIds.length > 0) {
+      toast(t('context.toastMovedToTrash', 'Movido a la papelera'), 'success', { label: t('tip.undo', 'Deshacer'), onClick: () => store.restoreDeleted(deletedIds) })
+    }
+    window.dispatchEvent(new Event('from:close-detail'))
+  }
 
   return (
     <div style={inlinePage ? undefined : { height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>

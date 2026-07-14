@@ -5494,16 +5494,34 @@ body.outliner-drag-active {
   pointer-events: none;
   white-space: nowrap;
   box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .toast--visible {
   opacity: 1;
   transform: translateY(0);
+  pointer-events: auto;
 }
 
 .toast--success { background: #16a34a; }
 .toast--error   { background: #dc2626; }
 .toast--info    { background: #2563eb; }
+
+.toast-action {
+  background: rgba(255,255,255,0.18);
+  border: none;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+}
+.toast-action:hover { background: rgba(255,255,255,0.3); }
 
 /* ── CommandPalette chips ────────────────────────────────────────────── */
 .cmdpalette-chips {

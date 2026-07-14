@@ -25,6 +25,7 @@ import { isInPapelera } from './papeleraHelper'
 import { markdownToHtml } from './importMarkdown'
 import { htmlToMarkdown } from './htmlMarkdown'
 import { updateContextKnowledgeFromElement } from '../api/autoClassify'
+import i18n from '../i18n/config'
 
 const CONTEXT_DEFAULT_COLOR = '#7c3aed'
 
@@ -596,7 +597,16 @@ export function maybeUpdateContextKnowledge(node: Node | null | undefined): void
   knowledgeUpdateInFlight.add(ctx.id)
   const currentKnowledge = readContextKnowledge(ctx.id)
   updateContextKnowledgeFromElement(ctx.text || '', currentKnowledge, elementTitle, elementText)
-    .then(res => { if (res.updated && res.knowledge) writeContextKnowledge(ctx.id, res.knowledge) })
+    .then(res => {
+      if (res.updated && res.knowledge) {
+        writeContextKnowledge(ctx.id, res.knowledge)
+        // Aviso discreto: antes la actualización era silenciosa y nadie podía distinguir
+        // "está funcionando en segundo plano" de "no ha hecho nada" (Alberto, 14 jul).
+        window.dispatchEvent(new CustomEvent('from:toast', {
+          detail: { message: i18n.t('v2.context.knowledgeUpdatedToast', '🧠 "{{name}}" actualizado', { name: ctx.text || '' }), type: 'info' },
+        }))
+      }
+    })
     .catch(() => { /* silencioso: mismo criterio que appendContextFacts */ })
     .finally(() => { knowledgeUpdateInFlight.delete(ctx.id) })
 }

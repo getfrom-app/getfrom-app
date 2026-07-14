@@ -1191,21 +1191,25 @@ export class NodeStore {
     return next.toISOString()
   }
 
-  deleteNode(id: string): void {
+  /** Borra el nodo y su cascada de descendientes (deletedAt). Devuelve los ids
+   *  realmente marcados como borrados — útil para poder deshacer (`restoreDeleted`)
+   *  sin dejar huérfanos a medio restaurar. Array vacío si una protección impidió
+   *  el borrado (raíz de sistema, perfil IA, nota diaria canónica). */
+  deleteNode(id: string): string[] {
     // Protección: las raíces de sistema CANÓNICAS (id determinista) nunca se borran
     // — ni por Backspace/merge ni por limpiezas. Los DUPLICADOS (id aleatorio) sí se
     // pueden borrar (el dedup los necesita), por eso protegemos solo por id determinista.
     for (const k of ['home','agenda','contexto','prompts','agentes','plantillas','paneles','papelera','perfil']) {
-      if (structuralId(k) === id) return
+      if (structuralId(k) === id) return []
     }
     const _n = this.nodes.get(id)
-    if (_n) { try { if (JSON.parse(_n.extraData || '{}')._perfilIA === '1') return } catch { /* ignore */ } }
+    if (_n) { try { if (JSON.parse(_n.extraData || '{}')._perfilIA === '1') return [] } catch { /* ignore */ } }
     // Protección: la nota diaria CANÓNICA (id determinista) NUNCA se borra — ni por
     // Backspace/merge ni por flujos automáticos (voz, descartes, limpiezas). Es el
     // contenedor del día del usuario. Solo se protege el canónico (id === diaryId);
     // los DUPLICADOS (id aleatorio) sí se borran para que mergeDuplicateDiaries limpie.
     if (_n && _n.isDiaryEntry && _n.diaryDate) {
-      try { if (diaryId(new Date(_n.diaryDate)) === id) return } catch { /* ignore */ }
+      try { if (diaryId(new Date(_n.diaryDate)) === id) return [] } catch { /* ignore */ }
     }
     // Cascada EXPLÍCITA: marca deletedAt en el nodo y TODOS sus descendientes
     // activos. Con el sync por operaciones el servidor ya no infiere borrados
@@ -1227,6 +1231,16 @@ export class NodeStore {
     const now = new Date().toISOString()
     this.beginBatch()
     try { for (const nid of toDelete) this.updateNode(nid, { deletedAt: now }) }
+    finally { this.endBatch() }
+    return toDelete
+  }
+
+  /** Deshace un `deleteNode` (o varios) — restaura exactamente los ids indicados
+   *  (la cascada completa, no solo el nodo raíz, para no dejar hijos huérfanos
+   *  marcados como borrados bajo un padre ya restaurado). */
+  restoreDeleted(ids: string[]): void {
+    this.beginBatch()
+    try { for (const id of ids) this.updateNode(id, { deletedAt: null }) }
     finally { this.endBatch() }
   }
 

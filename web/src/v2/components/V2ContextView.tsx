@@ -24,7 +24,7 @@ import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
 import { isAgentNode, getAgentData } from '../../utils/agentesHelper'
 import { isPromptNode } from '../../utils/promptsHelper'
-import { fmtDate } from '../../utils/formatDate'
+import { fmtDate, fmtRelative, fmtDateFull } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
 interface Props {
@@ -216,6 +216,14 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           propia (Alberto: no hace falta título "Lo que Fromly sabe" ni sus botones) —
           es la descripción viva del contexto, va justo debajo del título y antes de
           tareas/elementos, no al final. */}
+      {!!knowledgeDoc.body && knowledgeDoc.body.trim() !== '<p></p>' && (
+        <div
+          style={{ fontSize: 11, color: 'var(--text-tertiary,#999)', marginBottom: 4 }}
+          title={fmtDateFull(knowledgeDoc.updatedAt, i18n.language)}
+        >
+          {t('v2.context.knowledgeUpdated', 'Actualizado')} {fmtRelative(knowledgeDoc.updatedAt, i18n.language)}
+        </div>
+      )}
       <V2NoteBody node={knowledgeDoc} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
 
       {/* Tareas del contexto — estilo Hoy. */}

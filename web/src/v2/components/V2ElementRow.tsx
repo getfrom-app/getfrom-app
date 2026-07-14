@@ -27,8 +27,15 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
   const title = (node.text || '').replace(/^(?:✦|💬)\s*/u, '').trim() || t('v2.elementRow.untitled', 'Sin título')
   const del = (e: React.MouseEvent) => {
     e.stopPropagation(); e.preventDefault()
-    store.deleteNode(node.id)
-    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.elementRow.movedToTrash', 'Movido a la papelera'), type: 'success' } }))
+    const deletedIds = store.deleteNode(node.id)
+    if (deletedIds.length === 0) return
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: {
+        message: t('v2.elementRow.movedToTrash', 'Movido a la papelera'),
+        type: 'success',
+        action: { label: t('tip.undo', 'Deshacer'), onClick: () => store.restoreDeleted(deletedIds) },
+      },
+    }))
   }
   const datesTip = `${t('v2.rightColumn.created', 'Creado')}: ${fmtDateFull(node.createdAt, i18n.language)}\n${t('v2.rightColumn.updated', 'Modificado')}: ${fmtDateFull(node.updatedAt, i18n.language)}`
   return (

@@ -254,7 +254,47 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     setRenaming(null); setRenameVal('')
   }
   function toggleFav(id: string) { const n = store.getNode(id); if (n) store.updateNode(id, { isFavorite: !n.isFavorite }); setMenu(null) }
-  function del(id: string) { store.deleteNode(id); setMenu(null) }
+  function del(id: string) {
+    const deletedIds = store.deleteNode(id)
+    setMenu(null)
+    if (deletedIds.length === 0) return
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: {
+        message: t('context.toastMovedToTrash', 'Movido a la papelera'),
+        type: 'success',
+        action: { label: t('tip.undo', 'Deshacer'), onClick: () => store.restoreDeleted(deletedIds) },
+      },
+    }))
+  }
+
+  // ── Selección múltiple — limpiar en bloque (Alberto, 14 jul: "tuve que borrar
+  // huérfanos uno a uno vía base de datos porque no hay forma nativa"). Un overlay
+  // transparente por fila intercepta el clic (checkbox) sin tocar TaskRow ni el resto
+  // de tipos de fila — funciona igual para tareas, eventos y filas genéricas.
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  function toggleSelect(id: string) {
+    setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
+  }
+  function exitSelectMode() { setSelectMode(false); setSelected(new Set()) }
+  function bulkDelete() {
+    const ids = [...selected]
+    if (ids.length === 0) return
+    const allDeleted: string[] = []
+    for (const id of ids) allDeleted.push(...store.deleteNode(id))
+    exitSelectMode()
+    if (allDeleted.length === 0) return
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: {
+        message: t('elements.bulkDeletedToast', '{{count}} elemento(s) movidos a la papelera', { count: ids.length }),
+        type: 'success',
+        action: { label: t('tip.undo', 'Deshacer'), onClick: () => store.restoreDeleted(allDeleted) },
+      },
+    }))
+  }
+  // Salir de selección si cambia el filtro/búsqueda — evita seleccionar a ciegas
+  // sobre filas que ya no se ven.
+  useEffect(() => { if (selectMode) exitSelectMode() }, [filter, ctxFilter, taskSub, nq]) // eslint-disable-line react-hooks/exhaustive-deps
   function moveToContext(id: string, ctxId: string) {
     // Mover a otro contexto: asignación lógica (_ctxRefs) + si NO está fijado con pin, lo
     // reparentamos para que fluya dentro de la caja del contexto en el lienzo.
@@ -285,6 +325,13 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             style={{ flexShrink: 0, width: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: sortMenuOpen ? 'var(--bg-hover,#f4f4f5)' : 'var(--bg,#fff)', color: 'var(--text-secondary,#666)', cursor: 'pointer' }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h10M3 12h6M3 18h3M17 4v16m0 0l4-4m-4 4l-4-4"/></svg>
+          </button>
+          <button
+            title={selectMode ? t('elements.exitSelect', 'Salir de selección') : t('elements.selectMultiple', 'Seleccionar varios')}
+            onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+            style={{ flexShrink: 0, width: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: selectMode ? 'var(--accent,#6c5ce7)' : 'var(--bg,#fff)', color: selectMode ? '#fff' : 'var(--text-secondary,#666)', cursor: 'pointer' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l2.5 2.5L16 9"/></svg>
           </button>
           {sortMenuOpen && (
             <>
@@ -378,6 +425,32 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
           onClear={() => { setQ(''); setFilter('all'); setTaskSub('all') }}
           allowBoardViews={filter === 'task'}
         />
+        {/* Barra de acciones en bloque — visible solo en modo selección. */}
+        {selectMode && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, padding: '6px 2px' }}>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-secondary,#666)' }}>
+              {t('elements.selectedCount', '{{count}} seleccionados', { count: selected.size })}
+            </span>
+            <button
+              onClick={() => setSelected(new Set(filtered.map(r => r.id)))}
+              style={{ fontSize: 12, fontWeight: 500, color: 'var(--accent,#6c5ce7)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+            >
+              {t('elements.selectAllVisible', 'Seleccionar los {{count}} visibles', { count: filtered.length })}
+            </button>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+              <button onClick={exitSelectMode} style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-tertiary,#999)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', fontFamily: 'inherit' }}>
+                {t('common.cancel', 'Cancelar')}
+              </button>
+              <button
+                onClick={bulkDelete}
+                disabled={selected.size === 0}
+                style={{ fontSize: 12.5, fontWeight: 600, color: '#fff', background: selected.size === 0 ? 'var(--text-tertiary,#bbb)' : '#dc2626', border: 'none', borderRadius: 6, cursor: selected.size === 0 ? 'default' : 'pointer', padding: '5px 12px', fontFamily: 'inherit' }}
+              >
+                {t('tip.delete', 'Eliminar')} {selected.size > 0 ? `(${selected.size})` : ''}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {view !== 'lista' ? (
@@ -418,30 +491,31 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             {virtualizer.getVirtualItems().map(vi => {
               const r = filtered[vi.index]
               const isRenaming = renaming === r.id
+              const isSelected = selected.has(r.id)
+              const wrapStyle: React.CSSProperties = { position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_H, transform: `translateY(${vi.start}px)`, boxSizing: 'border-box' }
+
+              let inner: React.ReactNode = null
               // Tarea → TaskRow ÚNICO compartido con toda la app (Hoy, Contexto, otros
               // días): mismo checkbox, texto, chips de hora/día/repetición, contexto y
               // acciones de hover en TODAS partes, no una copia distinta por pestaña.
               if (r.kind === 'task' && !isRenaming) {
                 const n = store.getNode(r.id)
-                if (n) return (
+                if (n) inner = (
                   <TaskRow
-                    key={r.id}
                     node={n}
                     onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)}
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_H, transform: `translateY(${vi.start}px)`, boxSizing: 'border-box' }}
+                    style={{ position: 'static', width: '100%', height: '100%', boxSizing: 'border-box' }}
                   />
                 )
-              }
-              // Evento: pieza propia (sin checkbox de tarea real / chips de repetición).
-              if (r.kind === 'event' && !isRenaming) {
+              } else if (r.kind === 'event' && !isRenaming) {
+                // Evento: pieza propia (sin checkbox de tarea real / chips de repetición).
                 const n = store.getNode(r.id)
-                if (n) return (
+                if (n) inner = (
                   <div
-                    key={r.id}
                     className={`dc-row ${n.status === 'done' ? 'dc-row--done' : ''}`}
                     data-node-id={n.id}
                     onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openMenu(r.id, e.clientX, e.clientY) }}
-                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_H, transform: `translateY(${vi.start}px)`, boxSizing: 'border-box' }}
+                    style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}
                   >
                     <button
                       className={`dc-check ${n.status === 'done' ? 'dc-check--done' : ''}`}
@@ -452,57 +526,74 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                     <TaskHoverActions node={n} onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
                   </div>
                 )
-              }
-              return (
-                <div
-                  key={r.id}
-                  className="dc-row el-row"
-                  onClick={() => { if (!isRenaming) open(r.id) }}
-                  onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openMenu(r.id, e.clientX, e.clientY) }}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_H, transform: `translateY(${vi.start}px)`, display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 0 6px', cursor: 'pointer', boxSizing: 'border-box' }}
-                >
-                  <span style={{ fontSize: 15, flexShrink: 0 }}>{KIND_ICON[r.kind]}</span>
-                  <div style={{ minWidth: 0, flex: 1 }} title={`${t('v2.rightColumn.created', 'Creado')}: ${fmtDateFull(r.createdAt, i18n.language)}\n${t('v2.rightColumn.updated', 'Modificado')}: ${fmtDateFull(r.updatedAt, i18n.language)}`}>
-                    {isRenaming ? (
-                      <input
-                        ref={renameRef}
-                        value={renameVal}
-                        onClick={e => e.stopPropagation()}
-                        onChange={e => setRenameVal(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitRename() } if (e.key === 'Escape') { setRenaming(null) } }}
-                        onBlur={commitRename}
-                        style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--accent,#6c5ce7)', borderRadius: 5, padding: '2px 6px', fontSize: 13, background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontFamily: 'inherit' }}
-                      />
-                    ) : (<>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text,#222)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
-                      {r.snippet && r.snippet !== r.title && (
-                        <div style={{ fontSize: 11.5, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.snippet}</div>
-                      )}
-                    </>)}
+              } else {
+                inner = (
+                  <div
+                    className="dc-row el-row"
+                    onClick={() => { if (!isRenaming) open(r.id) }}
+                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openMenu(r.id, e.clientX, e.clientY) }}
+                    style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 0 6px', cursor: 'pointer', boxSizing: 'border-box' }}
+                  >
+                    <span style={{ fontSize: 15, flexShrink: 0 }}>{KIND_ICON[r.kind]}</span>
+                    <div style={{ minWidth: 0, flex: 1 }} title={`${t('v2.rightColumn.created', 'Creado')}: ${fmtDateFull(r.createdAt, i18n.language)}\n${t('v2.rightColumn.updated', 'Modificado')}: ${fmtDateFull(r.updatedAt, i18n.language)}`}>
+                      {isRenaming ? (
+                        <input
+                          ref={renameRef}
+                          value={renameVal}
+                          onClick={e => e.stopPropagation()}
+                          onChange={e => setRenameVal(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); commitRename() } if (e.key === 'Escape') { setRenaming(null) } }}
+                          onBlur={commitRename}
+                          style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--accent,#6c5ce7)', borderRadius: 5, padding: '2px 6px', fontSize: 13, background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontFamily: 'inherit' }}
+                        />
+                      ) : (<>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text,#222)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
+                        {r.snippet && r.snippet !== r.title && (
+                          <div style={{ fontSize: 11.5, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.snippet}</div>
+                        )}
+                      </>)}
+                    </div>
+                    {!isRenaming && (
+                      <span style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap' }}>
+                        {fmtDate(sortBy === 'created' ? r.createdAt : r.updatedAt, i18n.language)}
+                      </span>
+                    )}
+                    {!isRenaming && (
+                      <>
+                        {/* Eliminar directo al hover — mismo patrón que el resto de listas de la app. */}
+                        <button
+                          className="el-row-del"
+                          title={t('tip.delete', 'Eliminar')}
+                          onClick={(e) => { e.stopPropagation(); del(r.id) }}
+                          style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: '4px 5px', borderRadius: 4, display: 'flex', alignItems: 'center' }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                        </button>
+                        <button
+                          className="el-more"
+                          title={t('elements.actions', 'Acciones')}
+                          onClick={(e) => { e.stopPropagation(); const rc = (e.currentTarget as HTMLElement).getBoundingClientRect(); openMenu(r.id, rc.right - 200, rc.bottom + 2) }}
+                          style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 16, lineHeight: 1, padding: '2px 6px', borderRadius: 4 }}
+                        >⋯</button>
+                      </>
+                    )}
                   </div>
-                  {!isRenaming && (
-                    <span style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap' }}>
-                      {fmtDate(sortBy === 'created' ? r.createdAt : r.updatedAt, i18n.language)}
-                    </span>
-                  )}
-                  {!isRenaming && (
-                    <>
-                      {/* Eliminar directo al hover — mismo patrón que el resto de listas de la app. */}
-                      <button
-                        className="el-row-del"
-                        title={t('tip.delete', 'Eliminar')}
-                        onClick={(e) => { e.stopPropagation(); del(r.id) }}
-                        style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: '4px 5px', borderRadius: 4, display: 'flex', alignItems: 'center' }}
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                      </button>
-                      <button
-                        className="el-more"
-                        title={t('elements.actions', 'Acciones')}
-                        onClick={(e) => { e.stopPropagation(); const rc = (e.currentTarget as HTMLElement).getBoundingClientRect(); openMenu(r.id, rc.right - 200, rc.bottom + 2) }}
-                        style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 16, lineHeight: 1, padding: '2px 6px', borderRadius: 4 }}
-                      >⋯</button>
-                    </>
+                )
+              }
+
+              if (!inner) return null
+              return (
+                <div key={r.id} style={wrapStyle}>
+                  {inner}
+                  {/* Overlay de selección — intercepta el clic sin tocar TaskRow ni el resto
+                      de filas; el contenido de debajo sigue visible (fondo transparente). */}
+                  {selectMode && (
+                    <div
+                      onClick={() => toggleSelect(r.id)}
+                      style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center', paddingLeft: 6, cursor: 'pointer', background: isSelected ? 'rgba(108,92,231,0.10)' : 'transparent' }}
+                    >
+                      <input type="checkbox" checked={isSelected} readOnly style={{ pointerEvents: 'none', width: 15, height: 15 }} />
+                    </div>
                   )}
                 </div>
               )
