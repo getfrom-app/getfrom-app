@@ -308,6 +308,26 @@ export async function compactKnowledge(
 }
 
 /**
+ * Curador de «Lo que Fromly sabe» DE UN CONTEXTO: al guardar un elemento (nota/
+ * tarea/documento) dentro de un contexto, decide si aporta algo significativo y
+ * duradero y, si sí, devuelve el documento de memoria ACTUALIZADO completo (no
+ * solo un hecho más al final — puede acotar/reescribir/fusionar). Si no aporta
+ * nada, `updated: false` y no hay que tocar nada. Seguro de llamar: ante
+ * cualquier fallo el servidor devuelve `updated: false`.
+ */
+export async function updateContextKnowledgeFromElement(
+  contextName: string,
+  currentKnowledge: string,
+  elementTitle: string,
+  elementText: string,
+): Promise<{ updated: boolean; knowledge?: string }> {
+  return apiRequest<{ updated: boolean; knowledge?: string }>('/ai/context-knowledge-update', {
+    method: 'POST',
+    body: JSON.stringify({ contextName, currentKnowledge, elementTitle, elementText }),
+  })
+}
+
+/**
  * Extrae conocimiento estructurado de los nodos de un contexto.
  * Devuelve palabras clave, personas y temas frecuentes.
  */

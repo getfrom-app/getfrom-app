@@ -2232,5 +2232,7 @@
   "v2.chat.promptsShort": "Prompt",
   "v2.chat.noPrompts": "No prompts yet",
   "v2.chat.newPromptName": "Prompt name:",
-  "v2.chat.newPrompt": "New prompt"
+  "v2.chat.newPrompt": "New prompt",
+  "v2.chat.processingAudio": "Processing…",
+  "v2.chat.recordingListening": "Listening…"
 }

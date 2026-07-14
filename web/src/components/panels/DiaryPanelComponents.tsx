@@ -11,6 +11,7 @@ import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCale
 import { useUserStore } from '../../store/userStore'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate } from '../../utils/dates'
 import { isInPapelera } from '../../utils/papeleraHelper'
+import { pushEventToGcal } from '../../utils/gcalNodesSync'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -93,7 +94,17 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
 
   function setDue(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null }); return }
-    store.updateNode(node.id, { due: makeDueISO(date, time) })
+    const updates: Partial<Node> = { due: makeDueISO(date, time) }
+    // Tarea + hora concreta = evento: aterriza en el calendario y se sincroniza con
+    // Google (antes se quedaba como tarea con hora, sin aparecer en Google Calendar
+    // ni en la vista de calendario — solo los nodos isEvent aterrizan ahí).
+    const becomesEvent = !!time && !node.isEvent
+    if (becomesEvent) updates.isEvent = true
+    store.updateNode(node.id, updates)
+    if (time && (node.isEvent || becomesEvent)) {
+      const fresh = store.getNode(node.id)
+      if (fresh) pushEventToGcal(fresh).catch(() => {})
+    }
   }
 
   // Recurrencia helpers

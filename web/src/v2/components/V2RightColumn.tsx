@@ -41,6 +41,15 @@ interface Props {
   elementsFilter?: ElemKind | 'all' | 'favorite' | null
   /** Cierra el detalle y abre la tab Elementos filtrada por ese tipo. */
   onOpenElementsFiltered?: (kind: ElemKind) => void
+  /** Grabadora activa (useV2Recorder) — mientras graba/procesa, toma la columna
+   *  derecha entera (prioridad sobre detalle/tabs): es un estado transitorio que el
+   *  usuario necesita ver, no algo que competir por espacio con el resto. */
+  recorder?: { recording: boolean; busy: boolean; elapsedSec: number; liveTranscript: string; stop: () => void }
+}
+
+function fmtTimer(sec: number): string {
+  const m = Math.floor(sec / 60), s = sec % 60
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
 // Clasificación ligera de un nodo → icono + etiqueta de tipo.
@@ -103,7 +112,7 @@ function classifyContent(n: Node): ReturnType<typeof classifyElement> {
   return classifyElement(n)
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha, elementsFilter, onOpenElementsFiltered }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha, elementsFilter, onOpenElementsFiltered, recorder }: Props) {
   useStore()
   const { t, i18n } = useTranslation()
   const chat = useAIChat()
@@ -200,6 +209,8 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
     window.addEventListener('pointerup', onUp)
   }
 
+  const isRecordingActive = !!recorder && (recorder.recording || recorder.busy)
+
   return (
     <aside className="v2-col v2-right">
       <div className="v2-resize-handle" onPointerDown={startResize} title={t('v2.rightColumn.dragToWiden', 'Arrastra para ensanchar')} />
@@ -214,8 +225,34 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
         ))}
       </div>
 
+      {/* Grabadora activa — prioridad sobre todo lo demás mientras graba/procesa (Alberto:
+          "al darle a grabar se debería mostrar la columna derecha de grabación"). Timer +
+          icono pulsante siempre; transcripción en vivo si el navegador la soporta (mejor
+          esfuerzo, Web Speech API); estado «Procesando…» mientras sube+transcribe con
+          Whisper. Al terminar, `onAudioSaved` (V2App) abre la nota de voz resultante aquí
+          mismo — esta vista desaparece sola (recording y busy vuelven a false). */}
+      {isRecordingActive && recorder && (
+        <div className="v2-right-fill">
+          <div className="v2-recording-view">
+            <div className={`v2-recording-dot ${recorder.busy ? 'processing' : ''}`} />
+            <div className="v2-recording-status">
+              {recorder.busy ? t('v2.chat.processingAudio', 'Procesando…') : t('v2.chat.recordAudio', 'Grabando')}
+            </div>
+            {recorder.recording && <div className="v2-recording-timer">{fmtTimer(recorder.elapsedSec)}</div>}
+            {recorder.recording && (
+              <div className="v2-recording-transcript">
+                {recorder.liveTranscript || t('v2.chat.recordingListening', 'Escuchando…')}
+              </div>
+            )}
+            {recorder.recording && (
+              <button className="v2-recording-stop" onClick={recorder.stop}>⏹ {t('v2.chat.stopAndSave', 'Detener y guardar')}</button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Detalle de un elemento (documento/PDF/imagen/audio/nota) — con las tabs arriba. */}
-      {detailNodeId && (() => {
+      {!isRecordingActive && detailNodeId && (() => {
         const detailNode = store.getNode(detailNodeId)
         // Recursos (PDF/imagen/audio/enlace/podcast…) llevan publicar+eliminar AQUÍ, en la
         // cabecera, junto al título — antes cada visor de recurso repetía el título en su
@@ -247,13 +284,13 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
       })()}
 
       {/* Elementos: el buscador universal REAL de la v1 (filtros por tipo, virtualizado). */}
-      {!detailNodeId && mode === 'elementos' && (
+      {!isRecordingActive && !detailNodeId && mode === 'elementos' && (
         <div className="v2-right-fill">
           <ElementsPanel initialFilter={elementsFilter ?? undefined} />
         </div>
       )}
 
-      {!detailNodeId && mode !== 'elementos' && (
+      {!isRecordingActive && !detailNodeId && mode !== 'elementos' && (
       <div className="v2-right-body">
         {mode === 'contexto' && (
           // Con una conversación activa manda su PANEL (Relacionado/Tareas/Elementos);

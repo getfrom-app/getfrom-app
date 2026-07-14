@@ -2232,5 +2232,7 @@
   "v2.chat.promptsShort": "Prompt",
   "v2.chat.noPrompts": "Δεν υπάρχουν ακόμη prompts",
   "v2.chat.newPromptName": "Όνομα prompt:",
-  "v2.chat.newPrompt": "Νέο prompt"
+  "v2.chat.newPrompt": "Νέο prompt",
+  "v2.chat.processingAudio": "Επεξεργασία…",
+  "v2.chat.recordingListening": "Ακούω…"
 }

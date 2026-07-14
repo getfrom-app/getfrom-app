@@ -385,10 +385,18 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
   const headRef    = useRef<HTMLDivElement>(null)
   const scrollVRef = useRef<HTMLDivElement>(null)
 
+  // Posición de scroll que deja la columna de HOY (centerDate) pegada al borde
+  // DERECHO del viewport — no centrada. Alberto: quiere poder arrastrar tareas a
+  // «hoy» sin tener que buscarlo, siempre en el mismo sitio predecible (la derecha).
+  // Los días anteriores quedan visibles a la izquierda como contexto reciente.
+  function todayRightPos(): number {
+    if (!scrollHRef.current) return 0
+    return Math.max(0, (preDays + 1) * colW - (scrollHRef.current.clientWidth - AXIS_W))
+  }
+
   useLayoutEffect(() => {
     if (viewMode === 'year' || !scrollHRef.current) return
-    const pos = Math.max(0, preDays * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
-    scrollHRef.current.scrollLeft = pos
+    scrollHRef.current.scrollLeft = todayRightPos()
   }, [viewMode, centerDate.toDateString(), colW]) // eslint-disable-line
 
   useLayoutEffect(() => {
@@ -399,15 +407,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
 
   function centerNow() {
     if (!scrollHRef.current) return
-    const pos = Math.max(0, preDays * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
-    scrollHRef.current.scrollTo({ left: pos, behavior: 'smooth' })
+    scrollHRef.current.scrollTo({ left: todayRightPos(), behavior: 'smooth' })
     if (scrollVRef.current) scrollVRef.current.scrollTo({ top: Math.max(0, topPx(new Date()) - 120), behavior: 'smooth' })
   }
 
   function isAlreadyCentered(): boolean {
     if (!scrollHRef.current) return true
-    const expected = Math.max(0, preDays * colW - (scrollHRef.current.clientWidth - AXIS_W) / 2 + colW / 2)
-    return Math.abs(scrollHRef.current.scrollLeft - expected) < colW * 0.4
+    return Math.abs(scrollHRef.current.scrollLeft - todayRightPos()) < colW * 0.4
   }
 
   useEffect(() => {

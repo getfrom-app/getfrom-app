@@ -236,36 +236,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           <button className="v2-head-action" title={t('v2.chat.newCanvas', 'Nuevo lienzo')} onClick={onNewCanvas}>＋ {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
           <button className="v2-head-action" title={t('v2.chat.newTask', 'Nueva tarea')} onClick={() => setShowTask(true)}>＋ {t('v2.chat.newTaskShort', 'Tarea')}</button>
           <button className="v2-head-action" title={t('v2.chat.newEvent', 'Nuevo evento')} onClick={() => setShowEvent(true)}>＋ {t('v2.chat.newEventShort', 'Evento')}</button>
-          {/* Prompts: elegir uno para enviarlo directamente al chat, o crear uno nuevo. */}
-          <div style={{ position: 'relative' }} ref={promptMenuRef}>
-            <button className="v2-head-action" title={t('v2.chat.promptsTitle', 'Prompts')} onClick={() => setPromptMenu(o => !o)}>⚡ {t('v2.chat.promptsShort', 'Prompt')}</button>
-            {promptMenu && (
-              <div className="v2-doc-menu">
-                {listAllPrompts().map(p => {
-                  let picon = '⚡'
-                  try { picon = JSON.parse(p.extraData || '{}')._promptIcon || '⚡' } catch { /* ignore */ }
-                  return (
-                    <button key={p.id} onClick={() => {
-                      const text = resolvePrompt(p.id, { currentNodeId: currentNodeId || undefined })
-                      doSend(text)
-                      setPromptMenu(false)
-                    }}>{picon} {p.text || t('common.noTitle', 'Sin título')}</button>
-                  )
-                })}
-                {listAllPrompts().length === 0 && (
-                  <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.noPrompts', 'Sin prompts todavía')}</div>
-                )}
-                <div className="v2-doc-menu-sep" />
-                <button onClick={() => {
-                  const name = window.prompt(t('v2.chat.newPromptName', 'Nombre del prompt:'))
-                  if (!name || !name.trim()) return
-                  const created = createPromptUnder({ parentId: currentNodeId, label: name.trim(), icon: '⚡' })
-                  setPromptMenu(false)
-                  window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
-                }}>➕ {t('v2.chat.newPrompt', 'Nuevo prompt')}</button>
-              </div>
-            )}
-          </div>
           <button className="v2-head-action" title={t('v2.plannerOpen', 'Abrir el planificador')} onClick={() => setShowPlanner(true)}>📅 {t('wftopbar.planner', 'Planificador')}</button>
           <button
             className={`v2-head-action ${recorder.recording ? 'recording' : ''}`}
@@ -337,6 +307,39 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
       <div className="v2-composer">
         <div className="v2-composer-inner">
           <div className="v2-composer-box">
+            {/* Prompts: elegir uno para enviarlo directamente al chat, o crear uno nuevo.
+                Vive en el composer (no en la cabecera) — es aquí donde tiene sentido
+                elegir qué se va a enviar. Desplegable hacia ARRIBA (v2-doc-menu-up):
+                el composer está pegado abajo del todo. */}
+            <div style={{ position: 'relative' }} ref={promptMenuRef}>
+              <button className="v2-iconbtn" title={t('v2.chat.promptsTitle', 'Prompts')} onClick={() => setPromptMenu(o => !o)}>⚡</button>
+              {promptMenu && (
+                <div className="v2-doc-menu v2-doc-menu-up">
+                  {listAllPrompts().map(p => {
+                    let picon = '⚡'
+                    try { picon = JSON.parse(p.extraData || '{}')._promptIcon || '⚡' } catch { /* ignore */ }
+                    return (
+                      <button key={p.id} onClick={() => {
+                        const text = resolvePrompt(p.id, { currentNodeId: currentNodeId || undefined })
+                        doSend(text)
+                        setPromptMenu(false)
+                      }}>{picon} {p.text || t('common.noTitle', 'Sin título')}</button>
+                    )
+                  })}
+                  {listAllPrompts().length === 0 && (
+                    <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.noPrompts', 'Sin prompts todavía')}</div>
+                  )}
+                  <div className="v2-doc-menu-sep" />
+                  <button onClick={() => {
+                    const name = window.prompt(t('v2.chat.newPromptName', 'Nombre del prompt:'))
+                    if (!name || !name.trim()) return
+                    const created = createPromptUnder({ parentId: currentNodeId, label: name.trim(), icon: '⚡' })
+                    setPromptMenu(false)
+                    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
+                  }}>➕ {t('v2.chat.newPrompt', 'Nuevo prompt')}</button>
+                </div>
+              )}
+            </div>
             <textarea
               ref={taRef}
               value={input}

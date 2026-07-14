@@ -119,6 +119,9 @@
 }
 .v2-doc-menu > button:hover { background: var(--bg-hover); }
 .v2-doc-menu-sep { height: 1px; background: var(--border); margin: 5px 2px; }
+/* Variante hacia ARRIBA (composer, pegado al fondo — abrir hacia abajo se saldría
+   de la pantalla). Ancla por bottom en vez de top, mismo resto de estilo. */
+.v2-doc-menu-up { top: auto; bottom: calc(100% + 4px); }
 /* Modal «Gestionar plantillas» (crear/editar/eliminar) — mismo lenguaje visual que el resto de modales v2. */
 .v2-templates-modal {
   position: relative; z-index: 1; width: 420px; max-width: 92vw; max-height: 80vh;
@@ -351,6 +354,31 @@
 .v2-suggest:hover { border-color: var(--accent); background: var(--accent-soft); }
 .v2-suggest .v2-suggest-t { font-weight: 600; margin-bottom: 2px; }
 .v2-suggest .v2-suggest-d { color: var(--text-tertiary); font-size: 12px; }
+
+/* Grabadora activa — vista a pantalla completa de la columna derecha. */
+.v2-recording-view {
+  height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; padding: 30px 24px; text-align: center;
+}
+.v2-recording-dot {
+  width: 16px; height: 16px; border-radius: 50%; background: var(--danger, #e03131);
+  animation: v2-rec-pulse 1.3s ease-in-out infinite;
+}
+.v2-recording-dot.processing { background: var(--accent); animation: v2-rec-spin 1s linear infinite; border-radius: 4px; }
+@keyframes v2-rec-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.75); } }
+@keyframes v2-rec-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.v2-recording-status { font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+.v2-recording-timer { font-size: 32px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.v2-recording-transcript {
+  max-width: 100%; max-height: 30vh; overflow-y: auto; font-size: 13px; line-height: 1.6;
+  color: var(--text-secondary); background: var(--bg-secondary); border-radius: var(--radius);
+  padding: 10px 14px;
+}
+.v2-recording-stop {
+  margin-top: 6px; padding: 8px 18px; border-radius: 999px; border: none;
+  background: var(--danger, #e03131); color: #fff; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.v2-recording-stop:hover { opacity: 0.9; }
 
 /* Composer */
 .v2-composer { flex: 0 0 auto; padding: 12px 0 18px; }

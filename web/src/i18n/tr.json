@@ -2232,5 +2232,7 @@
   "v2.chat.promptsShort": "İstem",
   "v2.chat.noPrompts": "Henüz istem yok",
   "v2.chat.newPromptName": "İstem adı:",
-  "v2.chat.newPrompt": "Yeni istem"
+  "v2.chat.newPrompt": "Yeni istem",
+  "v2.chat.processingAudio": "İşleniyor…",
+  "v2.chat.recordingListening": "Dinliyor…"
 }

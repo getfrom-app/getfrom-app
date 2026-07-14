@@ -2232,5 +2232,7 @@
   "v2.chat.promptsShort": "Промпт",
   "v2.chat.noPrompts": "Промптов пока нет",
   "v2.chat.newPromptName": "Название промпта:",
-  "v2.chat.newPrompt": "Новый промпт"
+  "v2.chat.newPrompt": "Новый промпт",
+  "v2.chat.processingAudio": "Обработка…",
+  "v2.chat.recordingListening": "Слушаю…"
 }

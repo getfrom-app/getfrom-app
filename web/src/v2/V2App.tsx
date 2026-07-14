@@ -11,10 +11,13 @@ import { aiChatStore, useAIChat } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
-import { isMarkedContext, isRootContext, firstContextOf } from '../utils/cajones'
+import { isMarkedContext, isRootContext, firstContextOf, readContextKnowledge, writeContextKnowledge } from '../utils/cajones'
+import { isContextKnowledge } from '../utils/knowledgeNodes'
+import { htmlToMarkdown } from '../utils/htmlMarkdown'
 import { applyTemplate } from '../utils/tagsHelper'
 import { createMarkdownNode } from '../utils/importMarkdown'
 import { uploadFile } from '../api/client'
+import { updateContextKnowledgeFromElement } from '../api/autoClassify'
 import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
@@ -63,6 +66,39 @@ export default function V2App() {
     return v >= 320 && v <= 900 ? v : 440
   })
   useEffect(() => { localStorage.setItem('v2_right_w', String(rightWidth)) }, [rightWidth])
+
+  // Auto-actualizar «Lo que Fromly sabe» del contexto al GUARDAR un elemento (nota/
+  // tarea/documento): se dispara al SALIR del detalle (cerrar o abrir otro), no en
+  // cada tecla — compara el snapshot de apertura vs. el de cierre y solo llama a la
+  // IA si el contenido cambió de verdad. La IA decide si aporta algo significativo
+  // y duradero (puede acotar/reescribir/fusionar, no solo añadir al final) — si no
+  // aporta nada, no toca el documento. Alberto: "cada vez que se guarda un
+  // elemento, si es significativo, debe aportar algo... si no, no hace nada".
+  const knowledgeUpdateInFlight = useRef(new Set<string>())
+  useEffect(() => {
+    if (!detailNodeId) return
+    const id = detailNodeId
+    const openNode = store.getNode(id)
+    const snapshot = { text: openNode?.text || '', body: openNode?.body || '' }
+    return () => {
+      const node = store.getNode(id)
+      if (!node || node.deletedAt) return
+      if (node.text === snapshot.text && node.body === snapshot.body) return // nada cambió
+      if (isContextKnowledge(node.text)) return // no auto-resumir el propio documento de memoria
+      const ctx = firstContextOf(node)
+      if (!ctx) return
+      const elementTitle = (node.text || '').replace(/^✦\s*/, '').trim()
+      const elementText = htmlToMarkdown(node.body || '').trim()
+      if (!elementTitle && elementText.length < 20) return // demasiado trivial, ni molestar a la IA
+      if (knowledgeUpdateInFlight.current.has(ctx.id)) return // ya hay una actualización en curso para este contexto
+      knowledgeUpdateInFlight.current.add(ctx.id)
+      const currentKnowledge = readContextKnowledge(ctx.id)
+      updateContextKnowledgeFromElement(ctx.text || '', currentKnowledge, elementTitle, elementText)
+        .then(res => { if (res.updated && res.knowledge) writeContextKnowledge(ctx.id, res.knowledge) })
+        .catch(() => { /* silencioso: mismo criterio que appendContextFacts */ })
+        .finally(() => { knowledgeUpdateInFlight.current.delete(ctx.id) })
+    }
+  }, [detailNodeId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Arranque del motor SOLO si la v1 no lo cargó ya en esta sesión SPA.
   // NO re-ejecutamos las migraciones estructurales de v1 (algunas destructivas):
@@ -477,6 +513,7 @@ export default function V2App() {
         importDragOver={importDragOver}
         elementsFilter={elementsFilter}
         onOpenElementsFiltered={onOpenElementsFiltered}
+        recorder={recorder}
       />
       {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
       {showCapture && (
