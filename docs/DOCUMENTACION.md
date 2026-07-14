@@ -1,7 +1,79 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-14 (Web v9.6.815)
+> Última actualización: 2026-07-14 (Web v9.6.820)
+
+---
+
+## 🗓️ Sesión 2026-07-14 (cont.) — Elementos: filtros, Contexto reordenado, selección múltiple, deshacer
+
+Web **v9.6.815 → v9.6.820**. Log: `logs/2026-07-14-sesion2.md`. Continuación same-day tras
+feedback en vivo de Alberto usando la app (capturas reales), no una nueva auditoría.
+
+**Fix "Limpiar" en Elementos.** Solo limpiaba el texto de búsqueda (`setQ('')`); si no había
+texto escrito —el caso típico, con solo un filtro de tipo activo— el botón no hacía nada
+visible. Ahora resetea también `filter` y `taskSub`.
+
+**Notas vacías huérfanas — el primer fix no bastaba.** El intento de la sesión 1 (un `Set` en
+memoria rastreando qué notas creó `onNewDocument` en esa sesión) seguía dejando escapar
+algunas — Alberto siguió viendo "Sin título" nuevos bajo Documentos personales. Reescrito sin
+ningún rastreo: al cerrar CUALQUIER documento (`_doc`, no lienzo) con título Y cuerpo vacíos,
+se descarta — por construcción, solo un documento nunca tocado tiene ambos vacíos a la vez, así
+que es seguro sin depender de cuándo se creó. 6 huérfanos más limpiados; confirmado con consulta
+SQL directa a toda la BD que la cuenta quedó en cero.
+
+**"Lo que Fromly sabe" duplicado en Elementos.** `classifyElement()` clasifica cualquier nodo
+con `_doc:'1'` como `'document'`, no `'note'` — el filtro que oculta notas sueltas
+(`c.kind === 'note'`) no lo pillaba. Excluido explícitamente por `isContextKnowledge(n.text)`
+en `V2ContextView.tsx`.
+
+**Causa raíz real de que "Lo que Fromly sabe" nunca se autocompletara.** El efecto que la
+actualiza (`V2App.tsx`) solo se disparaba al cerrar una nota editada A MANO en el detalle.
+Todo lo que crea la IA por chat (`create_document`/`create_note` en `aiChatExecutor.ts` — la
+mayoría del contenido real en un producto chat-first) nunca lo activaba. Extraído a
+`maybeUpdateContextKnowledge()` en `cajones.ts`, compartida por ambos disparadores. Conocimiento
+de Casa Alicante regenerado a mano desde sus elementos reales, sin inventar nada.
+
+**Kanban/Calendario solo con el filtro Tareas.** No tienen sentido para notas, lienzos u otros
+elementos — sin estado ni fecha que organizar en un tablero. `FilterViewSwitcher` gana
+`allowBoardViews` (default `true`, no afecta al otro caller, `WFHomeView` de v1). Un
+`useEffect` resetea la vista sola a Lista si cambias de filtro con Kanban/Calendario activo.
+
+**Sub-filtro por CONTEXTO en Elementos.** Segundo nivel, para cualquier tipo (no solo tareas) —
+mismo patrón visual que el sub-filtro de tareas. Los chips disponibles se calculan sobre lo
+filtrado por tipo+búsqueda (capa `byTypeAndSearch` separada de `filtered`), no sobre lo ya
+recortado por contexto, para que elegir un contexto no haga desaparecer los demás chips.
+
+**V2ContextView reordenado.** Título del contexto arriba del todo (nuevo — antes no se
+mostraba en ningún sitio de la tab) → fila padre+editar+archivar (sin cambios) → "Lo que
+Fromly sabe" (antes al final, ahora justo debajo del título, sin cabecera ni fila de acciones
+propia — `V2NoteBody` gana `hideToolbar`) → Tareas → Elementos.
+
+**Tab Historial eliminada — fusionada con Elementos.** Era el mismo buscador global con el
+filtro "conversación" implícito y sus elementos anidados debajo (ya visibles al abrir la
+conversación en sí). `RightMode` pasa de 5 a 4 modos; limpiado el código muerto
+(`sessions`/`bySession`/`standalone`/`topLevel` en `V2RightColumn.tsx`) y las claves i18n
+huérfanas en los 12 idiomas.
+
+**4 mejoras de UX** (propuestas tras el trabajo anterior, confirmadas por Alberto: "1 hazlo 2
+hazlo 3 hazlo 4 hazlo"):
+- Indicador "Actualizado hace X" sobre "Lo que Fromly sabe" — `fmtRelative()` nuevo en
+  `utils/formatDate.ts` vía `Intl.RelativeTimeFormat` nativo (gratis en los 12 idiomas, sin
+  diccionario propio).
+- Toast discreto cuando "Lo que Fromly sabe" se autocompleta en segundo plano — antes era
+  silencioso, sin forma de distinguir "está funcionando" de "no ha hecho nada".
+- Selección múltiple en Elementos: checkbox por fila vía un overlay transparente que
+  intercepta el clic sin tocar `TaskRow` (componente compartido con toda la app) ni las filas
+  de evento/genéricas — funciona igual para los 3 tipos sin duplicar lógica. Eliminar en
+  bloque con toast de confirmación.
+- "Deshacer" al eliminar: `store.deleteNode()` pasa de `void` a devolver `string[]` (la
+  cascada completa de ids borrados, no solo el nodo raíz) para poder restaurarla exacta con
+  el nuevo `store.restoreDeleted()`. `Toast.tsx` gana soporte de botón de acción.
+
+Todo verificado con `tsc --noEmit` limpio en cada commit. La verificación en vivo en
+navegador para la selección múltiple no se pudo completar — el login del navegador embebido
+de este entorno falló repetidamente (problema del propio sandbox, ya visto antes en la sesión
+con código ya confirmado en producción, no una regresión de este cambio).
 
 ---
 

@@ -39,6 +39,9 @@ navegador si algún día quieres repasarlo.
 
 ## Novedades (julio 2026, Fromly 2.0)
 
+- **Deshacer al eliminar**: al borrar cualquier nota, tarea o archivo (individual o en bloque desde
+  Elementos), el aviso de confirmación incluye un botón "Deshacer" — nada desaparece sin que tengas
+  unos segundos para recuperarlo antes de que pase a la papelera de forma silenciosa.
 - **Archivos y PDF**: arrastra un PDF o imagen a cualquier sitio (chat o columna de contextos) — si
   tienes una conversación abierta se incorpora a ella, si no se importa directamente. Los PDF se
   abren con visor real: puedes **seleccionar texto y subrayar** (el subrayado queda marcado en
@@ -242,11 +245,13 @@ conversación para verlo.
 La columna derecha cambia de contenido según la pestaña que elijas arriba:
 
 - **Contexto** — qué sabe Fromly del tema en el que estás trabajando ("Lo que Fromly sabe",
-  arriba del todo), más las tareas y elementos que cuelgan de ese contexto.
+  arriba del todo, con un aviso discreto de cuándo se actualizó por última vez), más las
+  tareas y elementos que cuelgan de ese contexto.
 - **Elementos** — el buscador de todo lo que tienes guardado: notas, tareas, eventos, archivos,
   lienzos, conversaciones, agentes y prompts (clic en una conversación la retoma donde la
   dejaste). Filtra por tipo y, debajo, por contexto. Kanban y Calendario solo aparecen al filtrar
-  Tareas — para el resto no hay estado ni fecha que organizar en un tablero.
+  Tareas — para el resto no hay estado ni fecha que organizar en un tablero. El icono ✓ junto al
+  buscador activa la **selección múltiple**: marca varios elementos y elimínalos de golpe.
 - **Hoy** — la agenda de tu día: eventos, tareas por hacer, seguimiento y lo que tienes por
   planificar. Puedes arrastrar cualquier tarea de aquí directamente al Planificador para darle
   hora.
