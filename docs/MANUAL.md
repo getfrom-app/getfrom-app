@@ -22,10 +22,10 @@ Al entrar en Fromly tienes **tres columnas**:
   y la IA crea tareas, notas y eventos, les pone fecha, los clasifica en su contexto, o te
   responde con lo que ya guardas. Arrastra un PDF, una imagen o un archivo directamente al chat
   para incorporarlo a la conversación.
-- **Derecha — cinco pestañas**: **Contexto** (qué sabe Fromly de este tema, más sus tareas y
-  elementos), **Elementos** (buscador de todo tu contenido), **Historial** (tus conversaciones
-  anteriores), **Hoy** (la agenda de tu día, arrastrable al Planificador) y **Agenda** (cualquier
-  día, calendario anual).
+- **Derecha — cuatro pestañas**: **Contexto** (qué sabe Fromly de este tema, más sus tareas y
+  elementos), **Elementos** (buscador de todo tu contenido, incluidas tus conversaciones — filtra
+  por "💬 Conversaciones" para verlas solas), **Hoy** (la agenda de tu día, arrastrable al
+  Planificador) y **Agenda** (cualquier día, calendario anual).
 
 **Archivos y RAG.** Cuando subes un archivo, Fromly lo indexa: puedes preguntarle sobre su
 contenido en cualquier momento, no solo justo después de subirlo. Los PDF se abren con visor real
@@ -59,8 +59,9 @@ navegador si algún día quieres repasarlo.
   según esté atrasada, sea hoy o futura) y repetición, más su contexto al lado.
 - **Contexto de cualquier elemento**: siempre visible y editable — nota, tarea, PDF, imagen o
   enlace — con un chip y un botón para cambiarlo, y clic para navegar directamente a ese contexto.
-- **Historial global** más limpio: lista tus conversaciones y elementos para saltar rápido a
-  cualquier sitio; los comandos rápidos de un solo turno («créame una tarea…») ya no lo saturan.
+- **La pestaña Historial se fusionó con Elementos** (14 jul 26): era el mismo buscador con el
+  filtro "conversación" implícito y sus elementos anidados debajo — y esos elementos ya se ven al
+  abrir la conversación en sí. Filtra Elementos por "💬 Conversaciones" para el mismo resultado.
 - **Agentes y Prompts, ahora en cualquier contexto**: puedes crear un Agente (una automatización que
   corre sola cada día en la nube) o un Prompt (una plantilla de instrucciones reutilizable)
   colgando de cualquier contexto o proyecto, igual que una nota o una tarea — pídeselo a la IA por
@@ -236,17 +237,16 @@ conversación para verlo.
 
 ---
 
-## 5. La columna derecha — cinco pestañas
+## 5. La columna derecha — cuatro pestañas
 
 La columna derecha cambia de contenido según la pestaña que elijas arriba:
 
-- **Contexto** — qué sabe Fromly del tema en el que estás trabajando ("Lo que Fromly sabe"), más
-  las tareas y elementos que cuelgan de ese contexto.
+- **Contexto** — qué sabe Fromly del tema en el que estás trabajando ("Lo que Fromly sabe",
+  arriba del todo), más las tareas y elementos que cuelgan de ese contexto.
 - **Elementos** — el buscador de todo lo que tienes guardado: notas, tareas, eventos, archivos,
-  lienzos, conversaciones, agentes y prompts. Filtra por tipo, contexto, fecha o estado, y cambia
-  entre vista de lista, tabla, kanban o calendario (vistas tabla/kanban/calendario disponibles en
-  el plan Pro).
-- **Historial** — tus conversaciones anteriores; clic para retomar cualquiera donde la dejaste.
+  lienzos, conversaciones, agentes y prompts (clic en una conversación la retoma donde la
+  dejaste). Filtra por tipo y, debajo, por contexto. Kanban y Calendario solo aparecen al filtrar
+  Tareas — para el resto no hay estado ni fecha que organizar en un tablero.
 - **Hoy** — la agenda de tu día: eventos, tareas por hacer, seguimiento y lo que tienes por
   planificar. Puedes arrastrar cualquier tarea de aquí directamente al Planificador para darle
   hora.
@@ -346,9 +346,9 @@ de voz larga:
 
 ### Conversaciones
 
-Cada conversación que mantienes con el chat es en sí misma un elemento: aparece en la pestaña
-Historial para retomarla, y también en Elementos con su propio filtro, junto a notas, tareas y
-lienzos.
+Cada conversación que mantienes con el chat es en sí misma un elemento: aparece en Elementos con
+su propio filtro (💬 Conversaciones), junto a notas, tareas y lienzos — clic para retomarla donde
+la dejaste.
 
 ### Agente IA
 

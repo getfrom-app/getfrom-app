@@ -1,14 +1,16 @@
-// Columna derecha contextual de Fromly 2.0 — 4 modos.
+// Columna derecha contextual de Fromly 2.0 — 3 modos.
 // Contexto:  qué sabe Fromly del contexto activo + sus miembros.
-// Elementos: buscador global de todo lo guardado (notas, tareas, archivos…).
-// Historial: lista de conversaciones (chats) — clic retoma la conversación.
+// Elementos: buscador global de todo lo guardado (notas, tareas, archivos,
+//            conversaciones…) — Historial se retiró (10 jul 26): era el mismo
+//            buscador con el filtro "conversación" implícito y sus elementos
+//            anidados, y esos elementos ya se ven al abrir la conversación.
 // Hoy:       columna de referencia del día REAL de la v1 (DayColumn):
 //            eventos de Google Calendar, atrasadas, para hoy.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
-import { useAIChat, isQuickCommandSession } from '../../store/aiChatStore'
-import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
+import { useAIChat } from '../../store/aiChatStore'
+import { parseExtraData } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import PublishButton from '../../components/PublishButton'
 import DayColumn from '../../components/panels/DayColumn'
@@ -17,13 +19,11 @@ import V2ContextView from './V2ContextView'
 import V2ConversationView from './V2ConversationView'
 import V2DetailView from './V2DetailView'
 import V2AgendaView from './V2AgendaView'
-import V2ElementRow from './V2ElementRow'
-import { classifyElement } from '../elementKind'
 import { elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
-export type RightMode = 'contexto' | 'elementos' | 'historial' | 'hoy' | 'agenda'
+export type RightMode = 'contexto' | 'elementos' | 'hoy' | 'agenda'
 
 interface Props {
   mode: RightMode
@@ -103,13 +103,6 @@ function EditableDetailTitle({ nodeId }: { nodeId: string }) {
   )
 }
 
-// Clasifica un nodo como ELEMENTO de historial (documento/nota/pdf/imagen/enlace/audio).
-// Usa el clasificador compartido (alineado con la v1: detecta enlaces por isResource/
-// extraData._resourceUrl/_resource, no solo por resourceType).
-function classifyContent(n: Node): ReturnType<typeof classifyElement> {
-  return classifyElement(n)
-}
-
 export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha, elementsFilter, onOpenElementsFiltered, recorder }: Props) {
   useStore()
   const { t, i18n } = useTranslation()
@@ -123,69 +116,9 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
     }
   }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Historial (conversaciones) ──
-  // SIEMPRE global: el Historial es el índice para saltar a cualquier sitio de Fromly,
-  // no se filtra por el contexto abierto. (El contexto tiene su propia ficha en Contexto.)
-  const sessions = useMemo(() => {
-    const list = store.allActive().filter(n => {
-      const ed = parseExtraData(n.extraData)
-      if (ed._aiSession !== '1') return false
-      if (isInPapelera(n.id)) return false   // borrada → no aparece en Historial (trashNode reparenta, no pone deletedAt)
-      // Comando de 1 turno sin valor conversacional (p.ej. «créame una tarea…») → no
-      // ensucia Historial. Sigue en la BD/buscable; al añadir un 2º mensaje aparece sola.
-      if (isQuickCommandSession(n.id)) return false
-      return true
-    })
-    list.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
-    return list.slice(0, 100)
-  }, [store.nodesVersion, chat.sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Elementos DENTRO de cada conversación (hijos-contenido de la sesión) → indentados.
-  const bySession = useMemo(() => {
-    const m = new Map<string, { node: Node; icon: string; label: string }[]>()
-    for (const s of sessions) {
-      const kids: { node: Node; icon: string; label: string }[] = []
-      for (const n of store.children(s.id)) {
-        const c = classifyContent(n)
-        if (c) kids.push({ node: n, icon: c.icon, label: c.label })
-      }
-      if (kids.length) m.set(s.id, kids.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || '')))
-    }
-    return m
-  }, [sessions, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Elementos SUELTOS (subidos/creados SIN conversación): su padre NO es una sesión.
-  // OJO: excluimos las «notas» de texto plano (bullets del árbol v1) — hay miles y
-  // no son «elementos» del historial. En v2 el contenido suelto nace como DOCUMENTO
-  // (_doc) o RECURSO (archivo/PDF/imagen/enlace/audio); las notas que crea la IA van
-  // anidadas bajo su conversación (bySession), no aquí. Así el Historial global no se
-  // inunda con el vault heredado.
-  const standalone = useMemo(() => {
-    const sessionIds = new Set(sessions.map(s => s.id))
-    const out: { node: Node; icon: string; label: string }[] = []
-    for (const n of store.allActive()) {                        // SIEMPRE global (no por contexto)
-      const c = classifyContent(n)
-      if (!c || c.kind === 'note') continue                    // fragmentos/bullets v1 → fuera
-      if (n.parentId && sessionIds.has(n.parentId)) continue   // pertenece a una conversación
-      if (isInPapelera(n.id)) continue                          // borrado → fuera del Historial
-      out.push({ node: n, icon: c.icon, label: c.label })
-    }
-    return out
-  }, [sessions, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Nivel superior del Historial: conversaciones + elementos sueltos, por reciente.
-  const topLevel = useMemo(() => {
-    const chats = sessions.map(s => ({ node: s, icon: '💬', label: t('v2.chat.conversation', 'Conversación'), isChat: true as const }))
-    const alone = standalone.map(it => ({ ...it, isChat: false as const }))
-    return [...chats, ...alone]
-      .sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
-      .slice(0, 200)
-  }, [sessions, standalone]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const tabs: { id: RightMode; label: string }[] = [
     { id: 'contexto', label: t('v2.rightColumn.tabContext', 'Contexto') },
     { id: 'elementos', label: t('v2.rightColumn.tabElements', 'Elementos') },
-    { id: 'historial', label: t('v2.rightColumn.tabHistory', 'Historial') },
     { id: 'hoy', label: t('v2.rightColumn.tabToday', 'Hoy') },
     { id: 'agenda', label: t('v2.rightColumn.tabAgenda', 'Agenda') },
   ]
@@ -310,32 +243,6 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
               : activeSessionId
                 ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
                 : <div className="v2-right-empty">{t('v2.rightColumn.chooseContextEmpty', 'Elige un contexto a la izquierda, o empieza una conversación: aquí verás sus tareas y elementos.')}</div>
-        )}
-
-        {mode === 'historial' && (
-          <div>
-            {/* Conversaciones (con sus elementos indentados) + elementos sueltos. */}
-            {topLevel.map(it => (
-              <div key={it.node.id} className={it.isChat && chat.sessionId === it.node.id ? 'v2-el-active' : undefined}>
-                <V2ElementRow
-                  node={it.node}
-                  icon={it.icon}
-                  onOpen={id => (it.isChat ? onOpenConversation(id) : onOpenNode(id))}
-                  extraMeta={fmtDate(it.node.updatedAt, i18n.language)}
-                />
-                {/* Elementos DENTRO de la conversación, indentados. */}
-                {it.isChat && bySession.get(it.node.id)?.map(child => (
-                  <V2ElementRow key={child.node.id} node={child.node} icon={child.icon} onOpen={onOpenNode} child hideContext extraMeta={fmtDate(child.node.updatedAt, i18n.language)} />
-                ))}
-              </div>
-            ))}
-
-            {topLevel.length === 0 && (
-              <div className="v2-right-empty">
-                {selectedCtxId ? t('v2.rightColumn.contextNoContentYet', 'Este contexto no tiene conversaciones ni contenido todavía.') : t('v2.rightColumn.nothingYet', 'Aún no hay nada. Empieza a hablar con Fromly.')}
-              </div>
-            )}
-          </div>
         )}
 
         {mode === 'hoy' && (
