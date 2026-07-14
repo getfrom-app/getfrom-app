@@ -720,15 +720,14 @@ ver los disponibles en tu versión.
 | **Gratis** | €0 | Hasta 1.000 nodos sincronizados. Outliner + diario, búsqueda avanzada, Mac + iPhone + web, sync en tiempo real. Sin IA, sin archivos adjuntos, sin publicar notas. |
 | **Pro Mensual** | €7/mes | Todo lo de Gratis + nodos ilimitados + IA completa (Claude) + Agentes + Prompts + vistas tabla/kanban/calendario + archivos adjuntos + publicar notas con URL + soporte prioritario + 2.000.000 tokens de IA al mes incluidos. |
 | **Pro Anual** | €49/año (~€4,08/mes) | Todo lo de Pro Mensual, facturado anualmente. Ahorras cerca de un **42%** frente al mensual (7×12 = 84€ → 49€). |
-| **Lifetime** | €149 pago único | Todo lo de Pro, para siempre, sin suscripciones. |
+| **Lifetime** | €149 pago único | Todo lo de Pro, para siempre, sin suscripciones, + 3.000.000 tokens de IA incluidos de una vez. |
 
-**Recarga de tokens:** si agotas los tokens incluidos en tu plan Pro, puedes comprar un paquete
-adicional de 5.000.000 de tokens de forma puntual.
+**Recarga de tokens:** si agotas los tokens incluidos en tu plan Pro o Lifetime, puedes comprar un
+paquete adicional de 5.000.000 de tokens de forma puntual.
 
-**Sobre el plan Lifetime:** es un pago único que te da acceso a todo lo de Pro de forma indefinida.
-El checkout está activo en [fromly.app/pricing.html](https://fromly.app/pricing.html); dentro de la
-propia app, la pantalla de precios ofrece Gratis y Pro — si quieres Lifetime, actívalo desde la web
-de precios.
+**Sobre el plan Lifetime:** es un pago único que te da acceso a todo lo de Pro de forma indefinida,
+más 3.000.000 tokens de IA de regalo al comprarlo. El checkout está disponible tanto en **Ajustes →
+Cuenta → Planes** dentro de la propia app como en [fromly.app/pricing.html](https://fromly.app/pricing.html).
 
 ### Prueba gratuita
 
