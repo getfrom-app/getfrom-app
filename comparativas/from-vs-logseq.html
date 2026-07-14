@@ -51,31 +51,37 @@
   <h1>Fromly vs Logseq 2026: IA integrada y sync vs outliner open source local-first</h1>
   <p class="meta">Actualizado mayo 2026 · 8 min de lectura</p>
 
-  <p>Logseq tiene una comunidad apasionada. Es un outliner basado en grafos, open source, con todos tus datos en archivos Markdown locales, sin suscripción y con un poder de personalización enorme. Fromly comparte el modelo outliner pero toma decisiones radicalmente distintas: cloud, IA integrada, sin necesidad de configurar nada. Esta comparativa es honesta con ambas opciones.</p>
+  <p>Logseq tiene una comunidad apasionada. Es un outliner basado en grafos, open source, con todos tus datos en archivos Markdown locales, sin suscripción y con un poder de personalización enorme. Fromly parte de un planteamiento distinto: es un segundo cerebro chat-first — escribes en lenguaje natural en un chat central y la IA crea, clasifica y busca por ti, con un outliner de nodos por debajo para quien quiera bajar al detalle. Cloud, Contextos con memoria que se actualiza sola, agentes y sync automático, sin necesidad de configurar nada. Esta comparativa es honesta con ambas opciones.</p>
 
   <h2>La diferencia fundamental</h2>
   <p>Logseq es local-first y open source. Tus notas son archivos Markdown en tu disco, que puedes sincronizar con Git, iCloud, Dropbox o cualquier sistema que prefieras. Tienes control total. Pero ese control tiene un precio: la configuración inicial, la gestión del sync y la curva de aprendizaje son considerables. No hay IA oficial integrada.</p>
-  <p>Fromly es cloud-first. Sync automático sin configuración, IA integrada que conoce tu árbol de notas, apps en web/Mac/iPhone que funcionan desde el primer minuto. Pagas una suscripción o el Lifetime — y a cambio obtienes un sistema que funciona sin esfuerzo técnico.</p>
+  <p>Fromly es cloud-first y chat-first: escribes en un chat central en lenguaje natural — "recuérdame llamar a Ana el lunes", "resume mi día", "busca en mis notas sobre X" — y la IA crea tareas, notas y eventos, los clasifica en su Contexto correspondiente y responde con lo que ya tienes guardado. Cada Contexto (área o proyecto) acumula su propia memoria "Lo que Fromly sabe" que se actualiza sola, sin que tengas que contársela. Sync automático sin configuración, apps en web/Mac/iPhone que funcionan desde el primer minuto. Pagas una suscripción o el Lifetime — y a cambio obtienes un sistema que trabaja para ti, no al revés.</p>
 
   <h2>Tabla comparativa</h2>
   <table>
     <thead><tr><th>Característica</th><th>Fromly</th><th>Logseq</th></tr></thead>
     <tbody>
       <tr><td>Modelo de datos</td><td>Cloud con backup local</td><td class="win">Archivos Markdown locales (tus datos, tu disco)</td></tr>
+      <tr><td>Chat central en lenguaje natural</td><td class="win">Sí, crea, clasifica y responde</td><td>No</td></tr>
+      <tr><td>Contextos con memoria que se auto-actualiza</td><td class="win">Sí, sin que se lo cuentes</td><td>No</td></tr>
+      <tr><td>Agentes autónomos programables</td><td class="win">Sí, con horario propio</td><td>No</td></tr>
+      <tr><td>Prompts guardados (plantillas)</td><td class="win">Sí, con variables</td><td>No</td></tr>
+      <tr><td>Planificador con Google Calendar</td><td class="win">Sí, día/semana/mes/año</td><td>No</td></tr>
       <tr><td>Open source</td><td>No</td><td class="win">Sí (licencia AGPL)</td></tr>
-      <tr><td>IA integrada</td><td class="win">Sí, actúa sobre tus notas</td><td>No (sin IA oficial)</td></tr>
-      <tr><td>Sync automático</td><td class="win">Sí, en tiempo real, sin configurar</td><td>Manual (Git, iCloud, Dropbox)</td></tr>
+      <tr><td>IA integrada</td><td class="win">Sí, actúa sobre tus notas y tareas</td><td>No (sin IA oficial)</td></tr>
+      <tr><td>Sync automático</td><td class="win">Sí, en tiempo real por operaciones, sin configurar</td><td>Manual (Git, iCloud, Dropbox)</td></tr>
       <tr><td>Curva de aprendizaje</td><td class="win">Baja, funciona desde el primer minuto</td><td>Alta (Datalog, plugins, config)</td></tr>
       <tr><td>App web</td><td class="win">Sí (fromly.app)</td><td>No (app de escritorio)</td></tr>
-      <tr><td>App Mac</td><td class="win">Sí, 3.9 MB, Tauri</td><td>Sí (Electron, más pesada)</td></tr>
-      <tr><td>App iPhone</td><td class="win">Sí</td><td>Sí, pero limitada</td></tr>
+      <tr><td>App Mac</td><td class="win">Sí, ligera, Tauri (Rust + React)</td><td>Sí (Electron, más pesada)</td></tr>
+      <tr><td>App iPhone</td><td class="win">Sí, nativa Swift</td><td>Sí, pero limitada</td></tr>
+      <tr><td>Outliner de nodos anidados</td><td class="win">Sí, como capacidad dentro del chat</td><td class="win">Sí, es el núcleo de la app</td></tr>
       <tr><td>Vista de grafos</td><td>No</td><td class="win">Sí, muy potente</td></tr>
       <tr><td>Queries avanzadas (Datalog)</td><td>No</td><td class="win">Sí, muy potentes para técnicos</td></tr>
       <tr><td>Plugins y extensiones</td><td>No</td><td class="win">Cientos de plugins de la comunidad</td></tr>
       <tr><td>Filtros de tareas</td><td class="win">Hoy, pendiente, @contexto, #tag</td><td>Con Datalog queries (complejo)</td></tr>
       <tr><td>Backup local automático</td><td class="win">Sí, cada 2 horas</td><td class="win">Sí (son tus archivos locales)</td></tr>
       <tr><td>Sin lock-in</td><td class="win">Exportación JSON/Markdown</td><td class="win">Total (archivos Markdown planos)</td></tr>
-      <tr><td>Precio</td><td>Gratis (limitado) / Pro ~€10/mes / Lifetime €49</td><td class="win">Gratis (open source)</td></tr>
+      <tr><td>Precio</td><td>Gratis (limitado) / Pro €7/mes o €49/año / Lifetime €149</td><td class="win">Gratis (open source)</td></tr>
     </tbody>
   </table>
 
@@ -87,7 +93,7 @@
   <h2>El problema de Logseq para la mayoría</h2>
   <p>La curva de aprendizaje es real. Configurar el sync entre dispositivos (Git + Working Copy en iPhone, por ejemplo) requiere tiempo y paciencia. Las queries Datalog tienen su propia sintaxis. Cada vez que algo falla, la solución está en foros y documentación técnica.</p>
   <p>La experiencia móvil de Logseq es notablemente inferior a la de escritorio. La app iPhone existe pero no está a la altura. Y no hay app web — solo apps de escritorio.</p>
-  <p>La IA no existe de forma oficial. Hay plugins de la comunidad que integran ChatGPT, pero no es lo mismo que una IA que conoce tu árbol de notas de forma nativa.</p>
+  <p>La IA no existe de forma oficial. Hay plugins de la comunidad que integran ChatGPT, pero no es lo mismo que un chat central que crea, clasifica y busca en tus notas de forma nativa, con Contextos que se actualizan solos.</p>
 
   <h2>¿Quién debería usar cada una?</h2>
   <h3>Elige Logseq si:</h3>
@@ -102,22 +108,22 @@
   <h3>Elige Fromly si:</h3>
   <ul>
     <li>Quieres que todo funcione desde el primer minuto sin configurar nada</li>
-    <li>Necesitas IA que realmente trabaje con tus notas</li>
+    <li>Prefieres escribir en lenguaje natural en un chat y que la IA organice por ti</li>
+    <li>Necesitas Contextos que acumulen memoria sola, agentes y prompts guardados</li>
     <li>Usas iPhone de forma intensiva y necesitas la misma experiencia que en Mac</li>
-    <li>Prefieres un sistema de tareas integrado con filtros sencillos pero potentes</li>
     <li>No tienes tiempo o ganas de mantener la infraestructura técnica</li>
   </ul>
 
   <h2>Pros y contras</h2>
   <div class="pros-cons">
-    <div class="pros"><h4>Fromly — Ventajas</h4><ul><li>IA integrada que actúa sobre tus notas</li><li>Sync automático sin configurar</li><li>App web + Mac + iPhone de igual calidad</li><li>Curva de aprendizaje mínima</li><li>Agenda y filtros de tareas integrados</li></ul></div>
+    <div class="pros"><h4>Fromly — Ventajas</h4><ul><li>Chat central en lenguaje natural que crea y clasifica por ti</li><li>Contextos con memoria que se actualiza sola</li><li>Agentes autónomos y prompts guardados</li><li>Sync automático sin configurar</li><li>App web + Mac + iPhone de igual calidad</li></ul></div>
     <div class="cons"><h4>Fromly — Limitaciones</h4><ul><li>No open source</li><li>Sin vista de grafos</li><li>Sin queries Datalog avanzadas</li><li>Sin ecosystem de plugins</li><li>Requiere suscripción o Lifetime</li></ul></div>
     <div class="pros"><h4>Logseq — Ventajas</h4><ul><li>Open source, tus datos en archivos Markdown</li><li>Control total, cero lock-in</li><li>Queries Datalog muy potentes</li><li>Vista de grafos de conexiones</li><li>Comunidad enorme y cientos de plugins</li><li>Completamente gratis</li></ul></div>
     <div class="cons"><h4>Logseq — Limitaciones</h4><ul><li>Sin IA oficial integrada</li><li>Sync requiere configuración manual</li><li>App móvil limitada</li><li>Sin app web</li><li>Curva de aprendizaje alta para no técnicos</li></ul></div>
   </div>
 
   <div class="verdict">
-    <p><strong>Conclusión:</strong> Logseq es la mejor opción si eres técnico, valoras el control absoluto de tus datos y disfrutas configurando tu sistema. Fromly es la mejor opción si quieres un outliner con IA que funcione desde el minuto uno, sin configurar nada, en cualquier dispositivo. No es que uno sea mejor — es que sirven a personas diferentes. Si tienes que elegir, pregúntate: ¿quiero controlar el sistema o quiero que el sistema trabaje para mí?</p>
+    <p><strong>Conclusión:</strong> Logseq es la mejor opción si eres técnico, valoras el control absoluto de tus datos y disfrutas configurando tu sistema. Fromly es la mejor opción si quieres un segundo cerebro chat-first que organice por ti desde el minuto uno, sin configurar nada, en cualquier dispositivo — el outliner sigue ahí debajo para quien quiera usarlo. No es que uno sea mejor — es que sirven a personas diferentes. Si tienes que elegir, pregúntate: ¿quiero controlar el sistema o quiero que el sistema trabaje para mí?</p>
   </div>
 
   <div class="cta-block">

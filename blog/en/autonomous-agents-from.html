@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Autonomous agents: Fromly works while you sleep — Fromly Blog</title>
-  <meta name="description" content="Schedule an agent at 08:00 daily. It reads your tree, runs the task and writes the result in your diary.">
+  <meta name="description" content="Schedule an agent in any context. It reads what you tell it to, does the work, and leaves a document with the result — ready when you need it.">
   <link rel="icon" type="image/svg+xml" href="../../icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,7 +53,7 @@
 <header class="blog-hero">
   <span class="tag">Advanced</span>
   <h1>Autonomous agents: Fromly works while you sleep</h1>
-  <p class="subtitle">Schedule an agent at 08:00 daily. It reads your tree, runs the task and writes the result in your diary.</p>
+  <p class="subtitle">Schedule an agent at a fixed time. It reads the context you point it to, does the work, and leaves a document with the result — ready when you need it.</p>
   <div class="blog-meta">
     <span>Fromly Blog</span>
     <span>·</span>
@@ -63,74 +63,79 @@
   </div>
 </header>
 <article class="blog-body">
-<h2>The problem with manual review</h2>
+<h2>The work doesn't stop when you do</h2>
 
-<p>Every morning, most people open their task manager and spend 10–15 minutes doing the same thing: scanning what's open, checking what's due, and figuring out what matters. It's not thinking — it's maintenance. Low-value, repetitive, and completely automatable.</p>
+<p>There's a gap between what you know you should do and what actually happens once you close the laptop. Pending reviews, project summaries that never get written, tasks that sit without a status. It's not laziness — keeping the system current takes more attention than you have to spare.</p>
 
-<p>The issue isn't discipline or focus. The issue is that most tools are passive. They wait for you. Fromly isn't.</p>
+<p>Fromly solves this in a way that feels obvious in hindsight: let an agent do the maintenance work for you, autonomously, while you sleep or focus on what matters.</p>
 
-<h2>What autonomous agents actually do</h2>
+<div class="callout"><p><strong>An agent in Fromly isn't a reminder.</strong> It's an instruction attached to a context — a project, an area, whichever you choose — that reads what's there, runs a real task, and writes the result as a document in that same context, without you having to be present.</p></div>
 
-<p>Fromly lets you schedule agents — small, targeted routines that run at a specific time, read your tree, execute a defined task, and write the result directly into your diary. No manual trigger. No dashboard to check. The work happens whether you're at your desk or not.</p>
+<h2>The problem with traditional productivity systems</h2>
 
-<p>This isn't a generic automation pipeline. Fromly's agents understand the structure of your notes — they know what's a task, what's a context, what's pinned, what's pending. When an agent reads your tree, it doesn't parse raw text. It understands intent.</p>
+<p>Most productivity tools are passive. They store things for you. They remind you of things. But they never act. You're the one who has to open the app, check the state, decide what to do, and then execute.</p>
 
-<div class="callout"><p><strong>Key idea:</strong> An agent scheduled at 08:00 runs before you open your laptop. By the time you sit down, your diary already has a summary of what needs your attention today.</p></div>
+<p>That works when you have time and energy. But the days you need the most support are exactly the days you have the least capacity to keep the system running.</p>
 
-<div class="img-block"><img src="/img/screenshots/detalle-magic.png" alt="Fromly Magic understanding your notes"><p class="img-caption">Fromly reads your tree with context — not just keywords</p></div>
+<p>Fromly starts from a different principle: your contexts — Work, a project, a client — build up their own memory. That memory should be usable to get things done, not just to look things up.</p>
 
-<h2>A concrete example: the daily briefing agent</h2>
+<div class="img-block"><img src="/img/screenshots/outliner-jerarquia.png" alt="Context in Fromly with its memory and items"><p class="img-caption">Every context in Fromly builds up its own memory. Agents read that memory and act on it.</p></div>
 
-<p>Here's a real setup you can replicate in minutes:</p>
+<h2>How an agent works in Fromly</h2>
+
+<p>An agent in Fromly is a scheduled instruction that runs automatically: on open, daily, weekly, or only when you trigger it by hand. You define what it needs to do, which sources it reads, and when. Fromly handles the rest.</p>
+
+<p>The flow is simple:</p>
 
 <ol>
-  <li>Create a node called <strong>Daily Briefing Agent</strong> at the root of your tree.</li>
-  <li>Inside, write the instruction: <em>Every morning at 08:00, review all open tasks due today or overdue, check any flagged notes from yesterday, and write a structured summary in today's diary entry.</em></li>
-  <li>Schedule it to run daily at 08:00.</li>
+  <li>Ask the chat to create an agent, or create one with the button, inside whichever context makes sense — a project, an area, anywhere.</li>
+  <li>Define the instruction, the sources it should read, and the schedule.</li>
+  <li>Review the prompt and turn it on — agents start deactivated until you approve them.</li>
+  <li>When its turn comes, it runs the instruction and writes the result as a new document hanging off that context.</li>
 </ol>
 
-<p>When the agent runs, it scans your entire tree, identifies what's pending, checks dates, and produces a clean entry in your daily note. You open Fromly and the briefing is already there — tasks sorted by priority, a note on anything overdue, and a clean list of what to focus on.</p>
+<p>When you open Fromly in the morning, the work is already done. You don't have to ask for it, wait for it, or remember it. It's there, in the context where you need it.</p>
 
-<p>No clicking around. No manual filtering. The agent did the maintenance so you can do the thinking.</p>
+<h2>Concrete examples of useful agents</h2>
 
-<h2>Beyond task review: what else agents handle</h2>
+<p>The real power of agents is in their specificity. It's not "summarize things for me." It's a precise instruction that Fromly can interpret because it knows the context the agent lives in.</p>
 
-<p>Daily briefings are just the starting point. Fromly agents can handle a range of recurring routines:</p>
+<h3>Morning pending-tasks summary</h3>
 
-<ul>
-  <li><strong>Weekly capture review:</strong> Every Sunday at 18:00, review all unprocessed nodes captured during the week and flag anything that needs a decision.</li>
-  <li><strong>Project status check:</strong> Every Friday, scan a specific context (a project, a client, a goal) and write a brief status update in the diary.</li>
-  <li><strong>Stale node detection:</strong> Daily, identify any note or task that hasn't been touched in more than 7 days and surface it for review.</li>
-  <li><strong>Deadline proximity alerts:</strong> Each morning, list any node with a date within the next 48 hours and write it prominently in today's entry.</li>
-</ul>
+<p>An agent that every morning at 07:30 reviews undated tasks in the "Work" context, flags the ones open for more than three days, and writes a document with the three most urgent. By the time you sit down, you already know where to start.</p>
 
-<p>Each of these runs automatically. Each writes its output into your diary, creating a living log of what your system has done on your behalf.</p>
+<h3>Weekly project audit</h3>
 
-<div class="img-block"><img src="/img/screenshots/diario-hoy.png" alt="Today's diary in Fromly"><p class="img-caption">The diary becomes a record of both your work and your agents' work</p></div>
+<p>An agent attached to a project's context that every Sunday checks what moved that week and what didn't, and leaves a document with that summary inside the project itself. Not to stress you out — to keep the system from filling up with zombie projects.</p>
+
+<h3>Next-day prep</h3>
+
+<p>An agent that at 22:00 looks at tomorrow's calendar (synced with Google Calendar), cross-references it with related pending tasks, and writes a planning block into a document for tomorrow. You wake up with a draft of the day already there.</p>
+
+<div class="img-block"><img src="/img/screenshots/detalle-magic.png" alt="Fromly understanding the user's context"><p class="img-caption">Fromly doesn't run generic instructions: it understands the context the agent lives in and acts with precision.</p></div>
 
 <h2>How to set up your first agent</h2>
 
-<p>Setting up an agent in Fromly takes less than two minutes:</p>
+<p>Setting up an agent in Fromly doesn't require any technical knowledge:</p>
 
-<ol>
-  <li>Open Fromly and navigate to the node or context you want the agent to work on.</li>
-  <li>Use the contextual menu to create a scheduled agent on that node.</li>
-  <li>Write a clear, specific instruction — what to read, what to do, where to write the result.</li>
-  <li>Set the schedule: time, frequency (daily, weekly, weekdays only).</li>
-  <li>Save. That's it.</li>
-</ol>
+<ul>
+  <li>Ask the chat — "create an agent that reviews my pending tasks every morning" — or create one with the button from whichever context you want.</li>
+  <li>Write the instruction in natural language: what to review, what to do, and which sources it should use.</li>
+  <li>Choose when it runs: on open, daily, weekly, or manually only.</li>
+  <li>Review the prompt Fromly prepared and activate it. It won't run until you do.</li>
+</ul>
 
-<p>The instruction you write doesn't need to follow a rigid format. Fromly understands natural language and maps it to your actual tree structure. If you say "review overdue tasks in the Work context," From knows where Work is, what tasks live there, and what overdue means relative to today's date.</p>
+<p>Fromly interprets the instruction, knows which context is relevant, and runs the task with that memory. You don't need to format anything specially or learn a syntax. Tell it what you want and Fromly understands.</p>
 
-<div class="callout"><p><strong>Tip:</strong> Start with one agent. A daily 08:00 briefing that lists today's tasks. Run it for a week. Once you trust it, add a second routine. Build your automated layer incrementally.</p></div>
+<div class="callout"><p><strong>The instruction is what matters.</strong> The more specific it is, the better the result. "Review my tasks" is vague. "Review the open tasks in the May Launch project and write a summary" is actionable.</p></div>
 
-<h2>The result: a system that runs itself</h2>
+<h2>What changes when you use agents</h2>
 
-<p>The goal of autonomous agents isn't to replace your judgment — it's to eliminate the repetitive work that consumes your attention before you even start. When Fromly handles the daily scan, the weekly review, and the deadline check, you arrive at your work with context already loaded.</p>
+<p>The biggest change isn't that it saves you time, although it does. It's that your system stops depending on your energy to stay current. The heaviest days, Friday afternoons, the messy weeks — the system keeps running whether you tend to it or not.</p>
 
-<p>Your diary becomes more than a log. It becomes a record of decisions made, tasks surfaced, and routines executed — with or without you. That's what a system that actually works looks like.</p>
+<p>Fromly isn't a tool that waits for you to use it. It's a system that works alongside you and hands you the finished work when you need it.</p>
 
-<p>Set your first agent tonight. Tomorrow morning, Fromly will already have done its part.</p>
+<p>If you already use Fromly to capture and organize through the chat, agents are the step that turns every context into something active. Start with one simple agent — the morning pending-tasks summary — and watch how it changes the first hour of your day.</p>
   <div class="cta-box">
     <h3>Try Fromly for free</h3>
     <p>Start in 60 seconds. No credit card required.</p>

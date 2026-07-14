@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tasks with natural language dates: "meeting with Ana on Monday" — Fromly Blog</title>
-  <meta name="description" content="Fromly reads "next Tuesday" and sets the date. No pickers, no menus.">
+  <meta name="description" content="You tell Fromly's chat, exactly as you'd think it, and the AI sets the date. No pickers, no menus.">
   <link rel="icon" type="image/svg+xml" href="../../icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,9 +51,9 @@
   <a href="/blog/en/" class="back">← Blog</a>
 </nav>
 <header class="blog-hero">
-  <span class="tag">Natural language scheduling</span>
+  <span class="tag">Productivity</span>
   <h1>Tasks with natural language dates: "meeting with Ana on Monday"</h1>
-  <p class="subtitle">Fromly reads "next Tuesday" and sets the date. No pickers, no menus — just write your task naturally and it's scheduled.</p>
+  <p class="subtitle">You tell Fromly's chat, exactly as you'd think it, and the AI understands the date and creates the task. No pickers, no menus.</p>
   <div class="blog-meta">
     <span>Fromly Blog</span>
     <span>·</span>
@@ -63,78 +63,101 @@
   </div>
 </header>
 <article class="blog-body">
-<h2>The date picker problem nobody talks about</h2>
+<h2>The date problem in task managers</h2>
 
-<p>You're in the middle of a thought. You type "call Ana on Thursday" and then everything stops. You open a date picker, click the right month, find Thursday, confirm. Three seconds gone. Focus broken. You're no longer capturing — you're managing a UI.</p>
+<p>You open your task manager. You want to add "meeting with Ana on Monday." You type the text, then you have to open a pop-up calendar, navigate to Monday, click, close the picker, and only then does the task get saved with a date.</p>
 
-<p>Multiply that by every task you create in a day. It adds up fast. And the worst part? The information was already there, in plain English, when you typed "Thursday."</p>
+<p>That process, repeated dozens of times a day, costs more mental energy than it seems. It's not the click itself — it's the interruption. You step out of your train of thought to operate an interface.</p>
 
-<p>Fromly skips the picker entirely. It reads what you write.</p>
+<p>Fromly works differently: you tell the central chat, the way you'd tell an assistant, and that's it.</p>
 
-<div class="callout"><p>Fromly understands natural language dates as you type — no menus, no clicks, no extra steps. Write "meeting with Ana on Monday" and the date is set. Done.</p></div>
+<h2>Fromly understands what you write</h2>
 
-<h2>How Fromly reads your words</h2>
+<p>When you write <strong>"meeting with Ana on Monday"</strong> in Fromly's chat, the AI automatically detects the implied date, creates the task, and classifies it into the right context. No date picker. No menu. No extra steps.</p>
 
-<p>When you type a note or task in Fromly, it doesn't just store text. It reads it. Expressions like "next Tuesday," "tomorrow morning," "in two weeks," or "end of the month" are parsed automatically and converted into a real scheduled date on your task.</p>
-
-<p>You don't trigger anything. You don't press a shortcut or wait for a suggestion. Fromly detects the date reference as part of understanding what you wrote, and sets it silently in the background.</p>
-
-<div class="img-block"><img src="/img/screenshots/detalle-tareas.png" alt="Task detail in Fromly showing scheduled date"><p class="img-caption">Fromly sets the date from the text — no picker needed.</p></div>
-
-<p>This works across a wide range of formats:</p>
+<p>The same happens with expressions like:</p>
 
 <ul>
-  <li><strong>"Send the report by Friday"</strong> → scheduled for this Friday</li>
-  <li><strong>"Call the accountant next Monday"</strong> → scheduled for next Monday</li>
-  <li><strong>"Review the contract in 3 days"</strong> → scheduled 3 days from now</li>
-  <li><strong>"Team meeting on June 12"</strong> → scheduled for June 12</li>
-  <li><strong>"Dentist appointment tomorrow at 10"</strong> → scheduled for tomorrow</li>
+  <li><strong>"call Pedro next Tuesday"</strong> → date set for next Tuesday</li>
+  <li><strong>"submit the report on Friday"</strong> → due Friday</li>
+  <li><strong>"review the proposal tomorrow"</strong> → date set for tomorrow</li>
+  <li><strong>"doctor's appointment in two weeks"</strong> → calculated from today</li>
 </ul>
 
-<p>No special syntax. No tags. No brackets. Just write like you normally would, and Fromly handles the rest.</p>
+<p>Fromly understands natural language and turns it into structured data. You don't need to learn any special format or cryptic keyboard shortcuts.</p>
 
-<h2>Why this matters more than it seems</h2>
+<div class="img-block">
+  <img src="/img/blog/tareas-fecha-natural/01-fecha-natural-chip.png" alt="Fromly chat detecting date and time in natural language: Tuesday at 9:00">
+  <p class="img-caption">Fromly detects the date in the text and sets it without interrupting your flow</p>
+</div>
 
-<p>Most productivity tools separate two things that naturally go together: what you need to do, and when. You write the task, then you schedule it. That's two steps, two modes, two moments of friction.</p>
+<h2>Why this changes the workflow</h2>
 
-<p>Fromly treats the date as part of the task description — because in natural language, it always is. "Meeting with Ana on Monday" is one thought. Fromly captures it as one action.</p>
+<p>Friction in task capture has a real cost: when adding something is cumbersome, you simply don't add it. You rely on memory, remember too late, or end up with a messy capture system.</p>
 
-<p>This is especially useful when you're capturing fast: during a call, after a quick conversation, while reviewing your inbox. You don't want to slow down to fiddle with a calendar widget. You want to get the thought out and move on.</p>
+<p>Fromly removes that friction at the most critical point: the moment you think of something and want to record it. You can write exactly what's on your mind, in natural language, in the same chat you use for everything else, and Fromly takes care of extracting the date, creating the task, and classifying it into its context.</p>
 
-<div class="img-block"><img src="/img/screenshots/planificador.png" alt="Fromly planner showing tasks with dates"><p class="img-caption">Tasks appear in the planner automatically once a date is set from your text.</p></div>
+<div class="callout">
+  <p>Perfect capture is capture that doesn't interrupt your thinking. If you have to stop to operate an interface, you've already lost some of what you were about to write.</p>
+</div>
 
-<h2>What happens after the date is set</h2>
+<h2>How it works in practice</h2>
 
-<p>Once Fromly reads the date from your text, the task flows naturally into the rest of the system. It appears in the planner on the right day. It shows up in your agenda view. It's filterable by date. Nothing extra needed from you.</p>
-
-<p>If you wrote "meeting with Ana on Monday," that task will be waiting for you on Monday — not floating in some unscheduled backlog. Fromly took care of placing it where it belongs.</p>
-
-<p>The planner in Fromly gives you a day-by-day view of everything scheduled. Tasks that came in through natural language sit alongside tasks scheduled manually — they're identical to the system. The only difference is how little effort it took to create them.</p>
-
-<h3>What about ambiguous dates?</h3>
-
-<p>Fromly makes reasonable assumptions based on context. "Friday" means this coming Friday, not the one three weeks out. "Next Monday" means the Monday of next week, not this one. These are the same assumptions a human assistant would make.</p>
-
-<p>If you need to adjust, you can. Tap the task, change the date. But in practice, Fromly gets it right the vast majority of the time — because it's applying the same logic you'd apply if someone asked you what "next Monday" means.</p>
-
-<h2>Using it in practice</h2>
-
-<p>The best way to get value from this feature is to stop thinking about it as a feature. Just write your tasks naturally, the way you'd describe them to someone. Don't change your language to fit the tool — let the tool fit your language.</p>
+<p>There's nothing to configure. You write in the chat as usual, and Fromly detects time references automatically. The process is this:</p>
 
 <ol>
-  <li>Capture the task as a full sentence: <em>"Send invoice to client by Thursday"</em></li>
-  <li>Fromly reads it and schedules it for Thursday</li>
-  <li>It appears in your planner on Thursday</li>
-  <li>You move on</li>
+  <li>You write your task or note in natural language in the chat</li>
+  <li>Fromly identifies the date expression in the text</li>
+  <li>The date is set and the task classified into its context</li>
+  <li>The task shows up in the Today tab or on the right day in the agenda</li>
 </ol>
 
-<p>That's it. No extra steps. No switching contexts. The capture is the scheduling.</p>
+<p>Once a task has a date, Fromly folds it automatically into the time-based views. If you said "on Monday," it'll show up in your Monday view without you having to do anything else.</p>
 
-<div class="callout"><p>The fastest way to schedule a task is to write it the way you'd say it out loud. Fromly does the translation from language to date automatically.</p></div>
+<div class="img-block">
+  <img src="/img/blog/tareas-fecha-natural/02-evento-detectado.png" alt="Fromly chat detecting an event with date and time: Meeting on Monday at 10:00">
+  <p class="img-caption">Tasks with dates show up automatically in the planner on the right day</p>
+</div>
 
-<h2>Conclusion</h2>
+<h2>Expressions Fromly recognizes</h2>
 
-<p>Date pickers exist because most tools can't read. Fromly can. When you write "call Ana on Monday," that's already complete information — and Fromly treats it that way. The result is a capture flow that's genuinely fast, low-friction, and built around how you actually think.</p>
+<p>Fromly handles both relative and absolute dates. Some examples of what it detects:</p>
+
+<ul>
+  <li><strong>Days of the week:</strong> "on Monday," "next Thursday," "this Friday"</li>
+  <li><strong>Relative references:</strong> "tomorrow," "the day after tomorrow," "in three days"</li>
+  <li><strong>Weeks:</strong> "next week," "in two weeks"</li>
+  <li><strong>Specific dates:</strong> "June 15," "July 3"</li>
+  <li><strong>Periods:</strong> "end of the month," "early next week"</li>
+</ul>
+
+<p>You don't have to memorize a list of commands. If the expression makes sense in plain English, Fromly understands it.</p>
+
+<h2>What you'll never have to do again</h2>
+
+<p>With Fromly, these everyday frictions disappear:</p>
+
+<ul>
+  <li>Opening date pickers with your mouse</li>
+  <li>Navigating a calendar to find the right day</li>
+  <li>Writing the task and then going back to edit it just to add the date separately</li>
+  <li>Using the rigid date formats stricter systems demand</li>
+</ul>
+
+<p>The result is that capturing a task with a date is exactly as fast as writing a free-form note in the chat. There's no penalty for adding structure — and once it has a date, you can drag it straight into the Planner if you want to reorganize your day.</p>
+
+<div class="img-block">
+  <img src="/img/screenshots/filtro-pendiente.png" alt="Today tab with pending tasks with dates in Fromly">
+  <p class="img-caption">The Today tab and the Agenda automatically show tasks by their assigned date</p>
+</div>
+
+<h2>A system that doesn't get in your way</h2>
+
+<p>Most productivity tools ask you to adapt how you think to their model. Fromly does the opposite: it detects the structure in what you already write naturally in the chat.</p>
+
+<p>When a tool stops getting in your way, you use it more and better. Tasks get captured the moment they come up, with complete information, and they show up where they belong when the time comes.</p>
+
+<p>Write the way you think. Fromly handles the rest.</p>
   <div class="cta-box">
     <h3>Try Fromly for free</h3>
     <p>Start in 60 seconds. No credit card required.</p>

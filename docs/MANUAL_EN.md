@@ -1,44 +1,98 @@
-# Fromly — User manual v9.6.789
+# Fromly — User Manual
 
-> Web · Mac · iPhone · fromly.app · Last updated: July 10, 2026
+> Web · Mac · iPhone · fromly.app · Last updated: July 14, 2026
 
 ---
 
 ## Fromly 2.0 — what you see when you open it today
 
-Since July 2026, **Fromly opens in the chat by default** (Fromly 2.0), not the canvas. The
-classic view (the infinite canvas described in the rest of this manual) is still available at
-[fromly.app/v1](https://fromly.app/v1) if you prefer it — the data model is the same (nodes,
-tasks, contexts, resources), only the interface changes.
+Since July 2026, **Fromly opens in the chat by default** (Fromly 2.0). This manual documents that
+experience, which is what you'll see by default on web, Mac and iPhone. If you prefer the classic
+tree-and-infinite-canvas model (Fromly 1.0), it's still available at
+[fromly.app/v1](https://fromly.app/v1) — the data model is the same (nodes, tasks, contexts,
+resources), only the interface changes. At the end of this manual there's a short appendix on that
+classic view.
 
-Fromly 2.0 has **three columns**:
+When you open Fromly you have **three columns**:
 
-- **Left — Contexts**: your areas and projects, in a hierarchy. Click one to focus the
-  conversation on it; hover for **＋** to start a new conversation inside that context.
+- **Left — Contexts**: your Areas (always active, e.g. "Work", "Personal") and Projects
+  (subcontexts that open and close), in a hierarchy. Click one to focus the conversation on it.
 - **Center — the chat**: your main way of working. Type what you need in plain language —
   "remind me to call Ana on Monday", "summarize my day", "search my notes about X" — and the AI
-  creates tasks, notes and events or answers using what you've already saved. Drag a PDF, an
-  image or a text file straight into the chat to bring it into the conversation.
-- **Right — five modes** (tabs at the top): **Context** (what the AI knows about this topic +
-  its tasks and elements), **Elements** (search across all your content), **History** (your past
-  conversations, click to resume), **Today** (your day's agenda) and **Agenda** (any day on the
-  calendar, same view as Today).
+  creates tasks, notes and events, dates them, files them in their context, or answers with what
+  you've already saved. Drag a PDF, an image or a file straight into the chat to bring it into the
+  conversation.
+- **Right — five tabs**: **Context** (what Fromly knows about this topic, plus its tasks and
+  elements), **Elements** (search across everything you've saved), **History** (your past
+  conversations), **Today** (your day's agenda, draggable into the Planner) and **Agenda** (any
+  day, yearly calendar).
 
-**Files and RAG.** When you upload a file to a conversation, Fromly indexes it: you can ask
-about its content at any later point, not just right after uploading. PDFs open with a real
-viewer (text highlighting + region crop as an image).
+**Files and RAG.** When you upload a file, Fromly indexes it: you can ask about its content at any
+time, not just right after uploading. PDFs open with a real viewer (text highlighting + region
+crop as an image).
 
-**First time.** A guided 6-step tour appears automatically the first time you open it, walking
-through these same pieces. You can skip it or revisit it later by clearing your browser's
-localStorage.
+**First time.** A guided 6-step tour appears automatically the first time you open it, explaining
+these same pieces. You can skip it, or revisit it later by clearing your browser's localStorage if
+you ever want to go through it again.
+
+---
+
+## What's new (July 2026, Fromly 2.0)
+
+- **Files and PDFs**: drag a PDF or image anywhere (chat or the contexts column) — if you have a
+  conversation open it's added to it, otherwise it's imported directly. PDFs open with a real
+  viewer: you can **select text and highlight it** (the highlight shows in yellow right on the
+  page) and **crop any region as an image** with the crop tool in the toolbar. Every PDF shows a
+  thumbnail of its first page. You can **remove a file from a conversation** without deleting it —
+  it stays saved and searchable.
+- **Claude connector (MCP)**: Claude can search, create, edit, **delete and move** your notes,
+  upload real files and run batch cleanups. Notes Claude creates are normal documents (not bullet
+  lists).
+- **Agenda = Today**: opening any day from the yearly calendar shows exactly the same view as the
+  "Today" column (events, to-dos, follow-up, to be scheduled), with direct "+" buttons on each
+  block to create an event or task for that day.
+- **"Notes" in any context, conversation or task**: a full note editor (the same one you use for
+  any note — formatting, favorite, export, publish) to jot down whatever you want, separate from
+  that place's tasks and elements. Note and Canvas are two separate types from the moment you
+  create them ("+Note"/"+Canvas" in the chat header) — one no longer turns into the other
+  afterward.
+- **Parent context**: you can assign or change any context's parent context directly from the
+  right column.
+- **A more compact "Today" column**: each task on a single line, with time, date (colored by
+  whether it's overdue, today, or upcoming) and repeat chips, plus its context alongside.
+- **Context on every element**: always visible and editable — note, task, PDF, image or link —
+  with a chip and a button to change it, and a click to jump straight to that context.
+- A cleaner **global History**: lists your conversations and elements so you can jump to anywhere
+  quickly; one-off quick commands ("create a task for me…") no longer clutter it.
+- **Agents and Prompts, now in any context**: you can create an Agent (an automation that runs on
+  its own in the cloud every day) or a Prompt (a reusable instruction template) hanging off any
+  context or project, just like a note or a task — ask the AI for it in chat ("I want a daily
+  report on X") or create it with the corresponding button. They start disabled until you review
+  and enable the prompt yourself. They appear alongside the rest of the context's elements, with
+  their own icon.
+- **Prompts in the chat**: the "⚡ Prompt" button in the header lists your saved templates —
+  picking one sends it directly, with its variables already filled in.
+- **Voice dictation in the chat**: the microphone next to the text field transcribes live what you
+  say (shortcut Alt+Space) — different from "Record audio", which saves a separate voice note.
+- **Elements: Conversations and Canvases, separately**: conversations now show up as an element in
+  their own right (with their own filter), and canvases have their own filter with real visual
+  thumbnails of each drawing, instead of being listed as text.
+- **A new context already knows what it's about**: when you ask the AI to create a context for
+  something specific ("I want to track the daily market analysis"), the first conversation you
+  open there picks up naturally right away — it used to start with a generic greeting.
 
 ---
 
 ## 1. What is Fromly?
 
-Fromly is your second brain. A notes, tasks and personal knowledge-management app that organizes everything you think, do and want to remember into a single hierarchical tree, available on any device and with built-in AI that genuinely knows your information.
+Fromly is your personal second brain, chat-first: you write in plain language, the way you'd talk
+to a trusted assistant, and Fromly creates, files and remembers things for you. No need to
+navigate a folder tree or learn a special syntax — the chat box in the center is the door to
+everything.
 
-It exists for the person who has too many things on their mind, too many apps to manage them, and doesn't want to spend hours configuring complex systems. In Fromly, you capture, organize and act from a single place.
+It exists for people who have too much on their mind, too many apps to manage it all, and don't
+want to spend hours setting up complex systems. In Fromly, you capture, organize and act from a
+single conversation, available on Web, Mac and iPhone with the same account.
 
 ---
 
@@ -52,1230 +106,390 @@ Go to [fromly.app](https://fromly.app) and press **Create account**. You can sig
 - Google account
 - Apple ID
 
-With the same account you sign in from the browser, Mac and iPhone. Everything syncs **in real time**: start an idea on your phone and it appears instantly on your computer. Sync records every change as an operation, so it never loses or deletes anything by mistake — including whatever you create from Claude or your agents, which also shows up instantly.
+With the same account you sign in from the browser, Mac and iPhone. Everything syncs **in real
+time**: start an idea on your phone and it appears instantly on your computer. Sync records every
+change as an operation, so it never loses or deletes anything by mistake — including whatever you
+create from Claude or your agents, which also shows up instantly.
 
 ### Access from the browser
 
 Go to [fromly.app/app](https://fromly.app/app) from any modern browser. Nothing to install.
 
-You can also install it as a lightweight desktop app: in Chrome or Edge, press the install icon in the address bar. In Safari on iOS: Share → "Add to Home Screen".
+You can also install it as a lightweight desktop app: in Chrome or Edge, press the install icon in
+the address bar. In Safari on iOS: Share → "Add to Home Screen".
 
 ### Install on Mac
 
 1. Go to [fromly.app](https://fromly.app) and download the `From.dmg` file.
 2. Open the DMG and drag the Fromly icon into the **Applications** folder.
 3. Open Fromly from Launchpad or the Applications folder.
-4. If macOS warns it can't verify the developer, go to **System Settings → Privacy & Security** and press "Open anyway".
+4. If macOS warns it can't verify the developer, go to **System Settings → Privacy & Security**
+   and press "Open anyway".
 5. Sign in with your account.
 
-**Automatic updates:** when a new version is available, `✦ New version — Update` appears in Fromly's bottom bar. One click installs the update without leaving the app. No need to download anything manually.
+**Automatic updates:** when a new version is available, `✦ New version — Update` appears in
+Fromly's bottom bar. One click installs the update without leaving the app. No need to download
+anything manually.
 
 ### Install on iPhone
 
-Search for **Fromly — Notes and PKM** in the App Store, or go to [fromly.app/ios](https://fromly.app/ios). Install the app and sign in with the same account. Your notes appear within seconds.
+Search for **Fromly — Notes and PKM** in the App Store, or go to
+[fromly.app/ios](https://fromly.app/ios). Install the app and sign in with the same account. Your
+notes appear within seconds.
 
 ### First launch: what you see
 
-When you first open Fromly you find:
+The first time you open Fromly you land directly in the chat, with the three columns described at
+the start of this manual (Contexts on the left, chat in the center, five tabs on the right). A
+**guided 6-step tour** points out each piece — you can skip it at any time.
 
-- **The main tree** in the center: your workspace. It shows the **Agenda** directly — the years (2026, 2027...) from which you navigate to months, days and notes.
-- **The left sidebar**: your saved panels and the list of contexts.
-- **The top bar**: navigation breadcrumb and controls for the view and the right panel.
-- **The right panel**: opens with Magic (AI), Filter, Planner, or the contents of a selected Context.
-
-To start: click the current year to see your notes for the month, or press `H` to jump straight to today.
-
----
-
-## 3. The tree — how Fromly works
-
-Everything in Fromly lives in a single tree. There are no folders, no files: every note, task, event or resource is a **node** that can contain other child nodes.
-
-### Everything is a node
-
-A project is a node. A task inside that project is a child node. A note documenting that project's meeting is another child node. Everything nested, everything visible, everything movable.
-
-### Creating nodes
-
-- **Enter**: creates a new sibling node below the current one. The cursor moves automatically to the new node.
-- **Click an empty area**: creates a node at the end of the level you click.
-
-To edit any node, click its text.
-
-### Indent and outdent
-
-- **Tab**: indents the current node, making it a child of the node above.
-- **Shift+Tab**: outdents the node, raising it one level in the hierarchy.
-
-Example: you have "Web project" and create "Meeting with designer" below it. If you press Tab on "Meeting with designer", it becomes a child of "Web project".
-
-### Collapse and expand
-
-Click the **▶** triangle to the left of a node to collapse its children. Click again to expand them. Nodes with children start collapsed by default to keep the tree clean.
-
-Slash menu shortcuts:
-
-- `/Expand all` — expands all descendants of the current node.
-- `/Collapse all` — collapses all descendants.
-
-### Reorganize with drag & drop
-
-Hover over any node and the drag handle `⋮⋮` appears on the left. Drag from that handle to:
-
-- Change the node's order among its siblings.
-- Move it inside another node (re-parent it).
-
-While dragging, a target line shows where the node will land when you drop it.
-
-### Multi-node selection
-
-Click and drag the cursor over several nodes to select them (selected nodes turn blue). With a selection active:
-
-- **Backspace / Delete** — deletes the selected nodes
-- **Escape** — cancels the selection
-- **⌘A** — selects all visible nodes
-
-### Zoom into a node
-
-Hover over any node and the **→** icon appears on its right. Click it to zoom in: that node becomes the visible root of the tree. Useful for working inside a project without the rest of the tree distracting you.
-
-The **navigation breadcrumb** in the top bar shows where you are and lets you return to any previous level with a click.
+No setup needed before you start: type your first message in the chat ("I need to prep for
+Thursday's meeting", "note that Marina arrives in Madrid on Friday"...) and Fromly creates the
+matching task or note, filed in its right context.
 
 ---
 
-## 4. Node types
+## 3. The chat — your way of working
 
-### Note (default)
+The central chat is where you spend most of your time in Fromly. There's no syntax to learn: you
+write the way you think.
 
-Any node without a special type is a note. Write free text with inline Markdown formatting:
+### What you can ask it
 
-| Format | Syntax |
-|---|---|
-| **Bold** | `**text**` |
-| *Italic* | `*text*` |
-| `Code` | `` `text` `` |
-| ~~Strikethrough~~ | `~~text~~` |
-| [Link](url) | `[text](url)` |
+- **Create**: "remind me to call Ana on Monday", "note that project X is delayed a week", "create
+  an event with Marina Friday at 6pm". Fromly creates the matching task, note or event, dates it
+  if you mention one, and files it in its context.
+- **Recall and search**: "what tasks do I have pending today?", "search my notes for everything
+  related to project X", "summarize my day". Fromly answers with what you've already saved.
+- **Attach content**: drag a PDF, an image or a text file straight into the chat — it's added to
+  the conversation and indexed so you can ask about its content whenever you want (see "Files and
+  RAG" below).
 
-Notes can also have a **body**: long, multi-line content with full Markdown. When you select a note, its body appears in the right panel where you can edit it freely. Useful for developing ideas, documenting projects or storing long notes.
+### The chat header
 
-**Text blocks** (from the slash menu):
+At the top of the chat you have quick buttons always at hand:
 
-- **Heading** (H1, H2, H3): headers to structure content.
-- **List**: an item with a visual dash and extra indentation.
-- **Quote**: block with a left side bar.
-- **Code**: block with a monospaced font and a distinct background.
-- **Divider**: a horizontal line to split sections.
+- **+Note** — creates a new document (rich-text editor).
+- **+Canvas** — creates a drawing canvas inside the active context.
+- **+Task** — creates a task directly, without going through the chat.
+- **+Event** — creates an event with a date and time.
+- **Planner** — opens the calendar view (day/week/month/year) in the right column.
+- **Record** — opens the audio recorder (see "Voice note" in the element types section).
+- **⚡ Prompt** — expands your saved templates; picking one sends it directly to the chat, with
+  its variables already resolved.
 
-**Markdown shortcuts while typing:**
+### Voice dictation
 
-- Type `# ` at the start → H1 Heading
-- Type `## ` → H2 Heading
-- Type `### ` → H3 Heading
-- Type `- ` → List-style bullet
+The microphone icon next to the text field transcribes live what you say as you speak (shortcut
+**Alt+Space**). It's different from the **Record** button: dictation writes directly into the
+chat, while Record saves a separate voice note with its own transcription.
+
+### Files and RAG
+
+Everything you upload or write in Fromly gets indexed automatically (semantic embeddings on
+Postgres). That means you can ask Fromly about the content of a PDF or a note at any time — not
+just right after uploading it, the way you would in a regular chat with temporary attachments.
+PDFs, on top of that, open with a real viewer where you can highlight text and crop any region as
+an image.
+
+---
+
+## 4. Contexts — Areas and Projects
+
+Contexts are how Fromly organizes your life: every note, task or event belongs to a **single
+context**. The left column shows your context tree.
+
+### Areas and Projects
+
+- **Areas**: top-level contexts, always active (e.g. "Work", "Personal", "Family"). They're the
+  big drawers of your life.
+- **Projects**: subcontexts within an Area, meant for things that **open and close** (a launch, a
+  move, a trip). You can archive them when they're done without losing their content.
+
+Click any context in the left column to focus the conversation on it — the chat, the Context tab
+and the Elements tab all switch to show what's related to that context.
+
+### Assigning a context
+
+Every note or task has a single context, and you can assign it in two equivalent ways:
+
+- **`#` in the chat or in an element's title**: type `#` and a picker appears; confirm to assign
+  it (or create a new one if it doesn't exist yet).
+- **The context chip** on any element's card: if it has no context you'll see an indicator to
+  assign one; if it already has one, the chip shows its name and lets you change it with a click.
+  The same chip takes you straight to that context.
+
+When you create something from the chat in plain language, Fromly picks the most fitting context
+on its own based on what you write — you can always correct it later with the chip.
+
+### Parent context
+
+You can assign or change any context's parent context directly from the right column, to
+reorganize your Areas-and-Projects hierarchy without losing anything.
+
+### "What Fromly knows" — each context's memory
+
+Every context builds up its own memory: a living document, "What Fromly knows", that updates
+itself as you save relevant things there. No need to tell it separately — Fromly decides whether
+something is significant enough to remember and how to fold it in (it can rewrite or merge
+existing information, not just append to the end). Open the **Context** tab of any conversation to
+see it.
+
+---
+
+## 5. The right column — five tabs
+
+The right column changes content depending on the tab you pick at the top:
+
+- **Context** — what Fromly knows about the topic you're working on ("What Fromly knows"), plus
+  the tasks and elements hanging off that context.
+- **Elements** — the search across everything you've saved: notes, tasks, events, files, canvases,
+  conversations, agents and prompts. Filter by type, context, date or status, and switch between
+  list, table, kanban or calendar view (table/kanban/calendar views available on the Pro plan).
+- **History** — your past conversations; click to pick up any of them where you left off.
+- **Today** — your day's agenda: events, to-do tasks, follow-up items and what's still to be
+  scheduled. You can drag any task from here straight into the Planner to give it a time.
+- **Agenda** — the yearly calendar: navigate to any day and you'll see exactly the same view as
+  the Today tab, with "+" buttons to create events or tasks for that day.
+
+---
+
+## 6. Element types
+
+Within each context you can have different types of elements. They all share the same context
+chip (always visible and editable) and are indexed for chat and search.
+
+### Document
+
+A document is a rich-text note — the same Notion-style editor everywhere you write a long note:
+formatting, favorites, export and publish with a public URL. Create one with **+Note** in the chat
+header, or ask the AI ("write this down as a note for me"). Pasting long prose into a conversation
+can also turn into a document.
+
+### Canvas (Whiteboard)
+
+A canvas is a free drawing space inside a context — separate from a document from the moment you
+create it ("+Canvas" in the header); one doesn't turn into the other afterward. Useful for
+sketching, taking handwritten notes, or organizing ideas visually.
+
+**Basic tools:** pencil, shapes (line, arrow, rectangle, ellipse), free text, eraser and selection
+— with a color palette and several stroke widths. What you draw or write syncs across your
+devices, including the iPad.
+
+**Every day is also its own canvas.** Inside the Planner and the Agenda, each day has its own
+blank space where you can write or draw directly on that day, alongside its tasks and events.
 
 ### Task
 
-Tasks have a ☐/☑ checkbox to the left of the text. Marking it done archives the task and updates its status.
+Tasks have a ☐/☑ checkbox. Check it off to archive it and update its status.
 
-**How to create a task:**
-
-- Type `/task` in the slash menu.
-- Type `[ ] ` at the start of the node's text.
-- Type `[x] ` to create a task already marked done.
-- Use the `⌘Enter` shortcut on a node to turn it into a task.
-
-When you turn a node into a task (with `-t` + Enter or `⌘Enter`), an empty sibling node is always created below so you can keep writing without interruptions.
+**How to create a task:** with the **+Task** button in the chat header, or by asking the AI in
+plain language ("remind me to call Ana on Monday"). Fromly reads the date, priority and context
+straight out of what you write.
 
 **Task properties (right panel):**
 
-- **Status**: To do / In progress / Done / Overdue.
-- **Due date**: set it by typing in the date field with natural language. Fromly automatically detects expressions like:
-  - `today`, `tomorrow`, `the day after tomorrow`
-  - `on Monday`, `next Friday`
-  - `in 3 days`, `in 2 weeks`
-  - `June 15`, `06/15`
-  - As you type, gray ghost text shows the interpreted date. Press `Tab` to accept it.
-- **Priority**: high, medium or low. Appears as a badge next to the text.
-- **Repeat**: daily, weekly, monthly or custom (every N days/weeks/months/years).
+- **Status**: Pending / In progress / Done / Overdue.
+- **Due date**: write it in plain language (`today`, `tomorrow`, `next Friday`, `in 3 days`, `June
+  15`) and Fromly parses the date.
+- **Priority**: high, medium or low.
+- **Repeat**: daily, weekly, monthly, or custom (every N days/weeks/months/years).
 
-**Mark as done:** click the checkbox. To uncheck it, click again.
-
-**Expand a task:** when you discover a task is bigger than you thought and needs sub-tasks or notes, use `/Expand` from the slash menu. The task becomes a container that can have children.
-
-### Custom properties
-
-Beyond Status, Date and Priority, **any node can have custom properties**: text, number, list (select), checkbox, date, link or tag. They live in two places at once:
-
-- **In a container's table**, each property is a **column**. Use the header **＋** to add one; tap/long-press a header to rename it, change its type or sort by it.
-- **In a node's detail** (the «Properties» section), you see and edit that node's values and, with **＋**, add a property that also appears as a column in the container's table — and vice versa.
-
-It works the same on iPhone and iPad: open a node and you'll see its «Properties» section under the title; list (select) values show their label with a colored dot.
+**Undated tasks — follow-up.** There's no separate type for "things you have in progress": it's
+simply a task with no date. It stays visible in the **"Follow-up"** section of the Today tab until
+you mark it done or give it a date. That section starts collapsed with a counter, since there tend
+to be a lot of them.
 
 ### Event
 
-Events have a start time and an end time. They appear in the Planner and in the Agenda view of the matching day. If you have Google Calendar connected, events sync automatically in both directions.
+Events have a start time and an end time. They show up in the Planner and in the Agenda for the
+corresponding day. If you have Google Calendar connected, they sync automatically in both
+directions.
 
-**How to create an event:**
+**How to create an event:** with the **+Event** button in the chat header, or by asking the AI
+("create an event with Marina on Friday at 6pm"). The creation modal lets you set a title, date
+(required), start and end time (optional — no time means an all-day event), and repeat.
 
-- Type `/event` in the slash menu.
-- Type `-e ` at the start of the text.
+**Editing an event (any device).** From the event's detail view you can adjust the start and end
+time and the location. If you have Google Calendar connected, saving creates or updates it there
+too, and "Delete event" removes it from Google Calendar as well.
 
-When you confirm the event type (with `-e` + Enter), an empty sibling node is created below so you can keep capturing.
+### Files: PDFs, images and others
 
-The event creation modal lets you:
+Drag a PDF, an image or a file straight into the chat or the contexts column. If you have a
+conversation open it's added to it; if not, it's imported directly.
 
-- Title the event.
-- Choose a date (required).
-- Add a start and end time (optional; without a time, it's an all-day event).
-- Enable repetition.
+**PDF with a real viewer:** opening a PDF lets you **select text and highlight it** (it shows in
+yellow right on the page) and **crop any region as an image** with the crop tool in the toolbar.
+Every PDF shows a thumbnail of its first page.
 
-**Edit an event (iPhone and iPad).** In an event node's detail (or via «Turn into event» from its menu) you can adjust the **start and end time** and the **place**. If Google Calendar is connected, saving **creates or updates** it there, and «Delete event» removes it from Google Calendar too.
+**Remove without deleting:** you can remove a file from a conversation without deleting it — it
+stays saved and searchable from the Elements tab.
 
-### Follow-up task (task without a date)
+### Voice note (Recorder)
 
-There's no separate type for "what you have in progress": it's simply a **task without a date**. A task with a date lands on its day; a task **without a date** is a **follow-up** and stays visible in the **«Follow-up»** section of the day panel until you mark it done or delete it. A normal checkbox, no type to decide.
+The **Record** button in the header opens the audio recorder, built for a meeting or a long voice
+note:
 
-- **Create:** a task you don't give a date to. It's already a follow-up.
-- **Close:** mark it done (its checkbox). To put it back into follow-up, add or remove its date from its triage menu.
-- The day's «Follow-up» section starts **collapsed with a counter** (there are usually many undated tasks); expand it whenever you want.
+1. Pressing **Record** starts recording: you'll see an animated icon, a timer, and — when the
+   browser supports it — a live transcription.
+2. When you finish, you'll see "Processing…" while Whisper transcribes the full audio.
+3. The result becomes a note with the transcription, ready for you to ask the chat to summarize it
+   or pull tasks out of it.
 
-> The old «loop» node type (⟲, open/close) was removed on web. This same follow-up task now
-> covers that need: something "in progress" with no date that you mark done once it resolves.
+### Conversations
 
-### Mirror ⬡
-
-A mirror is a synchronized reference to another node. It shows exactly the same content as the original. If you edit the mirror, you edit the original (and vice versa). If you edit the original, the mirror reflects the change immediately.
-
-**What a mirror is for:**
-
-- You want a task to appear in both "Work" and "Project X" without duplicating it.
-- You move a task to another day: the original node is left with an automatic mirror in its place so you don't lose track.
-- A resource or note that's relevant in several contexts.
-
-**How to create a mirror:**
-
-- Slash menu → `/Mirror` → a search box opens → select the node you want to mirror.
-- Right-click the node → "Create mirror".
-
-Mirrors are identified visually by the ⬡ icon next to the text.
-
-### Resource / Link
-
-A resource is a link to external content: an article, a YouTube video, a podcast, a web page. Fromly automatically extracts the title and content type when you paste it.
-
-**How to create a resource:**
-
-- Slash menu → `/Resource`.
-- **Paste a URL into an empty node**: Fromly detects it automatically, unfurls it (fetches the page's real title), and the node ends up with the web title and the link icon 🔗 in the bullet. The URL is preserved in the metadata even if you change the node's title.
-
-**Link node behavior:**
-
-- The bullet changes to a **chain icon** 🔗 (instead of the normal dot).
-- **Click the bullet** → navigates to the node's note in Fromly.
-- The inline **↗** button (next to the text) → opens the URL in your external browser.
-- When you edit the node's text, the URL is preserved even if you change the title.
-
-**Resource properties (right panel):**
-
-- Link URL.
-- Status: To do / Later / Done (to mark whether you've consumed it).
-- Type detected automatically (article, YouTube video, podcast...).
-
-Resources appear in the resources block of the daily Agenda so you remember what you have left to review.
-
-### PDF
-
-Drag any PDF file from your computer onto a node in Fromly. The PDF is uploaded to the cloud and becomes available on all your devices.
-
-**How to attach a PDF:**
-
-- Drag the `.pdf` file from Finder directly onto any node. A child node is created automatically with the file name and the **PDF** badge (red).
-
-**Viewer and annotations:**
-
-When you open a PDF node, the built-in viewer appears with a toolbar:
-
-| Tool | Function |
-|---|---|
-| ✏️ Pen | Freehand stroke. Pick color and thickness. |
-| 🖍 Highlighter | Semi-transparent yellow brush. |
-| T Text | Click on the PDF to insert floating text. |
-| ◻ Eraser | Removes annotations. |
-
-Annotations are saved in Fromly and are **permanently embedded** into the PDF on exit. If you open the PDF outside Fromly, the annotations are still there.
-
-### Whiteboard
-
-A whiteboard is a freehand SVG drawing canvas inside a node.
-
-**How to create a whiteboard:**
-
-- Slash menu → `/Whiteboard`.
-- Type `whiteboard` anywhere in a node's text: a confirmation ghost text appears. Press `Enter` to confirm.
-
-The whiteboard uses the same tools as the PDF viewer (pen, highlighter, text, eraser). Annotations are saved automatically.
-
-**Areas (canvas regions).** The **bookmark** button on the toolbar saves the visible region as an **area**: a named region shown as a **frame** on the canvas and listed in the day panel under **Areas**. Click its label to fly to that spot. Areas behave like any other node:
-- **They are containers**: cards inside the frame become **children** of the area (create one over a region with cards and they're collected automatically).
-- **Favorite ★ and rename**: star an area or rename it with a **double-click** in the Areas list. The list is **grouped by context** (with its color).
-- **Move the whole area**: drag the frame's **label** to move the region with **all its cards** inside.
-- **In/out**: drag a card **into** the frame and it belongs to the area; drag it out and it returns to the note.
-- **Safe delete**: deleting an area sends its cards **back to the note** (they're not trashed with it).
+Every conversation you have with the chat is itself an element: it shows up in the History tab so
+you can resume it, and also in Elements with its own filter, alongside notes, tasks and canvases.
 
 ### AI Agent
 
-An agent is a special node that runs an AI task autonomously. You define what it should do (prompt), when it triggers (schedule) and what actions it can take (create nodes, search, read your tree).
+An agent is an automation with its own instructions, sources and schedule, hanging off any context
+(not a single root). Create one by asking the AI in chat ("I want a daily report on X") or with
+the corresponding button in the context.
 
-**How to create an agent:** slash menu → `/Agent`.
+**They start disabled.** You have to review the generated prompt and turn it on yourself before it
+runs. The result of each run is a real document, hanging off the agent's context.
 
-**Use cases:**
+**Schedule:** on app open, daily, weekly, or manual (you run it yourself whenever you want with
+the ▶ button).
 
-- Summarize today's diary every night at 11:00 PM.
-- Extract tasks from a long note when you finish it.
-- Process the capture inbox and classify the items.
-- Search the internet and save the summary as a note.
+**Common use cases:**
 
-Agents are configured from the right panel: prompt, schedule (on app open / daily / weekly / specific time) and permissions.
+- Summarize today's daily note every night.
+- Pull tasks out of a long note when you finish it.
+- Search the web on a topic and save the summary as a note.
 
 ### Prompt
 
-A prompt is a reusable text template for the AI. Create it once and use it whenever you want to launch the same kind of instruction.
+A prompt is a reusable instruction template, with variables, that hangs off any context just like
+a note or a task. Create one by asking the AI or with the corresponding button in the context.
 
-**How to create a prompt:** slash menu → `/Prompt`.
+**How to use it:** the **⚡ Prompt** button in the chat header lists your saved templates; picking
+one resolves its variables (date, current context, etc.) and sends it right away.
 
-Useful for: "summarize this in 3 bullets", "extract the tasks", "translate to English", "improve the formal tone".
-
-### Log 🕐
-
-A log is a node with the **date and time in front of the text**, in a discreet chip (e.g. `Jun 10, 08:55`). It's for records: project progress, client follow-ups, a timestamped diary of facts.
-
-**How to create a log:**
-
-- Slash menu → `/Log`.
-- End the text with `-l` and press Enter.
-
-The date/time is stamped at the moment you create it and stays fixed in the chip (it isn't cleared when you edit the text).
-
-### Capture 🎬
-
-A **capture** is what you save when you **share a link or text to Fromly** from another app (see «Share to Fromly» below). It has its own icon and is **filterable**: the filter column has **«Captures»** to see them all. A capture of a video (TikTok, YouTube, Reel…) includes the clickable link, the author, a short description and the **transcription** of the audio under a «Transcription» heading.
+Handy for: "summarize this in 3 bullets", "extract the tasks", "make the tone more formal", a
+daily report with the same format every time.
 
 ---
 
-## Share to Fromly (iPhone)
-
-When you watch a video on social media and want to keep **what it says, not the video**: tap **Share → Fromly**.
-
-- A **capture** is saved in today's diary with the link, the author, an automatic title and summary (in the video's language) and the full **transcription**.
-- It happens **in the background**: the note appears instantly and the transcription fills in on its own within seconds. You don't have to wait.
-- Works with **TikTok, YouTube, Instagram, X and many more**. If you share a regular link or text, it's saved as-is (without transcribing).
-- **The first time**, enable Fromly in the share sheet: swipe the app row to the end → **More / Edit** → enable **Fromly**.
-- Transcription uses your **AI tokens** (Pro, Lifetime or trial plan).
-
----
-
-## 5. The Slash Menu — quick actions
-
-Type `/` in any node to open the quick-actions menu. You can keep typing to filter: `/ta` shows all options containing "ta".
-
-### Text
-
-| Action | Result |
-|---|---|
-| Text | Normal text node (default) |
-| List | Node with a visual dash and extra indentation |
-| Heading 1 | Large header (H1) |
-| Heading 2 | Medium header (H2) |
-| Heading 3 | Small header (H3) |
-| Quote | Quote block with a side bar |
-| Code | Code block with a monospaced font |
-| Divider | Horizontal dividing line |
-
-### Objects
-
-| Action | Result |
-|---|---|
-| Note | Turns the node into a note (base type) |
-| Task | Turns the node into a task with a checkbox |
-| Event | Turns the node into an event with a time |
-| Resource | Turns the node into a resource (external link) |
-| Expand | Turns a task into an expandable container |
-
-### AI
-
-| Action | Result |
-|---|---|
-| Agent | Creates an autonomous agent node |
-| Prompt | Creates a reusable prompt template |
-| Summarize | Summarizes the node's content and its children |
-| Find tasks | Extracts tasks from the node's text and creates them as children |
-
-### Views
-
-| Action | Result |
-|---|---|
-| Inline list | Shows the children in list (tree) view |
-| Inline table | Shows the children in table view with columns |
-| Inline kanban | Shows the children in a kanban board by status |
-| Inline calendar | Shows the children in calendar view |
-
-### Move to date
-
-Type `/move to Friday` or `/move to June 15` → the slash menu enters date mode with predictive ghost text showing the interpreted date. Press `Tab` or `Enter` to apply the date. The node moves to the indicated day in the Agenda and a mirror is left in the original position.
-
-You can also use the shortcuts:
-
-| Action | Result |
-|---|---|
-| Move to today | Moves the node to today in the Agenda |
-| Move to tomorrow | Moves the node to tomorrow |
-| Move to next week | Moves to the first day of next week |
-
-### Tree
-
-| Action | Result |
-|---|---|
-| Expand all | Expands all child nodes recursively |
-| Collapse all | Collapses all child nodes |
-| Count children | Shows how many descendants the node has |
-| Duplicate | Creates an exact copy of the node with all its children |
-| Mirror | Creates a mirror of this node somewhere else |
-
----
-
-## 6. Unified capture — Space and global search
-
-Pressing `Space` (with focus on the tree and no node being edited) or the `+` button opens the **unified capture modal**. This modal does everything in one place: creates nodes, searches, navigates and gives quick access to your usual starting points.
-
-### Empty view — quick access
-
-When it opens with no text, it shows four shortcuts:
-
-| Option | Action |
-|---|---|
-| **📅 Today** | Navigates to today's note |
-| **📅 Tomorrow** | Navigates to tomorrow's note |
-| **◈ Filters →** | Opens the list of your saved filters |
-| **🧠 Contexts →** | Opens the list of all your contexts |
-
-Nodes marked as **Favorites** also appear here for quick access.
-
-### Search with text
-
-Start typing and Fromly searches in real time:
-
-- **A note's name** → navigates directly to the node
-- **A context's name** (e.g. "work") → opens that context's filter + side panel
-- **"contexts"** → shows all contexts to select with ↑↓ and Enter
-- **"filters"** → shows all saved filters
-- **"today" / "tomorrow"** → quick access to those days
-- **Free text** → if there's no match, "Create: [your text]" appears to create a new node
-
-Search ignores accents and case.
-
-### Create with flags
-
-When creating any item, add flags at the end of the text:
-
-- `-t` → creates a task
-- `-e` → creates an event
-- `-f` → marks as favorite
-
-### Prediction ghost text
-
-While you type in the modal, ghost text may suggest dates, node types or contexts based on what you write. Press `Tab` to accept the suggestion.
-
-### Space activation rule
-
-- If the active input in the tree **is empty**: `Space` opens the capture modal.
-- If the active input **has text**: `Space` inserts a normal space.
-
-The `⌘K` shortcut is equivalent to `Space` and works as an always-available alternative, even when text is being edited.
-
----
-
-## 7. The Sidebar
-
-The sidebar is the left navigation panel. It has two main sections:
-
-### PANELS
-
-Your custom dynamic views. Each panel is a saved filter or a link to a specific node. They update automatically, always showing the current state.
-
-- **Reorder**: drag panels with the `⠿` handle that appears on hover.
-- **Delete**: `×` icon on hover.
-- **Create**: activate a filter with `⌘F` and press the 📊 icon in the results bar to save it as a panel.
-- **Select**: clicking a panel activates the filter in the central view. Escape deactivates it and returns to the agenda.
-
-### CONTEXTS
-
-A list of all your contexts, accessible with one click. Contexts are work tags that group related nodes across the tree.
-
-- **Click a context**: filters the central tree showing all nodes with that context, and opens the context content (editable) in the right panel.
-- **Chevron ›**: if a context has sub-contexts with content, you can expand them.
-- **+ button**: creates a new context directly from the sidebar. Type the name and press Enter.
-- **Escape**: deselects the active context and closes the right panel.
-
-### The ··· menu (top right)
-
-Access to system tools that don't live in the main tree:
-
-- **Agents** — your autonomous AI agents.
-- **Templates** — reusable templates.
-- **Trash** — deleted nodes. You can restore them (right-click → Restore) or delete them permanently.
-- **Settings** — account, AI, integrations, appearance, backup.
-- **Sign out**.
-
----
-
-## 8. The top bar and the right panel
-
-### Top bar
-
-The top bar always shows where you are and gives you access to the controls of the current view.
-
-- **Navigation breadcrumb**: shows the path from the root node to the current node. Each item is clickable to return to that level. Example: `Tree > Work > Web project > Meeting June 4`.
-- **View icons**: switch between list, table, kanban or calendar for the current node.
-- **Dark mode** (moon icon): toggles between light and dark theme.
-
-### Right panel — four modes
-
-The right panel is activated by the icons in the top-right bar:
-
-| Icon | Panel | Shortcut |
-|---|---|---|
-| ✦ | **Magic** — AI assistant with chat and voice | `M` |
-| ⌘F | **Filter** — smart filters with chips and results | `⌘F` |
-| P | **Planner** — daily timeline and year view | `P` |
-| (context) | **Context content** — appears when you click a context in the sidebar | — |
-
-Each mode takes over the right panel. To close the panel, press `Escape` or click the active icon again.
-
----
-
-## 9. The @ system — Contexts
-
-Contexts are tags that group related nodes beyond the tree's hierarchy. Imagine you have work projects spread across different branches: with the `@work` context you see them all together at once without reorganizing anything.
-
-### Assign a context to a node
-
-Type `@` in any node. The picker opens with the available contexts. Select the one you want to assign. The node is tagged with a visible purple chip next to the text.
-
-You can assign more than one context to the same node. It also works in unified capture (Space): type `@` and Fromly suggests contexts as ghost text.
-
-### Create and manage contexts
-
-**From the sidebar**: press `+` in the CONTEXTS section. Type the name and press Enter. The new context appears in the list and opens in the right panel ready to add content.
-
-**From the context itself (right panel)**: when you select a context, it opens as an editable outliner in the right column. Add children to describe the context, store instructions for the AI or create sub-sections.
-
-Contexts are special root nodes with `_tagDefinition` internally. They aren't system folders: they're normal tree nodes that Fromly assigns a tag function to.
-
-### Projects: contexts that open and close
-
-Inside a large context (an "area" like Media Sector) you can create **projects** — small subcontexts that start and finish. They're normal contexts, except they **open and close**.
-
-**Create and assign with `#`.** Type `#name` in any node or in quick capture:
-- If it doesn't exist, Fromly creates it. If you type `#name` alone (no other text), it takes you straight to the new context.
-- While you type the name (even without `#`), it appears as a suggestion (ghost text). Press `Enter` or `Tab` to assign it.
-- Assigning a project to a task doesn't move the task: it stays in your agenda and, at the same time, "enters" the project.
-
-**A project's page.** The center is a clean canvas for your notes, logs, tables, PDFs and images. In the right column:
-- **Status**: a **Close / Reopen** button (projects only; root areas are always active). A closed project disappears from suggestions but keeps everything.
-- **Parent context**: pick a context and this project becomes its subcontext.
-- **Contains**: everything assigned to it, with one click to open and an `×` to remove.
-
-**Context chips.** On any node, **click** a context chip to open it, or tap the **×** to remove it from that node.
-
-**In today's column** everything actionable lives in the **«To do»** block: today's and overdue tasks are grouped **under their context** (each with a dot in its color), and those without a context go at the end, under **«No context»**. The **Follow-up** block (undated tasks) sits below, collapsed.
-
-### Filter by context from the sidebar
-
-Click any context in the sidebar. The central tree filters to show all nodes with that context assigned, and the right panel shows the context content.
-
-Press **Escape** to deactivate the filter and return to the agenda.
-
-### Filter by @context in the filter field
-
-In the filter bar (`⌘F`), type `@work` (or your context's name) to see all nodes with that context assigned. On iOS, the purple context chips in the Explore tab do the same with a tap.
-
-### The AI Profile
-
-Inside the **AI Profile** context you can write personal information that the AI always loads: who you are, what you do, your active projects, communication preferences. The AI uses it automatically in every conversation without you having to repeat it.
-
-### Auto-classification with AI
-
-Fromly can automatically suggest the most appropriate context for each note or task.
-
-**Real-time badge:** when you create or edit a node without an assigned context, a small `✦ ContextName` badge appears next to the text. Click it to confirm the suggested context or pick another. Fromly learns from your corrections.
-
-**"Unclassified" filter:** in the context list a special **"Unclassified"** entry appears with the number of pending nodes. Clicking it filters the tree to show only those nodes.
-
-**Classify all at once:** under the "Unclassified" filter the **"✦ Classify all"** button appears. Press it to have Fromly analyze all historical nodes without a context in the background. Progress shows in a bar with "Classifying… X/Y". You can cancel at any time with the ✕ button.
-
-Classification uses AI (Claude Haiku) without consuming your plan's tokens.
-
-### Why use contexts
-
-Contexts let you cross the tree by dimension. Your work tasks are spread across projects in different branches, but with `@work` you see them all together. Without moving anything, without duplicating anything.
-
----
-
-## 10. Favorites
-
-Favorites are a quick bookmark for the nodes you use frequently.
-
-**Mark as favorite:** press `⌘⇧F` on any node to toggle favorite. The node is marked with a gold star.
-
-**Access favorites:** open unified capture (Space) without typing anything. Favorites appear in the **Favorites** section of the modal's empty state.
-
-**Filter favorites:** use the `favorite` operator in the filter field (`⌘F`) to see all your marked nodes.
-
-**Use on iOS:** in the Search tab, the empty state shows favorites directly for immediate access.
-
----
-
-## 11. The Agenda and the node system
-
-### The daily note is your command center
-
-When you open Fromly you land directly on **today's note** (not the root of the tree): it's the place you work from. If you navigate to another node and press **Escape**, you come back to today's note. The home button still takes you to the root of the tree whenever you want the structural view.
-
-### «Your day» — the snapshot of your day
-
-At the top of today's note appears the **«Your day»** block, which gathers at a glance everything that needs your attention. It can be collapsed and, if there's nothing, it isn't shown. Everything you see are links to your real notes: checking a task right there acts on the original node; clicking the text takes you to the note.
-
-- **To do** — your actionable items, grouped **under their context** (each with a dot in its color). Overdue tasks (their day in red) and today's tasks live here; the ones without a context go at the end under **«No context»**.
-- **Follow-up** — your **undated** tasks (what you have in progress); it starts collapsed with a counter.
-- **To plan** — undated tasks waiting for a date, collapsed by default.
-
-**Completing:** when you check a task, the check turns **green**, it gets struck through and slides with an animation to the end of its group — it stays visible until tomorrow, it doesn't vanish all at once.
-
-**Send to the planner:** drag any «Your day» row to the planner on the right to give it a time. The task stays in your list and gains a chip with the time.
-
-### The Agenda — main view
-
-Fromly's home view IS the Agenda. When you open the app you see the years directly (2026, 2027...). Navigating is as simple as expanding year → month → day.
-
-The Agenda organizes time in the hierarchy: **Year → Month → Day**. Each day has its own note with:
-
-- The tasks due that day (including overdue ones still pending).
-- The day's events (synced with Google Calendar if connected).
-- A free writing area for the day's notes, captures and ideas.
-
-**Go to today:** press `H` or the calendar icon in the top bar.
-
-**Navigate to another day:** expand the years/months/days tree. You can also navigate from the Planner (key `P`) by clicking any day in the Year view.
-
-**Move tasks to another day:** slash menu → `/Move to today`, `/Move to tomorrow` or `/Move to date...`. Fromly places the node on the target day and leaves a mirror at the origin.
-
-Nodes with pending tasks inside show the 📁 icon (live container) even when collapsed, indicating there's pending work inside.
-
-### System nodes (··· menu)
-
-The following items are system items, accessed from the `···` menu (top right):
-
-**🤖 Agents** — autonomous AI agents. When you open an agent the controls appear: Active/Paused toggle and a ▶ Run button.
-
-**📋 Templates** — reusable templates. To use one: slash menu → `/Template`.
-
-**🗑 Trash** — deleted nodes. The hierarchy is preserved.
-- Right-click → **Restore** — returns the node to its original location.
-- Right-click → **Delete permanently**.
-
-**⚙️ Settings**:
-- **Account**: email, password, current plan.
-- **AI**: active model, your own API keys (Pro/Lifetime), agent configuration.
-- **Predictions**: keywords to recognize tasks and events.
-- **Integrations**: Google Calendar, MCP connection with Claude.
-- **Data / Backup**: snapshots, restore, export JSON or Markdown.
-- **Appearance**: light/dark theme, density, accent color.
-
----
-
-## 12. Smart filters
-
-Filters let you see exactly what you need at any moment, without reorganizing the tree.
-
-Filters are **fully reactive in real time**: if you move a task to tomorrow, change its status or assign it a date, the filter updates instantly without refreshing. Nodes that stop matching the filter leave the result with a slide-out animation to the right.
-
-**Activate:** `⌘F` or the filter icon in the top bar (right panel).
-
-### Natural language
-
-You can write directly in natural language and Fromly translates your query into the technical operators automatically:
-
-- "today's and past tasks" → `task today or overdue`
-- "resources without a date" → `resource no-date`
-- "everything this week" → `week`
-- "pending favorites" → `favorite pending`
-
-Fromly uses AI (Haiku, free for all users) to interpret the query. It does not consume your plan's tokens.
-
-### Available operators
-
-| Operator | Shows |
-|---|---|
-| `today` | Nodes dated today or today's diary note |
-| `tomorrow` | Nodes dated tomorrow |
-| `week` | Nodes dated within the current week |
-| `month` | Nodes dated within the current month |
-| `past` | Nodes dated before today |
-| `future` | Nodes dated after today |
-| `no-date` | Nodes without an assigned due date |
-| `with-date` | Nodes with any date assigned |
-| `task` | All nodes that are tasks |
-| `pending` | Pending (uncompleted) tasks |
-| `done` | Completed tasks |
-| `overdue` | Tasks whose date has passed and aren't done |
-| `note` | All note-type nodes |
-| `event` | All events |
-| `resource` | All resources |
-| `file` | Nodes with attached files (PDF or others) |
-| `link` | Link/URL-type nodes |
-| `diary` | Diary-type nodes (day notes) |
-| `favorite` | Nodes marked as favorite |
-| `@context` | Nodes with that context assigned |
-| `#context` | Synonym for `@context` — same filter, alternate syntax |
-| `[[name]]` | Nodes that reference that node by name (wiki-link) |
-| `node:ID` | A specific node and all its descendants or references |
-
-**Combinations:** operators are combinable. Separate several operators with a space (implicit AND) or use `or` for OR:
-
-- `today pending` → pending tasks dated today.
-- `@work pending` → pending tasks in the work context.
-- `today pending @work` → pending tasks for today in the work context.
-- `overdue @personal` → overdue tasks in the personal context.
-- "today's or tomorrow's tasks" → `task today or task tomorrow`.
-
-Search ignores accents and case.
-
-### Filter from Magic Chat
-
-If you open Magic Chat and describe what you want to see ("show me overdue tasks", "filter by this week's resources"), Magic detects the intent and applies the filter directly without you having to open `⌘F` or type operators.
-
-### Suggestion chips
-
-Below the filter field, quick-access chips appear: **Today**, **Tasks**, **Pending**, **This week**, **Overdue**, **Events**. Click to activate them directly.
-
-### Result views
-
-Results can be shown in four modes. Switch with the bar icons:
-
-| View | When to use it |
-|---|---|
-| **List** | Inline-editable filtered tree. Standard view. |
-| **Table** | Columns with properties (status, date, priority). Ideal for many nodes with metadata. |
-| **Kanban** | Board with columns by status or priority. Drag & drop between columns. |
-| **Calendar** | Monthly view with nodes distributed by due date. |
-
-### Save a filter as a panel
-
-When you have a useful filter, save it to the sidebar with the 📊 button in the results bar. It appears in your panels and is available with one click from any view.
-
----
-
-## 13. Panels (📊)
-
-Panels are dynamic views pinned in the PANELS section of the sidebar. They update automatically whenever you open them. There are two types:
-
-**Node panel**: shows that node and all its descendants and references. Like zooming into that node but always accessible from the sidebar.
-
-**Filter panel**: the result of a saved filter. For example: "my tasks for today", "@work pending", "#reading". Each time you open it, it shows the current state.
-
-### How to create a panel
-
-**From an active filter:** with the filter on screen, press the 📊 icon in the results bar.
-
-**From a node:** right-click the node → "Add to panels". The panel shows that node and all its descendants together with any reference to the node.
-
-### Manage panels
-
-Hover over a panel in the PANELS section to see the action buttons:
-
-- **✏ Rename**: inline name editing. Enter confirms, Escape cancels.
-- **× Delete**: deletes the panel permanently.
-- **Reorder**: drag with the `⠿` handle.
-- **Activate**: clicking the panel applies it in the central tree. Escape deactivates it.
-
-Panels sync across all your devices.
-
----
-
-## 14. Inline views
-
-Any node that has children can show those children in four different display modes. Inline views don't change how data is stored, only how you see it.
-
-Activate the view from the slash menu (→ Views) or from the icons in the node's top bar.
-
-### List (default)
-
-The classic nested tree. Each child appears as a node with the ability to expand its own children. Inline editable.
-
-### Table
-
-Each child of the node is a row. The columns are the properties: status, due date, priority, and any custom column you create.
-
-**Custom columns:** click "+" in the table header to add a column. Available types: text, number, select, multi-select, date, checkbox, URL, tag, task, reminder.
-
-- Column headers are clickable to sort (ascending/descending/original).
-- You can rename, reorder and delete columns.
-- Columns are shared across all views of the same node (the table and the kanban see the same data).
-
-### Kanban
-
-Children appear as cards in columns. By default the columns are the statuses (To do, In progress, Done). You can group by:
-
-- Status
-- Priority
-- Any select-type column
-
-Drag cards between columns to update the value directly. Click "+" inside a column to create a new node with that status/value already assigned.
-
-### Calendar
-
-Children with a due date appear on the matching day of a monthly calendar. Click any day to create a new node with that date.
-
-### Multi-views: save more than one view per node
-
-You can create multiple views for the same node. Press the "+" next to the view tabs to add a new one. Each view independently saves its type, configuration and name. You can rename, duplicate and delete views.
-
----
-
-## 15. Magic — Fromly's intelligence
-
-Magic is Fromly's intelligence layer. The idea isn't "to have AI": it's for **Fromly to understand you**. You write the way you think and Fromly handles the rest — it understands what each thing is, orders it, remembers who you are and anticipates. All in the background, no menus, nothing for you to maintain. The goal is to remove the friction between what you think and what gets written down, and to do it fast.
-
-Magic has three faces:
-
-1. **It understands you as you write** — classifies, dates and detects the type of each note without you touching a menu (see below and section 9).
-2. **It remembers you** — builds a profile of you and per-context knowledge from what you write ("What Fromly knows").
-3. **It acts for you** — Magic Chat, recorder, scheduled agents.
-
-### How Fromly understands you — the intelligence layer
-
-**Automatic contexts with hierarchy.** As you write, Fromly classifies each note into the context it belongs to (work, family, a specific project), understanding the **hierarchy** of contexts and sub-contexts. A note about "La Isla" goes to "Work › La Isla", not to a flat tag. If a context that doesn't exist is needed, Fromly can create the sub-context in the right place. The context badge appears next to the node with the suggestion; one click confirms or changes it. Contexts and structural nodes (Agenda/Year/Month) never show a badge.
-
-**"What Fromly knows" per context.** Each context accumulates its own living knowledge, in three sections: **Keywords**, **People** and **Frequent topics**. Fromly extracts it only from the notes you classify there and keeps it up to date: when you add something new, it **merges** the new information with what was already there, without duplicating, instead of rewriting everything. The update is proactive (when classifying nodes) and it learns again if you keep editing an already-classified node. It only stores new information: if there's nothing to add, it touches nothing. You open a context and Fromly already knows what it's about.
-
-**Your profile — Fromly remembers you.** Fromly builds a profile of you from what you write: your projects, the stable people in your life, your long-term goals and assets. It filters the noise — **it only keeps what lasts**, not the day's tasks or temporary issues — and synthesizes instead of copying literally ("I'm getting married" → "Has marriage plans with their partner"). Learning is saved even if you leave the node, navigate to another page or the node is created by an agent. Open your profile from **CONTEXTS → My profile**.
-
-**Classify everything old.** In the contexts panel, under "Unclassified", the **"Classify all"** button processes all old nodes without a context at once, with a progress bar and the option to cancel.
-
-### Magic Chat — voice and text assistant
-
-Magic Chat knows your tree, your tasks, your contexts and your personal profile.
-
-**Open Magic:**
-- ✦ icon in the top-right bar
-- `M` key (with no active input)
-
-Type in the field and press Enter to send.
-
-**Record with voice:** hold `R` while you speak. On release, it transcribes and sends. The animated waveform shows it's listening.
-
-**Where Magic creates things:**
-- Reminders and generic tasks → go to **today's diary**
-- If you're in a project note and ask to add something related → goes to **that note**
-- If it's not the right destination: **"Move it to this note"** or **"Move it to today"** button next to Undo
-
-**Navigate directly:** say "show tomorrow's tasks" or "open the projects note" — Magic navigates directly with no intermediate text.
-
-### Prompts — conversation modes for Magic
-
-**Prompts** (⚡ icon in the top bar) are conversation modes you create that change how Magic replies to you. A prompt is a node: its **content is its children**, where you write the instructions (you edit it like any note).
-
-**Create and edit:** open the ⚡ Prompts panel, press "New prompt…" and write its instructions inside. Fromly ships two examples: **Daily diary** and **Brainstorming**.
-
-**Variables** (Fromly fills them in when you use the prompt): `{{date}}`, `{{name}}`, `{{current_context}}`, `{{today_notes}}`, `{{profile}}`. In the prompt's properties panel, clicking a variable inserts it where your cursor is.
-
-**How it activates in Magic (three ways):**
-- **Manual**: type `/` in Magic and choose the prompt; or the ✨ button on iPhone.
-- **Automatic by context**: in the prompt's properties you choose "activate in the daily note / in tasks / in a context". When you open Magic from there, it activates on its own (chip labeled "auto").
-- **Suggestion**: as you write, if the text matches a prompt, Magic activates it on its own. You can always remove it with the **×** on the chip.
-
-Example of the "Daily diary" prompt: when you open Magic from your note for today, Magic becomes your diary companion — it listens, replies calmly and, if you ask, summarizes your day.
-
-**What it can do:**
-- Create tasks, notes and events in your tree
-- Navigate directly to any note or diary day
-- Summarize the content of any node
-- Search for information in your notes
-- Organize, rewrite, prioritize
-- Apply filters directly by describing what you want to see
-- Run bulk actions
-
-**Automatic context:** the AI automatically loads:
-- The open node with its title, body and children.
-- Today's diary with your tasks and events.
-- Your pending tasks.
-- The active contexts (@) with their instructions.
-- Your AI profile.
-
-### Teaching Magic — continuous learning
-
-Magic learns from your corrections and adapts to you progressively.
-
-**How to teach:** right-click any node → **Teach Magic**. Options depend on the node:
-- "This isn't a task / event"
-- "This should be a task / event"
-- "The context is wrong"
-- "This interpretation is correct ✓"
-- Free field: "Magic, remember that..."
-
-**See what it learned:** Settings → Magic → "What Magic has learned about you" section. Edit or delete any item individually.
-
-### Ghost text — predictions while you write
-
-While you write in any node, Fromly shows suggestions in light gray (ghost text):
-
-- If it detects an **action verb** or an expression that sounds like a task → it suggests turning the node into a task. Press `Tab` to accept.
-- If it detects a **date in natural language** (`tomorrow`, `on Monday`, `June 15`) → it suggests that date as the due date. Press `Tab` to accept. Pressing `Enter` afterwards creates a sibling node below.
-- If the text looks like an **event** (time, meeting, call) → it suggests the event type.
-
-Customize which words trigger these suggestions in **Settings → Predictions**.
-
-### Variable codes in prompts
-
-Inside any agent or prompt you can use variables that Fromly resolves before sending to the AI:
-
-| Code | Replaced by |
-|---|---|
-| `{{date}}` | Full current date |
-| `{{short_date}}` | Date in short format (06/04/2026) |
-| `{{day}}` | Day name (Thursday) |
-| `{{week}}` | Week number of the year |
-| `{{month}}` | Month name |
-| `{{year}}` | Current year |
-| `{{time}}` | Current time |
-| `{{note}}` | Current node content |
-| `{{tag}}` | Current node's tags/contexts |
-
-To insert a code in the editor: type `{{` and a picker opens with all available variables.
-
-### Autonomous agents
-
-Agents are Agent-type nodes that run on a schedule or manually. They can read your tree, create notes, run internet searches and modify nodes.
-
-Agents are configured in their properties panel:
-
-- **Prompt**: what it should do.
-- **Schedule**: when it triggers (on app open, daily, weekly, specific time).
-- **Allowed actions**: create nodes, modify nodes, search the internet.
-
-**Agent examples:**
-
-- Every night at 11:30 PM: "Summarize today's diary in 3 key points and add them as children".
-- Every Monday: "List the coming week's tasks and create a summary in the Agenda".
-- On app open: "Show overdue tasks and ask what to do with each one".
-
----
-
-## 16. The Planner
-
-The Planner is Fromly's calendar view. Press `P` (with no active input) or the planner icon in the top bar to open and close it. It takes over the right panel.
+## 7. The Planner
+
+The Planner is Fromly's calendar view. Open it with the **Planner** button in the chat header — it
+takes over the right column, which stays pinned to the **Today** tab so you can drag tasks
+straight into the calendar while you plan.
 
 ### Four views: Day · Week · Month · Year
 
-**Day view**: today, full screen (a single column). An hours timeline with your tasks and events that have a specific time; the blocks show their start time and can be resized to adjust the duration.
+- **Day**: an hourly timeline with your timed tasks and events; blocks show their start time and
+  can be resized to adjust the duration.
+- **Week**: several days in columns. At the top, an "all day" strip for tasks with a date but no
+  time.
+- **Month**: the month grid, with each day's tasks and events.
+- **Year**: all 12 months in a grid. Days with content carry a dot; click any day to open its Day
+  view.
 
-**Week view**: several days in columns (between 2 and 7; drag the header to see more or fewer). The same hours timeline per column. At the top, an **"all day" strip** for tasks that have a date but no time: **click** the gap of a day to write a new task right there and press **Enter** (you can chain several in a row).
+**Tasks vs events at a glance:** tasks show with no fill (a thin border with a touch of color);
+Google events show with their background color.
 
-**Month view**: the month grid. Each day shows **all** of its tasks (rows grow taller if needed). **Clicking a task** takes you **to the task**; clicking an event opens its editor.
+### Giving a task a time
 
-**Year view**: the 12 months of the year in a grid. Days with tasks or events appear with a dot. Click any day to open its Day view.
+Drag any task from the **Today** tab onto the Planner's timeline to give it a time — the task
+stays in its context, it just gains a chip with the assigned time. You can also click an empty
+time slot to create a new task right there.
 
-> Only items with a **time** appear in the hours timeline. Tasks with a date but no time live in the **"all day" strip** (top) and in the «Your day» section of the daily note.
+### Google Calendar sync while planning
 
-**Tasks vs events at a glance**: **tasks** are shown **without a fill** (a thin border with a touch of color); **Google events** are shown **with their background color**.
+If you have Google Calendar connected, the Planner creates and updates events automatically:
 
-**Navigation**: ‹ › buttons to go forward or back. **Today** button to return to the current day.
+- **Giving a task a time** → creates an event in Google Calendar.
+- **Moving or resizing the block** → the Google Calendar event updates instantly.
+- **Removing the time** → the Google Calendar event is deleted.
 
-### Data model — the node never moves
-
-The Planner doesn't move or duplicate your tree nodes. **The node always stays in its original place in the tree.** Using the planner only assigns or changes the node's time.
-
-### Planning a task — assigning a time
-
-**From the tree to the timeline**: drag any node from the central tree onto the planner's timeline. It's assigned the time of the point where you drop it. The node stays in the same place in the tree — it has only gained a scheduled time.
-
-**From the tree to "All day"**: drag a node to the top strip to assign it only a date (no time). It appears in the all-day strip until you assign it a time.
-
-**From "All day" to the timeline**: drag an item from the all-day strip onto the timeline to assign it a specific time. From then on it appears in the hours grid.
-
-**Click an empty hour**: creates a new node directly at that time. Type the title and press Enter.
-
-**Resize**: drag the bottom edge of any block to change its duration.
-
-**Move a block**: drag the block to another time. The purple line indicates the block's real start while positioning it.
-
-### Google Calendar sync when planning
-
-If you have Google Calendar connected, the planner creates and updates events automatically:
-
-- **Assign a time** to a task → an event is created in Google Calendar.
-- **Move or resize** the block → the Google Calendar event updates instantly.
-- **Remove the time** (right-click → "Remove time") → the Google Calendar event is deleted.
-
-Google Calendar events are also shown in the planner with their original color and can be moved and resized directly from Fromly.
-
-### Right-click on a block
-
-- **Go to node** — navigates to the node in the tree.
-- **Remove time (→ all day)** — removes the time but keeps the date. The node returns to the all-day strip.
-- **Remove from planner** — removes the date and time entirely.
-- **Color** — changes the block's color in the planner.
-
-### Zoom
-
-- **Vertical zoom** (hours scale): drag the hours axis up to zoom in or down to zoom out. Also with Shift + mouse wheel.
-- **Horizontal zoom** (day columns): drag the day header to see more or fewer days at once (between 2 and 7).
-- **Reset zoom**: ↺ button in the planner bar.
-
-Press **Escape** to close the planner.
+Events that already exist in Google live only in Google (they're not copied as notes in Fromly):
+they show up in the Planner and the Agenda with their original color, and clicking one opens its
+editor with a **"➕ Create node in Fromly"** button — a note is only created if you press it.
 
 ---
 
-## 17. Google Calendar
+## 8. Google Calendar
 
 ### Connect
 
-Go to **Settings → Integrations → Google Calendar** and follow the authorization process. You only need to do it once.
+Go to **Settings → Integrations → Google Calendar** and follow the authorization flow. You only
+need to do it once.
 
 ### How it works
 
-- Your Google Calendar events appear in the Planner with each calendar's color.
-- Creating an event in Fromly also creates it in Google Calendar.
-- Editing or deleting an event works in both directions: what you change in Fromly is reflected in Google Calendar, and vice versa.
-- Your Google calendar colors are respected.
-- Sync takes your local time zone into account.
+- Your Google Calendar events show up in the Planner and the Agenda with each calendar's color.
+- Creating an event in Fromly creates it in Google Calendar too.
+- Editing or deleting an event works in both directions.
+- Sync accounts for your local timezone.
 
-### Events in the Agenda
-
-If you have Google Calendar connected, the day's events appear on the day node in the Agenda, next to your tasks. In the Planner, Google events are shown with their original color.
+Fromly syncs with **Google Calendar**, not Apple Calendar/EventKit.
 
 ---
 
-## 18. Moving nodes
+## 9. Share to Fromly (iPhone)
 
-There are several ways to move a node elsewhere:
+When you see a video on social media and want to keep **what it says, not the video itself**:
+press **Share → Fromly**.
 
-**Drag & drop:** drag from the `⋮⋮` handle (visible on hover) and drop on the destination.
-
-**Slash menu:**
-
-- `/Move to today` → moves to today's node in the Agenda.
-- `/Move to tomorrow` → moves to tomorrow's node.
-- `/Move to next week` → moves to the first day of next week.
-- `/Move to date…` → type any date in natural language with predictive ghost text.
-
-**Right-click → "Move to..."** → opens a search box to choose the destination.
-
-**Keyboard shortcuts:**
-
-- `⌘↑` / `⌘↓` → moves the node up or down among its siblings.
-
-When you move a node to another day, the node physically moves to the destination and the system creates mirrors automatically so you don't lose track:
-
-- At the **origin** a mirror of the moved node is left, with a visual reference to the destination day.
-- At the **destination**, mirrors of the original context are created so the node arrives with its context preserved.
-- Mirrors show the same icon as the original node with reduced opacity to distinguish them.
+- A **capture** is saved to today's note with the link, the author, an automatic title and summary
+  (in the video's language), and the full **transcript**.
+- It happens **in the background**: the note appears instantly and the transcript fills in on its
+  own within seconds. You don't have to wait.
+- Works with **TikTok, YouTube, Instagram, X and many more**. If you share a regular link or plain
+  text, it's saved as-is (no transcription).
+- **The first time**, enable Fromly in the share sheet: swipe the app row all the way → **More /
+  Edit** → turn on **Fromly**.
+- Transcription uses your **AI tokens** (Pro plan or trial).
 
 ---
 
-## 19. Fromly for iPhone
+## 10. Fromly for iPhone
 
-The iPhone app is available on the App Store. It's organized into five tabs accessible from the bottom bar:
+The iPhone app is available on the App Store with the same account as web and Mac. Everything you
+capture on iPhone shows up synced in real time on your other devices, and vice versa.
 
-### Tab 1 — Explore
+What you can count on today on iPhone:
 
-Quick filtering view by multi-select chips. Select combinations of chips to see exactly what you need:
+- **Notes, tasks and events**: creating, editing, marking done, assigning dates.
+- **Real-time sync** with the same account as web and Mac, sending only the changes (deltas), not
+  the whole database.
+- **Share to Fromly** from other apps (see previous section).
+- **Google Calendar**, if you have it connected.
 
-**Type:**
-- Note, Task, Event, File, Link
-
-**Date:**
-- Today, This week, This month, Past, Future
-
-**Status:**
-- Pending, Done, No date, Loop
-
-**Contexts** (purple chips): filter by the context assigned to each node.
-
-**Saved filters** (blue chips with 🔖): your custom filters saved from web or Mac, available with a tap.
-
-Below the chips the result appears with the number of nodes found and the full list. Tapping any result opens the **node detail view** (IOSNodeDetailView) with the "..." menu for actions: edit, move, mark done, etc.
-
-### Tab 2 — Search
-
-Real-time full-text search with keyboard auto-focus. Type any term and Fromly searches your whole tree instantly.
-
-The empty state (before typing) shows your **Favorites** for immediate access to the nodes you use most.
-
-### Tab 3 — Agenda
-
-Daily and weekly view with the day's tasks and events. Navigate between days with a swipe or the header controls.
-
-### Tab 4 — Planner
-
-Task planner with a timeline. Shows the day's tasks with and without a time, and lets you reorganize the day.
-
-### Tab 5 — Settings
-
-Account management, AI model, integrations (Google Calendar), appearance and import.
-
-### Sync
-
-Everything you capture on iPhone appears on web and Mac in real time. Changes travel only as deltas (only what changes, not the entire database).
+The iPhone app is in the process of gradually catching up to the web and Mac chat interface: if
+you're specifically looking for the three-column experience (Contexts / Chat / five tabs)
+described at the start of this manual, check in the app itself which parts are already available
+in your version before assuming it fully matches the web.
 
 ---
 
-## 20. Backup and privacy
+## 11. Connecting Claude (MCP)
 
-### Automatic backup on the server
-
-Fromly creates a full snapshot of your data on the server every 2 hours (only when there are changes). The last **12 snapshots** are kept (~24 hours of continuous history).
-
-You can create a manual snapshot whenever you want: **Settings → Data → Backups → "Create snapshot now"**.
-
-### Restore a backup
-
-In **Settings → Data → Backups**, choose any snapshot from the list and press "Restore". Before overwriting your data, the server automatically creates a safety snapshot (`pre-restore`) so you can undo if you make a mistake.
-
-### Export your data
-
-In **Settings → Export** you can download all your data at any time:
-
-- **JSON**: structured format with all metadata (for programmatic use or migrations).
-- **Markdown**: a folder of `.md` files, one per node with a body. Readable in any editor.
-
-Your data isn't locked into Fromly. The export is complete, unrestricted and works on the free plan.
-
-### Privacy
-
-- The AI only accesses content that's in the active conversation's context: the open node, its children and the contexts you have active. It doesn't scan the whole tree automatically.
-- The local backup on Mac is stored in `Application Support/Fromly/Backups/` on your own computer.
-
----
-
-## 21. Keyboard shortcuts
-
-| Action | Shortcut |
-|---|---|
-| Unified capture / global search | `Space` |
-| Global search (alternative) | `⌘K` |
-| New sibling node | `Enter` |
-| Indent node | `Tab` |
-| Outdent node | `Shift+Tab` |
-| Accept ghost text suggestion | `Tab` |
-| Dismiss ghost text suggestion | `Esc` |
-| Move node up among siblings | `⌘↑` |
-| Move node down among siblings | `⌘↓` |
-| Toggle node ↔ task | `⌘Enter` |
-| Toggle favorite | `⌘⇧F` |
-| Smart filter | `⌘F` |
-| Open/close planner | `P` |
-| Open/close Magic | `M` |
-| Record with voice in Magic (hold) | `R` |
-| Slash menu | `/` |
-| Go to today | `H` |
-| Deselect context / clear filter / close panel | `Escape` |
-| Bold | `⌘B` |
-| Italic | `⌘I` |
-| Undo | `⌘Z` |
-| Redo | `⌘⇧Z` |
-| Select all visible nodes | `⌘A` |
-
----
-
-## 22. Settings
-
-### Account
-
-- **Email**: read-only (changing it would break Google/Apple sign-in).
-- **Password**: you can change it (asks for the current one).
-- **Subscription**: your plan and, if you have an active subscription, renewal, «Cancel» and «Manage billing» (customer portal). On the free plan you'll only see «Upgrade»; on a lifetime license, nothing to manage.
-- **Delete account**: protected — asks to confirm with your password (or your email if you sign in with Google).
-
-### Language
-
-Fromly is available in **12 languages**: Spanish, English, German, French, Italian, Portuguese, Greek, Dutch, Polish, Russian, Turkish and Swedish. The language is detected automatically from your browser or operating system settings (English if yours isn't available — it never assumes Spanish).
-
-To change it manually: **Settings → 🌐 Language** and choose your language. The change applies immediately without reloading. Tooltips, help texts and field placeholders are also translated, and the AI and voice follow the same interface language.
-
-### Appearance
-
-- **Theme**: light or dark.
-- **Accent color**: 12 colors for the interface (purple by default).
-- **Calendar and Planner**: start and end of the day (7:00–23:00 by default); hours outside the range are hidden in the calendar and the planner.
-
-### AI
-
-- **Included tokens**: your AI token balance.
-- **Your own API keys**: only with a **lifetime license** can you use your own Anthropic/OpenAI/Google keys (usage goes to your account).
-- AI **language**: Spanish, English or automatic.
-
-### Magic
-
-Everything Fromly knows about you lives in your **AI Profile** (an editable note). From here, «View and edit» opens what Fromly has learned on its own, and what it knows **per context** is listed. Cleanup is automatic. Magic is always active (there are no switches).
-
-### Shortcuts
-
-Keyboard shortcuts (the configurable ones are reassigned with a click) and text expansion.
-
-### Google
-
-Connect/disconnect Google Calendar and see the sync status.
-
-### Accessories
-
-API token, menu bar (Mac), Apple Shortcut, Raycast, Chrome and Claude. See §23b.
-
-### Data / Backup
-
-- Automatic snapshots every ~2h; create a manual snapshot; restore a previous one.
-- **Export** a full copy in JSON or Markdown.
-
-### Import
-
-Fromly imports from other apps with a **step-by-step wizard**. Go to **Settings → Import** and choose the source:
-
-- **Obsidian** — upload the vault folder (.md). The subfolder structure is preserved.
-- **Notion** — export to «Markdown & CSV», unzip the .zip and upload the folder.
-- **Apple Notes** — convert them to .txt/.md first and upload them.
-- **Markdown / text** — one or more .md/.txt files, or a whole folder.
-- **Fromly (JSON)** — a backup exported from Fromly.
-
-Imported content is created in a **«📥 Imported [date]»** node (with headings → sections and nested bullets), so you can review and reorganize it without touching your current notes.
-
-### Templates
-
-A template is a **child node of 📋 Templates**: you edit it like any note. When you open it, in the right column you can:
-- **Auto-apply in daily note**: every new day starts with its content.
-- **Recurring note**: every X days/weeks/months (and on the day), Fromly inserts the template as a **section within that day's note** (ideal for weekly/monthly review).
-
----
-
-## 23. Connecting with Claude (MCP)
-
-Fromly is in the **official Claude connectors directory** (Anthropic). Once connected, Claude automatically saves documents, tasks and conversation summaries to your vault without you having to ask.
+Fromly is in Claude's official connector directory (Anthropic). Once connected, Claude can search,
+create, edit, **delete and move** your notes and tasks, upload real files and run batch cleanups —
+without you having to ask each time.
 
 ### How to connect — Claude directory (recommended)
 
 Works from any device: claude.ai, iPhone, Android and Claude Desktop.
 
-1. Open Claude (claude.ai, the iPhone/Android app or Claude Desktop).
+1. Open Claude (claude.ai, the iPhone/Android app, or Claude Desktop).
 2. Go to **Settings → Connectors**.
 3. Search for **"Fromly"** in the directory.
 4. Press **Connect** and sign in with your Fromly account via OAuth.
-5. Done — Claude can save notes and tasks to your vault from that moment.
+5. Done — Claude can save notes and tasks to your vault from that point on.
 
-You don't need to install extensions, copy tokens or enter URLs manually.
+No need to install extensions, copy tokens, or enter URLs manually.
 
 ### How to connect — Claude Code (CLI)
 
-For Claude Code (the terminal CLI), set up the connection manually. First generate your token in **Fromly → Settings → Accessories**. Then add the `from` entry to `~/.claude.json` under the `mcpServers` key:
+For Claude Code (the terminal CLI), set up the connection manually. First generate your token in
+**Fromly → Settings → Accessories**. Then add the `from` entry to `~/.claude.json` under the
+`mcpServers` key:
 
 ```json
 "mcpServers": {
@@ -1287,142 +501,319 @@ For Claude Code (the terminal CLI), set up the connection manually. First genera
 }
 ```
 
-Restart Claude Code. Fromly works automatically from that moment.
+Restart Claude Code. Fromly works automatically from that point on.
 
 ### What Claude does with Fromly automatically
 
-- **Saves documents and analyses** it generates during the conversation.
+- **Saves documents and analysis** it generates during the conversation, as normal notes (not
+  bullet lists).
 - **Creates tasks** when you mention pending actions.
 - **Saves session summaries** when you say "fin".
-- **Loads area context** if you mention projects configured in your AI Profile.
-- **Searches your vault** before answering to give you real context.
+- **Searches your vault** before answering, to give you real context.
+- **Can delete and move** notes and tasks when you ask it to, in addition to creating and editing.
 
 **Examples:**
 
 ```
-"What tasks do I have pending for today?"
+"What tasks do I have pending today?"
 "Add a task to call Adrián tomorrow at 10"
 "Search my notes for everything related to project X"
-fin  →  Claude saves the conversation summary to Fromly automatically
+fin  →  Claude automatically saves the conversation summary to Fromly
 ```
 
 ---
 
-## 23b. Accessories — capture from anywhere
+## 12. Accessories — capture from anywhere
 
-Fromly doesn't force you to have the app in front of you. These accessories send whatever you have to your **note for today**, and Fromly's intelligence classifies it (type, date, context). All of them — except the menu bar — connect with your account's **API token**.
+Fromly doesn't require you to have the app open. These accessories send whatever you capture to
+today's note, and Fromly's intelligence takes care of classifying it (type, date, context). All of
+them — except the menu bar — connect using your account's **API token**.
 
 ### The API token
-It's the key Raycast, Chrome and Claude Code (CLI) use to talk to your Fromly. It's generated and copied in **Settings → Accessories** (it's the same token for all three; regenerating it invalidates the previous one). It lives for 1 year. For Claude on web, iPhone, Android and Desktop, you don't need the token — use the connectors directory (see section 23).
+
+It's the key that Raycast, Chrome and Claude Code (CLI) use to talk to your Fromly. Generate and
+copy it in **Settings → Accessories** (it's the same token for all three; regenerating it
+invalidates the previous one). It's valid for 1 year. For Claude on web, iPhone, Android and
+Desktop you don't need the token — use the connector directory instead (see section 11).
 
 ### Menu bar (Mac)
-Fromly lives in the Mac menu bar with its icon (the tree).
-- **Click the icon** (or menu → *Quick capture*) → opens a Spotlight-style capture window: type a note, task or event and it drops into your note for today. Fromly detects the type, date and any `@contexts` you write.
+
+Fromly lives in the Mac menu bar with its own icon.
+
+- **Clicking the icon** (or menu → *Quick capture*) → opens a Spotlight-style capture window: type
+  a note, task or event and it lands in today's note. Fromly detects the type, date and context.
 - Closing the main window does **not** close Fromly: it stays available in the menu bar.
-- **Hide it**: Settings → Accessories → turn off "Show icon in the menu bar", or right-click the icon → *Hide this icon*.
+- **Hiding it:** Settings → Accessories → turn off "Show icon in menu bar", or right-click the
+  icon → *Hide this icon*.
 
-### Apple Shortcut (global key)
-To capture from **any app** with a single key.
-1. In **Settings → Accessories → Apple Shortcut** press **"Install Apple Shortcut"** (opens the ready-made shortcut in the Shortcuts app) and add it.
-2. In the Shortcuts app, open the **shortcut's settings → Hotkey** and assign the combination you want (for example ⌃⌥Space).
-3. When you press it, it asks for the text and saves it directly to your note for today.
+### Apple Shortcut (global hotkey)
 
-Under the hood it uses the `from://capture?text=…&silent=1` link. If you prefer to build it by hand, create a Shortcut with the *"Open URL"* action using that link and replace `[Text]` with *"Ask for text"* or *"Clipboard"*.
+For capturing from **any app** with a single keystroke.
+
+1. In **Settings → Accessories → Apple Shortcut** press **"Install Apple Shortcut"** (opens the
+   ready-made shortcut in the Shortcuts app) and add it.
+2. In the Shortcuts app, open the shortcut's **Settings → Keyboard Shortcut** and assign whatever
+   combination you want (e.g. ⌃⌥Space).
+3. Pressing it prompts you for text and saves it directly to today's note.
+
+Under the hood it uses the `from://capture?text=…&silent=1` link. If you'd rather build it
+yourself, create a Shortcut with the **"Open URL"** action using that link, and replace `[Text]`
+with **"Ask for Text"** or **"Clipboard"**.
 
 ### Raycast
-Fromly extension for [Raycast](https://raycast.com):
-- **Create in Fromly** — type and it drops into your note for today (Fromly decides whether it's a note, task or event).
-- **Search Fromly** — searches your whole vault and opens the result in the app or on the web.
-- **Open Today's Note** — opens your daily note.
 
-Install it from the Raycast Store and paste your API token into its preferences (Settings → Accessories → Raycast → copy token).
+Fromly's extension for [Raycast](https://raycast.com):
+
+- **Create in Fromly** — type and it lands in today's note (Fromly decides if it's a note, task or
+  event).
+- **Search Fromly** — search your whole vault and open the result in the app or on the web.
+- **Open Today's Note** — opens today's agenda.
+
+Install it from the Raycast Store and paste your API token into its preferences (Settings →
+Accessories → Raycast → copy token).
 
 ### Chrome
-Fromly extension for Chrome:
-- **Click the icon** → saves the current tab's URL to your note for today (it becomes a link).
-- **Select text → right-click → "Send selection to Fromly"** → saves it as a node.
 
-Install it from the Chrome Web Store, open its **Options** and paste your API token.
+Fromly's extension for Chrome:
 
-### Connecting with Claude (MCP)
-The integration with Claude Desktop/Code is described in the previous section — it uses the same API token.
+- **Click the icon** → saves the current tab's URL to today's note (turned into a link).
+- **Select text → right-click → "Send selection to Fromly"** → saves it as a note.
+
+Install it from the Chrome Web Store, open its Options and paste your API token.
+
+### Claude connection (MCP)
+
+The Claude Desktop/Code integration is described in the previous section — it uses the same API
+token as Claude Code.
 
 ---
 
-## 24. Plans and pricing
+## 13. Backup and privacy
+
+### Automatic server backup
+
+Fromly takes a full snapshot of your data on the server every 2 hours (only when there are
+changes). The last **12 snapshots** are kept (~24 hours of continuous history).
+
+You can create a manual snapshot whenever you want: **Settings → Data → Backups → "Create snapshot
+now"**.
+
+### Restoring a backup
+
+In **Settings → Data → Backups**, pick any snapshot from the list and press "Restore". Before
+overwriting your data, the server automatically creates a safety snapshot (`pre-restore`) so you
+can undo it if something goes wrong.
+
+### Exporting your data
+
+In **Settings → Export** you can download all your data at any time:
+
+- **JSON**: a structured format with all the metadata (for programmatic use or migrations).
+- **Markdown**: a folder of `.md` files, one per element with content. Readable in any editor.
+
+Your data isn't locked into Fromly. The export is complete, with no restrictions, and it works on
+the free plan.
+
+### Privacy
+
+- The AI only accesses content that's in the active conversation's context: the open conversation,
+  its attached files, and whatever contexts you have active. It doesn't scan your whole vault
+  automatically unless you explicitly ask it to search your notes.
+- The local Mac backup is stored in `Application Support/Fromly/Backups/` on your own computer.
+- Fromly uses an operation-based sync system (op-log): it records every change instead of
+  inferring deletions, so it never loses or deletes anything by mistake — including changes made
+  from Claude or your agents.
+
+---
+
+## 14. Settings
+
+### Account
+
+- **Email**: read-only (changing it would break Google/Apple sign-in).
+- **Password**: you can change it (requires the current one).
+- **Subscription**: your plan and, if you have an active subscription, renewal date, "Cancel" and
+  "Manage billing" (customer portal). On the free plan you'll only see "Upgrade".
+- **Delete account**: protected — asks you to confirm with your password (or your email if you
+  sign in with Google).
+
+### Language
+
+Fromly is available in **12 interface languages**: Spanish, English, German, French, Italian,
+Portuguese, Greek, Dutch, Polish, Russian, Turkish and Swedish. The language is detected
+automatically from your browser or operating system settings (falling back to English if yours
+isn't available — it never defaults to Spanish).
+
+To change it manually: **Settings → 🌐 Language** and pick your language. The change applies
+immediately, no reload needed. The AI and voice follow the same language as the interface.
+
+### Appearance
+
+- **Theme**: light or dark.
+- **Accent color**: several colors for the interface.
+- **Calendar and Planner**: visible start and end time of the day (default 7:00-23:00).
+
+### AI
+
+- **Included tokens**: your monthly AI token balance, plus the option to buy a top-up.
+- **Your own API keys**: with a perpetual license you can use your own Anthropic/OpenAI/Google
+  keys (usage is billed to your account).
+- **AI language**: Spanish, English, or automatic.
+
+### Integrations
+
+Connect/disconnect Google Calendar and check sync status, and manage the MCP connection with
+Claude.
+
+### Accessories
+
+API token, menu bar (Mac), Apple Shortcut, Raycast, Chrome and Claude. See section 12.
+
+### Data / Backup
+
+- Automatic snapshots every ~2h; create a manual snapshot; restore a previous one.
+- **Export** a complete copy in JSON or Markdown.
+
+### Import
+
+Fromly imports from other apps with a step-by-step wizard. Go to **Settings → Import** and pick
+the source:
+
+- **Obsidian** — upload the vault folder (.md). Subfolder structure is preserved.
+- **Notion** — export as "Markdown & CSV", unzip the .zip and upload the folder.
+- **Apple Notes** — convert them to .txt/.md first and upload them.
+- **Markdown / text** — one or more .md/.txt files, or a whole folder.
+- **Fromly (JSON)** — a backup exported from Fromly.
+
+Imported content is organized into its own context (with the import date) so you can review and
+reorganize it without touching your existing notes.
+
+---
+
+## 15. Keyboard shortcuts
+
+| Action | Shortcut |
+|---|---|
+| Voice dictation in the chat | `Alt+Space` |
+| Bold (in the document editor) | `⌘B` |
+| Italic (in the document editor) | `⌘I` |
+| Undo | `⌘Z` |
+| Redo | `⌘⇧Z` |
+
+Fromly keeps adding keyboard shortcuts to the chat interface; check **Settings → Shortcuts** to
+see what's available in your version.
+
+---
+
+## 16. Plans and pricing
 
 | Plan | Price | Includes |
 |---|---|---|
-| **Free** | €0 | Up to 1,000 synced nodes, no AI, no files |
-| **Trial** | 7 days free | Full Pro access for 7 days (card required) |
-| **Pro Monthly** | €7/month | Unlimited nodes, full AI, file attachments, public notes |
-| **Pro Annual** | €49/year (€4.08/month) | Everything in Pro Monthly, billed annually |
-| **Lifetime** | €149 one-time | Everything in Pro forever + 3M AI tokens included |
+| **Free** | €0 | Up to 1,000 synced nodes. Outliner + daily note, advanced search, Mac + iPhone + web, real-time sync. No AI, no file attachments, no publishing notes. |
+| **Pro Monthly** | €7/month | Everything in Free + unlimited nodes + full AI (Claude) + Agents + Prompts + table/kanban/calendar views + file attachments + publish notes with a URL + priority support + 2,000,000 AI tokens per month included. |
+| **Pro Annual** | €49/year (~€4.08/month) | Everything in Pro Monthly, billed annually. You save close to **42%** versus monthly (7×12 = €84 → €49). |
+| **Lifetime** | €149 one-time | Everything in Pro, forever, no subscriptions. |
 
-### 7-day free trial
+**Token top-up:** if you run out of the tokens included in your Pro plan, you can buy an extra
+one-time package of 5,000,000 tokens.
 
-You can try all Pro features for 7 days at no cost. A credit card is required to start the trial; if you don't cancel before the period ends, the subscription automatically switches to Pro monthly.
+**About the Lifetime plan:** it's a one-time payment that gives you everything in Pro indefinitely.
+Checkout is live at [fromly.app/pricing.html](https://fromly.app/pricing.html); inside the app
+itself, the pricing screen offers Free and Pro — if you want Lifetime, activate it from the
+pricing website.
 
-During the trial you have full access to AI, unlimited nodes, file attachments and integrations. The top bar shows a **"Free trial · X days left"** badge so you know how much time remains.
+### Free trial
 
-To cancel at any time: **Settings → Account → Subscription → Cancel** or from [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing).
+Trial access to Pro features is activated by invitation (a link you receive by email) or through a
+checkout with a trial period set up specifically for you — there's no self-serve "start your free
+trial" button on the app's pricing screen. If you've received a trial invitation, the top bar will
+show a badge with the days remaining for as long as it lasts.
 
-Manage your subscription in **Settings → Account → Subscription** or at [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing).
+### Manage your subscription
 
-After completing payment, your plan updates automatically in the app within seconds. No need to reload or sign out.
+Manage your plan in **Settings → Account → Subscription** or at
+[app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing). After completing payment,
+your plan updates automatically in the app within seconds — no need to reload or sign out.
 
-If you have a beta code or coupon, enter it at checkout when buying. 100% coupons activate the plan just like a normal payment.
+If you have a beta code or coupon, enter it at checkout when you buy. 100% coupons activate the
+plan just like a regular payment.
 
 ---
 
-## 25. Telegram channel — @FromMagicBot
+## 17. Telegram channel — @FromMagicBot
 
-Subscribe to Fromly's official Telegram channel to get weekly tips on how to get the most out of the app: shortcuts, workflows, use cases with Magic and news.
+Subscribe to Fromly's official Telegram channel for weekly tips on getting the most out of the
+app: workflows, AI use cases and what's new.
 
-**How to join:** search for **@FromMagicBot** on Telegram or use the link at fromly.app.
+**How to join:** search for **@FromMagicBot** on Telegram, or follow the link on fromly.app.
 
-Tips are sent automatically with no interaction needed. It's a broadcast channel, ideal for learning Fromly gradually without flooding your inbox.
+Tips are sent automatically, no interaction needed. It's a broadcast channel, ideal for learning
+Fromly gradually without cluttering your inbox.
 
 ---
 
 ## Frequently asked questions
 
 **Can I use Fromly offline?**
-Yes. The Mac and iPhone apps work offline. Changes sync automatically when you regain connection.
+Yes. The Mac and iPhone apps work offline. Changes sync automatically once you're back online.
 
 **What happens if I go over 1,000 nodes on the free plan?**
-You can keep reading your notes, but you can't create new ones until you delete nodes or upgrade to Pro.
+You can keep reading your notes, but you can't create new ones until you delete content or upgrade
+to Pro.
 
 **Where is my data stored?**
-On Fromly's servers (Europe) and, on Mac, also in a local backup on your own computer. You can export everything in JSON or Markdown from Settings at any time.
+On Fromly's servers (Europe) and, on Mac, also in a local backup on your own computer. You can
+export everything as JSON or Markdown from Settings at any time.
 
 **Does the AI read all my notes?**
-No. The AI only accesses content that's in the active conversation's context: the open node, its children and the contexts you have active. It doesn't scan the whole tree automatically.
+No, unless you explicitly ask it to ("search my notes..."). By default, the AI only accesses the
+active conversation's content: what you've written or attached there, and whatever contexts you
+have active.
 
 **Can I import my notes from Obsidian, Notion or other apps?**
-Yes. Go to **Settings → Import**. Fromly accepts exports from Obsidian, Notion, LogSeq, NotePlan, Bear, Apple Notes and Markdown folders in general.
-
-**Do mirrors (⬡) sync in both directions?**
-Yes. Editing the mirror edits the original, and any change to the original is reflected in all its mirrors immediately.
+Yes. Go to **Settings → Import**. Fromly accepts exports from Obsidian, Notion, Apple Notes, and
+Markdown folders in general.
 
 **Can I share a note with someone who doesn't have Fromly?**
-Yes. Right-click the node → "Publish". Fromly generates a public URL like `fromly.app/p/...` with the rendered content. Only those who have the link can see it.
+Yes, on the Pro plan. From the note's detail view, "Publish" generates a public URL like
+`fromly.app/p/...` with the rendered content. Only people with the link can see it.
 
 **How does sync between devices work?**
-Changes sync in real time (delta: only the changes travel, not the whole database). Under normal conditions, changes appear within seconds on all your devices.
+Changes sync in real time via operations (op-log): only the changes travel, not the whole
+database, and a deletion is never inferred. Under normal conditions, changes show up within
+seconds on all your devices.
 
-**Does automatic backup use up quota?**
-No. Automatic snapshots are part of the service on all plans. The history keeps the last 12 snapshots.
+**Does the automatic backup use up quota?**
+No. Automatic snapshots are part of the service on every plan. History keeps the last 12
+snapshots.
 
 **How do I cancel my subscription?**
-From **Settings → Account → Subscription** or at [app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing). Your Pro access stays until the end of the paid period.
+From **Settings → Account → Subscription** or at
+[app.lemonsqueezy.com/billing](https://app.lemonsqueezy.com/billing). Your Pro access remains
+active until the end of the paid period.
 
 **Can I use my own AI API keys?**
-Yes, on the Pro or Lifetime plan. Go to **Settings → AI** and add your Anthropic, OpenAI or Google keys. Usage goes to your account and doesn't draw from Fromly's tokens.
+Yes, with a perpetual license (Lifetime). Go to **Settings → AI** and add your Anthropic, OpenAI
+or Google keys. Usage will be billed to your account and won't be deducted from Fromly's tokens.
 
-**Are Space capture and ⌘K the same?**
-Yes. `Space` opens the unified capture modal when the cursor isn't editing text. `⌘K` does the same and always works, even when text is being edited. They're synonyms for the same modal.
+**What happens if I run out of my monthly AI tokens?**
+You can buy a one-time top-up of 5,000,000 extra tokens from **Settings → AI**, or wait for them
+to renew with your next billing cycle.
 
 ---
 
-*fromly.app — Your second brain. On all your devices.*
+## Appendix: the classic view (Fromly 1.0)
+
+Before July 2026, Fromly opened in a bullet tree with an infinite canvas as the main screen: a
+slash menu (`/`) for creating node types, a sidebar with panels and contexts, a four-mode side
+panel (assistant, filter, planner, context), and its own keyboard shortcuts for navigating the
+tree (indent with Tab, collapse nodes, drag with a handle, etc.).
+
+That data model — nodes, tasks, contexts, resources — is the same one Fromly 2.0 uses under the
+hood. If you prefer working that way, the classic view is still active at
+[fromly.app/v1](https://fromly.app/v1) with its own tree-and-canvas interface. It's not the
+default entry point, nor the one the rest of this manual documents.
+
+---
+
+*fromly.app — Your second brain. That understands you.*

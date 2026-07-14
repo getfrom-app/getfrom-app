@@ -108,7 +108,7 @@
   <h2 id="fragmentation">The device fragmentation problem</h2>
   <p>You start a note on Mac during a meeting. You want to review it on your iPhone while commuting. You get home and want to expand it in the browser because your computer isn't nearby. In most systems, this flow requires exports, manual syncing, or losing information along the way.</p>
   <p>Device fragmentation is one of the biggest enemies of personal productivity. When your information isn't where you need it, you create duplicates, take screenshots, or simply abandon the system.</p>
-  <p>Fromly solves this with a cloud architecture where the node tree is identical across all devices, always updated in real time.</p>
+  <p>Fromly solves this with a cloud architecture where your contexts, your chat, and your content are identical across all devices, always updated in real time.</p>
 
   <div class="platform-grid">
     <div class="platform-card">
@@ -131,27 +131,27 @@
   <h2 id="platforms">Fromly on each platform</h2>
 
   <h3>Mac — The main hub</h3>
-  <p>The Mac app is where most users spend the most time. It has the most complete feature set: keyboard shortcuts for everything, a visual planner with weekly view, native Google Calendar integration, Magic AI with voice capture, and access to the full tree.</p>
-  <p>The Mac app is native — it's not a web wrapper. That means it's fast, responds instantly, and integrates with the OS: notifications, Spotlight search, automatic dark mode.</p>
+  <p>The Mac app is where most users spend the most time. It has the most complete feature set: the central chat, contexts, a visual planner with weekly view, Google Calendar integration, and voice capture.</p>
+  <p>The Mac app is built with Tauri (Rust + React) — the same code as the web. That means every improvement that ships on the web ships on Mac too, no lag, and the app integrates with the OS: notifications, Spotlight search, automatic dark mode.</p>
 
   <h3>iPhone — Capture on the go</h3>
-  <p>The iPhone app is optimized for two use cases: quick idea capture on the move, and reviewing tasks and agenda when your Mac isn't available.</p>
-  <p>The iPhone widget lets you see your tasks for the day from the home screen without opening the app. Voice capture works with the iPhone microphone — an idea comes to you while walking, you say it out loud, and it appears in your tree within seconds.</p>
+  <p>The iPhone app is native (Swift), in progressive parity with the web, and it's optimized for two use cases: quick idea capture on the move, and reviewing tasks and agenda when your Mac isn't available.</p>
+  <p>The iPhone widget lets you see your tasks for the day from the home screen without opening the app. Voice capture works with the iPhone microphone — an idea comes to you while walking, you say it out loud, and it appears in your chat within seconds.</p>
 
   <h3>Web — Universal access</h3>
-  <p>If you're on someone else's computer, on an iPad, or on any device with a browser, you can access Fromly at <a href="https://fromly.app/app">fromly.app/app</a>. Full functionality: node tree, filters, planner, and Magic AI.</p>
+  <p>If you're on someone else's computer, on an iPad, or on any device with a browser, you can access Fromly at <a href="https://fromly.app/app">fromly.app/app</a>. Full functionality: chat, contexts, filters, and planner.</p>
 
   <figure class="screenshot">
-    <img src="/img/blog/mac-iphone-sync/02-app-completa.png" alt="Fromly in web browser showing the node tree and weekly planner with Google Calendar" loading="lazy" width="1280" height="700">
-    <figcaption>Fromly in the web browser: full functionality without installation. The same tree, the same filters, the same AI — on any device with a browser.</figcaption>
+    <img src="/img/blog/mac-iphone-sync/02-app-completa.png" alt="Fromly in web browser showing the chat, contexts, and weekly planner with Google Calendar" loading="lazy" width="1280" height="700">
+    <figcaption>Fromly in the web browser: full functionality without installation. The same chat, the same contexts, the same AI — on any device with a browser.</figcaption>
   </figure>
 
   <h2 id="sync">How sync works</h2>
-  <p>Fromly's sync is real-time and automatic. There's no sync button, no manual exports. When you create a node on Mac, it appears on iPhone in under a second. When you mark a task as done on iPhone, it updates on Mac instantly.</p>
-  <p>The status bar at the bottom of Fromly shows sync status: "Connected", "Syncing", or the time of the last automatic backup. You always know your information is safe.</p>
+  <p>Fromly syncs by operations — an op-log, WorkFlowy-style: every change you make (creating a task, editing a note, moving something between contexts) is recorded as an individual operation and propagated to your other devices in real time. It's not a full snapshot uploaded and downloaded — it's the history of changes, which means sync never infers a deletion you didn't make and never loses data by mistake, not even changes made through the Claude connector or an Agent.</p>
+  <p>There's no sync button, no manual exports. When you create something on Mac, it appears on iPhone in under a second. When you mark a task as done on iPhone, it updates on Mac instantly. All of this happens in the cloud — not through iCloud.</p>
 
   <div class="callout">
-    <p>🔒 <strong>Automatic backups:</strong> Fromly automatically backs up your tree periodically. You can see when the last backup happened in the bottom status bar. If something goes wrong, your data is protected.</p>
+    <p>🔒 <strong>Automatic backups:</strong> Fromly automatically backs up your information periodically. You can see when the last backup happened in the bottom status bar. If something goes wrong, your data is protected.</p>
   </div>
 
   <h2 id="workflows">Cross-device workflows</h2>
@@ -161,7 +161,7 @@
   <p>You plan your week on Mac Monday morning. Tuesday you're commuting and review the day's tasks on iPhone from the widget. You mark a task done — it updates on Mac automatically.</p>
 
   <h3>iPhone to Mac</h3>
-  <p>You have an idea while walking. You say it out loud into the iPhone app. You get to your Mac and the idea is already in your tree, ready to develop.</p>
+  <p>You have an idea while walking. You say it out loud into the iPhone app. You get to your Mac and the idea is already in your chat, filed in its context, ready to develop.</p>
 
   <h3>Without Mac — web only</h3>
   <p>You're at someone's place without your Mac. You open fromly.app in the browser and have full access to all your information. You add a task, check notes from a meeting, review your weekly agenda.</p>

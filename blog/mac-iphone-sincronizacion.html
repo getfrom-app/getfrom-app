@@ -107,7 +107,7 @@
   <h2 id="fragmentacion">El problema de la fragmentación entre dispositivos</h2>
   <p>Empiezas una nota en el Mac durante una reunión. Quieres revisarla mientras vas en el metro con el iPhone. Llegas a casa y quieres ampliarla desde el navegador porque no tienes el ordenador a mano. En la mayoría de sistemas, este flujo implica exportaciones, sincronizaciones manuales o perder información en el camino.</p>
   <p>La fragmentación entre dispositivos es uno de los mayores enemigos de la productividad personal. Cuando tu información no está donde la necesitas, creas copias, tomas capturas de pantalla o simplemente abandonas el sistema.</p>
-  <p>Fromly resuelve esto con una arquitectura en la nube donde el árbol de nodos es el mismo en todos los dispositivos, siempre actualizado en tiempo real.</p>
+  <p>Fromly resuelve esto con una arquitectura en la nube donde tus contextos, tu chat y tu contenido son los mismos en todos los dispositivos, siempre actualizados en tiempo real.</p>
 
   <div class="platform-grid">
     <div class="platform-card">
@@ -130,27 +130,27 @@
   <h2 id="plataformas">Fromly en cada plataforma</h2>
 
   <h3>Mac — El hub principal</h3>
-  <p>La app de Mac es donde la mayoría de usuarios pasan más tiempo. Tiene la funcionalidad más completa: atajos de teclado para todo, planificador visual con vista semanal, integración nativa con Google Calendar, Magic AI con captura por voz y acceso al árbol completo.</p>
-  <p>La app Mac es nativa — no es un wrapper de la web. Esto significa que es rápida, responde al instante y se integra con el sistema operativo: notificaciones, Spotlight search, modo oscuro automático.</p>
+  <p>La app de Mac es donde la mayoría de usuarios pasan más tiempo. Tiene la funcionalidad más completa: chat central, contextos, planificador visual con vista semanal, integración con Google Calendar y captura por voz.</p>
+  <p>La app Mac está construida con Tauri (Rust + React) — el mismo código que la web. Esto significa que cada mejora que llega a la web llega también al Mac, sin retraso, y que la app se integra con el sistema: notificaciones, Spotlight search, modo oscuro automático.</p>
 
   <h3>iPhone — La captura en movimiento</h3>
-  <p>La app de iPhone está optimizada para dos casos de uso: captura rápida de ideas en movimiento y revisión de tareas y agenda cuando no tienes el Mac a mano.</p>
-  <p>El widget de iPhone te permite ver tus tareas del día desde la pantalla de inicio sin abrir la app. La captura por voz funciona con el micrófono del iPhone — una idea surge caminando, la dices en voz alta y aparece en tu árbol en segundos.</p>
+  <p>La app de iPhone es nativa (Swift), en paridad progresiva con la web, y está optimizada para dos casos de uso: captura rápida de ideas en movimiento y revisión de tareas y agenda cuando no tienes el Mac a mano.</p>
+  <p>El widget de iPhone te permite ver tus tareas del día desde la pantalla de inicio sin abrir la app. La captura por voz funciona con el micrófono del iPhone — una idea surge caminando, la dices en voz alta y aparece en tu chat en segundos.</p>
 
   <h3>Web — El acceso universal</h3>
-  <p>Si estás en un ordenador que no es el tuyo, en un iPad o en cualquier dispositivo con navegador, puedes acceder a Fromly desde <a href="https://fromly.app/app">fromly.app/app</a>. La funcionalidad es completa: árbol de nodos, filtros, planificador y Magic AI.</p>
+  <p>Si estás en un ordenador que no es el tuyo, en un iPad o en cualquier dispositivo con navegador, puedes acceder a Fromly desde <a href="https://fromly.app/app">fromly.app/app</a>. La funcionalidad es completa: chat, contextos, filtros y planificador.</p>
 
   <figure class="screenshot">
-    <img src="/img/blog/mac-iphone-sync/02-app-completa.png" alt="Fromly en navegador web mostrando el árbol de nodos y el planificador semanal con Google Calendar" loading="lazy" width="1280" height="700">
-    <figcaption>Fromly en el navegador web: funcionalidad completa sin instalación. El mismo árbol, los mismos filtros, la misma IA — en cualquier dispositivo con navegador.</figcaption>
+    <img src="/img/blog/mac-iphone-sync/02-app-completa.png" alt="Fromly en navegador web mostrando el chat, los contextos y el planificador semanal con Google Calendar" loading="lazy" width="1280" height="700">
+    <figcaption>Fromly en el navegador web: funcionalidad completa sin instalación. El mismo chat, los mismos contextos, la misma IA — en cualquier dispositivo con navegador.</figcaption>
   </figure>
 
   <h2 id="sincronizacion">Cómo funciona la sincronización</h2>
-  <p>La sincronización de Fromly es en tiempo real y automática. No hay botón de sincronizar, no hay exportaciones manuales. Cuando creas un nodo en el Mac, aparece en el iPhone en menos de un segundo. Cuando marcas una tarea como hecha en el iPhone, se actualiza en el Mac instantáneamente.</p>
-  <p>La barra de estado en la parte inferior de Fromly muestra el estado de la sincronización: "Conectado", "Sincronizando" o el tiempo del último backup automático. Siempre sabes que tu información está a salvo.</p>
+  <p>Fromly sincroniza por operaciones (un registro tipo op-log, al estilo WorkFlowy): cada cambio que haces —crear una tarea, editar una nota, mover algo de contexto— se registra como una operación individual y se propaga al resto de tus dispositivos en tiempo real. No es una foto completa que se sube y baja: es el historial de cambios, lo que hace que la sincronización nunca infiera un borrado que no hiciste ni pierda datos por error, ni siquiera los cambios hechos desde el conector de Claude o desde un Agente.</p>
+  <p>No hay botón de sincronizar, no hay exportaciones manuales. Cuando creas algo en el Mac, aparece en el iPhone en menos de un segundo. Cuando marcas una tarea como hecha en el iPhone, se actualiza en el Mac instantáneamente. Todo esto ocurre en la nube, no a través de iCloud.</p>
 
   <div class="callout">
-    <p>🔒 <strong>Backups automáticos:</strong> Fromly hace backups automáticos de tu árbol periódicamente. Puedes ver cuándo fue el último backup en la barra de estado inferior. En caso de problema, tu información está protegida.</p>
+    <p>🔒 <strong>Backups automáticos:</strong> Fromly hace backups automáticos de tu información periódicamente. Puedes ver cuándo fue el último backup en la barra de estado inferior. En caso de problema, tu información está protegida.</p>
   </div>
 
   <h2 id="flujos">Flujos de trabajo entre dispositivos</h2>
@@ -160,7 +160,7 @@
   <p>Creas la agenda de la semana en el Mac el lunes por la mañana. El martes vas en el metro y repasas las tareas del día en el iPhone desde el widget. Marcas como hecha una tarea — se actualiza en el Mac automáticamente.</p>
 
   <h3>Del iPhone al Mac</h3>
-  <p>Tienes una idea mientras caminas. La dices en voz alta en la app de iPhone. Llegas al Mac y la idea ya está en tu árbol, lista para desarrollarla.</p>
+  <p>Tienes una idea mientras caminas. La dices en voz alta en la app de iPhone. Llegas al Mac y la idea ya está en tu chat, clasificada en su contexto, lista para desarrollarla.</p>
 
   <h3>Sin Mac — solo web</h3>
   <p>Estás en casa de alguien sin tu Mac. Abres fromly.app en el navegador y tienes acceso completo a toda tu información. Añades una tarea, consultas notas de una reunión, revisas tu agenda de la semana.</p>

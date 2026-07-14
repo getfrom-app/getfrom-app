@@ -77,7 +77,7 @@
 <header class="blog-hero">
   <span class="tag">Trabajo</span>
   <h1>Cómo tomar notas de reuniones que realmente uses después</h1>
-  <p class="subtitle">El 80% de las notas de reunión nunca se vuelven a abrir. La solución no es tomar mejores notas — es tener un sistema que las conecte con las tareas que generan.</p>
+  <p class="subtitle">El 80% de las notas de reunión nunca se vuelven a abrir. La solución no es tomar mejores notas — es tener un chat central que las conecte con las tareas que generan.</p>
   <div class="blog-meta">
     <span>📅 28 de mayo de 2026</span>
     <span>⏱ 6 min de lectura</span>
@@ -95,24 +95,24 @@
       <li><a href="#durante">Cómo tomar notas durante la reunión</a></li>
       <li><a href="#despues">El proceso de los 5 minutos después</a></li>
       <li><a href="#buscar">Encontrar notas antiguas cuando las necesitas</a></li>
-      <li><a href="#ia">Usar IA para procesar las notas</a></li>
+      <li><a href="#ia">Usar la IA para procesar las notas</a></li>
     </ol>
   </div>
 
   <h2 id="problema">Por qué las notas de reunión se abandonan</h2>
   <p>El problema no es la falta de motivación — es la falta de sistema. Las notas de reunión se abandonan por tres razones: están desconectadas de las tareas que generan, están guardadas en un lugar que no visitas después, y no hay un proceso de revisión que las active.</p>
   <p>En la mayoría de apps de notas, una nota de reunión es solo texto. Las tareas que surgen en la reunión hay que copiarlas manualmente a tu app de tareas. El contexto de la reunión se pierde. La nota queda huérfana en una carpeta que no abres.</p>
-  <p>Fromly resuelve esto porque <strong>las notas y las tareas viven en el mismo sistema</strong>. Una tarea que surge en una reunión puede estar anidada directamente bajo la nota de esa reunión, con su fecha y contexto completo.</p>
+  <p>Fromly resuelve esto porque <strong>las notas y las tareas viven en el mismo contexto y pasan por el mismo chat</strong>. Le cuentas a Fromly lo que se decidió y ella crea las tareas correspondientes, con fecha si la mencionaste, colgadas del proyecto o cliente al que pertenecen.</p>
 
   <figure class="screenshot">
-    <img src="/img/blog/tomar-notas-reunion/01-nota-reunion.png" alt="Nota de reunión en Fromly con estructura jerárquica: contexto, tareas anidadas y fechas asignadas" loading="lazy" width="1280" height="700">
-    <figcaption>Una nota de reunión en Fromly: las tareas están anidadas bajo la nota, con fecha asignada y contexto visible. No hay que copiar nada a otra app.</figcaption>
+    <img src="/img/blog/tomar-notas-reunion/01-nota-reunion.png" alt="Nota de reunión en Fromly con tareas clasificadas en su contexto y fechas asignadas" loading="lazy" width="1280" height="700">
+    <figcaption>Una nota de reunión en Fromly: las tareas quedan clasificadas en el contexto correcto, con fecha asignada. No hay que copiar nada a otra app.</figcaption>
   </figure>
 
   <h2 id="estructura">La estructura de nota de reunión que funciona</h2>
-  <p>No necesitas una estructura perfecta — necesitas una suficientemente buena que puedas seguir incluso cuando la reunión va rápido. Esta es la que recomendamos:</p>
+  <p>No necesitas una estructura perfecta — necesitas una suficientemente buena que puedas seguir incluso cuando la reunión va rápido. Esto es lo que recomendamos que tenga tu nota:</p>
   <ul>
-    <li><strong>Nombre de la reunión + fecha</strong> — Como título del nodo (Fromly lo crea con la fecha automáticamente)</li>
+    <li><strong>Nombre de la reunión + fecha</strong> — Como título de la nota (Fromly lo puede poner automáticamente si se lo pides por chat)</li>
     <li><strong>Contexto</strong> — Una línea de para qué es esta reunión y quién participa</li>
     <li><strong>Puntos tratados</strong> — Notas libres durante la reunión. No hace falta redactar — apunta palabras clave</li>
     <li><strong>Decisiones</strong> — Lo que se decidió claramente. Esto es lo más valioso</li>
@@ -120,11 +120,11 @@
   </ul>
 
   <h2 id="durante">Cómo tomar notas durante la reunión</h2>
-  <p>Durante la reunión, el objetivo es capturar sin interrumpir. No corrijas, no formatees, no busques el lugar perfecto para cada nota. Simplemente escribe.</p>
-  <p>En Fromly, crea el nodo de la reunión antes de que empiece usando Magic AI: <em>"Crea una nota de reunión 'Revisión proyecto cliente X' con secciones: contexto, puntos tratados y tareas de acción"</em>. La estructura está lista en 5 segundos.</p>
+  <p>Durante la reunión, el objetivo es capturar sin interrumpir. No corrijas, no formatees, no busques el lugar perfecto para cada nota. Simplemente escribe o graba.</p>
+  <p>Antes de que empiece, pide en el chat: <em>"crea una nota de reunión 'Revisión proyecto cliente X' en el contexto del cliente"</em>. La nota está lista en segundos, en el contexto correcto. Si prefieres no escribir, pulsa Grabar en la cabecera del chat: Fromly transcribe la reunión en vivo con Whisper y te deja el texto completo al terminar.</p>
 
   <div class="callout">
-    <p>💡 <strong>Durante la reunión:</strong> Usa subnodos para cada punto. Escribe rápido y sin filtrar. <kbd>Enter</kbd> para nueva línea, <kbd>Tab</kbd> para indentar. Cuando alguien diga "hay que hacer X", escribe la tarea con <kbd>Cmd+Enter</kbd> para convertirla en tarea con checkbox.</p>
+    <p>💡 <strong>Durante la reunión:</strong> escribe rápido y sin filtrar, apuntando solo lo importante. Cuando alguien diga "hay que hacer X", anótalo tal cual — al terminar, se lo pides a la IA y te lo convierte en tareas de verdad, cada una en su sitio.</p>
   </div>
 
   <h2 id="despues">El proceso de los 5 minutos después</h2>
@@ -132,18 +132,18 @@
   <p>El proceso es simple:</p>
   <ol>
     <li><strong>Identifica las tareas</strong> — Las que dijiste "lo hago yo" y las que quedaron pendientes</li>
-    <li><strong>Convierte a tareas</strong> — Pulsa <kbd>Cmd+Enter</kbd> en cada línea que es una acción</li>
-    <li><strong>Asigna fechas</strong> — A las que tienen deadline, añade la fecha directamente</li>
-    <li><strong>Enlaza al proyecto</strong> — Si las tareas corresponden a un proyecto específico, muévelas allí</li>
+    <li><strong>Pídeselo al chat</strong> — "Extrae las tareas de esta nota y créalas con su fecha"</li>
+    <li><strong>Revisa las fechas</strong> — Fromly les pone fecha si la mencionaste; ajusta las que falten</li>
+    <li><strong>Comprueba el contexto</strong> — Si las tareas corresponden a un proyecto específico, ya deberían estar ahí</li>
   </ol>
   <p>Con Fromly, este proceso tarda 3-5 minutos porque todo está en el mismo sistema. No hay que abrir otra app, no hay que copiar texto.</p>
 
   <h2 id="buscar">Encontrar notas antiguas cuando las necesitas</h2>
   <p>La reunión fue hace dos semanas. Te preguntan "¿qué decidimos sobre el tema X?". En la mayoría de sistemas, eso significa buscar entre carpetas de archivos o desplazarte por un historial infinito.</p>
-  <p>En Fromly, pulsa <kbd>Cmd+F</kbd> y escribe "reunión cliente X" o la fecha aproximada. Los resultados aparecen con su contexto completo — incluyendo las tareas que generó esa reunión y si están completadas.</p>
+  <p>En Fromly, pregúntaselo directamente al chat: "¿qué decidimos en la reunión con el cliente X?". La respuesta llega con su contexto completo — incluyendo las tareas que generó esa reunión y si están completadas. Si prefieres explorar tú mismo, la pestaña Elementos busca en todo lo guardado.</p>
 
-  <h2 id="ia">Usar IA para procesar las notas</h2>
-  <p>Si la reunión fue intensa y tus notas son caóticas, Magic AI puede ayudarte a procesarlas. Abre el chat y pide:</p>
+  <h2 id="ia">Usar la IA para procesar las notas</h2>
+  <p>Si la reunión fue intensa y tus notas son caóticas, la IA de Fromly puede ayudarte a procesarlas. Abre el chat y pide:</p>
   <ul>
     <li>"Extrae las tareas de las notas de la reunión de hoy y conviértelas en tareas pendientes"</li>
     <li>"Resume los puntos clave de las notas de la reunión de cliente X"</li>

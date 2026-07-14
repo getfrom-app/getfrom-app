@@ -32,8 +32,9 @@
 
 | Plan | Price | Includes |
 |---|---|---|
-| One-time license | $59 | Full app + connect your own AI API key |
-| Monthly subscription | $7/month | Managed AI, no API key needed |
+| Free | €0 | Up to 1,000 synced nodes, no AI |
+| Pro | €7/month or €49/year (~€4.08/mo) | Unlimited nodes, full AI, agents, 2M AI tokens/month |
+| Lifetime | €149 one-time | Everything in Pro, forever, no subscription |
 
 Payments processed securely by [Lemon Squeezy](https://lemonsqueezy.com).
 

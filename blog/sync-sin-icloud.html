@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sync instantáneo sin iCloud: web, Mac e iPhone siempre al día — Fromly Blog</title>
-  <meta name="description" content="Write on Mac, open iPhone: it's there. Fromly's private server. No iCloud Drive dependency.">
+  <meta name="description" content="Escribes en el Mac, abres el iPhone: ya está ahí. Fromly funciona sobre su propio servidor privado. Sin depender de iCloud Drive.">
   <link rel="icon" type="image/svg+xml" href="../icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,9 +51,9 @@
   <a href="/blog/" class="back">← Blog</a>
 </nav>
 <header class="blog-hero">
-  <span class="tag">Privacidad</span>
+  <span class="tag">Fiabilidad</span>
   <h1>Sync instantáneo sin iCloud: web, Mac e iPhone siempre al día</h1>
-  <p class="subtitle">Write on Mac, open iPhone: it's there. Fromly's private server. No iCloud Drive dependency.</p>
+  <p class="subtitle">Escribes en el Mac, abres el iPhone: ya está ahí. Fromly funciona sobre su propio servidor privado — sin depender de iCloud Drive, sin esperas, sin conflictos.</p>
   <div class="blog-meta">
     <span>Fromly Blog</span>
     <span>·</span>
@@ -79,29 +79,29 @@
 
 <h2>Servidor privado: qué significa en la práctica</h2>
 
-<p>Cuando guardas algo en Fromly —una nota, una tarea, un cambio en el outliner— ese cambio va directamente al servidor de Fromly. Cuando abres Fromly en otro dispositivo, el servidor ya tiene esa información. No hay intermediarios, no hay sistemas de archivos locales que sincronizar, no hay dependencia del estado de iCloud en ese momento concreto.</p>
+<p>Cuando escribes algo en el chat de Fromly —una nota, una tarea, un mensaje que la IA convierte en algo estructurado, un cambio hecho desde un contexto—, ese cambio va directamente al servidor de Fromly, por operaciones (op-log en tiempo real, como en herramientas tipo WorkFlowy): nunca infiere un borrado, así que nunca pierde ni sobrescribe nada por error. Cuando abres Fromly en otro dispositivo, el servidor ya tiene esa información. No hay intermediarios, no hay sistemas de archivos locales que sincronizar, no hay dependencia del estado de iCloud en ese momento concreto.</p>
 
 <div class="callout"><p><strong>El resultado es predecible:</strong> lo que escribes en un dispositivo aparece en los demás en segundos, sin importar si tienes iCloud activado, sin importar el estado de tu cuenta de Apple.</p></div>
 
 <p>Esto tiene implicaciones concretas para el trabajo real:</p>
 
 <ul>
-  <li>Capturas una idea en el iPhone durante el desayuno. Al sentarte en el Mac, está ahí.</li>
-  <li>Reorganizas el árbol de notas en web desde el trabajo. En casa, en el Mac, ves la estructura actualizada.</li>
-  <li>Un colega con acceso compartido modifica algo. Lo ves reflejado sin tener que recargar manualmente.</li>
+  <li>Le cuentas algo al chat desde el iPhone durante el desayuno. Al sentarte en el Mac, ya está clasificado en su contexto.</li>
+  <li>Reorganizas tus contextos y proyectos desde la web en el trabajo. En casa, en el Mac, ves la estructura actualizada.</li>
+  <li>Un cambio hecho por un agente automático o desde el conector de Claude se refleja igual, sin tener que recargar manualmente.</li>
 </ul>
 
-<div class="img-block"><img src="/img/screenshots/outliner-jerarquia.png" alt="Árbol de nodos en Fromly"><p class="img-caption">El árbol de nodos se mantiene sincronizado en todos los dispositivos en tiempo real.</p></div>
+<div class="img-block"><img src="/img/screenshots/outliner-jerarquia.png" alt="Contextos y elementos de Fromly sincronizados"><p class="img-caption">Contextos, chat, tareas y notas se mantienen sincronizados en todos los dispositivos en tiempo real.</p></div>
 
 <h2>La sincronización como parte de la experiencia, no como feature separada</h2>
 
 <p>En la mayoría de apps, la sincronización es algo que ocurre "por detrás" y que notas cuando falla. En Fromly, está integrada en el núcleo del producto. No es un sistema añadido; es la razón por la que la app existe de la forma en que existe.</p>
 
-<p>Fromly es un outliner web-first con apps nativas para Mac e iPhone. Las tres versiones comparten el mismo backend. No hay archivos locales que reconciliar. No hay conflictos de versión. No hay decisiones que tomar sobre qué copia es la "buena".</p>
+<p>Fromly es una app chat-first, web-first, con Mac (aplicación Tauri, con el mismo código que la web) e iPhone (nativa en Swift, en paridad progresiva con la web). Las tres versiones comparten el mismo backend. No hay archivos locales que reconciliar. No hay conflictos de versión. No hay decisiones que tomar sobre qué copia es la "buena".</p>
 
 <h3>Web, Mac e iPhone: tres formas de acceder al mismo lugar</h3>
 
-<p>Puedes usar Fromly desde el navegador en cualquier ordenador, desde la app nativa en Mac y desde el iPhone. Las tres son ventanas al mismo árbol de información. Cambias algo en una y las otras lo reflejan.</p>
+<p>Puedes usar Fromly desde el navegador en cualquier ordenador, desde la app nativa en Mac y desde el iPhone. Las tres son ventanas al mismo chat, los mismos contextos y la misma memoria. Cambias algo en una y las otras lo reflejan.</p>
 
 <p>Esto tiene un valor específico si trabajas en varios contextos a lo largo del día: en casa, en la oficina, en movilidad. No necesitas pensar en qué dispositivo tiene la versión más actualizada. Siempre es la misma versión.</p>
 
@@ -121,11 +121,11 @@
 
 <h2>Por qué importa la confianza en la herramienta</h2>
 
-<p>Hay una diferencia entre usar una herramienta y confiar en una herramienta. Cuando confías en que tus datos están donde los dejaste, dejas de dedicar energía mental a verificarlo. Dejas de tener esa pequeña duda al abrir una nota: "¿es la última versión?".</p>
+<p>Hay una diferencia entre usar una herramienta y confiar en una herramienta. Cuando confías en que tus datos están donde los dejaste, dejas de dedicar energía mental a verificarlo. Dejas de tener esa pequeña duda al abrir el chat: "¿tiene el contexto actualizado?".</p>
 
 <p>Esa fricción acumulada —pequeña en cada instancia, significativa a lo largo del tiempo— es lo que Fromly elimina con su arquitectura de servidor propio. No es un detalle técnico menor. Es la base sobre la que se construye una herramienta de productividad en la que puedas confiar de verdad.</p>
 
-<div class="callout"><p>Fromly no depende de iCloud Drive. Tiene su propio servidor. Tus notas, tareas y árbol de trabajo están siempre sincronizados entre web, Mac e iPhone. Sin esperas. Sin fricción. Sin pensar en ello.</p></div>
+<div class="callout"><p>Fromly no depende de iCloud Drive. Tiene su propio servidor. Tu chat, tus notas, tareas y contextos están siempre sincronizados entre web, Mac e iPhone. Sin esperas. Sin fricción. Sin pensar en ello.</p></div>
   <div class="cta-box">
     <h3>Prueba Fromly gratis</h3>
     <p>Empieza en 60 segundos. Sin tarjeta.</p>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Instant sync without iCloud: web, Mac and iPhone always up to date — Fromly Blog</title>
-  <meta name="description" content="Write on Mac, open iPhone: it's there. Fromly's private server. No iCloud Drive dependency.">
+  <meta name="description" content="Write on Mac, open iPhone: it's there. Fromly runs on its own private server. No iCloud Drive dependency.">
   <link rel="icon" type="image/svg+xml" href="../../icon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,7 +51,7 @@
   <a href="/blog/en/" class="back">← Blog</a>
 </nav>
 <header class="blog-hero">
-  <span class="tag">reliability</span>
+  <span class="tag">Reliability</span>
   <h1>Instant sync without iCloud: web, Mac and iPhone always up to date</h1>
   <p class="subtitle">Write on Mac, open iPhone: it's there. Fromly runs on its own private server — no iCloud Drive dependency, no sync delays, no conflicts.</p>
   <div class="blog-meta">
@@ -63,77 +63,69 @@
   </div>
 </header>
 <article class="blog-body">
-<h2>The sync problem nobody talks about</h2>
+<h2>Write on Mac. Open iPhone. It's there.</h2>
 
-<p>You write a task on your Mac. You grab your iPhone on the way out. The note isn't there. You try iCloud Drive. It's syncing. You wait. Or worse — it conflicts, splits, or silently overwrites what you wrote.</p>
+<p>There's no sync button. No spinner while you wait. No "updating from iCloud" message. You wrote it ten seconds ago on the Mac and it's already on the iPhone, exactly as you left it.</p>
 
-<p>This is the invisible tax of apps that rely on iCloud Drive for sync. It works fine when everything is calm. It breaks exactly when you need it most: on the go, switching devices fast, working in a spotty connection.</p>
+<p>That's how Fromly works. And it's not magic — it's infrastructure of its own.</p>
 
-<p><strong>Fromly doesn't use iCloud Drive.</strong> It runs on its own private server. That changes everything.</p>
+<h2>The problem with iCloud Drive</h2>
 
-<h2>Why iCloud Drive sync fails when it matters</h2>
+<p>If you've used any file-based notes or productivity app, you know the pain. iCloud Drive syncs when it can: when there's a good connection, when the system decides it's time, when the stars align. Sometimes it takes seconds. Sometimes minutes. Sometimes you find yourself editing an old version without knowing there's a newer one on another device.</p>
 
-<p>iCloud Drive is a file synchronization layer. It was built to sync documents between Apple devices — not to power real-time, structured data across platforms. When apps bolt their database on top of it, they inherit its limitations:</p>
+<p>The underlying problem is that iCloud Drive is designed for files, not for real-time structured data. Apps that use it as a backend are limited by those constraints from day one.</p>
+
+<p>Fromly doesn't use iCloud Drive. It has its own server.</p>
+
+<h2>Private server: what it means in practice</h2>
+
+<p>When you write something in Fromly's chat — a note, a task, a message the AI turns into something structured, a change made from within a context — that change goes straight to Fromly's server, by operations (a real-time op-log, the same approach tools like WorkFlowy use): it never infers a deletion, so it never loses or overwrites anything by mistake. When you open Fromly on another device, the server already has that information. No middlemen, no local file systems to reconcile, no dependency on iCloud's state at that exact moment.</p>
+
+<div class="callout"><p><strong>The result is predictable:</strong> what you write on one device shows up on the others within seconds, regardless of whether iCloud is enabled, regardless of the state of your Apple account.</p></div>
+
+<p>This has concrete implications for real work:</p>
 
 <ul>
-  <li>Sync delays of seconds or minutes in poor network conditions</li>
-  <li>Merge conflicts when you edit the same note on two devices</li>
-  <li>No access from non-Apple platforms (no web, no Windows, no browser)</li>
-  <li>Total dependency on Apple infrastructure for something that has nothing to do with Apple</li>
+  <li>You tell the chat something on your iPhone over breakfast. By the time you sit at the Mac, it's already classified into its context.</li>
+  <li>You reorganize your contexts and projects from the web at work. At home, on the Mac, you see the updated structure.</li>
+  <li>A change made by an automated agent or through the Claude connector shows up the same way, without a manual refresh.</li>
 </ul>
 
-<p>Most people accept this as the cost of doing business with a notes app. Fromly rejects that assumption entirely.</p>
+<div class="img-block"><img src="/img/screenshots/outliner-jerarquia.png" alt="Fromly contexts and elements in sync"><p class="img-caption">Contexts, chat, tasks, and notes stay in sync across every device in real time.</p></div>
 
-<div class="callout"><p>Fromly stores your data on its own server. Every write is committed server-side immediately. Every read pulls the latest state. There is no file. There is no sync queue. There is just your data, always current.</p></div>
+<h2>Sync as part of the experience, not a separate feature</h2>
 
-<h2>How Fromly's private server works</h2>
+<p>In most apps, sync is something that happens "behind the scenes" and you only notice when it fails. In Fromly, it's built into the core of the product. It's not a bolted-on system; it's the reason the app exists the way it does.</p>
 
-<p>When you type something in Fromly — a task, a note, a quick capture — it's sent directly to Fromly's server. Not to a local file waiting to be uploaded. Not to a sync queue hoping for a good connection. Directly.</p>
+<p>Fromly is a chat-first, web-first app, with Mac (a Tauri app, sharing the same code as the web) and iPhone (native Swift, in progressive parity with the web). All three versions share the same backend. There are no local files to reconcile. No version conflicts. No decisions to make about which copy is the "good" one.</p>
 
-<p>When you open Fromly on your iPhone a second later, it fetches the latest state from the same server. No waiting. No "syncing…" spinner. No conflicts.</p>
+<h3>Web, Mac and iPhone: three ways to reach the same place</h3>
 
-<div class="img-block"><img src="/img/screenshots/outliner-jerarquia.png" alt="Fromly outliner node tree"><p class="img-caption">Everything you write in Fromly lives in a node tree — accessible instantly from any device</p></div>
+<p>You can use Fromly from the browser on any computer, from the native app on Mac, and from your iPhone. All three are windows into the same chat, the same contexts, and the same memory. Change something in one and the others reflect it.</p>
 
-<p>This is the same architecture used by tools like Notion, Linear, and Figma. The difference is that Fromly brings it to a personal productivity tool — lightweight, fast, and opinionated about structure.</p>
+<p>This has specific value if you work across several settings throughout the day: at home, at the office, on the move. You don't need to think about which device has the most current version. It's always the same version.</p>
 
-<h3>What this means in practice</h3>
+<div class="img-block"><img src="/img/blog/sync/01-interfaz-oscuro.png" alt="Today's note in Fromly"><p class="img-caption">Today's note is always up to date, no matter where you last edited it.</p></div>
+
+<h2>How to use it without thinking about it</h2>
+
+<p>Fromly's sync requires no configuration. You create an account, install the app on the devices you use, and that's it. From there, Fromly keeps everything aligned.</p>
 
 <ol>
-  <li><strong>Write on Mac, open iPhone:</strong> it's there. Instantly. No waiting.</li>
-  <li><strong>Open the web app from any browser:</strong> same state, same data, same structure.</li>
-  <li><strong>Work offline:</strong> Fromly queues changes locally and commits them the moment you reconnect. No data loss.</li>
-  <li><strong>No Apple lock-in:</strong> your data doesn't live inside iCloud Drive. Fromly works on any device with a browser.</li>
+  <li><strong>Install Fromly on Mac and iPhone</strong> (and access it from the web when you're on another computer).</li>
+  <li><strong>Use whichever device is at hand</strong> at any given moment. There's no hierarchy between platforms.</li>
+  <li><strong>Trust that it's there.</strong> You don't need to hunt for sync buttons or check whether iCloud is working.</li>
 </ol>
 
-<h2>Cross-platform without compromise</h2>
+<p>The goal of Fromly isn't for you to think about how sync works. It's for you to never have to think about it at all.</p>
 
-<p>Fromly runs natively on Mac (as a Tauri app), on iPhone (native iOS), and on any browser as a full web app. All three talk to the same server. All three show the same data.</p>
+<h2>Why trusting the tool matters</h2>
 
-<div class="img-block"><img src="/img/screenshots/sidebar-atajos.png" alt="Fromly sidebar with shortcuts"><p class="img-caption">The same structure — contexts, shortcuts, filters — available across Mac, web, and iPhone</p></div>
+<p>There's a difference between using a tool and trusting a tool. When you trust that your data is where you left it, you stop spending mental energy verifying it. You stop having that small doubt when you open the chat: "does it have the latest context?".</p>
 
-<p>This matters for how you actually work. Your morning planning session on Mac. A quick capture on iPhone during a meeting. Reviewing your task list on the web from a client's office. Fromly handles all three without you thinking about sync at all.</p>
+<p>That accumulated friction — small in each instance, significant over time — is what Fromly removes with its own-server architecture. It's not a minor technical detail. It's the foundation a productivity tool needs if it wants to be genuinely trustworthy.</p>
 
-<p>That's not a feature. That's the baseline you should expect from any tool that calls itself reliable.</p>
-
-<h3>No configuration required</h3>
-
-<p>There's no "enable sync" setting in Fromly. There's no iCloud toggle, no Dropbox folder to point at, no local database to back up. You log in. Your data is there. You log in on another device. Your data is there too.</p>
-
-<p>From knows where your data is because it manages it directly. You don't have to.</p>
-
-<div class="callout"><p>Fromly doesn't ask you to manage sync. It manages it for you, invisibly, so you can focus on what you were actually trying to write.</p></div>
-
-<h2>What about privacy and ownership?</h2>
-
-<p>Running on a private server raises a fair question: who controls the data? Fromly is built around a clear principle — your notes, tasks, and structure are yours. The server is infrastructure, not a walled garden.</p>
-
-<p>Fromly doesn't sell your data, doesn't analyze it for advertising, and doesn't share it with third parties. The server exists to make sync reliable. Nothing more.</p>
-
-<h2>The apps that get this right</h2>
-
-<p>The best productivity tools don't make you think about where your data lives. You just open them and they work. Fromly is built on that principle from the ground up — not as an afterthought bolted onto a file-sync layer.</p>
-
-<p>If you've been frustrated by notes that arrive late, tasks that conflict, or the general unreliability of iCloud Drive sync in productivity apps, Fromly is worth trying. Write on your Mac. Pick up your iPhone. It's there. That's it.</p>
+<div class="callout"><p>Fromly doesn't depend on iCloud Drive. It has its own server. Your chat, notes, tasks, and contexts are always in sync across web, Mac, and iPhone. No waiting. No friction. No thinking about it.</p></div>
   <div class="cta-box">
     <h3>Try Fromly for free</h3>
     <p>Start in 60 seconds. No credit card required.</p>
