@@ -500,6 +500,7 @@ export default function V2App() {
         onNewDocument={onNewDocument}
         onNewCanvas={onNewCanvas}
         recorder={recorder}
+        onOpenPlanner={() => { setDetailNodeId(null); setRightMode('hoy') }}
       />
       <V2RightColumn
         mode={rightMode}

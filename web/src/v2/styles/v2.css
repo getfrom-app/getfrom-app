@@ -273,13 +273,15 @@
 }
 .v2-trash-empty:hover { background: var(--color-error, #e0393e); color: #fff; }
 
-/* Planificador — overlay a pantalla completa que envuelve el PlannerPanel real de la
-   v1 (día/semana/mes/año, drag&drop, GCal). Necesita todo el ancho para el timeline
-   multi-columna, por eso NO usa el .v2-modal pequeño sino un overlay a pantalla completa.
-   Barra propia con el cierre, encima del pp-header (que ya está lleno de controles a
-   la derecha: hoy/reset zoom), para no solaparse con ellos. */
+/* Planificador — overlay que envuelve el PlannerPanel real de la v1 (día/semana/
+   mes/año, drag&drop, GCal). Necesita todo el ancho disponible para el timeline
+   multi-columna, por eso NO usa el .v2-modal pequeño sino un overlay grande —
+   pero SIN tapar la columna derecha (queda en su tab «Hoy»): así se puede
+   arrastrar una tarea desde ahí al planificador para agendarla, como en la v1
+   (Alberto: «el planificador siempre se abrirá en conjunto con la columna
+   derecha de hoy»). `right: var(--v2-right)` en vez de `inset:0`. */
 .v2-planner-overlay {
-  position: fixed; inset: 0; z-index: 210;
+  position: fixed; top: 0; left: 0; bottom: 0; right: var(--v2-right); z-index: 210;
   background: var(--bg-primary);
   display: flex; flex-direction: column;
 }
