@@ -5,6 +5,7 @@
 import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { firstContextOf, contextColor } from '../../utils/cajones'
+import { fmtDateFull } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
 interface Props {
@@ -21,7 +22,7 @@ interface Props {
 }
 
 export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext, onDetach }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const ctx = hideContext ? null : firstContextOf(node)
   const title = (node.text || '').replace(/^(?:✦|💬)\s*/u, '').trim() || t('v2.elementRow.untitled', 'Sin título')
   const del = (e: React.MouseEvent) => {
@@ -29,9 +30,11 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
     store.deleteNode(node.id)
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.elementRow.movedToTrash', 'Movido a la papelera'), type: 'success' } }))
   }
+  const datesTip = `${t('v2.rightColumn.created', 'Creado')}: ${fmtDateFull(node.createdAt, i18n.language)}\n${t('v2.rightColumn.updated', 'Modificado')}: ${fmtDateFull(node.updatedAt, i18n.language)}`
   return (
     <div
       className={`v2-el-row ${child ? 'v2-el-child' : ''}`}
+      title={datesTip}
       onClick={() => onOpen(node.id)}
       onContextMenu={e => {
         e.preventDefault(); e.stopPropagation()

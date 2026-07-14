@@ -569,8 +569,12 @@
 
 /* ── Vista de detalle (visor/editor en la columna derecha) ─────────── */
 .v2-detail-head {
-  height: 48px; flex: 0 0 auto; display: flex; align-items: center; gap: 8px;
-  padding: 0 10px; border-bottom: 1px solid var(--border);
+  flex: 0 0 auto; padding: 6px 10px; border-bottom: 1px solid var(--border);
+}
+.v2-detail-head-top { height: 36px; display: flex; align-items: center; gap: 8px; }
+.v2-detail-dates {
+  font-size: 11px; color: var(--text-tertiary); padding: 0 0 0 34px; cursor: default;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .v2-detail-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
 

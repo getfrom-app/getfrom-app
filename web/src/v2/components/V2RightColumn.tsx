@@ -20,6 +20,7 @@ import V2AgendaView from './V2AgendaView'
 import V2ElementRow from './V2ElementRow'
 import { classifyElement } from '../elementKind'
 import { elementDisplayTitle } from '../../utils/docNode'
+import { fmtDate, fmtDateFull } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
 export type RightMode = 'contexto' | 'elementos' | 'historial' | 'hoy' | 'agenda'
@@ -100,11 +101,6 @@ function EditableDetailTitle({ nodeId }: { nodeId: string }) {
       {title}
     </span>
   )
-}
-
-function fmtDate(iso: string | undefined, locale: string): string {
-  if (!iso) return ''
-  try { return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) } catch { return '' }
 }
 
 // Clasifica un nodo como ELEMENTO de historial (documento/nota/pdf/imagen/enlace/audio).
@@ -265,18 +261,28 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
         return (
           <div className="v2-right-fill">
             <div className="v2-detail-head">
-              <button className="v2-iconbtn" onClick={onCloseDetail} title={t('v2.rightColumn.back', 'Volver')}>‹</button>
-              <EditableDetailTitle nodeId={detailNodeId} />
-              {isResourceLike && detailNode && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <PublishButton node={detailNode} />
-                  <button
-                    title={t('tip.delete', 'Eliminar')}
-                    onClick={() => { store.deleteNode(detailNode.id); onCloseDetail() }}
-                    className="v2-iconbtn"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                  </button>
+              <div className="v2-detail-head-top">
+                <button className="v2-iconbtn" onClick={onCloseDetail} title={t('v2.rightColumn.back', 'Volver')}>‹</button>
+                <EditableDetailTitle nodeId={detailNodeId} />
+                {isResourceLike && detailNode && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <PublishButton node={detailNode} />
+                    <button
+                      title={t('tip.delete', 'Eliminar')}
+                      onClick={() => { store.deleteNode(detailNode.id); onCloseDetail() }}
+                      className="v2-iconbtn"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                    </button>
+                  </div>
+                )}
+              </div>
+              {detailNode && (
+                <div className="v2-detail-dates" title={`${t('v2.rightColumn.created', 'Creado')}: ${fmtDateFull(detailNode.createdAt, i18n.language)}\n${t('v2.rightColumn.updated', 'Modificado')}: ${fmtDateFull(detailNode.updatedAt, i18n.language)}`}>
+                  {t('v2.rightColumn.created', 'Creado')} {fmtDate(detailNode.createdAt, i18n.language)}
+                  {detailNode.updatedAt && detailNode.updatedAt !== detailNode.createdAt && (
+                    <> · {t('v2.rightColumn.updated', 'Modificado')} {fmtDate(detailNode.updatedAt, i18n.language)}</>
+                  )}
                 </div>
               )}
             </div>
@@ -319,7 +325,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
                 />
                 {/* Elementos DENTRO de la conversación, indentados. */}
                 {it.isChat && bySession.get(it.node.id)?.map(child => (
-                  <V2ElementRow key={child.node.id} node={child.node} icon={child.icon} onOpen={onOpenNode} child hideContext />
+                  <V2ElementRow key={child.node.id} node={child.node} icon={child.icon} onOpen={onOpenNode} child hideContext extraMeta={fmtDate(child.node.updatedAt, i18n.language)} />
                 ))}
               </div>
             ))}

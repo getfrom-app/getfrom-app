@@ -12,6 +12,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { isDocNode, elementDisplayTitle } from '../../utils/docNode'
+import { fmtDate, fmtDateFull } from '../../utils/formatDate'
 import { isMarkedContext, listMarkedContexts, contextColor, assignContext } from '../../utils/cajones'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { renderInline } from '../outliner/InlineRenderer'
@@ -22,6 +23,8 @@ import { TaskPropsPopover } from './DiaryPanelComponents'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { isQuickCommandSession } from '../../store/aiChatStore'
+import { createAgentUnder } from '../../utils/agentesHelper'
+import { createPromptUnder } from '../../utils/promptsHelper'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
 import type { FilterView } from '../views/FilterResultsView'
 import PizarraThumbnail from '../views/PizarraThumbnail'
@@ -29,7 +32,8 @@ import PizarraThumbnail from '../views/PizarraThumbnail'
 export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
-interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; due?: string | null; status?: string | null }
+interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; due?: string | null; status?: string | null }
+type SortBy = 'updated' | 'created' | 'title'
 
 const ed = (n: Node): Record<string, unknown> => { try { return JSON.parse(n.extraData || '{}') } catch { return {} } }
 
@@ -83,6 +87,7 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
 const KIND_ICON: Record<ElemKind, string> = { text: '📝', canvas: '🎨', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡' }
 const ROW_H = 46
 const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
+const ELEMENTS_SORT_KEY = 'from_v2_elements_sort'
 
 interface Props {
   /** Filtro inicial (p.ej. al llegar desde «← Agentes»/«← Prompts» en el detalle). */
@@ -90,7 +95,7 @@ interface Props {
 }
 
 export default function ElementsPanel({ initialFilter }: Props = {}) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const s = useStore()
   const [filter, setFilter] = useState<ElemKind | 'all' | 'favorite'>(initialFilter || 'all')
   // Si llegamos aquí ya con el panel montado (p.ej. «← Agentes» tras «← Prompts»
@@ -107,8 +112,15 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     setView(v)
     localStorage.setItem(ELEMENTS_VIEW_KEY, v)
   }
+  const [sortBy, setSortBy] = useState<SortBy>(() => (localStorage.getItem(ELEMENTS_SORT_KEY) as SortBy) || 'updated')
+  const [sortMenuOpen, setSortMenuOpen] = useState(false)
+  function changeSort(v: SortBy) {
+    setSortBy(v)
+    localStorage.setItem(ELEMENTS_SORT_KEY, v)
+    setSortMenuOpen(false)
+  }
 
-  // TODOS los elementos del lienzo (globalmente), más recientes primero.
+  // TODOS los elementos del lienzo (globalmente) — el orden final lo decide `sortBy`.
   const rows = useMemo(() => {
     void s.nodesVersion
     const out: ElemRow[] = []
@@ -119,23 +131,28 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
       // Quita el prefijo decorativo (✦ sesión / 💬 transcripción) para no duplicar
       // icono: la fila ya muestra el icono de tipo (KIND_ICON) a la izquierda.
       const title = (elementDisplayTitle(n) || snippet.slice(0, 60) || t('common.noTitle')).replace(/^(?:✦|💬)\s*/u, '')
-      out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '', due: n.due, status: n.status })
+      out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '', createdAt: n.createdAt || '', due: n.due, status: n.status })
     }
-    out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     return out
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.nodesVersion, t])
 
   const nq = q.trim().toLowerCase()
   const showTaskSub = filter === 'task' || filter === 'event'
-  const filtered = useMemo(() => rows.filter(r => {
-    if (filter === 'favorite') { if (!store.getNode(r.id)?.isFavorite) return false }
-    else if (filter === 'all') { if (r.kind === 'memory') return false } // memoria IA solo con su propio chip
-    else if (r.kind !== filter) return false
-    if (showTaskSub && !matchesTaskSub(r, taskSub)) return false
-    if (!nq) return true
-    return r.title.toLowerCase().includes(nq) || r.snippet.toLowerCase().includes(nq)
-  }), [rows, filter, taskSub, showTaskSub, nq])
+  const filtered = useMemo(() => {
+    const out = rows.filter(r => {
+      if (filter === 'favorite') { if (!store.getNode(r.id)?.isFavorite) return false }
+      else if (filter === 'all') { if (r.kind === 'memory') return false } // memoria IA solo con su propio chip
+      else if (r.kind !== filter) return false
+      if (showTaskSub && !matchesTaskSub(r, taskSub)) return false
+      if (!nq) return true
+      return r.title.toLowerCase().includes(nq) || r.snippet.toLowerCase().includes(nq)
+    })
+    if (sortBy === 'title') out.sort((a, b) => a.title.localeCompare(b.title))
+    else if (sortBy === 'created') out.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    else out.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    return out
+  }, [rows, filter, taskSub, showTaskSub, nq, sortBy])
 
   const counts = useMemo(() => rows.reduce((acc, r) => { acc[r.kind] = (acc[r.kind] || 0) + 1; return acc }, {} as Record<ElemKind, number>), [rows])
   const favCount = useMemo(() => { void s.nodesVersion; return rows.filter(r => store.getNode(r.id)?.isFavorite).length }, [rows, s.nodesVersion])
@@ -178,6 +195,19 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
   }
 
+  function createNewAgent() {
+    const name = window.prompt(t('elements.newAgentPrompt', 'Nombre del agente:'))
+    if (!name || !name.trim()) return
+    const created = createAgentUnder({ parentId: null, label: name.trim(), icon: '🤖' })
+    open(created.id)
+  }
+  function createNewPrompt() {
+    const name = window.prompt(t('elements.newPromptPrompt', 'Nombre del prompt:'))
+    if (!name || !name.trim()) return
+    const created = createPromptUnder({ parentId: null, label: name.trim(), icon: '⚡' })
+    open(created.id)
+  }
+
   // ── Acciones de organización por fila (clic-derecho + botón ···) ──────────────
   const [menu, setMenu] = useState<{ id: string; x: number; y: number; ctx: boolean } | null>(null)
   const [renaming, setRenaming] = useState<string | null>(null)
@@ -217,11 +247,30 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{ padding: '14px 14px 6px', flexShrink: 0 }}>
-        <input
-          value={q} onChange={e => setQ(e.target.value)}
-          placeholder={t('elements.searchShort', 'Buscar')}
-          style={{ width: '100%', boxSizing: 'border-box', padding: '8px 10px', marginBottom: 10, borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontSize: 13, outline: 'none' }}
-        />
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10, position: 'relative' }}>
+          <input
+            value={q} onChange={e => setQ(e.target.value)}
+            placeholder={t('elements.searchShort', 'Buscar')}
+            style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontSize: 13, outline: 'none' }}
+          />
+          <button
+            title={t('elements.sortBy', 'Ordenar por')}
+            onClick={() => setSortMenuOpen(v => !v)}
+            style={{ flexShrink: 0, width: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: sortMenuOpen ? 'var(--bg-hover,#f4f4f5)' : 'var(--bg,#fff)', color: 'var(--text-secondary,#666)', cursor: 'pointer' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h10M3 12h6M3 18h3M17 4v16m0 0l4-4m-4 4l-4-4"/></svg>
+          </button>
+          {sortMenuOpen && (
+            <>
+              <div onClick={() => setSortMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 1000 }} />
+              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 1001, minWidth: 180, background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 8, boxShadow: '0 6px 24px rgba(0,0,0,0.14)', padding: 4, fontSize: 13 }}>
+                <ElMenuItem label={(sortBy === 'updated' ? '✓ ' : '') + t('elements.sortUpdated', 'Última modificación')} onClick={() => changeSort('updated')} />
+                <ElMenuItem label={(sortBy === 'created' ? '✓ ' : '') + t('elements.sortCreated', 'Fecha de creación')} onClick={() => changeSort('created')} />
+                <ElMenuItem label={(sortBy === 'title' ? '✓ ' : '') + t('elements.sortTitle', 'Título')} onClick={() => changeSort('title')} />
+              </div>
+            </>
+          )}
+        </div>
         {/* Filtro por tipo — texto limpio en una fila, con scroll horizontal, subrayado activo. */}
         <div className="el-filterbar">
           {CHIPS.map(c => {
@@ -240,6 +289,16 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             )
           })}
         </div>
+        {(filter === 'agent' || filter === 'prompt') && (
+          <div style={{ marginTop: 6 }}>
+            <button
+              onClick={filter === 'agent' ? createNewAgent : createNewPrompt}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, border: '1px dashed var(--border,#e2e2e2)', background: 'transparent', borderRadius: 7, padding: '5px 10px', fontSize: 12.5, fontWeight: 500, color: 'var(--accent,#6c5ce7)', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              + {filter === 'agent' ? t('elements.newAgent', 'Nuevo agente') : t('elements.newPrompt', 'Nuevo prompt')}
+            </button>
+          </div>
+        )}
         {showTaskSub && (
           <div className="el-filterbar" style={{ marginTop: 4 }}>
             {SUB_CHIPS.map(c => {
@@ -349,7 +408,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                   style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_H, transform: `translateY(${vi.start}px)`, display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 0 6px', cursor: 'pointer', boxSizing: 'border-box' }}
                 >
                   <span style={{ fontSize: 15, flexShrink: 0 }}>{KIND_ICON[r.kind]}</span>
-                  <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ minWidth: 0, flex: 1 }} title={`${t('v2.rightColumn.created', 'Creado')}: ${fmtDateFull(r.createdAt, i18n.language)}\n${t('v2.rightColumn.updated', 'Modificado')}: ${fmtDateFull(r.updatedAt, i18n.language)}`}>
                     {isRenaming ? (
                       <input
                         ref={renameRef}
@@ -367,6 +426,11 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                       )}
                     </>)}
                   </div>
+                  {!isRenaming && (
+                    <span style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap' }}>
+                      {fmtDate(sortBy === 'created' ? r.createdAt : r.updatedAt, i18n.language)}
+                    </span>
+                  )}
                   {!isRenaming && (
                     <>
                       {/* Eliminar directo al hover — mismo patrón que el resto de listas de la app. */}

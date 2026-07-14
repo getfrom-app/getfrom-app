@@ -23,6 +23,7 @@ import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
 import { isAgentNode, getAgentData } from '../../utils/agentesHelper'
 import { isPromptNode } from '../../utils/promptsHelper'
+import { fmtDate } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
 interface Props {
@@ -33,7 +34,7 @@ interface Props {
 }
 
 export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenConversation }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   useStore()
   const node = store.getNode(ctxId)
   const parent = contextParent(ctxId)
@@ -215,7 +216,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
                 icon={icon}
                 onOpen={id => (isConversation && onOpenConversation ? onOpenConversation(id) : onOpenNode(id))}
                 hideContext
-                extraMeta={agentData ? (agentData.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')) : undefined}
+                extraMeta={agentData ? (agentData.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')) : fmtDate(n.updatedAt, i18n.language)}
               />
             )
           })}

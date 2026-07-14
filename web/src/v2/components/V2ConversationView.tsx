@@ -17,6 +17,7 @@ import { ragRelated } from '../../api/client'
 import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
+import { fmtDate } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
 interface Props {
@@ -27,7 +28,7 @@ interface Props {
 
 export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx }: Props) {
   useStore()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const chat = useAIChat()
   const [pickerOpen, setPickerOpen] = useState(false)
   const pickerWrap = useRef<HTMLDivElement>(null)
@@ -135,7 +136,7 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
         <div style={{ marginBottom: 4 }}>
           <div className="v2-section-label" style={{ padding: '6px 0 4px' }}>{t('v2.related', 'Relacionado')}</div>
           {related.map(({ node: n, icon }) => (
-            <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} />
+            <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} extraMeta={fmtDate(n.updatedAt, i18n.language)} />
           ))}
         </div>
       )}
@@ -176,7 +177,7 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
       )}
 
       {lineEls.map(({ node: n, icon }) => (
-        <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} hideContext onDetach={detachFromConversation} />
+        <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} hideContext onDetach={detachFromConversation} extraMeta={fmtDate(n.updatedAt, i18n.language)} />
       ))}
       {elements.length === 0 && <div className="v2-right-empty" style={{ padding: '8px 0' }}>{t('v2.noElementsYet', 'Sin elementos todavía. Pídele a Fromly una nota, un documento, o sube archivos.')}</div>}
 
