@@ -337,18 +337,18 @@
 <div class="claude-hero">
     <div class="claude-badge">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Ahora en el directorio oficial de Claude · Anthropic
+        Conector MCP para Claude
     </div>
     <h1>Fromly en Claude.<br><span>Tu vault, desde el chat.</span></h1>
-    <p>Guarda conversaciones, crea tareas y consulta tu información de Fromly directamente desde Claude. Sin instalar nada, sin copiar tokens. Busca "Fromly" en el directorio de conectores.</p>
+    <p>Guarda conversaciones, crea tareas y consulta tu información de Fromly directamente desde Claude. Sin instalar nada, sin copiar tokens: lo añades como conector personalizado con una URL.</p>
     <div class="hero-actions-center">
         <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" class="btn-purple">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Buscar "Fromly" en Claude → Conectores
+            Añadir Fromly en Claude → Conectores
         </a>
         <a href="/" class="btn-secondary">Descargar Fromly</a>
     </div>
-    <p style="margin-top: 16px; font-size: 13px; color: var(--text-secondary);">Gratis · Funciona en claude.ai, iPhone, Android y Claude Desktop</p>
+    <p style="margin-top: 16px; font-size: 13px; color: var(--text-secondary);">Gratis · Se configura una vez en claude.ai o Claude Desktop, y funciona también en iPhone y Android</p>
 </div>
 
 <!-- Demo visual -->
@@ -401,30 +401,30 @@
 </div>
 </div>
 
-<!-- Pasos de conexión — directorio -->
+<!-- Pasos de conexión — conector personalizado por URL -->
 <div class="steps-section" style="padding-top: 80px;">
     <h2>Conecta Fromly con Claude en 4 pasos</h2>
-    <p>Funciona desde cualquier dispositivo — iPhone, Android, web y Desktop</p>
+    <p>Se configura una vez en claude.ai o Claude Desktop, y queda disponible también en iPhone y Android</p>
     <div class="steps-grid">
         <div class="step-card">
             <div class="step-number">1</div>
             <h3>Abre Claude</h3>
-            <p>Entra en <strong>claude.ai</strong> o abre la app de Claude en iPhone, Android o Desktop. La misma cuenta funciona en todos.</p>
+            <p>Entra en <strong>claude.ai</strong> o abre la app de Claude Desktop → Ajustes → Conectores.</p>
         </div>
         <div class="step-card">
             <div class="step-number">2</div>
-            <h3>Ve a Ajustes → Conectores</h3>
-            <p>Busca <strong>"Fromly"</strong> en el directorio oficial de conectores de Claude. Fromly aparece como conector verificado de Anthropic.</p>
+            <h3>Añade un conector personalizado</h3>
+            <p>Pulsa <strong>"Añadir conector personalizado"</strong> y pega esta URL: <code>https://from-server-production.up.railway.app/mcp</code></p>
         </div>
         <div class="step-card">
             <div class="step-number">3</div>
-            <h3>Pulsa Conectar</h3>
-            <p>Haz clic en <strong>Conectar</strong> e inicia sesión con tu cuenta de Fromly mediante OAuth. Sin copiar tokens ni introducir URLs.</p>
+            <h3>Inicia sesión</h3>
+            <p>Se abre una ventana para iniciar sesión con tu cuenta de Fromly mediante OAuth. Sin copiar tokens.</p>
         </div>
         <div class="step-card">
             <div class="step-number">4</div>
             <h3>Listo</h3>
-            <p>Claude puede guardar notas, crear tareas y consultar tu vault de Fromly directamente desde el chat, en cualquier dispositivo.</p>
+            <p>Claude puede guardar notas, crear tareas y consultar tu vault de Fromly directamente desde el chat, en cualquier dispositivo con la misma cuenta.</p>
         </div>
     </div>
 </div>
@@ -548,10 +548,10 @@
 <div class="req-section">
     <h2>Dónde funciona</h2>
     <p>
-        Fromly se conecta con Claude desde <strong>cualquier dispositivo</strong> a través del directorio oficial de conectores de Anthropic.<br><br>
-        <strong>claude.ai (web)</strong> — Ajustes → Conectores → buscar "Fromly".<br>
-        <strong>Claude para iPhone y Android</strong> — mismo flujo, misma cuenta.<br>
-        <strong>Claude Desktop</strong> — Ajustes → Conectores → buscar "Fromly".<br>
+        Fromly se conecta con Claude como <strong>conector personalizado</strong> (URL + OAuth), sin depender de ningún directorio.<br><br>
+        <strong>claude.ai (web)</strong> — Ajustes → Conectores → "Añadir conector personalizado".<br>
+        <strong>Claude Desktop</strong> — mismo flujo, Ajustes → Conectores.<br>
+        <strong>Claude para iPhone y Android</strong> — se sincroniza automáticamente con la misma cuenta en cuanto lo añades desde la web o Desktop.<br>
         <strong>Claude Code (CLI)</strong> — configuración manual en <code>~/.claude.json</code> (ver arriba).<br><br>
         Una vez conectado, Claude guarda notas, crea tareas y consulta tu vault en todos tus dispositivos. Todos los datos se guardan en tu vault de Fromly.
     </p>
@@ -560,11 +560,11 @@
 <!-- CTA -->
 <section class="cta" id="download" style="text-align:center; padding: 80px 24px;">
     <h2>Empieza ahora</h2>
-    <p>Conecta Fromly con Claude en menos de un minuto desde cualquier dispositivo.</p>
+    <p>Conecta Fromly con Claude en menos de un minuto.</p>
     <div class="hero-actions-center" style="margin-top: 28px;">
         <a href="https://claude.ai" target="_blank" rel="noopener noreferrer" class="btn-purple">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            Buscar "Fromly" en Claude → Conectores
+            Añadir Fromly en Claude → Conectores
         </a>
         <a href="/" class="btn-secondary">Descargar Fromly</a>
     </div>

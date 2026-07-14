@@ -469,21 +469,23 @@ in your version before assuming it fully matches the web.
 
 ## 11. Connecting Claude (MCP)
 
-Fromly is in Claude's official connector directory (Anthropic). Once connected, Claude can search,
-create, edit, **delete and move** your notes and tasks, upload real files and run batch cleanups —
-without you having to ask each time.
+Fromly connects to Claude as a **custom connector** (MCP with OAuth) — it doesn't depend on
+Anthropic listing it in any directory. Once connected, Claude can search, create, edit,
+**delete and move** your notes and tasks, upload real files and run batch cleanups — without you
+having to ask each time.
 
-### How to connect — Claude directory (recommended)
+### How to connect — custom connector (recommended)
 
-Works from any device: claude.ai, iPhone, Android and Claude Desktop.
+Set it up once in claude.ai or Claude Desktop; it becomes available on iPhone and Android too with
+the same account.
 
-1. Open Claude (claude.ai, the iPhone/Android app, or Claude Desktop).
-2. Go to **Settings → Connectors**.
-3. Search for **"Fromly"** in the directory.
-4. Press **Connect** and sign in with your Fromly account via OAuth.
+1. Open Claude (claude.ai or Claude Desktop).
+2. Go to **Settings → Connectors → Add custom connector**.
+3. Paste this URL: `https://from-server-production.up.railway.app/mcp`
+4. A window opens to sign in with your Fromly account via OAuth.
 5. Done — Claude can save notes and tasks to your vault from that point on.
 
-No need to install extensions, copy tokens, or enter URLs manually.
+No need to install extensions or copy tokens.
 
 ### How to connect — Claude Code (CLI)
 
@@ -533,8 +535,8 @@ them — except the menu bar — connect using your account's **API token**.
 
 It's the key that Raycast, Chrome and Claude Code (CLI) use to talk to your Fromly. Generate and
 copy it in **Settings → Accessories** (it's the same token for all three; regenerating it
-invalidates the previous one). It's valid for 1 year. For Claude on web, iPhone, Android and
-Desktop you don't need the token — use the connector directory instead (see section 11).
+invalidates the previous one). It's valid for 1 year. For Claude on web and Desktop you don't need
+the token — add Fromly as a custom connector instead (see section 11).
 
 ### Menu bar (Mac)
 

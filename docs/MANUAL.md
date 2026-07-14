@@ -475,21 +475,23 @@ versión antes de asumir que coincide al cien por cien con la web.
 
 ## 11. Conexión con Claude (MCP)
 
-Fromly está en el **directorio oficial de conectores de Claude** (Anthropic). Una vez conectado,
-Claude puede buscar, crear, editar, **borrar y mover** tus notas y tareas, subir archivos reales y
-hacer limpiezas por lotes — sin que tengas que pedirlo cada vez.
+Fromly se conecta con Claude como **conector personalizado** (MCP con OAuth) — sin depender de
+que Anthropic lo publique en ningún directorio. Una vez conectado, Claude puede buscar, crear,
+editar, **borrar y mover** tus notas y tareas, subir archivos reales y hacer limpiezas por lotes —
+sin que tengas que pedirlo cada vez.
 
-### Cómo conectar — directorio de Claude (recomendado)
+### Cómo conectar — conector personalizado (recomendado)
 
-Funciona desde cualquier dispositivo: claude.ai, iPhone, Android y Claude Desktop.
+Se configura una vez en claude.ai o Claude Desktop, y queda disponible también en iPhone y Android
+con la misma cuenta.
 
-1. Abre Claude (claude.ai, app de iPhone/Android o Claude Desktop).
-2. Ve a **Ajustes → Conectores**.
-3. Busca **"Fromly"** en el directorio.
-4. Pulsa **Conectar** e inicia sesión con tu cuenta de Fromly mediante OAuth.
+1. Abre Claude (claude.ai o Claude Desktop).
+2. Ve a **Ajustes → Conectores → Añadir conector personalizado**.
+3. Pega esta URL: `https://from-server-production.up.railway.app/mcp`
+4. Se abre una ventana para iniciar sesión con tu cuenta de Fromly mediante OAuth.
 5. Listo — Claude puede guardar notas y tareas en tu vault desde ese momento.
 
-No necesitas instalar extensiones, copiar tokens ni introducir URLs manualmente.
+No necesitas instalar extensiones ni copiar tokens.
 
 ### Cómo conectar — Claude Code (CLI)
 
@@ -539,8 +541,8 @@ la barra de menús— se conectan con el **token de API** de tu cuenta.
 
 Es la llave que usan Raycast, Chrome y Claude Code (CLI) para hablar con tu Fromly. Se genera y
 copia en **Ajustes → Accesorios** (es el mismo token para los tres; regenerarlo invalida el
-anterior). Vive 1 año. Para Claude en web, iPhone, Android y Desktop no necesitas el token — usa el
-directorio de conectores (ver sección 11).
+anterior). Vive 1 año. Para Claude en web y Desktop no necesitas el token — añade Fromly como
+conector personalizado (ver sección 11).
 
 ### Barra de menús (Mac)
 

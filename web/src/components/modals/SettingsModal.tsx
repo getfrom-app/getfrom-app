@@ -643,8 +643,11 @@ AL TERMINAR ("fin"):
 - Si hay info nueva del área → from_update_context(contexto, info).
 - Confirma: "Guardado en Fromly (cuenta: X) — [título sesión]".`
 
+const MCP_SERVER_URL = 'https://from-server-production.up.railway.app/mcp'
+
 export function ClaudeMcpPane() {
   const { t } = useTranslation()
+  const [urlCopied, setUrlCopied] = useState(false)
   const steps = [
     t('mcp.step1'),
     t('mcp.step2'),
@@ -653,6 +656,12 @@ export function ClaudeMcpPane() {
     t('mcp.step5'),
   ]
 
+  function copyUrl() {
+    navigator.clipboard.writeText(MCP_SERVER_URL).catch(() => {})
+    setUrlCopied(true)
+    setTimeout(() => setUrlCopied(false), 2000)
+  }
+
   return (
     <div className="st-pane">
       <SectionTitle>{t('mcp.directoryTitle')}</SectionTitle>
@@ -660,7 +669,7 @@ export function ClaudeMcpPane() {
         {t('mcp.directoryHint')}
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
         {steps.map((step, i) => (
           <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
             <div style={{
@@ -671,6 +680,17 @@ export function ClaudeMcpPane() {
             <div style={{ fontSize: 14, lineHeight: 1.5, paddingTop: 3 }}>{step}</div>
           </div>
         ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 24 }}>
+        <code style={{
+          flex: 1, padding: '6px 10px', background: 'var(--bg-secondary)', borderRadius: 6,
+          fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          border: '1px solid var(--border)',
+        }}>{MCP_SERVER_URL}</code>
+        <button className="btn-secondary" onClick={copyUrl} style={{ flexShrink: 0, fontSize: 12 }}>
+          {urlCopied ? t('common.copied') : t('common.copy')}
+        </button>
       </div>
 
       <div style={{ marginTop: 8 }}>
