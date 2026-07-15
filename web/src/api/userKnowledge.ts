@@ -38,18 +38,24 @@ export function ensurePerfilSync(): Node {
  * Antes de este cambio, un perfil con años de hechos acumulados aparecía VACÍO
  * en la pantalla de Perfil de v2 (que solo lee/edita `.body`), aunque el chat
  * lo siguiera usando bien vía sus hijos (Alberto, 15 jul: "tenía un perfil...
- * no sé si habrá sobrevivido al cambio"). Mismo id, sin duplicar. Idempotente:
- * una vez migrado (o si ya nace vacío), es un simple get.
+ * no sé si habrá sobrevivido al cambio"). Mismo id, sin duplicar.
+ *
+ * SIEMPRE fusiona si quedan hijos legacy — NUNCA se salta por tener ya algo en
+ * `.body` (antes se saltaba si el body no estaba vacío; un "prueba" de una
+ * línea escrito antes de que existiera esta migración bastó para bloquearla y
+ * dejar cientos de hechos reales invisibles). El body existente se conserva
+ * SIEMPRE, delante del contenido migrado — no se pierde nada. Idempotente: sin
+ * hijos legacy, es un simple get.
  */
 export function getOrCreateProfileDoc(): Node {
   const perfil = ensurePerfilSync()
-  const hasRealBody = !!(perfil.body && perfil.body.trim() && perfil.body.trim() !== '<p></p>')
-  if (hasRealBody) return perfil
   const legacyChildren = store.children(perfil.id).filter(c => !c.deletedAt)
   if (legacyChildren.length === 0) return perfil
   const legacyText = legacyChildren.map(n => (n.text || '').trim()).filter(Boolean).join('\n\n')
   for (const child of legacyChildren) store.deleteNode(child.id)
-  store.updateNode(perfil.id, { body: legacyText ? markdownToHtml(legacyText) : '<p></p>' })
+  const existingBody = htmlToMarkdown(perfil.body || '').trim()
+  const combined = [existingBody, legacyText].filter(Boolean).join('\n\n')
+  store.updateNode(perfil.id, { body: combined ? markdownToHtml(combined) : '<p></p>' })
   return store.getNode(perfil.id)!
 }
 
