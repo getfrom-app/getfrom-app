@@ -2255,5 +2255,8 @@
   "pricing.lifetimeNoSub": "Jednorazowa płatność — bez subskrypcji",
   "pricing.lifetimeLabel": "na zawsze",
   "pricing.lifetimeNote": "Jednorazowa płatność, bez subskrypcji",
-  "pricing.ctaGoLifetime": "Kup Lifetime"
+  "pricing.ctaGoLifetime": "Kup Lifetime",
+  "v2.chat.attachFromDrive": "Dołącz z Google Drive",
+  "v2.chat.driveShort": "Drive",
+  "v2.driveImportFailed": "Nie udało się zaimportować z Google Drive"
 }

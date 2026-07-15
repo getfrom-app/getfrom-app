@@ -22,8 +22,8 @@ const GOOGLE_SCOPES = [
   'https://www.googleapis.com/auth/calendar',
 ].join(' ')
 
-export async function getGoogleStatus(): Promise<{ connected: boolean; email: string | null }> {
-  return apiRequest<{ connected: boolean; email: string | null }>('/google/status')
+export async function getGoogleStatus(): Promise<{ connected: boolean; email: string | null; driveConnected: boolean }> {
+  return apiRequest<{ connected: boolean; email: string | null; driveConnected: boolean }>('/google/status')
 }
 
 export function getGoogleOAuthUrl(): string {

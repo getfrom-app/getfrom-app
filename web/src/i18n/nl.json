@@ -2255,5 +2255,8 @@
   "pricing.lifetimeNoSub": "Eenmalige betaling — geen abonnement",
   "pricing.lifetimeLabel": "voor altijd",
   "pricing.lifetimeNote": "Eenmalige betaling, geen abonnement",
-  "pricing.ctaGoLifetime": "Lifetime kopen"
+  "pricing.ctaGoLifetime": "Lifetime kopen",
+  "v2.chat.attachFromDrive": "Bijvoegen vanuit Google Drive",
+  "v2.chat.driveShort": "Drive",
+  "v2.driveImportFailed": "Importeren vanuit Google Drive is mislukt"
 }

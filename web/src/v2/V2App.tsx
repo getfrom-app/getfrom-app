@@ -16,6 +16,8 @@ import { htmlToMarkdown } from '../utils/htmlMarkdown'
 import { applyTemplate } from '../utils/tagsHelper'
 import { createMarkdownNode } from '../utils/importMarkdown'
 import { uploadFile } from '../api/client'
+import { pickAndImportDriveFile } from '../utils/googleDrivePicker'
+import type { DriveImportResult } from '../api/googleDrive'
 import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
@@ -274,6 +276,41 @@ export default function V2App() {
   const toast = (message: string, type: 'success' | 'error' = 'success') =>
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type } }))
 
+  // Crea el nodo-recurso de un archivo YA importado desde Drive (la subida a R2
+  // la hizo el servidor en /google/drive/import) — mismo `extraData` que
+  // `uploadResourceNode`, sin repetir la subida.
+  const createDriveResourceNode = (result: DriveImportResult, parentId: string | null): string => {
+    const node = store.createNode({ text: result.name.replace(/\.[^.]+$/, ''), parentId })
+    store.updateNode(node.id, { isResource: true, extraData: JSON.stringify({ _resourceUrl: result.publicUrl, _resourceKey: result.key, _resourceType: result.resourceType }) })
+    return node.id
+  }
+
+  // Botón "Adjuntar desde Drive" del composer — MISMO comportamiento dual que
+  // soltar un archivo (onFilesDropped): con conversación activa se adjunta
+  // ahí, sin conversación se importa al contexto/día activo.
+  const onOpenDrivePicker = async () => {
+    let result: DriveImportResult | null
+    try {
+      result = await pickAndImportDriveFile()
+    } catch {
+      toast(t('v2.driveImportFailed', 'No se pudo importar desde Google Drive'), 'error')
+      return
+    }
+    if (!result) return // cancelado en el Picker, o redirigido a conectar Drive
+
+    if (aiChatStore.sessionId) {
+      const sid = aiChatStore.sessionId
+      setDetailNodeId(null); setViewingCtxFicha(false); setRightMode('contexto')
+      createDriveResourceNode(result, sid)
+      toast(t('v2.attachedToConversation', '📎 {{name}} adjuntado a la conversación', { name: result.name }))
+      aiChatStore.addNotice(t('v2.filesIncorporatedNotice', 'He incorporado {{label}} a esta conversación. Ya puedes preguntarme sobre su contenido.', { label: `**${result.name}**` }))
+    } else {
+      const id = createDriveResourceNode(result, captureParentId())
+      setDetailNodeId(id); setViewingCtxFicha(false); setRightMode('contexto')
+      toast(t('v2.importedToFromly', '📥 {{name}} importado a Fromly', { name: result.name }))
+    }
+  }
+
   // Dónde nace el contenido creado desde el centro: el contexto activo o el diario de hoy.
   const captureParentId = (): string | null => {
     if (selectedCtxId) return selectedCtxId
@@ -513,6 +550,7 @@ export default function V2App() {
         onNewCanvas={onNewCanvas}
         recorder={recorder}
         onOpenPlanner={() => { setDetailNodeId(null); setRightMode('hoy') }}
+        onOpenDrivePicker={onOpenDrivePicker}
       />
       <V2RightColumn
         mode={rightMode}

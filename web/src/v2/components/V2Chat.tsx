@@ -27,6 +27,8 @@ interface Props {
    *  día) y se cierra cualquier detalle abierto — para poder arrastrar tareas
    *  desde ahí al propio planificador y agendar, como en la v1. */
   onOpenPlanner: () => void
+  /** Abre el selector de Google Drive (Picker) y adjunta/importa el archivo elegido. */
+  onOpenDrivePicker: () => void
 }
 
 // Oculta los bloques ```from-action``` (completos o el parcial que aún se está
@@ -41,7 +43,7 @@ function stripActions(s: string): string {
     .trim()
 }
 
-export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, onNewDocument, onNewCanvas, recorder, onOpenPlanner }: Props) {
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, onNewDocument, onNewCanvas, recorder, onOpenPlanner, onOpenDrivePicker }: Props) {
   const { t } = useTranslation()
   const SUGGESTIONS = [
     { t: t('v2.chat.suggestSummarizeDayTitle', 'Resume mi día'), d: t('v2.chat.suggestSummarizeDayDesc', 'Tareas y eventos de hoy'), p: t('v2.chat.suggestSummarizeDayPrompt', '¿Qué tengo para hoy? Resume mis tareas y eventos.') },
@@ -241,6 +243,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           <button className="v2-head-action" title={t('v2.chat.newTask', 'Nueva tarea')} onClick={() => setShowTask(true)}>＋ {t('v2.chat.newTaskShort', 'Tarea')}</button>
           <button className="v2-head-action" title={t('v2.chat.newEvent', 'Nuevo evento')} onClick={() => setShowEvent(true)}>＋ {t('v2.chat.newEventShort', 'Evento')}</button>
           <button className="v2-head-action" title={t('v2.plannerOpen', 'Abrir el planificador')} onClick={() => { setShowPlanner(true); onOpenPlanner() }}>📅 {t('wftopbar.planner', 'Planificador')}</button>
+          <button className="v2-head-action" title={t('v2.chat.attachFromDrive', 'Adjuntar desde Google Drive')} onClick={onOpenDrivePicker}>📎 {t('v2.chat.driveShort', 'Drive')}</button>
           <button
             className={`v2-head-action ${recorder.recording ? 'recording' : ''}`}
             title={recorder.recording ? t('v2.chat.stopAndSave', 'Detener y guardar') : t('v2.chat.recordAudio', 'Grabar audio (reunión o nota de voz)')}

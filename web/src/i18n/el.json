@@ -2255,5 +2255,8 @@
   "pricing.lifetimeNoSub": "Εφάπαξ πληρωμή — χωρίς συνδρομή",
   "pricing.lifetimeLabel": "για πάντα",
   "pricing.lifetimeNote": "Εφάπαξ πληρωμή, χωρίς συνδρομή",
-  "pricing.ctaGoLifetime": "Αγορά Lifetime"
+  "pricing.ctaGoLifetime": "Αγορά Lifetime",
+  "v2.chat.attachFromDrive": "Επισύναψη από το Google Drive",
+  "v2.chat.driveShort": "Drive",
+  "v2.driveImportFailed": "Δεν ήταν δυνατή η εισαγωγή από το Google Drive"
 }

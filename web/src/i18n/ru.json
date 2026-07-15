@@ -2255,5 +2255,8 @@
   "pricing.lifetimeNoSub": "Разовый платёж — без подписки",
   "pricing.lifetimeLabel": "навсегда",
   "pricing.lifetimeNote": "Разовый платёж, без подписки",
-  "pricing.ctaGoLifetime": "Купить Lifetime"
+  "pricing.ctaGoLifetime": "Купить Lifetime",
+  "v2.chat.attachFromDrive": "Прикрепить из Google Drive",
+  "v2.chat.driveShort": "Drive",
+  "v2.driveImportFailed": "Не удалось импортировать из Google Drive"
 }

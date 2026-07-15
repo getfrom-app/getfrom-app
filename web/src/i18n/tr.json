@@ -2255,5 +2255,8 @@
   "pricing.lifetimeNoSub": "Tek seferlik ödeme — abonelik yok",
   "pricing.lifetimeLabel": "sonsuza kadar",
   "pricing.lifetimeNote": "Tek seferlik ödeme, abonelik yok",
-  "pricing.ctaGoLifetime": "Lifetime Satın Al"
+  "pricing.ctaGoLifetime": "Lifetime Satın Al",
+  "v2.chat.attachFromDrive": "Google Drive'dan ekle",
+  "v2.chat.driveShort": "Drive",
+  "v2.driveImportFailed": "Google Drive'dan içe aktarılamadı"
 }

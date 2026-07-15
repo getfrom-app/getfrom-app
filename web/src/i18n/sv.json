@@ -2255,5 +2255,8 @@
   "pricing.lifetimeNoSub": "Engångsbetalning — ingen prenumeration",
   "pricing.lifetimeLabel": "för alltid",
   "pricing.lifetimeNote": "Engångsbetalning, ingen prenumeration",
-  "pricing.ctaGoLifetime": "Köp Lifetime"
+  "pricing.ctaGoLifetime": "Köp Lifetime",
+  "v2.chat.attachFromDrive": "Bifoga från Google Drive",
+  "v2.chat.driveShort": "Drive",
+  "v2.driveImportFailed": "Det gick inte att importera från Google Drive"
 }
