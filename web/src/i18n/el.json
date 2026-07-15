@@ -2265,5 +2265,12 @@
   "v2.ctxMenu.moveTo": "Μετακίνηση σε…",
   "v2.ctxMenu.delete": "Διαγραφή",
   "v2.ctxMenu.noTargets": "Δεν υπάρχει άλλο διαθέσιμο πλαίσιο",
-  "v2.ctxDeletedToast": "Το πλαίσιο μετακινήθηκε στον κάδο"
+  "v2.ctxDeletedToast": "Το πλαίσιο μετακινήθηκε στον κάδο",
+  "settingsView.colorCopper": "Χαλκός",
+  "settingsView.colorGraphite": "Γραφίτης",
+  "settingsView.colorForest": "Δασικό πράσινο",
+  "settingsView.colorAubergine": "Μελιτζανί",
+  "settingsView.colorOchre": "Ώχρα",
+  "settingsView.colorWine": "Κρασί",
+  "settingsView.colorPetrol": "Πετρόλ"
 }

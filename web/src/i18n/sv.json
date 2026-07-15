@@ -2265,5 +2265,12 @@
   "v2.ctxMenu.moveTo": "Flytta till…",
   "v2.ctxMenu.delete": "Ta bort",
   "v2.ctxMenu.noTargets": "Ingen annan kontext tillgänglig",
-  "v2.ctxDeletedToast": "Kontext flyttad till papperskorgen"
+  "v2.ctxDeletedToast": "Kontext flyttad till papperskorgen",
+  "settingsView.colorCopper": "Koppar",
+  "settingsView.colorGraphite": "Grafit",
+  "settingsView.colorForest": "Skogsgrön",
+  "settingsView.colorAubergine": "Aubergine",
+  "settingsView.colorOchre": "Ockra",
+  "settingsView.colorWine": "Vinröd",
+  "settingsView.colorPetrol": "Petrol"
 }

@@ -2265,5 +2265,12 @@
   "v2.ctxMenu.moveTo": "Переместить в…",
   "v2.ctxMenu.delete": "Удалить",
   "v2.ctxMenu.noTargets": "Нет другого доступного контекста",
-  "v2.ctxDeletedToast": "Контекст перемещён в корзину"
+  "v2.ctxDeletedToast": "Контекст перемещён в корзину",
+  "settingsView.colorCopper": "Медь",
+  "settingsView.colorGraphite": "Графит",
+  "settingsView.colorForest": "Лесной",
+  "settingsView.colorAubergine": "Баклажан",
+  "settingsView.colorOchre": "Охра",
+  "settingsView.colorWine": "Вино",
+  "settingsView.colorPetrol": "Петроль"
 }

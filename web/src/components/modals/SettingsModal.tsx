@@ -309,7 +309,15 @@ export function CuentaPane() {
 
 // Paleta de color de acento — compartida con SettingsView (v1 embebido).
 export const ACCENT_COLORS: { value: AccentColor; label: string; hex: string }[] = [
-  { value: 'steel',  label: 'settingsView.colorSteel',  hex: '#3E5C76' },
+  // Paleta "industrial" — tonos apagados/editoriales, no los básicos saturados de abajo.
+  { value: 'steel',     label: 'settingsView.colorSteel',     hex: '#3E5C76' },
+  { value: 'copper',    label: 'settingsView.colorCopper',    hex: '#B8491F' },
+  { value: 'graphite',  label: 'settingsView.colorGraphite',  hex: '#37474F' },
+  { value: 'forest',    label: 'settingsView.colorForest',    hex: '#2F5233' },
+  { value: 'aubergine', label: 'settingsView.colorAubergine', hex: '#4A3B5C' },
+  { value: 'ochre',     label: 'settingsView.colorOchre',     hex: '#A67C27' },
+  { value: 'wine',      label: 'settingsView.colorWine',      hex: '#722F37' },
+  { value: 'petrol',    label: 'settingsView.colorPetrol',    hex: '#1B4B5A' },
   { value: 'purple', label: 'settingsView.colorPurple', hex: '#8b5cf6' },
   { value: 'indigo', label: 'settingsView.colorIndigo', hex: '#6366f1' },
   { value: 'blue',   label: 'settingsView.colorBlue',   hex: '#3b82f6' },

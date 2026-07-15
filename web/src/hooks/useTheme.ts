@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 
 export type Theme = 'light' | 'dark' | 'system'
 export type Density = 'normal' | 'compact' | 'comfortable'
-export type AccentColor = 'steel' | 'purple' | 'blue' | 'green' | 'orange' | 'rose' | 'teal'
+export type AccentColor = 'steel' | 'copper' | 'graphite' | 'forest' | 'aubergine' | 'ochre' | 'wine' | 'petrol'
+  | 'purple' | 'blue' | 'green' | 'orange' | 'rose' | 'teal'
   | 'indigo' | 'cyan' | 'amber' | 'pink' | 'red' | 'lime'
 
 const THEME_KEY = 'from_theme'
@@ -29,7 +30,8 @@ export function getStoredDensity(): Density {
 
 export function getStoredAccent(): AccentColor {
   const stored = localStorage.getItem(ACCENT_KEY)
-  const valid: AccentColor[] = ['steel', 'purple', 'blue', 'green', 'orange', 'rose', 'teal', 'indigo', 'cyan', 'amber', 'pink', 'red', 'lime']
+  const valid: AccentColor[] = ['steel', 'copper', 'graphite', 'forest', 'aubergine', 'ochre', 'wine', 'petrol',
+    'purple', 'blue', 'green', 'orange', 'rose', 'teal', 'indigo', 'cyan', 'amber', 'pink', 'red', 'lime']
   return valid.includes(stored as AccentColor) ? stored as AccentColor : 'steel'
 }
 

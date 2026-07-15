@@ -2265,5 +2265,12 @@
   "v2.ctxMenu.moveTo": "Verschieben nach…",
   "v2.ctxMenu.delete": "Löschen",
   "v2.ctxMenu.noTargets": "Kein anderer Kontext verfügbar",
-  "v2.ctxDeletedToast": "Kontext in den Papierkorb verschoben"
+  "v2.ctxDeletedToast": "Kontext in den Papierkorb verschoben",
+  "settingsView.colorCopper": "Kupfer",
+  "settingsView.colorGraphite": "Graphit",
+  "settingsView.colorForest": "Waldgrün",
+  "settingsView.colorAubergine": "Aubergine",
+  "settingsView.colorOchre": "Ocker",
+  "settingsView.colorWine": "Weinrot",
+  "settingsView.colorPetrol": "Petrol"
 }

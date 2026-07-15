@@ -2265,5 +2265,12 @@
   "v2.ctxMenu.moveTo": "Verplaatsen naar…",
   "v2.ctxMenu.delete": "Verwijderen",
   "v2.ctxMenu.noTargets": "Geen andere context beschikbaar",
-  "v2.ctxDeletedToast": "Context naar prullenbak verplaatst"
+  "v2.ctxDeletedToast": "Context naar prullenbak verplaatst",
+  "settingsView.colorCopper": "Koper",
+  "settingsView.colorGraphite": "Grafiet",
+  "settingsView.colorForest": "Bosgroen",
+  "settingsView.colorAubergine": "Aubergine",
+  "settingsView.colorOchre": "Oker",
+  "settingsView.colorWine": "Wijnrood",
+  "settingsView.colorPetrol": "Petrol"
 }

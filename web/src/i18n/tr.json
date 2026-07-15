@@ -2265,5 +2265,12 @@
   "v2.ctxMenu.moveTo": "Taşı…",
   "v2.ctxMenu.delete": "Sil",
   "v2.ctxMenu.noTargets": "Başka bağlam yok",
-  "v2.ctxDeletedToast": "Bağlam çöp kutusuna taşındı"
+  "v2.ctxDeletedToast": "Bağlam çöp kutusuna taşındı",
+  "settingsView.colorCopper": "Bakır",
+  "settingsView.colorGraphite": "Grafit",
+  "settingsView.colorForest": "Orman yeşili",
+  "settingsView.colorAubergine": "Patlıcan",
+  "settingsView.colorOchre": "Aşı boyası",
+  "settingsView.colorWine": "Şarap",
+  "settingsView.colorPetrol": "Petrol"
 }

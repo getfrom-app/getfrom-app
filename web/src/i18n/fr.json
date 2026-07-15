@@ -2265,5 +2265,12 @@
   "v2.ctxMenu.moveTo": "Déplacer vers…",
   "v2.ctxMenu.delete": "Supprimer",
   "v2.ctxMenu.noTargets": "Aucun autre contexte disponible",
-  "v2.ctxDeletedToast": "Contexte déplacé vers la corbeille"
+  "v2.ctxDeletedToast": "Contexte déplacé vers la corbeille",
+  "settingsView.colorCopper": "Cuivre",
+  "settingsView.colorGraphite": "Graphite",
+  "settingsView.colorForest": "Forêt",
+  "settingsView.colorAubergine": "Aubergine",
+  "settingsView.colorOchre": "Ocre",
+  "settingsView.colorWine": "Vin",
+  "settingsView.colorPetrol": "Pétrole"
 }
