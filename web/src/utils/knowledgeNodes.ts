@@ -26,17 +26,21 @@
  * Fase 1 sigue funcionando sin duplicar.
  */
 
-// ── CANÓNICO de creación (Fase 2 = texto nuevo "Fromly") ──
+// ── CANÓNICO de creación ──
+// Perfil: sigue igual (Fase 2 = "Fromly"). Contexto: Fase 3 = "Memoria" — ya no
+// se llama "Lo que Fromly sabe" (Alberto, 15 jul: "ese nombre lo quitamos,
+// digamos que es la MEMORIA de cada contexto").
 export const PROFILE_KNOWLEDGE = '🧠 Lo que Fromly sabe sobre ti'
-export const CONTEXT_KNOWLEDGE = '🧠 Lo que Fromly sabe'
+export const CONTEXT_KNOWLEDGE = '🧠 Memoria'
 
-// ── Texto VIEJO ("From"), solo para la migración de renombrado in situ. ──
+// ── Texto VIEJO, solo para las migraciones de renombrado in situ. ──
 export const PROFILE_KNOWLEDGE_OLD = '🧠 Lo que From sabe sobre ti'
 export const CONTEXT_KNOWLEDGE_OLD = '🧠 Lo que From sabe'
+export const CONTEXT_KNOWLEDGE_OLD_FROMLY = '🧠 Lo que Fromly sabe'
 
-// ── Alias reconocidos (viejo + nuevo). Comparación EXACTA, sin colisión de prefijo. ──
+// ── Alias reconocidos (todos los nombres históricos). Comparación EXACTA, sin colisión de prefijo. ──
 const PROFILE_ALIASES = ['🧠 Lo que From sabe sobre ti', '🧠 Lo que Fromly sabe sobre ti']
-const CONTEXT_ALIASES = ['🧠 Lo que From sabe', '🧠 Lo que Fromly sabe']
+const CONTEXT_ALIASES = ['🧠 Lo que From sabe', '🧠 Lo que Fromly sabe', '🧠 Memoria']
 
 /** true si el texto es el nodo de conocimiento del PERFIL (viejo o nuevo). */
 export function isProfileKnowledge(text: string | null | undefined): boolean {

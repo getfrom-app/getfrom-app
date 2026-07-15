@@ -220,6 +220,14 @@ function createAgentAction(a: Record<string, unknown>, sessionId?: string, curre
   })
   const schedulePart = schedule ? ` (programado: ${schedule})` : ' (sin programar todavía)'
   const convoPart = conversational ? ' Al ejecutarse, abrirá una conversación nueva con esa pregunta y esperará tu respuesta.' : ''
+  // Abrir SIEMPRE en la columna derecha + toast — antes dependía de que fuera la
+  // ÚNICA acción del turno (send() en aiChatStore.ts), así que a veces no se
+  // abría (Alberto, 15 jul: "debe aparecer allí mismo en el chat... y abrirse a
+  // la derecha. Añade además un toast de confirmación").
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Agente «${label}» creado`, type: 'success' } }))
+  }
   return result('create_agent', true,
     `Agente «${label}» creado${schedulePart}. Está DESACTIVADO — revísalo y actívalo cuando estés listo.${convoPart}`,
     [created.id])
@@ -238,6 +246,11 @@ function createPromptAction(a: Record<string, unknown>, sessionId?: string, curr
   const parentId = explicitParent ?? sessionId ?? currentNodeId ?? null
 
   const created = createPromptUnder({ parentId, label, content })
+  // Abrir SIEMPRE en la columna derecha + toast, igual que create_agent (Alberto, 15 jul).
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Prompt «${label}» creado`, type: 'success' } }))
+  }
   return result('create_prompt', true, `Prompt «${label}» creado.`, [created.id])
 }
 

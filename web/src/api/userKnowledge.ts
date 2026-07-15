@@ -11,7 +11,7 @@
 
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
-import { PROFILE_KNOWLEDGE, PROFILE_KNOWLEDGE_OLD, CONTEXT_KNOWLEDGE, CONTEXT_KNOWLEDGE_OLD, isProfileKnowledge, isContextKnowledge } from '../utils/knowledgeNodes'
+import { PROFILE_KNOWLEDGE, PROFILE_KNOWLEDGE_OLD, CONTEXT_KNOWLEDGE, CONTEXT_KNOWLEDGE_OLD, CONTEXT_KNOWLEDGE_OLD_FROMLY, isProfileKnowledge, isContextKnowledge } from '../utils/knowledgeNodes'
 
 // Canónico de creación (Fase 2 = texto nuevo "Fromly"). Los finders reconocen viejo + nuevo.
 const LEARN_SECTION = PROFILE_KNOWLEDGE
@@ -178,6 +178,21 @@ export function migrateKnowledgeNodesToFromly(): void {
   }
   if (renamed > 0) console.log(`[migrateKnowledgeNodesToFromly] renombrados ${renamed} nodos de conocimiento → Fromly`)
   try { localStorage.setItem('from_knowledge_fromly_v1', '1') } catch { /* */ }
+}
+
+/** FASE 3: renombra in situ los nodos de memoria de CONTEXTO que aún tengan el
+ *  texto "🧠 Lo que Fromly sabe" al nuevo "🧠 Memoria" — el perfil ("…sobre ti")
+ *  no cambia, solo la memoria por contexto. Mismo id → sin duplicar. Idempotente
+ *  y guardada por flag: corre una sola vez por dispositivo. */
+export function migrateContextKnowledgeToMemoria(): void {
+  try { if (localStorage.getItem('from_knowledge_memoria_v1') === '1') return } catch { /* */ }
+  let renamed = 0
+  for (const n of store.nodes.values()) {
+    if (n.deletedAt) continue
+    if ((n.text || '').trim() === CONTEXT_KNOWLEDGE_OLD_FROMLY) { store.updateNode(n.id, { text: CONTEXT_KNOWLEDGE }); renamed++ }
+  }
+  if (renamed > 0) console.log(`[migrateContextKnowledgeToMemoria] renombrados ${renamed} nodos de memoria de contexto`)
+  try { localStorage.setItem('from_knowledge_memoria_v1', '1') } catch { /* */ }
 }
 
 /** Devuelve (creando si falta) el nodo "🧠 Lo que From sabe sobre ti" — lo que

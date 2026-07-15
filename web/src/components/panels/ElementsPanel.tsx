@@ -14,6 +14,7 @@ import type { Node } from '../../types'
 import { isDocNode, elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
 import { isMarkedContext, listMarkedContexts, contextColor, assignContext, firstContextOf, contextParent } from '../../utils/cajones'
+import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { renderInline } from '../outliner/InlineRenderer'
 import RowContextChip from './RowContextChip'
@@ -49,6 +50,7 @@ function classify(n: Node): ElemKind | null {
   // que se guarden todos los chats").
   if (e._aiSession === '1') return 'conversation'
   if (e._containerNotes === '1') return null   // espacio de notas libres (estructural, no un elemento)
+  if (isContextKnowledge(n.text)) return null  // 🧠 Memoria del contexto — estructural, no un elemento suelto
   if (e._pdfSelection != null) return 'highlight'   // subrayado guardado de un PDF (cita)
   if (e._agentDef === '1') return 'agent'           // agente (v2: puede colgar de cualquier contexto)
   if (e._promptDef === '1') return 'prompt'         // prompt (v2: puede colgar de cualquier contexto)

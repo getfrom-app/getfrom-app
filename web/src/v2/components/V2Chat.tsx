@@ -303,6 +303,26 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
                       ))}
                     </div>
                   )}
+                  {/* Referencia clicable al agente/prompt recién creado, en el propio mensaje
+                      del chat — antes solo quedaba descrito en el texto, sin nada a lo que
+                      hacer clic aquí mismo (Alberto, 15 jul: "debe aparecer allí mismo en el
+                      chat que se ha creado y se debe abrir a la derecha"). */}
+                  {m.actions
+                    .filter(a => a.ok && (a.action === 'create_agent' || a.action === 'create_prompt') && a.createdIds.length === 1)
+                    .map(a => {
+                      const node = store.getNode(a.createdIds[0])
+                      if (!node) return null
+                      return (
+                        <button
+                          key={a.createdIds[0]}
+                          className="v2-chip"
+                          style={{ marginTop: 8, display: 'block' }}
+                          onClick={() => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: node.id } }))}
+                        >
+                          {node.text || t('common.noTitle', 'Sin título')}
+                        </button>
+                      )
+                    })}
                 </div>
               </div>
             ))}
