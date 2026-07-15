@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 14 julio 2026
+> Web · Mac · iPhone · fromly.app · Última actualización: 16 julio 2026
 
 ---
 
@@ -19,10 +19,12 @@ Al entrar en Fromly tienes **tres columnas**:
   y la IA crea tareas, notas y eventos, les pone fecha, los clasifica en su contexto, o te
   responde con lo que ya guardas. Arrastra un PDF, una imagen o un archivo directamente al chat
   para incorporarlo a la conversación.
-- **Derecha — cuatro pestañas**: **Contexto** (qué sabe Fromly de este tema, más sus tareas y
-  elementos), **Elementos** (buscador de todo tu contenido, incluidas tus conversaciones — filtra
-  por "💬 Conversaciones" para verlas solas), **Hoy** (la agenda de tu día, arrastrable al
-  Planificador) y **Agenda** (cualquier día, calendario anual).
+- **Derecha — cinco pestañas**: **Contexto** (qué sabe Fromly de este tema, más sus tareas y
+  elementos), **Detalles** (la ficha de lo que tengas abierto — una nota, tarea o conversación
+  concreta — independiente de Contexto, así una no tapa a la otra), **Elementos** (buscador de todo
+  tu contenido, incluidas tus conversaciones — filtra por "💬 Conversaciones" para verlas solas),
+  **Hoy** (la agenda de tu día, arrastrable al Planificador) y **Agenda** (cualquier día, calendario
+  anual).
 
 **Archivos y RAG.** Cuando subes un archivo, Fromly lo indexa: puedes preguntarle sobre su
 contenido en cualquier momento, no solo justo después de subirlo. Los PDF se abren con visor real
@@ -68,8 +70,8 @@ navegador si algún día quieres repasarlo.
   chat ("quiero un informe diario de X") o créalo con el botón correspondiente. Empiezan
   desactivados hasta que revisas y activas el prompt tú mismo. Aparecen junto al resto de elementos
   del contexto, con su propio icono.
-- **Prompts en el chat**: el botón "⚡ Prompt" en la cabecera lista tus plantillas guardadas —
-  seleccionar una la envía directamente, con sus variables ya rellenas.
+- **Prompts en el chat**: el botón "⚡ Prompt" junto al campo de escritura lista tus plantillas
+  guardadas — seleccionar una la envía directamente, con sus variables ya rellenas.
 - **Dictado por voz en el chat**: el micrófono junto al campo de escritura transcribe en vivo lo que
   dices (atajo Alt+Espacio) — distinto de "Grabar audio", que guarda una nota de voz aparte.
 - **Elementos: Conversaciones y Lienzos por separado**: las conversaciones ya aparecen como un
@@ -132,7 +134,7 @@ la app. No hace falta descargar nada manualmente.
 
 ### Instalar en iPhone
 
-Busca **Fromly — Notas y PKM** en el App Store o accede desde [fromly.app/ios](https://fromly.app/ios).
+Busca **Fromly: pizarra infinita** en el App Store o accede desde [fromly.app/ios](https://fromly.app/ios).
 Instala la app e inicia sesión con la misma cuenta. Tus notas aparecen en segundos.
 
 ### El primer arranque: qué ves
@@ -174,14 +176,17 @@ En la parte superior del chat tienes botones rápidos siempre a mano:
 - **+Evento** — crea un evento con fecha y hora.
 - **Planificador** — abre la vista de calendario (día/semana/mes/año) en la columna derecha.
 - **Grabar** — abre la grabadora de audio (ver «Nota de voz» en la sección de tipos de elemento).
+- **📎 Drive** — abre el selector de Google Drive para adjuntar un archivo directamente a la
+  conversación (requiere haber conectado Google en Ajustes).
+
+Junto al campo de escritura, en el propio composer, tienes además:
+
 - **⚡ Prompt** — despliega tus plantillas guardadas; elegir una la envía directamente al chat, con
   sus variables ya resueltas.
-
-### Dictado por voz
-
-El icono de micrófono junto al campo de escritura transcribe en vivo lo que dices mientras hablas
-(atajo **Alt+Espacio**). Es distinto del botón **Grabar**: el dictado escribe directamente en el
-chat, mientras que Grabar guarda una nota de voz aparte con su propia transcripción.
+- **🎙️ Dictado** — el icono de micrófono transcribe en vivo lo que dices mientras hablas (atajo
+  **Alt+Espacio**). Es distinto del botón **Grabar** de la cabecera: el dictado escribe
+  directamente en el chat, mientras que Grabar guarda una nota de voz aparte con su propia
+  transcripción.
 
 ### Archivos y RAG
 
@@ -227,28 +232,39 @@ según lo que escribes — tú puedes corregirlo después con el chip en cualqui
 Puedes asignar o cambiar el contexto padre de cualquier contexto directamente desde la columna
 derecha, para reorganizar tu jerarquía de Áreas y Proyectos sin perder nada.
 
-### "Lo que Fromly sabe" — la memoria de cada contexto
+### "Memoria" — el recuerdo de cada contexto
 
-Cada contexto acumula su propia memoria: un documento vivo, "Lo que Fromly sabe", que se actualiza
-solo a medida que guardas cosas relevantes ahí. No hace falta contárselo aparte — Fromly decide si
-algo es lo bastante significativo para recordarlo y cómo integrarlo (puede reescribir o fusionar la
+Cada contexto acumula su propia memoria: un documento vivo, "Memoria", que se actualiza solo a
+medida que guardas cosas relevantes ahí. No hace falta contárselo aparte — Fromly decide si algo
+es lo bastante significativo para recordarlo y cómo integrarlo (puede reescribir o fusionar la
 información existente, no solo añadir al final). Abre la pestaña **Contexto** de cualquier
 conversación para verlo.
 
+### Perfil — quién eres tú, no un contexto concreto
+
+El Perfil es distinto de la Memoria de un contexto: es lo que Fromly sabe sobre ti en general, y
+se usa en cualquier conversación sin importar el contexto activo (tu nombre, cómo prefieres que te
+hable, datos personales estables). Se accede desde el menú de tu cuenta ("Perfil"). Igual que la
+Memoria de contexto, se actualiza solo a medida que hablas con Fromly — pero también puedes abrirlo
+y editarlo tú mismo como un documento normal en cualquier momento.
+
 ---
 
-## 5. La columna derecha — cuatro pestañas
+## 5. La columna derecha — cinco pestañas
 
 La columna derecha cambia de contenido según la pestaña que elijas arriba:
 
-- **Contexto** — qué sabe Fromly del tema en el que estás trabajando ("Lo que Fromly sabe",
-  arriba del todo, con un aviso discreto de cuándo se actualizó por última vez), más las
-  tareas y elementos que cuelgan de ese contexto.
+- **Contexto** — qué sabe Fromly del tema en el que estás trabajando ("Memoria", arriba del
+  todo, con un aviso discreto de cuándo se actualizó por última vez), más las tareas y
+  elementos que cuelgan de ese contexto.
+- **Detalles** — la ficha de lo que tengas abierto (una nota, tarea o conversación concreta),
+  independiente de Contexto: abrir un elemento no te hace perder de vista la memoria del tema.
 - **Elementos** — el buscador de todo lo que tienes guardado: notas, tareas, eventos, archivos,
   lienzos, conversaciones, agentes y prompts (clic en una conversación la retoma donde la
-  dejaste). Filtra por tipo y, debajo, por contexto. Kanban y Calendario solo aparecen al filtrar
-  Tareas — para el resto no hay estado ni fecha que organizar en un tablero. El icono ✓ junto al
-  buscador activa la **selección múltiple**: marca varios elementos y elimínalos de golpe.
+  dejaste, filtra por "💬 Conversaciones" para verlas solas). Filtra por tipo y, debajo, por
+  contexto. Kanban y Calendario solo aparecen al filtrar Tareas — para el resto no hay estado
+  ni fecha que organizar en un tablero. El icono ✓ junto al buscador activa la **selección
+  múltiple**: marca varios elementos y elimínalos de golpe.
 - **Hoy** — la agenda de tu día: eventos, tareas por hacer, seguimiento y lo que tienes por
   planificar. Puedes arrastrar cualquier tarea de aquí directamente al Planificador para darle
   hora.
@@ -376,7 +392,7 @@ Un prompt es una plantilla de instrucciones reutilizable, con variables, que cue
 contexto igual que una nota o una tarea. Se crea pidiéndoselo a la IA, con **+ Nuevo prompt** en la
 pestaña Elementos (filtra por ⚡ Prompts), o desde el propio menú del composer del chat.
 
-**Cómo se usa:** el botón **⚡ Prompt** de la cabecera del chat lista tus plantillas guardadas;
+**Cómo se usa:** el botón **⚡ Prompt** junto al campo de escritura lista tus plantillas guardadas;
 elegir una resuelve sus variables (fecha, contexto actual, etc.) y la envía directamente.
 
 Útil para: "resume esto en 3 bullets", "extrae las tareas", "mejora el tono formal", un informe

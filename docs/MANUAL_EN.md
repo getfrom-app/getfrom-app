@@ -1,6 +1,6 @@
 # Fromly — User Manual
 
-> Web · Mac · iPhone · fromly.app · Last updated: July 14, 2026
+> Web · Mac · iPhone · fromly.app · Last updated: July 16, 2026
 
 ---
 
@@ -18,9 +18,11 @@ When you open Fromly you have **three columns**:
   creates tasks, notes and events, dates them, files them in their context, or answers with what
   you've already saved. Drag a PDF, an image or a file straight into the chat to bring it into the
   conversation.
-- **Right — five tabs**: **Context** (what Fromly knows about this topic, plus its tasks and
-  elements), **Elements** (search across everything you've saved), **History** (your past
-  conversations), **Today** (your day's agenda, draggable into the Planner) and **Agenda** (any
+- **Right — five tabs**: **Context** (what Fromly knows about this topic — its "Memory" — plus its
+  tasks and elements), **Details** (the card for whatever you have open — a note, task or specific
+  conversation — independent from Context, so one doesn't cover the other), **Elements** (search
+  across everything you've saved, including your conversations — filter by "💬 Conversations" to
+  see them alone), **Today** (your day's agenda, draggable into the Planner) and **Agenda** (any
   day, yearly calendar).
 
 **Files and RAG.** When you upload a file, Fromly indexes it: you can ask about its content at any
@@ -35,6 +37,9 @@ you ever want to go through it again.
 
 ## What's new (July 2026, Fromly 2.0)
 
+- **Undo on delete**: deleting any note, task or file (individually or in bulk from Elements) shows
+  a confirmation with an "Undo" button — nothing disappears without giving you a few seconds to
+  recover it before it silently moves to trash.
 - **Files and PDFs**: drag a PDF or image anywhere (chat or the contexts column) — if you have a
   conversation open it's added to it, otherwise it's imported directly. PDFs open with a real
   viewer: you can **select text and highlight it** (the highlight shows in yellow right on the
@@ -58,16 +63,18 @@ you ever want to go through it again.
   whether it's overdue, today, or upcoming) and repeat chips, plus its context alongside.
 - **Context on every element**: always visible and editable — note, task, PDF, image or link —
   with a chip and a button to change it, and a click to jump straight to that context.
-- A cleaner **global History**: lists your conversations and elements so you can jump to anywhere
-  quickly; one-off quick commands ("create a task for me…") no longer clutter it.
+- **The History tab merged into Elements** (July 14, 2026): it was the same search with the
+  "conversation" filter implied and its nested elements listed below — and those elements already
+  show up when you open the conversation itself. Filter Elements by "💬 Conversations" for the same
+  result.
 - **Agents and Prompts, now in any context**: you can create an Agent (an automation that runs on
   its own in the cloud every day) or a Prompt (a reusable instruction template) hanging off any
   context or project, just like a note or a task — ask the AI for it in chat ("I want a daily
   report on X") or create it with the corresponding button. They start disabled until you review
   and enable the prompt yourself. They appear alongside the rest of the context's elements, with
   their own icon.
-- **Prompts in the chat**: the "⚡ Prompt" button in the header lists your saved templates —
-  picking one sends it directly, with its variables already filled in.
+- **Prompts in the chat**: the "⚡ Prompt" button next to the text field lists your saved
+  templates — picking one sends it directly, with its variables already filled in.
 - **Voice dictation in the chat**: the microphone next to the text field transcribes live what you
   say (shortcut Alt+Space) — different from "Record audio", which saves a separate voice note.
 - **Elements: Conversations and Canvases, separately**: conversations now show up as an element in
@@ -129,7 +136,7 @@ anything manually.
 
 ### Install on iPhone
 
-Search for **Fromly — Notes and PKM** in the App Store, or go to
+Search for **Fromly: infinite canvas** in the App Store, or go to
 [fromly.app/ios](https://fromly.app/ios). Install the app and sign in with the same account. Your
 notes appear within seconds.
 
@@ -171,14 +178,16 @@ At the top of the chat you have quick buttons always at hand:
 - **+Event** — creates an event with a date and time.
 - **Planner** — opens the calendar view (day/week/month/year) in the right column.
 - **Record** — opens the audio recorder (see "Voice note" in the element types section).
+- **📎 Drive** — opens the Google Drive picker to attach a file directly to the conversation
+  (requires connecting Google in Settings).
+
+Next to the text field, in the composer itself, you also have:
+
 - **⚡ Prompt** — expands your saved templates; picking one sends it directly to the chat, with
   its variables already resolved.
-
-### Voice dictation
-
-The microphone icon next to the text field transcribes live what you say as you speak (shortcut
-**Alt+Space**). It's different from the **Record** button: dictation writes directly into the
-chat, while Record saves a separate voice note with its own transcription.
+- **🎙️ Dictation** — the microphone icon transcribes live what you say as you speak (shortcut
+  **Alt+Space**). It's different from the header's **Record** button: dictation writes directly
+  into the chat, while Record saves a separate voice note with its own transcription.
 
 ### Files and RAG
 
@@ -223,13 +232,20 @@ on its own based on what you write — you can always correct it later with the 
 You can assign or change any context's parent context directly from the right column, to
 reorganize your Areas-and-Projects hierarchy without losing anything.
 
-### "What Fromly knows" — each context's memory
+### "Memory" — each context's recall
 
-Every context builds up its own memory: a living document, "What Fromly knows", that updates
-itself as you save relevant things there. No need to tell it separately — Fromly decides whether
-something is significant enough to remember and how to fold it in (it can rewrite or merge
-existing information, not just append to the end). Open the **Context** tab of any conversation to
-see it.
+Every context builds up its own memory: a living document, "Memory", that updates itself as you
+save relevant things there. No need to tell it separately — Fromly decides whether something is
+significant enough to remember and how to fold it in (it can rewrite or merge existing
+information, not just append to the end). Open the **Context** tab of any conversation to see it.
+
+### Profile — who you are, not tied to one context
+
+The Profile is different from a context's Memory: it's what Fromly knows about you in general, and
+it's used in every conversation regardless of the active context (your name, how you like to be
+addressed, stable personal facts). Open it from your account menu ("Profile"). Like context Memory,
+it updates itself as you talk with Fromly — but you can also open and edit it yourself as a regular
+document at any time.
 
 ---
 
@@ -237,12 +253,15 @@ see it.
 
 The right column changes content depending on the tab you pick at the top:
 
-- **Context** — what Fromly knows about the topic you're working on ("What Fromly knows"), plus
-  the tasks and elements hanging off that context.
+- **Context** — what Fromly knows about the topic you're working on ("Memory"), plus the tasks and
+  elements hanging off that context.
+- **Details** — the card for whatever you have open (a specific note, task or conversation),
+  independent from Context: opening an element doesn't make you lose sight of the topic's memory.
 - **Elements** — the search across everything you've saved: notes, tasks, events, files, canvases,
-  conversations, agents and prompts. Filter by type, context, date or status, and switch between
-  list, table, kanban or calendar view (table/kanban/calendar views available on the Pro plan).
-- **History** — your past conversations; click to pick up any of them where you left off.
+  conversations, agents and prompts (click a conversation to pick it up where you left off; filter
+  by "💬 Conversations" to see them alone). Filter by type, context, date or status, and switch
+  between list, table, kanban or calendar view (table/kanban/calendar views available on the Pro
+  plan).
 - **Today** — your day's agenda: events, to-do tasks, follow-up items and what's still to be
   scheduled. You can drag any task from here straight into the Planner to give it a time.
 - **Agenda** — the yearly calendar: navigate to any day and you'll see exactly the same view as
@@ -335,8 +354,8 @@ note:
 
 ### Conversations
 
-Every conversation you have with the chat is itself an element: it shows up in the History tab so
-you can resume it, and also in Elements with its own filter, alongside notes, tasks and canvases.
+Every conversation you have with the chat is itself an element: it shows up in Elements (filter by
+"💬 Conversations") alongside notes, tasks and canvases — click it to resume where you left off.
 
 ### AI Agent
 
@@ -361,8 +380,8 @@ the ▶ button).
 A prompt is a reusable instruction template, with variables, that hangs off any context just like
 a note or a task. Create one by asking the AI or with the corresponding button in the context.
 
-**How to use it:** the **⚡ Prompt** button in the chat header lists your saved templates; picking
-one resolves its variables (date, current context, etc.) and sends it right away.
+**How to use it:** the **⚡ Prompt** button next to the text field lists your saved templates;
+picking one resolves its variables (date, current context, etc.) and sends it right away.
 
 Handy for: "summarize this in 3 bullets", "extract the tasks", "make the tone more formal", a
 daily report with the same format every time.
