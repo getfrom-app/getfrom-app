@@ -27,7 +27,7 @@ import { htmlToMarkdown } from './htmlMarkdown'
 import { updateContextKnowledgeFromElement } from '../api/autoClassify'
 import i18n from '../i18n/config'
 
-const CONTEXT_DEFAULT_COLOR = '#7c3aed'
+const CONTEXT_DEFAULT_COLOR = '#2C4356'
 
 function ed(n: Node | null | undefined): Record<string, unknown> {
   if (!n) return {}

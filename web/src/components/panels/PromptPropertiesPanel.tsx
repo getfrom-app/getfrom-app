@@ -72,7 +72,7 @@ export default function PromptPropertiesPanel({ nodeId, onBack, onTestInMagic }:
       onClick={onSelect}
       style={{
         display: 'flex', alignItems: 'flex-start', gap: 8, width: '100%', textAlign: 'left',
-        background: checked ? 'rgba(139,92,246,0.07)' : 'transparent',
+        background: checked ? 'rgba(62,92,118,0.07)' : 'transparent',
         border: '1px solid', borderColor: checked ? 'var(--accent)' : 'var(--border)',
         borderRadius: 8, padding: '8px 10px', cursor: 'pointer', fontFamily: 'inherit',
       }}

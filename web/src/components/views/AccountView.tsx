@@ -979,7 +979,7 @@ AL TERMINAR ("fin"):
 
               {/* Paso 2: Custom Instructions — solo si hay token */}
               {mcpToken && (
-                <div style={{ width: '100%', background: 'rgba(139,92,246,0.06)', border: '1px solid rgba(139,92,246,0.2)', borderRadius: 10, padding: '14px 16px' }}>
+                <div style={{ width: '100%', background: 'rgba(62,92,118,0.06)', border: '1px solid rgba(62,92,118,0.2)', borderRadius: 10, padding: '14px 16px' }}>
                   <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ background: 'var(--accent)', color: 'white', borderRadius: '50%', width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>2</span>
                     {t('account.mcpStep2Title')}

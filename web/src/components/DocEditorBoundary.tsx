@@ -24,7 +24,7 @@ export default class DocEditorBoundary extends Component<{ children: ReactNode; 
           No se pudo abrir este texto.{' '}
           <button
             onClick={() => this.setState({ error: null })}
-            style={{ background: 'none', border: '1px solid var(--border,#ddd)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', color: 'var(--accent,#8b5cf6)' }}
+            style={{ background: 'none', border: '1px solid var(--border,#ddd)', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', color: 'var(--accent,#3E5C76)' }}
           >
             Reintentar
           </button>

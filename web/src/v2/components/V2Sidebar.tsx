@@ -15,7 +15,9 @@ import type { Node } from '../../types'
 // Misma paleta que el menú de clic derecho de un contexto en la Pizarra (v1) —
 // escribe extraData._tagColor, que contextColor() ya lee con prioridad sobre
 // el heredado/acento por defecto.
-const ACCENT_SWATCHES = ['#3E5C76', '#e03131', '#f76707', '#f59f00', '#2f9e44', '#1098ad', '#1971c2', '#7048e8', '#9c36b5', '#e64980', '#495057']
+// Industriales primero (misma paleta que Ajustes → Apariencia), variedad después.
+// Sin morado/violeta/lila en ningún tono — ver feedback "quitar el morado de todos los sitios".
+const ACCENT_SWATCHES = ['#3E5C76', '#B8491F', '#37474F', '#2F5233', '#4A3B5C', '#A67C27', '#722F37', '#1B4B5A', '#e03131', '#f76707', '#2f9e44', '#1971c2', '#e64980', '#495057']
 
 function setContextAccentColor(id: string, color: string) {
   const n = store.getNode(id); if (!n) return

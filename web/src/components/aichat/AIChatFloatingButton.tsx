@@ -26,7 +26,7 @@ export default function AIChatFloatingButton({ onClick, isOpen }: Props) {
         width: 48,
         height: 48,
         borderRadius: '50%',
-        background: 'linear-gradient(135deg, var(--accent), #8b5cf6)',
+        background: 'linear-gradient(135deg, var(--accent), #3E5C76)',
         color: 'white',
         border: 'none',
         cursor: 'pointer',

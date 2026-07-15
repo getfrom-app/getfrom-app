@@ -153,7 +153,7 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
           id: n.id,
           text: linked ? linked.text : n.text,
           start, end,
-          color: n.color || (ed._linkedTaskId ? 'var(--accent)' : '#8b5cf6'),
+          color: n.color || 'var(--accent)',
           nodeId: ed._linkedTaskId || n.id,
         })
         continue
@@ -631,7 +631,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
   // tema. Los bloques se pintan en su versión PASTEL (suave, poco saturada).
   const plannerBase = (typeof document !== 'undefined'
     ? (localStorage.getItem('from_planner_color') || getComputedStyle(document.documentElement).getPropertyValue('--accent').trim())
-    : '') || '#8b5cf6'
+    : '') || '#3E5C76'
   const taskPastel = pastelize(plannerBase)
 
   // ── Render bloque ─────────────────────────────────────────────────────────

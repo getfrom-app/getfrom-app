@@ -96,7 +96,7 @@ export default function OnboardingWidget() {
         position: 'fixed', bottom: 80, left: 16, width: 340, zIndex: 9999,
         background: '#ffffff', borderRadius: 16,
         boxShadow: '0 8px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)',
-        border: '1px solid rgba(139,92,246,0.15)', overflow: 'hidden',
+        border: '1px solid rgba(62,92,118,0.15)', overflow: 'hidden',
         opacity: animIn ? 1 : 0, transform: animIn ? 'translateY(0)' : 'translateY(24px)',
         transition: 'opacity 0.3s ease, transform 0.3s ease',
       }}
@@ -128,7 +128,7 @@ function ProgressDots({ active }: { active: number }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', gap: 6 }}>
       {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-        <div key={i} style={{ width: i === active ? 20 : 8, height: 8, borderRadius: 4, background: i === active ? '#8b5cf6' : '#e0d9f7', transition: 'width 0.25s ease, background 0.25s ease' }} />
+        <div key={i} style={{ width: i === active ? 20 : 8, height: 8, borderRadius: 4, background: i === active ? '#3E5C76' : '#D6DEE4', transition: 'width 0.25s ease, background 0.25s ease' }} />
       ))}
     </div>
   )
@@ -138,7 +138,7 @@ function PrimaryBtn({ label, onClick }: { label: string; onClick: () => void }) 
   return (
     <button
       onClick={onClick}
-      style={{ width: '100%', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 16, transition: 'opacity 0.15s' }}
+      style={{ width: '100%', background: 'linear-gradient(135deg, #3E5C76, #2C4356)', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', marginBottom: 16, transition: 'opacity 0.15s' }}
       onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
       onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
     >{label}</button>
@@ -158,9 +158,9 @@ function SkipLink({ onSkip }: { onSkip: () => void }) {
 function WaitingDots({ label }: { label: string }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 18, color: '#aaa', fontSize: 12 }}>
-      <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
-      <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
-      <span className="wf-filter-ai-dot" style={{ background: '#c4b5fd' }} />
+      <span className="wf-filter-ai-dot" style={{ background: '#9FB8CB' }} />
+      <span className="wf-filter-ai-dot" style={{ background: '#9FB8CB' }} />
+      <span className="wf-filter-ai-dot" style={{ background: '#9FB8CB' }} />
       <span style={{ marginLeft: 4 }}>{label}</span>
     </div>
   )
@@ -169,20 +169,20 @@ function WaitingDots({ label }: { label: string }) {
 function TopBar() {
   const { t } = useTranslation()
   return (
-    <div style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', padding: '10px 16px', fontSize: 12, fontWeight: 700, color: '#fff', letterSpacing: 0.3 }}>
+    <div style={{ background: 'linear-gradient(135deg, #3E5C76, #2C4356)', padding: '10px 16px', fontSize: 12, fontWeight: 700, color: '#fff', letterSpacing: 0.3 }}>
       {t('onboarding.promise')}
     </div>
   )
 }
 
 function AccentLine() {
-  return <div style={{ height: 1, margin: '0 20px', background: 'rgba(139,92,246,0.12)' }} />
+  return <div style={{ height: 1, margin: '0 20px', background: 'rgba(62,92,118,0.12)' }} />
 }
 
 function StepHeader({ emoji, onClose }: { emoji: string; onClose: () => void }) {
   return (
     <>
-      <div style={{ height: 4, background: 'linear-gradient(90deg, #8b5cf6, #a78bfa)' }} />
+      <div style={{ height: 4, background: 'linear-gradient(90deg, #3E5C76, #8FB4D9)' }} />
       <div style={{ padding: '16px 20px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 28 }}>{emoji}</div>
         <CloseBtn onClose={onClose} />
@@ -199,7 +199,7 @@ function StepCanvas({ onClose, onSkip }: { onClose: () => void; onSkip: () => vo
     <>
       <TopBar />
       <div style={{ padding: '18px 20px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: '#8b5cf6', lineHeight: 1.3 }}>{t('onboarding.v2.canvasTitle')}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#3E5C76', lineHeight: 1.3 }}>{t('onboarding.v2.canvasTitle')}</div>
         <CloseBtn onClose={onClose} />
       </div>
       <AccentLine />
@@ -318,7 +318,7 @@ function StepDone({ onClose }: { onClose: () => void }) {
       </div>
       <button
         onClick={onClose}
-        style={{ width: '100%', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'opacity 0.15s' }}
+        style={{ width: '100%', background: 'linear-gradient(135deg, #3E5C76, #2C4356)', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer', transition: 'opacity 0.15s' }}
         onMouseEnter={e => (e.currentTarget.style.opacity = '0.88')}
         onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
       >{t('onboarding.v2.start')}</button>
@@ -330,8 +330,8 @@ function StepDone({ onClose }: { onClose: () => void }) {
 
 const linkBtnStyle: React.CSSProperties = {
   flex: 1, textAlign: 'center', textDecoration: 'none',
-  background: '#f5f3ff', border: '1px solid #e0d9f7',
+  background: '#f5f3ff', border: '1px solid #D6DEE4',
   borderRadius: 8, padding: '8px 4px', fontSize: 12,
-  fontWeight: 500, color: '#7c3aed', display: 'block',
+  fontWeight: 500, color: '#2C4356', display: 'block',
   transition: 'background 0.15s',
 }

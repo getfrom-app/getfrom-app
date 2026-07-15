@@ -138,7 +138,7 @@ function getTimeBlocks(day: Date, gcalEvents: CalendarEvent[]): TimeBlock[] {
         id: n.id,
         text: linked ? linked.text : n.text,
         start, end,
-        color: ed._linkedTaskId ? 'var(--accent)' : '#8b5cf6',
+        color: 'var(--accent)',
         linkedId: ed._linkedTaskId,
       })
     } catch { /* ignore */ }

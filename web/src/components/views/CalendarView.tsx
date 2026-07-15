@@ -894,7 +894,7 @@ function WeekView({ weekStart, today, allNodes, googleEvents, navLabel, navUnit,
       <div className="calendar-legend">
         <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#f59e0b' }}></span>{t('calendar.legendEvent')}</span>
         <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#ef4444' }}></span>{t('calendar.legendHighPriority')}</span>
-        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#8b5cf6' }}></span>{t('calendar.legendTask')}</span>
+        <span className="calendar-legend-item"><span className="legend-dot" style={{ background: '#3E5C76' }}></span>{t('calendar.legendTask')}</span>
       </div>
     </>
   )

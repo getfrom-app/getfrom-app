@@ -206,8 +206,8 @@ export default function ContextChips({ nodeId, visible, onSelect }: ContextChips
               display: 'flex',
               alignItems: 'center',
               gap: 5,
-              background: chip.accent ? 'rgba(139,92,246,0.08)' : 'var(--bg-secondary)',
-              border: `1px solid ${chip.accent ? 'rgba(139,92,246,0.3)' : 'var(--border)'}`,
+              background: chip.accent ? 'rgba(62,92,118,0.08)' : 'var(--bg-secondary)',
+              border: `1px solid ${chip.accent ? 'rgba(62,92,118,0.3)' : 'var(--border)'}`,
               borderRadius: 20,
               padding: '5px 12px',
               fontSize: 12,
@@ -219,12 +219,12 @@ export default function ContextChips({ nodeId, visible, onSelect }: ContextChips
             }}
             onMouseEnter={e => {
               const el = e.currentTarget
-              el.style.background = chip.accent ? 'rgba(139,92,246,0.15)' : 'var(--bg-hover, var(--bg-primary))'
+              el.style.background = chip.accent ? 'rgba(62,92,118,0.15)' : 'var(--bg-hover, var(--bg-primary))'
               el.style.color = chip.accent ? 'var(--accent)' : 'var(--text-primary)'
             }}
             onMouseLeave={e => {
               const el = e.currentTarget
-              el.style.background = chip.accent ? 'rgba(139,92,246,0.08)' : 'var(--bg-secondary)'
+              el.style.background = chip.accent ? 'rgba(62,92,118,0.08)' : 'var(--bg-secondary)'
               el.style.color = chip.accent ? 'var(--accent)' : 'var(--text-secondary)'
             }}
           >

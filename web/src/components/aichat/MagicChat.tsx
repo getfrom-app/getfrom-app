@@ -476,7 +476,7 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
       {/* Chip del prompt activo */}
       {activePromptNode && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '4px 10px 0' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(139,92,246,0.12)', border: '1px solid rgba(139,92,246,0.35)', borderRadius: 999, padding: '2px 8px', fontSize: 11.5, color: 'var(--accent)', fontWeight: 500, maxWidth: '100%' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(62,92,118,0.12)', border: '1px solid rgba(62,92,118,0.35)', borderRadius: 999, padding: '2px 8px', fontSize: 11.5, color: 'var(--accent)', fontWeight: 500, maxWidth: '100%' }}>
             <span>{promptIcon(activePromptNode)}</span>
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activePromptNode.text}</span>
             {chat.activePromptAuto && <span style={{ fontSize: 9.5, opacity: 0.65 }}>{t('prompts.autoTag', 'auto')}</span>}
@@ -496,9 +496,9 @@ export default function MagicChat({ onClose, currentNodeId, mode = 'modal' }: Pr
         </div>
       ) : isTranscribing ? (
         <div className="magic-chat-node-input" style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)', fontSize: 13 }}>
-          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
-          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
-          <span className="wf-filter-ai-dot" style={{ background: '#8b5cf6' }} />
+          <span className="wf-filter-ai-dot" style={{ background: 'var(--accent)' }} />
+          <span className="wf-filter-ai-dot" style={{ background: 'var(--accent)' }} />
+          <span className="wf-filter-ai-dot" style={{ background: 'var(--accent)' }} />
           <span style={{ marginLeft: 4 }}>{t('ai.transcribing', 'Transcribiendo…')}</span>
         </div>
       ) : (

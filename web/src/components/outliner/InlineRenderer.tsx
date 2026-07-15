@@ -45,7 +45,7 @@ function tagStyle(hex: string): string {
 }
 
 // Color para chips de contexto @mention
-const CONTEXT_COLOR = '#7c3aed'
+const CONTEXT_COLOR = '#2C4356'
 
 // Convierte slug de contexto a nombre legible: "la-isla" → "La Isla", "media-sector/radio" → "Radio"
 function slugToDisplayName(slug: string): string {

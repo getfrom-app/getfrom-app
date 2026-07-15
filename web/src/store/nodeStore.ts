@@ -856,7 +856,7 @@ export class NodeStore {
 
   /** Color del tag: primero mira si hay color personalizado en la definición, si no usa hash */
   tagColor(tagName: string): string {
-    const COLORS = ['#8b5cf6', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16']
+    const COLORS = ['#3E5C76', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#ec4899', '#06b6d4', '#84cc16']
     // Buscar color personalizado en nodo de definición
     for (const n of this.nodes.values()) {
       if (n.deletedAt) continue
@@ -880,17 +880,17 @@ export class NodeStore {
       const t = (n.text || '').trim()
       if (t === '🧠 Contexto' || t === '🏷 Tags') { root = n; break }
     }
-    if (!root) return '#7c3aed'
+    if (!root) return '#2C4356'
     const target = (slug || '').toLowerCase()
     for (const n of this.children(root.id)) {
       if (n.deletedAt) continue
       const s = (n.text || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, '-').replace(/[^a-z0-9\-/]/g, '')
       if (s === target) {
         try { const ed = JSON.parse(n.extraData || '{}'); if (ed._tagColor) return ed._tagColor } catch { /* ignore */ }
-        return '#7c3aed'
+        return '#2C4356'
       }
     }
-    return '#7c3aed'
+    return '#2C4356'
   }
 
   /** Borrar un tag de todos los nodos y eliminar su definición */

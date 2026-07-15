@@ -46,7 +46,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
       const isChunkError = this.state.error?.message?.includes('Failed to fetch dynamically imported module')
       return (
         <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }}>
-          <h2 style={{ color: '#8b5cf6' }}>Fromly</h2>
+          <h2 style={{ color: '#3E5C76' }}>Fromly</h2>
           <p style={{ color: '#666', margin: '16px 0' }}>
             {isChunkError ? 'Actualizando la app...' : 'Ha ocurrido un error al cargar.'}
           </p>
@@ -56,7 +56,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
               const url = window.location.href.replace(/[?#].*$/, '') + '?v=' + Date.now()
               window.location.replace(url)
             }}
-            style={{ padding: '8px 16px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+            style={{ padding: '8px 16px', background: '#3E5C76', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
           >
             Reintentar
           </button>
@@ -103,11 +103,11 @@ function GoogleCallbackPage() {
   if (error) {
     return (
       <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }}>
-        <h2 style={{ color: '#8b5cf6' }}>Fromly</h2>
+        <h2 style={{ color: '#3E5C76' }}>Fromly</h2>
         <p style={{ color: '#e53e3e', margin: '16px 0' }}>{error}</p>
         <button
           onClick={() => navigate('/app/', { replace: true })}
-          style={{ padding: '8px 16px', background: '#8b5cf6', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+          style={{ padding: '8px 16px', background: '#3E5C76', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
         >
           {t('app.backToHome')}
         </button>
@@ -117,7 +117,7 @@ function GoogleCallbackPage() {
 
   return (
     <div style={{ padding: '40px', textAlign: 'center', fontFamily: 'Inter, sans-serif' }}>
-      <h2 style={{ color: '#8b5cf6' }}>Fromly</h2>
+      <h2 style={{ color: '#3E5C76' }}>Fromly</h2>
       <p style={{ color: '#666', margin: '16px 0' }}>Conectando con Google...</p>
     </div>
   )

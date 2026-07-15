@@ -33,7 +33,7 @@ export default function ClaudeConnectPage() {
     return (
       <div>
         <div style={{
-          background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+          background: 'linear-gradient(135deg, #3E5C76 0%, #2C4356 100%)',
           color: 'white',
           padding: '16px 24px',
           textAlign: 'center',
@@ -167,7 +167,7 @@ function Logo() {
     <div style={{ textAlign: 'center', marginBottom: '24px' }}>
       <div style={{
         width: 56, height: 56,
-        background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+        background: 'linear-gradient(135deg, #3E5C76 0%, #2C4356 100%)',
         borderRadius: 16,
         display: 'inline-flex',
         alignItems: 'center',
@@ -200,7 +200,7 @@ const cardStyle: React.CSSProperties = {
   padding: '40px 32px',
   maxWidth: 440,
   width: '100%',
-  boxShadow: '0 4px 40px rgba(139,92,246,0.12)',
+  boxShadow: '0 4px 40px rgba(62,92,118,0.12)',
 }
 
 const titleStyle: React.CSSProperties = {
@@ -230,7 +230,7 @@ const permissionsBox: React.CSSProperties = {
 const permissionsTitle: React.CSSProperties = {
   fontSize: 13,
   fontWeight: 600,
-  color: '#7c3aed',
+  color: '#2C4356',
   margin: '0 0 8px',
 }
 
@@ -261,7 +261,7 @@ const buttonsRow: React.CSSProperties = {
 const primaryButtonStyle: React.CSSProperties = {
   flex: 1,
   padding: '12px 20px',
-  background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+  background: 'linear-gradient(135deg, #3E5C76 0%, #2C4356 100%)',
   color: 'white',
   border: 'none',
   borderRadius: 10,

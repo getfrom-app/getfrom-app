@@ -108,7 +108,7 @@ export default function PromptListPanel({ onSelectPrompt, selectedPromptId }: Pr
                 padding: '6px 8px 6px 16px',
                 cursor: isRenaming ? 'default' : 'pointer', fontSize: 13,
                 color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                background: isActive ? 'rgba(139,92,246,0.08)' : isHovered ? 'var(--bg-hover)' : 'transparent',
+                background: isActive ? 'rgba(62,92,118,0.08)' : isHovered ? 'var(--bg-hover)' : 'transparent',
               }}
               onMouseEnter={() => setHoveredId(p.id)}
               onMouseLeave={() => setHoveredId(null)}

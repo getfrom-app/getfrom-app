@@ -3367,7 +3367,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
           <div style={{ position: 'fixed', top: areaMenu.y, left: areaMenu.x, zIndex: 2000, minWidth: 190, background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, padding: 8, boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary,#999)', padding: '2px 6px 6px' }}>{t('ctxPanel.accentColor', 'Color de acento')}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '0 4px 8px' }}>
-              {['#6c5ce7', '#e03131', '#f76707', '#f59f00', '#2f9e44', '#1098ad', '#1971c2', '#7048e8', '#9c36b5', '#e64980', '#495057'].map(c => (
+              {['#3E5C76', '#B8491F', '#37474F', '#2F5233', '#4A3B5C', '#A67C27', '#722F37', '#1B4B5A', '#e03131', '#f76707', '#2f9e44', '#1971c2', '#e64980', '#495057'].map(c => (
                 <button key={c} title={c} onClick={() => { setContextAccentColor(areaMenu.id, c); setAreaMenu(null) }}
                   style={{ width: 22, height: 22, borderRadius: '50%', background: c, border: '1px solid rgba(0,0,0,0.12)', cursor: 'pointer' }} />
               ))}

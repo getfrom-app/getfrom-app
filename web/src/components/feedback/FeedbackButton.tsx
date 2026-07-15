@@ -65,20 +65,20 @@ export default function FeedbackButton() {
         style={{
           position: 'fixed', bottom: 38, left: 16, zIndex: 9998,
           display: 'flex', alignItems: 'center', gap: 7,
-          background: '#ffffff', border: '1px solid rgba(139,92,246,0.25)',
+          background: '#ffffff', border: '1px solid rgba(62,92,118,0.25)',
           borderRadius: 999, padding: '7px 13px 7px 11px',
           boxShadow: '0 2px 12px rgba(0,0,0,0.10)', cursor: 'pointer',
           fontSize: 13, fontWeight: 600, color: '#5b21b6',
           transition: 'box-shadow 0.15s, transform 0.15s',
         }}
-        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 18px rgba(139,92,246,0.25)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 18px rgba(62,92,118,0.25)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
         onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.10)'; e.currentTarget.style.transform = 'translateY(0)' }}
       >
         <span style={{ fontSize: 14 }}>💬</span>
         <span>{t('feedback.buttonLabel')}</span>
         <span style={{
           fontSize: 10, fontWeight: 700, letterSpacing: 0.4,
-          background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)', color: '#fff',
+          background: 'linear-gradient(135deg, #3E5C76, #2C4356)', color: '#fff',
           borderRadius: 5, padding: '1px 5px',
         }}>BETA</span>
       </button>
@@ -100,7 +100,7 @@ export default function FeedbackButton() {
           }}>
             {/* Cabecera */}
             <div style={{
-              background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+              background: 'linear-gradient(135deg, #3E5C76, #2C4356)',
               padding: '16px 20px', color: '#fff',
             }}>
               <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 3 }}>
@@ -137,7 +137,7 @@ export default function FeedbackButton() {
                     fontFamily: 'inherit', color: '#1a1a1a', outline: 'none',
                     boxSizing: 'border-box',
                   }}
-                  onFocus={e => (e.currentTarget.style.borderColor = '#a78bfa')}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#8FB4D9')}
                   onBlur={e => (e.currentTarget.style.borderColor = '#e3e0ef')}
                 />
                 {status === 'error' && (
@@ -155,7 +155,7 @@ export default function FeedbackButton() {
                     disabled={!message.trim() || status === 'sending'}
                     style={{
                       background: !message.trim() || status === 'sending'
-                        ? '#c4b5fd' : 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+                        ? '#9FB8CB' : 'linear-gradient(135deg, #3E5C76, #2C4356)',
                       color: '#fff', border: 'none', borderRadius: 9,
                       padding: '9px 18px', fontSize: 13.5, fontWeight: 600,
                       cursor: !message.trim() || status === 'sending' ? 'default' : 'pointer',

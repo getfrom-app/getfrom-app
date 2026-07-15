@@ -203,7 +203,7 @@ function flyToFilter(sourceEl: HTMLElement, filterQuery: string) {
     whiteSpace: 'nowrap',
     overflow: 'hidden',
     // Aplicar mismo estilo visible
-    color: '#7c3aed',
+    color: '#2C4356',
     fontSize: '0.8em',
     fontWeight: '500',
     borderBottom: '1px dashed rgba(124,58,237,0.5)',
@@ -4147,7 +4147,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                     return s === slug
                   })
                   if (!ctxNode) return null
-                  let ctxColor = '#7c3aed'
+                  let ctxColor = '#2C4356'
                   try { const ed = JSON.parse(ctxNode.extraData || '{}'); if (ed._tagColor) ctxColor = ed._tagColor } catch { /* ignore */ }
                   return (
                     <span

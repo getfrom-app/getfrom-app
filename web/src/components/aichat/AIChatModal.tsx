@@ -189,7 +189,7 @@ export default function AIChatModal({ onClose, currentNodeId }: Props) {
           padding: '12px 16px', borderBottom: '1px solid var(--border)',
         }}>
           <span style={{
-            background: 'linear-gradient(135deg, var(--accent), #8b5cf6)',
+            background: 'linear-gradient(135deg, var(--accent), #3E5C76)',
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
             fontSize: 14, fontWeight: 600,
           }}>✨</span>

@@ -197,9 +197,9 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
             cursor: isRenaming ? 'default' : 'pointer', fontSize: 13,
             color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
             background: isDragOver
-              ? 'rgba(139,92,246,0.18)'
+              ? 'rgba(62,92,118,0.18)'
               : isActive
-                ? 'rgba(139,92,246,0.08)'
+                ? 'rgba(62,92,118,0.08)'
                 : isHovered
                   ? 'var(--bg-hover)'
                   : 'transparent',
@@ -306,7 +306,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
               padding: '5px 8px 5px 16px',
               cursor: 'pointer', fontSize: 13,
               color: isPerfilActive ? 'var(--accent)' : 'var(--text-primary)',
-              background: isPerfilActive ? 'rgba(139,92,246,0.08)' : 'transparent',
+              background: isPerfilActive ? 'rgba(62,92,118,0.08)' : 'transparent',
               fontWeight: isPerfilActive ? 600 : 500,
             }}
             onClick={() => openNodeDetail(perfilNode.id)}
@@ -329,7 +329,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
               padding: '5px 8px 5px 16px',
               cursor: 'pointer', fontSize: 13,
               color: isUnclassifiedActive ? 'var(--accent)' : 'var(--text-secondary)',
-              background: isUnclassifiedActive ? 'rgba(139,92,246,0.08)' : 'transparent',
+              background: isUnclassifiedActive ? 'rgba(62,92,118,0.08)' : 'transparent',
             }}
             onClick={() => onSelectContext(UNCLASSIFIED_FILTER_ID)}
           >
@@ -373,7 +373,7 @@ export default function ContextListPanel({ onSelectContext, selectedContextId }:
                   padding: '4px 11px', fontSize: 12.5, color: 'var(--text-secondary)', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 4, fontFamily: 'inherit',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,92,246,0.12)'; e.currentTarget.style.color = 'var(--accent)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(62,92,118,0.12)'; e.currentTarget.style.color = 'var(--accent)' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-hover)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
               >
                 <span style={{ opacity: 0.7 }}>+</span> {name}
