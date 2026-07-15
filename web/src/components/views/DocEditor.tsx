@@ -18,6 +18,7 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { store, useStore } from '../../store/nodeStore'
 import { assignContext } from '../../utils/cajones'
+import { isContextKnowledge, isProfileKnowledge } from '../../utils/knowledgeNodes'
 import { firstLineTitle } from '../../utils/docNode'
 import { markdownToHtml } from '../../utils/importMarkdown'
 import DocMention from './DocMention'
@@ -169,10 +170,19 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // enrutado (V2DetailView, etc.) una TAREA/EVENTO acaba abriéndose en este editor
   // como si fuera un documento en blanco, NUNCA debe perder su nombre — el bug
   // original era justo este: tareas abiertas por error quedaban tituladas «Documento».
+  // «🧠 Lo que Fromly sabe» (por contexto o de perfil) es OTRO título canónico: un
+  // sentinel de texto fijo, no algo que el usuario escriba — pero su body puede
+  // quedarse vacío legítimamente (memoria aún sin contenido). Sin esta protección,
+  // el guardado al DESMONTAR (más abajo) recalculaba `text` desde un body vacío y
+  // lo dejaba en blanco, con lo que dejaba de reconocerse como el nodo de
+  // conocimiento y aparecía como un documento huérfano «Sin título» en Elementos
+  // (Alberto, 15 jul: "Lo que Fromly sabe" de Casa Alicante vacío + nota "Sin
+  // título" — mismo nodo, mismo bug).
   const keepsOwnTitle = () => {
     const n = store.getNode(node.id)
     if (!n) return false
     if (n.isDiaryEntry || n.diaryDate || n.status != null || n.isEvent) return true
+    if (isContextKnowledge(n.text) || isProfileKnowledge(n.text)) return true
     try { return JSON.parse(n.extraData || '{}')._containerNotes === '1' } catch { return false }
   }
   // Construye el update de guardado: incluye `text` salvo en nodos de título canónico.
