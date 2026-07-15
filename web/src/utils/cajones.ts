@@ -438,11 +438,23 @@ export function firstContextOf(n: Node): Node | null {
     const c = store.getNode(id)
     if (c && !c.deletedAt && !isContextClosed(c)) return c
   }
-  // Ownership: subir hasta el primer contexto.
+  // Ownership: subir hasta el primer contexto. También mira _ctxRefs en cada
+  // ANCESTRO, no solo en n — las conversaciones se parentan siempre bajo el
+  // diario de hoy y llevan el contexto como _ctxRefs (assignContext), no como
+  // reparent físico (aiChatStore.ts:createSessionNode + send/assignContext).
+  // Un agente creado DENTRO de esa conversación (parentId=sessionId) es nieto
+  // del contexto real, no hijo directo — sin mirar _ctxRefs de los ancestros,
+  // firstContextOf nunca encontraba el contexto y el agente/su ejecución caían
+  // siempre en "sin contexto" (Alberto, 15 jul: Ejecutar sobre un agente
+  // conversacional creado dentro de un contexto abría el chat sin contexto).
   let cur: Node | null | undefined = n.parentId ? store.getNode(n.parentId) : null
   let guard = 0
   while (cur && guard++ < 80) {
     if (isContextKnowledge(cur.text)) break
+    for (const id of nodeCtxRefs(cur)) {
+      const c = store.getNode(id)
+      if (c && !c.deletedAt && !isContextClosed(c)) return c
+    }
     if ((isMarkedContext(cur) || isRootContext(cur.id)) && !cur.text?.startsWith('🧠')) {
       return isContextClosed(cur) ? null : cur
     }

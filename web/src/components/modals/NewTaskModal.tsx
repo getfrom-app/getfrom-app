@@ -12,10 +12,12 @@ interface Props {
 export default function NewTaskModal({ onClose, parentId }: Props) {
   const { t } = useTranslation()
   const [text, setText] = useState('')
-  const [due, setDue] = useState(() => {
-    const d = new Date()
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-  })
+  // Vacío por defecto: el input es datetime-local (fecha + hora), así que un
+  // valor "YYYY-MM-DD" sin hora es inválido para el input (se ve el placeholder
+  // vacío) pero SIGUE siendo un string truthy en el estado — al enviar sin tocar
+  // el campo, `due ? ... : null` colaba igualmente y creaba la tarea con
+  // due=hoy medianoche UTC (02:00 en Madrid en verano) en vez de sin fecha.
+  const [due, setDue] = useState('')
   const [priority, setPriority] = useState<'high' | 'medium' | 'low' | ''>('')
   const inputRef = useRef<HTMLInputElement>(null)
   const { showToast } = useToast()
