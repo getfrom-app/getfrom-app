@@ -185,10 +185,13 @@ export function renderInline(text: string): React.ReactNode {
       )
       remaining = remaining.slice(before.length + best.match[2].length + best.match[3].length + 4) // [t](u)
     } else if (best.type === 'wiki') {
+      // Se muestra como un enlace normal (sin corchetes visibles) — el [[...]] es
+      // solo el marcador de guardado, no algo que el usuario deba ver (Alberto,
+      // 15 jul: "me gustaría que se vea como enlace, no con corchetes").
       const refText = best.match[2]
       tokens.push(
         <span key={key++} className="mention-inline" data-ref-text={refText}>
-          [[{refText}]]
+          {refText}
         </span>
       )
       remaining = remaining.slice(before.length + refText.length + 4) // [[x]]
@@ -311,9 +314,9 @@ export function renderInlineToHtml(text: string, highlight?: string, forcedBlock
       const checked = c === 'x' || c === 'X'
       return `<span class="inline-checkbox ${checked ? 'inline-checkbox--done' : 'inline-checkbox--empty'}">${checked ? '\u2713' : '\u25cb'}</span>`
     })
-    // wiki-links [[nombre de nota]]
+    // wiki-links [[nombre de nota]] — se muestran como enlace, sin corchetes visibles.
     .replace(/\[\[([^\]]+)\]\]/g, (_, refText) => {
-      return `<span class="mention-inline" data-ref-text="${refText}">[[${refText}]]</span>`
+      return `<span class="mention-inline" data-ref-text="${refText}">${refText}</span>`
     })
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
     // auto-link URLs no ya dentro de [text](url)

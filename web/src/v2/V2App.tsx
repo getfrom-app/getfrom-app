@@ -485,14 +485,22 @@ export default function V2App() {
   // Al ENVIARSE/LLEGAR un mensaje (la conversación crece), la tab Contexto pasa a
   // mostrar el panel de la CONVERSACIÓN (Relacionado/Tareas/Elementos) aunque haya un
   // contexto seleccionado. No se dispara solo por tener una sesión vieja cargada: solo
-  // cuando el nº de mensajes aumenta (actividad real).
+  // cuando el nº de mensajes aumenta EN LA MISMA sesión (actividad real). Antes
+  // comparaba contra un contador que arrancaba en 0 para toda la vida del componente,
+  // así que cargar una conversación vieja con mensajes (onSelectCtx → retomar el
+  // último chat del contexto) se veía como "llegó un mensaje" y tapaba la ficha del
+  // contexto con el panel de la conversación (Alberto, 15 jul: "cuando entro en un
+  // contexto que tiene una conversación... debería abrirse siempre la de contexto").
   const prevMsgCount = useRef(0)
+  const prevMsgSession = useRef<string | null>(null)
   useEffect(() => {
-    if (chat.messages.length > prevMsgCount.current && chat.messages.length > 0) {
+    const sameSession = prevMsgSession.current === chat.sessionId
+    if (sameSession && chat.messages.length > prevMsgCount.current && chat.messages.length > 0) {
       setViewingCtxFicha(false)
     }
     prevMsgCount.current = chat.messages.length
-  }, [chat.messages.length])
+    prevMsgSession.current = chat.sessionId
+  }, [chat.sessionId, chat.messages.length])
 
   // El ElementsPanel de v1 abre nodos disparando `from:open-detail` (en vez de navegar).
   // Lo escuchamos aquí para abrir el elemento desde el buscador universal.
