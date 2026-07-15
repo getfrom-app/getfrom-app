@@ -1,11 +1,11 @@
 // Panel de la CONVERSACIÓN activa (tab Contexto cuando hay un chat abierto y no
-// hay contexto seleccionado). Muestra: añadir a contexto (buscador tipo v1), bloque
-// de contenido RELACIONADO por significado (RAG), TAREAS de la conversación (estilo
-// v1) y los ELEMENTOS incluidos (notas, documentos, PDF, imágenes, enlaces).
+// hay contexto seleccionado). Muestra: añadir a contexto (buscador tipo v1), TAREAS
+// de la conversación (estilo v1) y los ELEMENTOS incluidos (notas, documentos, PDF,
+// imágenes, enlaces). El bloque «Relacionado» (RAG por significado) se quitó — daba
+// resultados sin relación real (Alberto, 15 jul).
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
-import { useAIChat } from '../../store/aiChatStore'
 import { assignContext, nodeCtxRefs, contextColor, getOrCreateContainerNotes } from '../../utils/cajones'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import PdfCanvasPreview from '../../components/views/PdfCanvasPreview'
@@ -13,7 +13,6 @@ import ContextPicker from '../../components/panels/ContextPicker'
 import { V2NoteBody } from './V2DetailView'
 import { classifyElement } from '../elementKind'
 import { saveExample } from '../../api/autoClassify'
-import { ragRelated } from '../../api/client'
 import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
@@ -29,7 +28,6 @@ interface Props {
 export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx }: Props) {
   useStore()
   const { t, i18n } = useTranslation()
-  const chat = useAIChat()
   const [pickerOpen, setPickerOpen] = useState(false)
   const pickerWrap = useRef<HTMLDivElement>(null)
 
@@ -40,32 +38,6 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [pickerOpen])
-
-  // MODO PUSH: contenido RELACIONADO por significado del último mensaje del usuario.
-  const lastUserMsg = useMemo(() => {
-    const m = [...chat.messages].reverse().find(x => x.role === 'user')
-    return (m?.content || '').trim()
-  }, [chat.messages])
-  const [related, setRelated] = useState<{ node: Node; icon: string }[]>([])
-  useEffect(() => {
-    if (lastUserMsg.length < 4) { setRelated([]); return }
-    let cancelled = false
-    const exclude = [sessionId, ...store.children(sessionId).map(n => n.id)]
-    const t = setTimeout(() => {
-      ragRelated(lastUserMsg, exclude, 6).then(hits => {
-        if (cancelled) return
-        const out: { node: Node; icon: string }[] = []
-        for (const h of hits) {
-          const n = store.getNode(h.nodeId)
-          if (!n || n.deletedAt || !n.text) continue
-          const c = classifyElement(n)
-          out.push({ node: n, icon: c?.icon || '📄' })
-        }
-        setRelated(out)
-      }).catch(() => {})
-    }, 400)
-    return () => { cancelled = true; clearTimeout(t) }
-  }, [lastUserMsg, sessionId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tareas de la conversación = hijos-tarea de la sesión (estilo Hoy).
   const tasks = useMemo(() => {
@@ -131,16 +103,6 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
         </div>
       </div>
 
-      {/* MODO PUSH: relacionado por significado (RAG) del último mensaje. */}
-      {related.length > 0 && (
-        <div style={{ marginBottom: 4 }}>
-          <div className="v2-section-label" style={{ padding: '6px 0 4px' }}>{t('v2.related', 'Relacionado')}</div>
-          {related.map(({ node: n, icon }) => (
-            <V2ElementRow key={n.id} node={n} icon={icon} onOpen={onOpenNode} extraMeta={fmtDate(n.updatedAt, i18n.language)} />
-          ))}
-        </div>
-      )}
-
       {/* Bloque de tareas de la conversación — estilo Hoy */}
       <div className="v2-section-label" style={{ padding: '10px 0 4px' }}>{t('v2.tasks', 'Tareas')}</div>
       <V2TaskList tasks={tasks} />
@@ -185,7 +147,10 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
           exportar, publicar…) para esta conversación, al final de todo. */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
         <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('v2.context.notes', 'Notas')}</div>
-        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />
+        {/* Espacio de anotación libre de ESTA conversación, no una nota independiente
+            — sin cabecera de acciones propia (favorito/exportar/eliminar), igual que
+            «Lo que Fromly sabe» en la ficha del contexto (Alberto, 15 jul). */}
+        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
       </div>
     </div>
   )

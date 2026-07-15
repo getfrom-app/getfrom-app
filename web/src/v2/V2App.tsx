@@ -227,13 +227,26 @@ export default function V2App() {
   // 1 elemento → se abre en detalle; varios → listados en la tab Contexto (panel de conversación).
   const onOpenConversation = (id: string) => {
     aiChatStore.loadSession(id)
-    setSelectedCtxId(null)
+    // Mantener el contexto de la conversación en la barra lateral y el breadcrumb
+    // (antes se limpiaba SIEMPRE — Alberto, 15 jul: "cuando se abre una conversación
+    // dentro del contexto diario, se debería mantener ese contexto diario. Y arriba,
+    // en el breadcrumb, debería poner contexto y luego la conversación en sí").
+    const sessionNode = store.getNode(id)
+    const sessionCtx = sessionNode ? firstContextOf(sessionNode) : null
+    setSelectedCtxId(sessionCtx?.id ?? null)
     setFocusNodeId(null)
     setViewingCtxFicha(false)
     const content = store.children(id).filter(n => {
       if (n.deletedAt || !n.text) return false
       const ed = parseExtraData(n.extraData)
       if (ed._aiTranscript === '1' || ed._aiMsgRole) return false
+      // «Notas» de la conversación (getOrCreateContainerNotes) NO es un elemento
+      // real — es la zona de anotación libre embebida al final del panel de la
+      // conversación. Antes se colaba aquí como "el único elemento adjunto" en
+      // cuanto se creaba vacía al ver el panel, y la columna derecha se abría en
+      // su detalle de nota a pantalla completa en vez de mostrar la conversación
+      // (Alberto, 15 jul).
+      if (ed._containerNotes === '1') return false
       if (n.status != null || (n.types || []).includes('tarea')) return false
       if ((n.types || []).includes('evento') || n.isEvent) return false
       return true

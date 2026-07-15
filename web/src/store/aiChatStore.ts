@@ -450,7 +450,20 @@ class AIChatStore {
       }
 
       const allActions = extractActions(assistantText)
-      if (allActions.length === 0) break
+      if (allActions.length === 0) {
+        // La IA dijo que iba a hacer algo (bloque ```from-action``` abierto) pero la
+        // respuesta se cortó antes del cierre — el JSON queda incompleto y
+        // extractActions no encuentra nada, así que ANTES no se creaba nada y
+        // tampoco se avisaba: Fromly decía "voy a crear el agente ahora mismo" y
+        // se quedaba ahí, en silencio (Alberto, 15 jul: "dice que lo crea, pero no
+        // lo crea realmente"). Con instrucciones muy largas (agentes con
+        // user_message extenso) es más probable llegar al límite de la respuesta
+        // a mitad del bloque. Avisar en vez de fallar en silencio.
+        if (hasUnclosedActionBlock(assistantText)) {
+          this.addNotice('⚠️ Se me ha cortado la respuesta a mitad de una acción y no he llegado a ejecutarla. Pídemelo otra vez — si es una instrucción muy larga, dímelo en dos mensajes.')
+        }
+        break
+      }
 
       const readActions  = allActions.filter(a => READ_ACTIONS.has(a.action as string))
       const KNOWN_WRITE_ACTIONS = new Set(['create_note','create_document','create_task','create_event','create_context','create_agent','update_agent','create_prompt','create_resource','update_node','add_column','fill_column','add_row','change_view','run_prompt'])
@@ -1178,6 +1191,17 @@ function extractActions(text: string): Array<Record<string, unknown>> {
     } catch { /* ignore malformed JSON */ }
   }
   return out
+}
+
+// Detecta un bloque ```from-action abierto que nunca llegó a cerrarse (la
+// respuesta se cortó a mitad, típicamente por un user_message muy largo al
+// crear un agente). extractActions() exige el cierre para poder parsear el
+// JSON, así que sin esto el fallo era completamente silencioso.
+function hasUnclosedActionBlock(text: string): boolean {
+  const opens = (text.match(/```from-action/g) || []).length
+  if (opens === 0) return false
+  const closed = (text.match(/```from-action\s*\n[\s\S]*?\n```/g) || []).length
+  return opens > closed
 }
 
 export const aiChatStore = new AIChatStore()

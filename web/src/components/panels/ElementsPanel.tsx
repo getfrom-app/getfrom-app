@@ -118,7 +118,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   useEffect(() => {
     if (filter !== 'task' && (view === 'kanban' || view === 'calendario')) changeView('lista')
   }, [filter]) // eslint-disable-line react-hooks/exhaustive-deps
-  const [sortBy, setSortBy] = useState<SortBy>(() => (localStorage.getItem(ELEMENTS_SORT_KEY) as SortBy) || 'updated')
+  const [sortBy, setSortBy] = useState<SortBy>(() => (localStorage.getItem(ELEMENTS_SORT_KEY) as SortBy) || 'created')
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
   function changeSort(v: SortBy) {
     setSortBy(v)
@@ -225,9 +225,23 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   const filtered = useMemo(() => {
     const out = ctxFilter === 'all' ? byTypeAndSearch : byTypeAndSearch.filter(r => ctxMatchesFilter(r.ctxId, ctxFilter))
     const sorted = [...out]
+    // Sin fecha (createdAt/updatedAt vacío) SIEMPRE al final, sea cual sea la
+    // dirección — antes un '' se colaba como "más reciente" en algunos casos
+    // (Alberto, 15 jul: "Locución CREO Laura Martínez..." salía primero sin ser
+    // ni de lejos lo más nuevo).
     if (sortBy === 'title') sorted.sort((a, b) => a.title.localeCompare(b.title))
-    else if (sortBy === 'created') sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    else sorted.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    else if (sortBy === 'created') sorted.sort((a, b) => {
+      if (!a.createdAt && !b.createdAt) return 0
+      if (!a.createdAt) return 1
+      if (!b.createdAt) return -1
+      return b.createdAt.localeCompare(a.createdAt)
+    })
+    else sorted.sort((a, b) => {
+      if (!a.updatedAt && !b.updatedAt) return 0
+      if (!a.updatedAt) return 1
+      if (!b.updatedAt) return -1
+      return b.updatedAt.localeCompare(a.updatedAt)
+    })
     return sorted
   }, [byTypeAndSearch, ctxFilter, sortBy])
 
