@@ -104,10 +104,6 @@ export default function V2App() {
   }, [ownAccent])
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
   const [rightMode, setRightMode] = useState<RightMode>('hoy')
-  // ¿La tab Contexto muestra la FICHA del contexto (true) o el panel de la
-  // CONVERSACIÓN activa (false)? Al hablar manda la conversación; al entrar a un
-  // contexto para verlo, manda su ficha.
-  const [viewingCtxFicha, setViewingCtxFicha] = useState(false)
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // elemento abierto en la columna derecha
   // Ajustes a pantalla completa: null = modo normal; si no, la pestaña activa.
@@ -189,12 +185,13 @@ export default function V2App() {
   }, [])
 
   // Al elegir un contexto, la columna derecha muestra SIEMPRE su ficha completa
-  // (vista de contexto): contenido agrupado + qué sabe Fromly + archivar.
+  // (vista de contexto): contenido agrupado + qué sabe Fromly + archivar. La tab
+  // Detalles es independiente — no se toca aquí, así que lo que hubiera abierto
+  // sigue disponible al volver a ella (Alberto, 15 jul).
   const onSelectCtx = (id: string | null) => {
     setSelectedCtxId(id)
     setFocusNodeId(null)
     setDetailNodeId(null)
-    setViewingCtxFicha(!!id)  // clic en un contexto = ver su ficha
     setRightMode(id ? 'contexto' : 'hoy')
     // Retomar la última conversación de este contexto si existe, en vez de siempre
     // resetear a un chat en blanco (Alberto, 15 jul: "cuando se vuelva el contexto,
@@ -210,8 +207,7 @@ export default function V2App() {
     setSelectedCtxId(null)
     setFocusNodeId(null)
     setDetailNodeId(null)
-    setViewingCtxFicha(false)
-    setRightMode('contexto') // durante una conversación, la derecha muestra su panel
+    setRightMode('detalles') // durante una conversación, la derecha muestra su panel
     aiChatStore.startNewSession()
   }
 
@@ -222,13 +218,13 @@ export default function V2App() {
     setSelectedCtxId(id)
     setFocusNodeId(null)
     setDetailNodeId(null)
-    setViewingCtxFicha(false)  // se está iniciando una conversación, no viendo la ficha
-    setRightMode('contexto')
+    setRightMode('detalles')  // se está iniciando una conversación, no viendo la ficha
     aiChatStore.startNewSession()
   }
 
-  // Abrir una conversación: chat al CENTRO + su(s) elemento(s) en la DERECHA a la vez.
-  // 1 elemento → se abre en detalle; varios → listados en la tab Contexto (panel de conversación).
+  // Abrir una conversación: chat al CENTRO + su(s) elemento(s) en la tab DETALLES a
+  // la vez. 1 elemento → se abre en detalle; varios → listados en el panel de la
+  // conversación. La tab Contexto se mantiene intacta (ficha del contexto, si lo hay).
   const onOpenConversation = (id: string) => {
     aiChatStore.loadSession(id)
     // Mantener el contexto de la conversación en la barra lateral y el breadcrumb
@@ -239,7 +235,6 @@ export default function V2App() {
     const sessionCtx = sessionNode ? firstContextOf(sessionNode) : null
     setSelectedCtxId(sessionCtx?.id ?? null)
     setFocusNodeId(null)
-    setViewingCtxFicha(false)
     const content = store.children(id).filter(n => {
       if (n.deletedAt || !n.text) return false
       const ed = parseExtraData(n.extraData)
@@ -255,7 +250,7 @@ export default function V2App() {
       if ((n.types || []).includes('evento') || n.isEvent) return false
       return true
     })
-    setRightMode('contexto')
+    setRightMode('detalles')
     setDetailNodeId(content.length === 1 ? content[0].id : null)
   }
 
@@ -322,14 +317,14 @@ export default function V2App() {
     for (const f of textFiles) {
       try { const note = createMarkdownNode(captureParentId(), await f.text(), f.name, false); if (note) lastNote = note.id } catch { /* */ }
     }
-    if (lastNote) { setDetailNodeId(lastNote); setRightMode('contexto') }
+    if (lastNote) { setDetailNodeId(lastNote); setRightMode('detalles') }
 
     if (!otherFiles.length) return
 
     if (aiChatStore.sessionId) {
       // Hay conversación → adjuntar a ella.
       const sid = aiChatStore.sessionId
-      setDetailNodeId(null); setViewingCtxFicha(false); setRightMode('contexto')
+      setDetailNodeId(null); setRightMode('detalles')
       let ok = 0
       for (const f of otherFiles) { if (await uploadResourceNode(f, sid)) { ok++; toast(t('v2.attachedToConversation', '📎 {{name}} adjuntado a la conversación', { name: f.name })) } }
       if (ok > 0) {
@@ -339,7 +334,7 @@ export default function V2App() {
     } else {
       // Sin conversación → importar a Fromly (RAG), sin iniciar chat.
       const id = await importFilesToFromly(otherFiles, captureParentId())
-      if (id) { setDetailNodeId(id); setViewingCtxFicha(false); setRightMode('contexto') }
+      if (id) { setDetailNodeId(id); setRightMode('detalles') }
     }
   }
 
@@ -371,13 +366,13 @@ export default function V2App() {
 
     if (aiChatStore.sessionId) {
       const sid = aiChatStore.sessionId
-      setDetailNodeId(null); setViewingCtxFicha(false); setRightMode('contexto')
+      setDetailNodeId(null); setRightMode('detalles')
       createDriveResourceNode(result, sid)
       toast(t('v2.attachedToConversation', '📎 {{name}} adjuntado a la conversación', { name: result.name }))
       aiChatStore.addNotice(t('v2.filesIncorporatedNotice', 'He incorporado {{label}} a esta conversación. Ya puedes preguntarme sobre su contenido.', { label: `**${result.name}**` }))
     } else {
       const id = createDriveResourceNode(result, captureParentId())
-      setDetailNodeId(id); setViewingCtxFicha(false); setRightMode('contexto')
+      setDetailNodeId(id); setRightMode('detalles')
       toast(t('v2.importedToFromly', '📥 {{name}} importado a Fromly', { name: result.name }))
     }
   }
@@ -439,12 +434,12 @@ export default function V2App() {
     if (originSession && originSession !== chat.sessionId) {
       aiChatStore.loadSession(originSession)
       setFocusNodeId(null)
-      setViewingCtxFicha(false)
     }
     const ctx = node ? firstContextOf(node) : null
     if (ctx) setSelectedCtxId(ctx.id)
 
-    // Elemento normal: se abre en la columna derecha (visor/editor según su tipo).
+    // Elemento normal: se abre en la tab Detalles (visor/editor según su tipo).
+    setRightMode('detalles')
     setDetailNodeId(id)
   }
 
@@ -467,40 +462,23 @@ export default function V2App() {
   }, [chat.isStreaming])  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Al aparecer el PRIMER mensaje de usuario de una conversación, la columna derecha
-  // va sola a «Contexto» → se ve el panel de conversación con el bloque «Relacionado»
-  // (push) sin cambiar de tab a mano. Se dispara por mensaje (no por sessionId, que
-  // puede venir persistido del reload), una sola vez por sesión, y solo desde la tab
-  // por defecto «Hoy» para no pisar una elección deliberada (Elementos/Historial).
+  // va sola a «Detalles» → se ve el panel de la conversación (Tareas/Elementos/Notas)
+  // sin cambiar de tab a mano. Se dispara por mensaje (no por sessionId, que puede
+  // venir persistido del reload), una sola vez por sesión, y solo desde la tab por
+  // defecto «Hoy» para no pisar una elección deliberada (Elementos/Contexto/Agenda).
+  // Contexto y Detalles son tabs independientes desde el 15 jul (Alberto: "debe haber
+  // una forma de volver a la columna de contexto") — este efecto ya no necesita tocar
+  // ni compararse con el estado de la ficha del contexto, que ahora vive aparte.
   const switchedFor = useRef<string | null>(null)
   useEffect(() => {
     const sid = chat.sessionId
-    if (!sid || detailNodeId || selectedCtxId) return
+    if (!sid || detailNodeId) return
     if (switchedFor.current === sid || rightMode !== 'hoy') return
     if (chat.messages.some(m => m.role === 'user')) {
       switchedFor.current = sid
-      setRightMode('contexto')
+      setRightMode('detalles')
     }
   }, [chat.sessionId, chat.messages.length])  // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Al ENVIARSE/LLEGAR un mensaje (la conversación crece), la tab Contexto pasa a
-  // mostrar el panel de la CONVERSACIÓN (Relacionado/Tareas/Elementos) aunque haya un
-  // contexto seleccionado. No se dispara solo por tener una sesión vieja cargada: solo
-  // cuando el nº de mensajes aumenta EN LA MISMA sesión (actividad real). Antes
-  // comparaba contra un contador que arrancaba en 0 para toda la vida del componente,
-  // así que cargar una conversación vieja con mensajes (onSelectCtx → retomar el
-  // último chat del contexto) se veía como "llegó un mensaje" y tapaba la ficha del
-  // contexto con el panel de la conversación (Alberto, 15 jul: "cuando entro en un
-  // contexto que tiene una conversación... debería abrirse siempre la de contexto").
-  const prevMsgCount = useRef(0)
-  const prevMsgSession = useRef<string | null>(null)
-  useEffect(() => {
-    const sameSession = prevMsgSession.current === chat.sessionId
-    if (sameSession && chat.messages.length > prevMsgCount.current && chat.messages.length > 0) {
-      setViewingCtxFicha(false)
-    }
-    prevMsgCount.current = chat.messages.length
-    prevMsgSession.current = chat.sessionId
-  }, [chat.sessionId, chat.messages.length])
 
   // El ElementsPanel de v1 abre nodos disparando `from:open-detail` (en vez de navegar).
   // Lo escuchamos aquí para abrir el elemento desde el buscador universal.
@@ -660,7 +638,6 @@ export default function V2App() {
         onResize={setRightWidth}
         activeSessionId={chat.sessionId}
         onOpenConversation={onOpenConversation}
-        viewingCtxFicha={viewingCtxFicha}
         importDragOver={importDragOver}
         elementsFilter={elementsFilter}
         onOpenElementsFiltered={onOpenElementsFiltered}

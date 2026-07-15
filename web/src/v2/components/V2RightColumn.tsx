@@ -1,5 +1,13 @@
-// Columna derecha contextual de Fromly 2.0 — 3 modos.
-// Contexto:  qué sabe Fromly del contexto activo + sus miembros.
+// Columna derecha contextual de Fromly 2.0 — 5 modos.
+// Contexto:  qué sabe Fromly del contexto activo + sus miembros. SIEMPRE la
+//            ficha del contexto — nunca cambia a otra cosa (antes competía con
+//            el panel de conversación/detalle y se perdía sin forma de volver,
+//            Alberto 15 jul: "debe haber una forma de volver a la columna de
+//            contexto y no la hay"). Separado del contenido específico:
+// Detalles:  lo que esté abierto en concreto — el panel de la conversación
+//            activa (tareas/elementos/notas propias) o el detalle de una nota/
+//            tarea/PDF/lienzo. Contexto y Detalles son independientes: cambiar
+//            de tab entre ellos NUNCA pierde lo que había en el otro.
 // Elementos: buscador global de todo lo guardado (notas, tareas, archivos,
 //            conversaciones…) — Historial se retiró (10 jul 26): era el mismo
 //            buscador con el filtro "conversación" implícito y sus elementos
@@ -23,7 +31,7 @@ import { elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
-export type RightMode = 'contexto' | 'elementos' | 'hoy' | 'agenda'
+export type RightMode = 'contexto' | 'detalles' | 'elementos' | 'hoy' | 'agenda'
 
 interface Props {
   mode: RightMode
@@ -38,7 +46,6 @@ interface Props {
   onResize: (w: number) => void
   activeSessionId: string | null
   onOpenConversation: (id: string) => void
-  viewingCtxFicha: boolean
   /** Filtro inicial pedido para la tab Elementos (p.ej. «← Agentes» → 'agent'). */
   elementsFilter?: ElemKind | 'all' | 'favorite' | null
   /** Cierra el detalle y abre la tab Elementos filtrada por ese tipo. */
@@ -103,7 +110,7 @@ function EditableDetailTitle({ nodeId }: { nodeId: string }) {
   )
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, viewingCtxFicha, elementsFilter, onOpenElementsFiltered, recorder }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, elementsFilter, onOpenElementsFiltered, recorder }: Props) {
   useStore()
   const { t, i18n } = useTranslation()
   const chat = useAIChat()
@@ -118,6 +125,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
 
   const tabs: { id: RightMode; label: string }[] = [
     { id: 'contexto', label: t('v2.rightColumn.tabContext', 'Contexto') },
+    { id: 'detalles', label: t('v2.rightColumn.tabDetails', 'Detalles') },
     { id: 'elementos', label: t('v2.rightColumn.tabElements', 'Elementos') },
     { id: 'hoy', label: t('v2.rightColumn.tabToday', 'Hoy') },
     { id: 'agenda', label: t('v2.rightColumn.tabAgenda', 'Agenda') },
@@ -150,8 +158,15 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
         {tabs.map(tb => (
           <button
             key={tb.id}
-            className={`v2-right-tab ${!detailNodeId && mode === tb.id ? 'active' : ''}`}
-            onClick={() => { onCloseDetail(); onMode(tb.id) }}
+            className={`v2-right-tab ${mode === tb.id ? 'active' : ''}`}
+            onClick={() => {
+              // Contexto ⟷ Detalles son independientes — cambiar entre ellos NUNCA
+              // pierde lo que había en el otro (Alberto, 15 jul: "debe haber una
+              // forma de volver a la columna de contexto"). Solo se cierra el
+              // detalle al salir a Elementos/Hoy/Agenda.
+              if (tb.id !== 'contexto' && tb.id !== 'detalles') onCloseDetail()
+              onMode(tb.id)
+            }}
           >{tb.label}</button>
         ))}
       </div>
@@ -182,8 +197,10 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
         </div>
       )}
 
-      {/* Detalle de un elemento (documento/PDF/imagen/audio/nota) — con las tabs arriba. */}
-      {!isRecordingActive && detailNodeId && (() => {
+      {/* Detalle de un elemento (documento/PDF/imagen/audio/nota) — SOLO en la tab
+          Detalles (antes se mostraba sin importar la tab activa, tapando Contexto/
+          Elementos/Hoy en cuanto había algo abierto). */}
+      {!isRecordingActive && mode === 'detalles' && detailNodeId && (() => {
         const detailNode = store.getNode(detailNodeId)
         // Recursos (PDF/imagen/audio/enlace/podcast…) llevan publicar+eliminar AQUÍ, en la
         // cabecera, junto al título — antes cada visor de recurso repetía el título en su
@@ -224,25 +241,30 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
         )
       })()}
 
+      {/* Tab Detalles sin nodo abierto: el panel de la conversación activa, o vacío. */}
+      {!isRecordingActive && mode === 'detalles' && !detailNodeId && (
+        <div className="v2-right-body">
+          {activeSessionId
+            ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
+            : <div className="v2-right-empty">{t('v2.rightColumn.noDetailEmpty', 'Nada abierto todavía. Abre una nota, un archivo, o empieza una conversación.')}</div>}
+        </div>
+      )}
+
       {/* Elementos: el buscador universal REAL de la v1 (filtros por tipo, virtualizado). */}
-      {!isRecordingActive && !detailNodeId && mode === 'elementos' && (
+      {!isRecordingActive && mode === 'elementos' && (
         <div className="v2-right-fill">
           <ElementsPanel initialFilter={elementsFilter ?? undefined} />
         </div>
       )}
 
-      {!isRecordingActive && !detailNodeId && mode !== 'elementos' && (
+      {!isRecordingActive && mode !== 'elementos' && mode !== 'detalles' && (
       <div className="v2-right-body">
         {mode === 'contexto' && (
-          // Con una conversación activa manda su PANEL (Relacionado/Tareas/Elementos);
-          // la FICHA del contexto solo cuando entras a un contexto a verlo (viewingCtxFicha).
-          (activeSessionId && !viewingCtxFicha)
-            ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
-            : selectedCtxId
-              ? <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} onOpenConversation={onOpenConversation} />
-              : activeSessionId
-                ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
-                : <div className="v2-right-empty">{t('v2.rightColumn.chooseContextEmpty', 'Elige un contexto a la izquierda, o empieza una conversación: aquí verás sus tareas y elementos.')}</div>
+          // SIEMPRE la ficha del contexto — nunca el panel de conversación (eso vive
+          // en la tab Detalles, independiente).
+          selectedCtxId
+            ? <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} onOpenConversation={onOpenConversation} />
+            : <div className="v2-right-empty">{t('v2.rightColumn.chooseContextEmpty', 'Elige un contexto a la izquierda para ver su ficha.')}</div>
         )}
 
         {mode === 'hoy' && (
