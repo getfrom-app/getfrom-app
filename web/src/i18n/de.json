@@ -2253,6 +2253,8 @@
   "v2.chat.noAgents": "Noch keine Agenten",
   "v2.chat.newAgentName": "Name des Agenten:",
   "v2.chat.newAgent": "Neuer Agent",
+  "v2.chat.askNewPrompt": "Welchen Prompt möchtest du erstellen? Erzähl mir, wofür du ihn nutzen willst und was er sagen soll, dann erstelle ich einen Entwurf.",
+  "v2.chat.askNewAgent": "Was möchtest du automatisieren? Erzähl mir, was der Agent tun soll und wie oft, dann erstelle ich einen Entwurf.",
   "v2.chat.processingAudio": "Wird verarbeitet…",
   "v2.chat.recordingListening": "Hört zu…",
   "pricing.lifetimeEverythingPro": "Alles aus Pro, für immer",

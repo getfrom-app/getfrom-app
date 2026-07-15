@@ -2253,6 +2253,8 @@
   "v2.chat.noAgents": "Nog geen agenten",
   "v2.chat.newAgentName": "Naam van de agent:",
   "v2.chat.newAgent": "Nieuwe agent",
+  "v2.chat.askNewPrompt": "Welke prompt wil je maken? Vertel me waarvoor je hem gaat gebruiken en wat hij moet zeggen, dan maak ik een concept.",
+  "v2.chat.askNewAgent": "Wat wil je automatiseren? Vertel me wat de agent moet doen en hoe vaak, dan maak ik een concept.",
   "v2.chat.processingAudio": "Verwerken…",
   "v2.chat.recordingListening": "Luisteren…",
   "pricing.lifetimeEverythingPro": "Alles van Pro, voor altijd",

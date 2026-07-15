@@ -2253,6 +2253,8 @@
   "v2.chat.noAgents": "Пока нет агентов",
   "v2.chat.newAgentName": "Имя агента:",
   "v2.chat.newAgent": "Новый агент",
+  "v2.chat.askNewPrompt": "Какой промпт ты хочешь создать? Расскажи, для чего он нужен и что должен говорить, и я подготовлю черновик.",
+  "v2.chat.askNewAgent": "Что ты хочешь автоматизировать? Расскажи, что должен делать агент и как часто, и я подготовлю черновик.",
   "v2.chat.processingAudio": "Обработка…",
   "v2.chat.recordingListening": "Слушаю…",
   "pricing.lifetimeEverythingPro": "Всё из Pro, навсегда",

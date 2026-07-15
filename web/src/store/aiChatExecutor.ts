@@ -8,6 +8,7 @@ import type { ExecutedAction } from './aiChatStore'
 import { ensureDayPath } from '../utils/agendaHelper'
 import { pushEventToGcal } from '../utils/gcalNodesSync'
 import { createAgentUnder, getAgentData, setAgentEnabled, isAgentNode } from '../utils/agentesHelper'
+import { createPromptUnder } from '../utils/promptsHelper'
 import { markdownToHtml } from '../utils/importMarkdown'
 import { createContext, appendContextFacts, maybeUpdateContextKnowledge } from '../utils/cajones'
 import { userStore } from './userStore'
@@ -43,6 +44,7 @@ export async function executeChatAction(
     case 'create_context': return createContextAction(action)
     case 'create_agent':   return createAgentAction(action, sessionId, currentNodeId)
     case 'update_agent':   return updateAgentAction(action)
+    case 'create_prompt':  return createPromptAction(action, sessionId, currentNodeId)
     case 'create_event':   return createEvent(action, sessionId)
     case 'update_node':    return updateNode(action)
     case 'read_node':      return readNode(action)
@@ -219,6 +221,22 @@ function createAgentAction(a: Record<string, unknown>, sessionId?: string, curre
   return result('create_agent', true,
     `Agente «${label}» creado${schedulePart}. Está DESACTIVADO — revísalo y actívalo cuando estés listo.`,
     [created.id])
+}
+
+/** create_prompt — crea un prompt reutilizable (plantilla de texto que el usuario
+ *  lanza luego desde el desplegable ⚡ del composer) colgado del contexto activo.
+ *  Mismo patrón que create_agent: la IA redacta el contenido a partir de lo que
+ *  pida el usuario y lo crea directamente (sin gate de activación — un prompt no
+ *  hace nada por sí solo hasta que el usuario lo envía). */
+function createPromptAction(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
+  const label = cleanNodeTitle((a.text as string) || (a.title as string) || 'Prompt')
+  const content = (a.content as string) || (a.body as string) || ''
+  const rawParent = (a.parent_id as string | undefined) || null
+  const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
+  const parentId = explicitParent ?? sessionId ?? currentNodeId ?? null
+
+  const created = createPromptUnder({ parentId, label, content })
+  return result('create_prompt', true, `Prompt «${label}» creado.`, [created.id])
 }
 
 /** update_agent — activa/pausa, reprograma o cambia el prompt de un agente YA

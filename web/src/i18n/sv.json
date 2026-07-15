@@ -2253,6 +2253,8 @@
   "v2.chat.noAgents": "Inga agenter än",
   "v2.chat.newAgentName": "Agentens namn:",
   "v2.chat.newAgent": "Ny agent",
+  "v2.chat.askNewPrompt": "Vilken prompt vill du skapa? Berätta vad du ska använda den till och vad den ska säga, så tar jag fram ett utkast.",
+  "v2.chat.askNewAgent": "Vad vill du automatisera? Berätta vad agenten ska göra och hur ofta, så tar jag fram ett utkast.",
   "v2.chat.processingAudio": "Bearbetar…",
   "v2.chat.recordingListening": "Lyssnar…",
   "pricing.lifetimeEverythingPro": "Allt i Pro, för alltid",

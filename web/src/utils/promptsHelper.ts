@@ -95,6 +95,9 @@ export function createPromptUnder(opts: {
   label: string
   icon?: string
   activation?: PromptActivation
+  /** Contenido inicial (una línea por hijo, outliner) — lo usa create_prompt cuando
+   *  la IA redacta el prompt a partir de lo que pide el usuario en el chat. */
+  content?: string
 }): Node {
   const icon = opts.icon || '⚡'
   const node = store.createNode({ text: opts.label.trim(), parentId: opts.parentId })
@@ -106,9 +109,14 @@ export function createPromptUnder(opts: {
     }),
     isCollapsed: false,
   })
-  // Semilla: un hijo vacío para que el usuario empiece a escribir el contenido
-  // (mismo patrón que PromptListPanel.createPrompt / createAgentUnder).
-  store.createNode({ text: '', parentId: node.id })
+  const lines = (opts.content || '').split('\n').map(l => l.trim()).filter(Boolean)
+  if (lines.length > 0) {
+    for (const line of lines) store.createNode({ text: line, parentId: node.id })
+  } else {
+    // Semilla: un hijo vacío para que el usuario empiece a escribir el contenido
+    // (mismo patrón que PromptListPanel.createPrompt / createAgentUnder).
+    store.createNode({ text: '', parentId: node.id })
+  }
   return store.getNode(node.id)!
 }
 

@@ -2253,6 +2253,8 @@
   "v2.chat.noAgents": "Henüz ajan yok",
   "v2.chat.newAgentName": "Ajan adı:",
   "v2.chat.newAgent": "Yeni ajan",
+  "v2.chat.askNewPrompt": "Hangi istemi oluşturmak istiyorsun? Ne için kullanacağını ve ne söylemesi gerektiğini anlat, sana bir taslak hazırlayayım.",
+  "v2.chat.askNewAgent": "Neyi otomatikleştirmek istiyorsun? Ajanın ne yapması gerektiğini ve ne sıklıkla çalışacağını anlat, sana bir taslak hazırlayayım.",
   "v2.chat.processingAudio": "İşleniyor…",
   "v2.chat.recordingListening": "Dinliyor…",
   "pricing.lifetimeEverythingPro": "Pro'nun her şeyi, sonsuza kadar",

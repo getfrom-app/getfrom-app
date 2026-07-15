@@ -14,8 +14,8 @@ import { listTemplates } from '../../utils/tagsHelper'
 import { renderInline } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
-import { listAllPrompts, createPromptUnder, resolvePrompt } from '../../utils/promptsHelper'
-import { listAllAgents, createAgentUnder } from '../../utils/agentesHelper'
+import { listAllPrompts, resolvePrompt } from '../../utils/promptsHelper'
+import { listAllAgents } from '../../utils/agentesHelper'
 
 interface Props {
   currentNodeId: string | null
@@ -348,11 +348,16 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
                   )}
                   <div className="v2-doc-menu-sep" />
                   <button onClick={() => {
-                    const name = window.prompt(t('v2.chat.newPromptName', 'Nombre del prompt:'))
-                    if (!name || !name.trim()) return
-                    const created = createPromptUnder({ parentId: currentNodeId, label: name.trim(), icon: '⚡' })
+                    // Chat-first: en vez de un window.prompt() del navegador (Alberto,
+                    // 15 jul: "esta ventana feísima de Chrome... debería preguntar qué
+                    // prompt quieres crear... y confirmarlo por chat"), Fromly pregunta
+                    // en el propio chat; la respuesta del usuario dispara la IA con
+                    // acceso a create_prompt (aiChatExecutor.ts) — redacta el contenido,
+                    // crea el nodo y lo abre solo en la columna derecha (mismo mecanismo
+                    // que cualquier creación por chat, ver aiChatStore.ts).
                     setPromptMenu(false)
-                    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
+                    aiChatStore.addNotice(t('v2.chat.askNewPrompt', '¿Qué prompt quieres crear? Cuéntame para qué lo vas a usar y qué debe decir, y te preparo un borrador.'))
+                    taRef.current?.focus()
                   }}>➕ {t('v2.chat.newPrompt', 'Nuevo prompt')}</button>
                 </div>
               )}
@@ -379,11 +384,14 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
                   )}
                   <div className="v2-doc-menu-sep" />
                   <button onClick={() => {
-                    const name = window.prompt(t('v2.chat.newAgentName', 'Nombre del agente:'))
-                    if (!name || !name.trim()) return
-                    const created = createAgentUnder({ parentId: currentNodeId, label: name.trim(), icon: '🤖' })
+                    // Chat-first, mismo motivo que «Nuevo prompt» arriba: Fromly pregunta
+                    // en el chat en vez de un window.prompt() del navegador. La IA ya sabe
+                    // usar create_agent (system prompt del servidor) y tiene la regla de
+                    // preguntar 1-2 cosas concretas antes de crear si hay ambigüedad — el
+                    // agente nace SIEMPRE desactivado (revisar y activar a mano).
                     setAgentMenu(false)
-                    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
+                    aiChatStore.addNotice(t('v2.chat.askNewAgent', '¿Qué quieres automatizar? Cuéntame qué debe hacer el agente y con qué frecuencia, y te preparo un borrador.'))
+                    taRef.current?.focus()
                   }}>➕ {t('v2.chat.newAgent', 'Nuevo agente')}</button>
                 </div>
               )}
