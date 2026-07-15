@@ -23,6 +23,7 @@ import { findRootByKey } from './rootLookup'
 import { markdownToHtml } from './importMarkdown'
 import { htmlToMarkdown } from './htmlMarkdown'
 import { isInPapelera } from './papeleraHelper'
+import { isDocNode } from './docNode'
 import type { Node } from '../types'
 
 const AGENTES_NAME = '🤖 Agentes'
@@ -240,6 +241,52 @@ export function getAgentData(nodeId: string): {
       conversational: ed._agentConversational === '1',
     }
   } catch { return null }
+}
+
+/** Elementos (ids) que este agente debe tener SIEMPRE en cuenta al responder,
+ *  además del contexto donde vive (Alberto, 15 jul: "los agentes deben tener la
+ *  opción de poner elementos que tendrá en cuenta... si al agente de pensamientos
+ *  diarios le digo que debe tener en cuenta la nota de morning fórmula podrá
+ *  leerla y la tendrá en cuenta"). */
+export function getAgentReferencedElements(nodeId: string): string[] {
+  const n = store.getNode(nodeId)
+  if (!n) return []
+  try {
+    const v = JSON.parse(n.extraData || '{}')._agentReferencedElements
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && !!store.getNode(x)) : []
+  } catch { return [] }
+}
+
+export function addAgentReferencedElement(nodeId: string, elementId: string): void {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  const ed = JSON.parse(n.extraData || '{}')
+  const cur = getAgentReferencedElements(nodeId)
+  if (cur.includes(elementId)) return
+  ed._agentReferencedElements = [...cur, elementId]
+  store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+}
+
+export function removeAgentReferencedElement(nodeId: string, elementId: string): void {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  const ed = JSON.parse(n.extraData || '{}')
+  ed._agentReferencedElements = getAgentReferencedElements(nodeId).filter(id => id !== elementId)
+  store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+}
+
+/** Título + contenido legible de un elemento (documento → body en markdown; nota
+ *  outliner clásica → texto de sus hijos directos), para inyectarlo tal cual en
+ *  el system prompt de un agente. */
+export function readElementContent(nodeId: string): { title: string; content: string } | null {
+  const n = store.getNode(nodeId)
+  if (!n || n.deletedAt) return null
+  const title = n.text || 'Sin título'
+  if (isDocNode(n) || (n.body || '').trim()) {
+    return { title, content: htmlToMarkdown(n.body || '').trim() }
+  }
+  const lines = store.children(nodeId).filter(c => !c.deletedAt && (c.text || '').trim()).map(c => c.text.trim())
+  return { title, content: lines.join('\n') }
 }
 
 /** Lee la "nota" del agente: el texto de sus nodos hijos (recursivo, en orden),

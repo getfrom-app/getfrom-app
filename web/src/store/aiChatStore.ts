@@ -19,13 +19,12 @@ import { executeChatAction } from './aiChatExecutor'
 import { resolveTemplateCodes } from '../utils/templateCodes'
 import { learningsStore } from './learningsStore'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
-import { assignContext, isRootContext, isMarkedContext, firstContextOf, appendContextFacts } from '../utils/cajones'
+import { assignContext, isRootContext, isMarkedContext, firstContextOf, appendContextFacts, readContextKnowledge } from '../utils/cajones'
 import { resolvePrompt } from '../utils/promptsHelper'
-import { isContextKnowledge } from '../utils/knowledgeNodes'
 import { extractUserKnowledge } from '../api/autoClassify'
 import { aiLangBase, aiLangBCP47 } from '../utils/aiLang'
 import { saveUserKnowledgeToProfile, readProfileLines } from '../api/userKnowledge'
-import { getAgentData } from '../utils/agentesHelper'
+import { getAgentData, getAgentReferencedElements, readElementContent } from '../utils/agentesHelper'
 import { isInPapelera } from '../utils/papeleraHelper'
 
 export interface UndoBundle {
@@ -846,15 +845,16 @@ class AIChatStore {
       // Resolver códigos en el body del tag y en cada prompt
       let resolvedBody = resolveTemplateCodes(body, ctx)
 
-      // Memoria que Fromly acumula de este contexto ("🧠 Lo que From sabe"): se
-      // inyecta para que el chat use lo que sabe del proyecto, no solo el body.
-      const knowledgeNode = store.children(defNode.id).find(c => !c.deletedAt && isContextKnowledge(c.text))
-      if (knowledgeNode) {
-        const lines = store.children(knowledgeNode.id)
-          .filter(c => !c.deletedAt && (c.text || '').trim())
-          .map(c => (c.text || '').trim())
-        if (lines.length > 0) resolvedBody += '\n\n## Lo que From sabe de este contexto:\n' + lines.map(l => `- ${l}`).join('\n')
-      }
+      // Memoria que Fromly acumula de este contexto ("🧠 Memoria"): se inyecta para
+      // que el chat use lo que sabe del proyecto, no solo el body. Antes leía los
+      // hijos-línea del nodo (formato ANTIGUO) — desde que la memoria es un
+      // documento real (`.body` HTML, ver cajones.ts:getOrCreateContextKnowledgeDoc)
+      // esos hijos ya no existen, así que esto llevaba tiempo inyectando SIEMPRE
+      // vacío para cualquier contexto migrado (Alberto, 15 jul: el agente no tenía
+      // en cuenta nada de lo que Fromly ya sabía del contexto). readContextKnowledge
+      // ya soporta ambos formatos.
+      const knowledge = readContextKnowledge(defNode.id)
+      if (knowledge) resolvedBody += '\n\n## Lo que Fromly sabe de este contexto:\n' + knowledge
 
       if (prompts.length === 0) return resolvedBody
       const section = '\n\n## Prompts disponibles para este tag:\n' +
@@ -1031,11 +1031,42 @@ class AIChatStore {
         if (agentData?.systemPrompt?.trim()) {
           originAgentBlock = `INSTRUCCIÓN DEL AGENTE QUE ABRIÓ ESTA CONVERSACIÓN (sigue esto en tu respuesta):\n${agentData.systemPrompt.trim()}`
         }
+        // Elementos que el agente debe tener SIEMPRE en cuenta (Alberto, 15 jul: p.ej.
+        // "Morning Formula" como guía de vida — el agente debe leerla y usarla en
+        // TODA la conversación, no solo mencionarla).
+        const refs = getAgentReferencedElements(originAgentId)
+          .map(id => readElementContent(id))
+          .filter((r): r is { title: string; content: string } => !!r && !!r.content)
+        if (refs.length > 0) {
+          const refsBlock = 'ELEMENTOS QUE ESTE AGENTE DEBE TENER SIEMPRE EN CUENTA:\n' +
+            refs.map(r => `### ${r.title}\n${r.content}`).join('\n\n')
+          originAgentBlock = [originAgentBlock, refsBlock].filter(Boolean).join('\n\n')
+        }
+      }
+    }
+
+    // ── @menciones ([[Título]]) del último mensaje del usuario ─────────────
+    // Referenciar CUALQUIER elemento con @ (mismo formato wiki-link [[...]] que
+    // ya reconoce/renderiza renderInline) le da a Fromly su contenido completo,
+    // no solo el título (Alberto, 15 jul: "el chat tendrá acceso y lo leerá").
+    let mentionedBlock: string | undefined
+    const lastUserMsg = [...this.messages].reverse().find(m => m.role === 'user')
+    if (lastUserMsg) {
+      const titles = [...lastUserMsg.content.matchAll(/\[\[([^\]]+)\]\]/g)].map(m => m[1].trim())
+      const seen = new Set<string>()
+      const mentioned = titles
+        .map(title => store.allActive().find(n => !n.deletedAt && n.text?.toLowerCase() === title.toLowerCase()))
+        .filter((n): n is Node => !!n && !seen.has(n.id) && (seen.add(n.id), true))
+        .map(n => readElementContent(n.id))
+        .filter((r): r is { title: string; content: string } => !!r && !!r.content)
+      if (mentioned.length > 0) {
+        mentionedBlock = 'ELEMENTOS MENCIONADOS CON @ EN EL ÚLTIMO MENSAJE (contenido completo):\n' +
+          mentioned.map(r => `### ${r.title}\n${r.content}`).join('\n\n')
       }
     }
 
     // Combinar con el perfil de usuario
-    const combinedProfile = [activePromptBlock, originAgentBlock, dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
+    const combinedProfile = [activePromptBlock, originAgentBlock, mentionedBlock, dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
 
     return {
       messages: compactedMessages,

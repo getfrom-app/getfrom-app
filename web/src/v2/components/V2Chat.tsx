@@ -1,7 +1,7 @@
 // Chat central de Fromly 2.0 — el corazón de la app chat-first.
 // Reutiliza el motor REAL: aiChatStore.send() + streaming SSE + acciones.
 // currentNodeId = contexto seleccionado → buildPayload le inyecta ese contexto.
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAIChat, aiChatStore } from '../../store/aiChatStore'
 import type { ChatMessage } from '../../store/aiChatStore'
@@ -116,6 +116,40 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
     const text = e.target.value
     const expanded = tryExpand(text, getShortcuts())
     setInput(expanded ?? text)
+    updateMentionQuery(e.target)
+  }
+
+  // @mención — referenciar CUALQUIER elemento de Fromly en el chat, mismo formato
+  // [[Título]] que ya reconoce/renderiza renderInline (wiki-link del outliner).
+  // Al enviar, aiChatStore resuelve estas menciones y le da a Fromly el contenido
+  // completo del elemento (Alberto, 15 jul: "usando @ se debe poder mencionar
+  // cualquier elemento de fromly y el chat tendrá acceso y lo leerá").
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null)
+  const mentionStartRef = useRef<number>(0)
+  function updateMentionQuery(ta: HTMLTextAreaElement) {
+    const pos = ta.selectionStart ?? ta.value.length
+    const before = ta.value.slice(0, pos)
+    const m = before.match(/(?:^|\s)@([^\s@[\]]*)$/)
+    if (m) { mentionStartRef.current = pos - m[1].length - 1; setMentionQuery(m[1]) }
+    else setMentionQuery(null)
+  }
+  const mentionResults = useMemo(() => {
+    if (mentionQuery == null) return []
+    const q = mentionQuery.trim().toLowerCase()
+    if (!q) return store.allActive().filter(n => !n.deletedAt && (n.text || '').trim())
+      .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).slice(0, 8)
+    return store.allActive().filter(n => !n.deletedAt && (n.text || '').toLowerCase().includes(q))
+      .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || '')).slice(0, 8)
+  }, [mentionQuery]) // eslint-disable-line react-hooks/exhaustive-deps
+  function pickMention(title: string) {
+    const ta = taRef.current
+    if (!ta) return
+    const start = mentionStartRef.current
+    const end = ta.selectionStart ?? input.length
+    const next = input.slice(0, start) + `[[${title}]] ` + input.slice(end)
+    setInput(next)
+    setMentionQuery(null)
+    requestAnimationFrame(() => { ta.focus(); const p = start + title.length + 5; ta.setSelectionRange(p, p) })
   }
 
   const doSend = (text: string) => {
@@ -138,6 +172,12 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
   }, [currentNodeId, streaming])
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionQuery != null && mentionResults.length > 0 && (e.key === 'Enter' || e.key === 'Tab')) {
+      e.preventDefault()
+      pickMention(mentionResults[0].text || '')
+      return
+    }
+    if (e.key === 'Escape' && mentionQuery != null) { e.preventDefault(); setMentionQuery(null); return }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       doSend(input)
@@ -343,7 +383,14 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
 
       <div className="v2-composer">
         <div className="v2-composer-inner">
-          <div className="v2-composer-box">
+          <div className="v2-composer-box" style={{ position: 'relative' }}>
+            {mentionQuery != null && mentionResults.length > 0 && (
+              <div className="v2-doc-menu v2-doc-menu-up" style={{ left: 0, right: 'auto' }}>
+                {mentionResults.map(n => (
+                  <button key={n.id} onClick={() => pickMention(n.text || '')}>{n.text || t('common.noTitle', 'Sin título')}</button>
+                ))}
+              </div>
+            )}
             {/* Prompts: elegir uno para enviarlo directamente al chat, o crear uno nuevo.
                 Vive en el composer (no en la cabecera) — es aquí donde tiene sentido
                 elegir qué se va a enviar. Desplegable hacia ARRIBA (v2-doc-menu-up):
@@ -423,6 +470,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
               placeholder={isRecording ? t('v2.chat.voiceRecording', 'Escuchando…') : `${t('v2.chat.composerPlaceholder', 'Escribe a Fromly')}${contextLabel && contextLabel !== 'General' ? ` · ${contextLabel}` : ''}…`}
               onChange={onInputChange}
               onKeyDown={onKeyDown}
+              onBlur={() => setTimeout(() => setMentionQuery(null), 150)}
             />
             <button
               className="v2-iconbtn"
