@@ -1673,7 +1673,12 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
         ed[PIN_X] = String(Math.round(t.x)); ed[PIN_Y] = String(Math.round(t.y))
         if (ed[PIN_SCALE] == null) ed[PIN_SCALE] = '1'
         const body = t.md || linked.body || ''
-        store.updateNode(linked.id, { extraData: JSON.stringify(ed), body, text: firstLineTitle(body) })
+        // Mismo bug que DocEditor.tsx (Alberto, 15 jul): si el nodo vinculado YA tiene
+        // título propio, no derivarlo del body — solo los nodos que nacen sin título
+        // deben tomarlo de su primera línea.
+        const update: { extraData: string; body: string; text?: string } = { extraData: JSON.stringify(ed), body }
+        if (!(linked.text || '').trim()) update.text = firstLineTitle(body)
+        store.updateNode(linked.id, update)
       } else {
         const node = store.createNode({ text: firstLineTitle(t.md), parentId, extraData: newTextExtra({ x: t.x, y: t.y }) })
         if (t.md) store.updateNode(node.id, { body: t.md })

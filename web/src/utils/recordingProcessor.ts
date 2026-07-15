@@ -122,14 +122,26 @@ export async function restructureVoiceNote(nodeId: string): Promise<void> {
   try { ed = JSON.parse(node.extraData || '{}') } catch { return }
   const consolidated = typeof ed._audioTranscript === 'string' ? ed._audioTranscript : ''
   if (!consolidated.trim()) return
+  // Mismo bug que DocEditor.tsx (Alberto, 15 jul): esta función se llama tras CADA
+  // audio nuevo añadido a la misma nota. Si el usuario ya renombró la nota a mano (o
+  // ya tuvo su auto-título la primera vez), un segundo audio no debe volver a pisar
+  // el título — solo el resumen (body) sigue creciendo. `_aiAutoTitle` (puesto al
+  // crear la sesión) marca "sigue siendo el título automático genérico"; se borra en
+  // cuanto se pone el primero real, igual que ya hace maybeAutoRenameSession con las
+  // conversaciones de texto.
+  const stillAutoTitle = !!ed._aiAutoTitle
   try {
     const a = await analyzeTranscript(consolidated, 0)
     let bodyMd = a.summary || ''
     if (a.tasks && a.tasks.length > 0) {
       bodyMd += (bodyMd ? '\n\n' : '') + '**Tareas:**\n' + a.tasks.map(tk => `- [ ] ${tk}`).join('\n')
     }
-    const updates: { text?: string; body?: string } = {}
-    if (a.title) updates.text = `🎙 ${a.title}`   // título contextual (en vez de "Nota de voz")
+    const updates: { text?: string; body?: string; extraData?: string } = {}
+    if (a.title && stillAutoTitle) {
+      updates.text = `🎙 ${a.title}`   // título contextual (en vez de "Nota de voz")
+      const ed2 = { ...ed }; delete ed2._aiAutoTitle
+      updates.extraData = JSON.stringify(ed2)
+    }
     if (bodyMd.trim()) updates.body = bodyMd
     if (Object.keys(updates).length > 0) store.updateNode(nodeId, updates)
   } catch { /* mantener lo anterior si falla */ }

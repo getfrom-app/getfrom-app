@@ -712,11 +712,17 @@ export default function NodeView() {
     store.updateNode(node.id, { extraData: JSON.stringify(ed), status: null })
     unfurlUrl(text)
       .then(meta => {
+        const fresh = store.getNode(node.id)
         let ed2: Record<string, unknown> = {}
-        try { ed2 = JSON.parse(store.getNode(node.id)?.extraData || '{}') } catch {}
+        try { ed2 = JSON.parse(fresh?.extraData || '{}') } catch {}
         ed2._resourceMeta = meta
         ed2._resourceType = meta.type
-        store.updateNode(node.id, { text: meta.title || text, extraData: JSON.stringify(ed2) })
+        // Si el usuario ya renombró el nodo mientras el unfurl estaba en vuelo (todavía
+        // era la URL pelada cuando arrancó esta petición), no pisar su edición con el
+        // <title> de la página — mismo bug que DocEditor.tsx (Alberto, 15 jul).
+        const update: { extraData: string; text?: string } = { extraData: JSON.stringify(ed2) }
+        if ((fresh?.text || '').trim() === text) update.text = meta.title || text
+        store.updateNode(node.id, update)
       })
       .catch(() => {})
   }, [node?.id, node?.text]) // eslint-disable-line

@@ -22,6 +22,7 @@ import { structuralId } from './deterministicId'
 import { findRootByKey } from './rootLookup'
 import { markdownToHtml } from './importMarkdown'
 import { htmlToMarkdown } from './htmlMarkdown'
+import { isInPapelera } from './papeleraHelper'
 import type { Node } from '../types'
 
 const AGENTES_NAME = '🤖 Agentes'
@@ -120,6 +121,17 @@ export function getAgentesNode(): Node | undefined {
 export function isAgentNode(n: Node | null | undefined): boolean {
   if (!n) return false
   try { return JSON.parse(n.extraData || '{}')._agentDef === '1' } catch { return false }
+}
+
+/**
+ * listAllAgents — escanea TODO el árbol activo buscando nodos agente (mismo patrón
+ * que listAllPrompts en promptsHelper.ts: el desplegable del chat debe ver agentes
+ * de cualquier contexto, no solo los del root). Excluye la Papelera explícitamente
+ * — un nodo eliminado se reparenta bajo 🗑 Papelera en vez de marcarse `deletedAt`
+ * (papeleraHelper.ts), así que sigue siendo "activo" para `store.allActive()`.
+ */
+export function listAllAgents(): Node[] {
+  return store.allActive().filter(n => isAgentNode(n) && !isInPapelera(n.id))
 }
 
 /** Convierte texto plano (una idea por línea o párrafos separados por blanco) en

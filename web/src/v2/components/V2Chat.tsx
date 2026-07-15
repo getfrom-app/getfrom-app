@@ -15,6 +15,7 @@ import { renderInline } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
 import { listAllPrompts, createPromptUnder, resolvePrompt } from '../../utils/promptsHelper'
+import { listAllAgents, createAgentUnder, getAgentData } from '../../utils/agentesHelper'
 
 interface Props {
   currentNodeId: string | null
@@ -60,11 +61,13 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
   const [showPlanner, setShowPlanner] = useState(false)
   const [docMenu, setDocMenu] = useState(false)
   const [promptMenu, setPromptMenu] = useState(false)
+  const [agentMenu, setAgentMenu] = useState(false)
   const [showTemplatesModal, setShowTemplatesModal] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const recognitionRef = useRef<unknown>(null)
   const docMenuRef = useRef<HTMLDivElement>(null)
   const promptMenuRef = useRef<HTMLDivElement>(null)
+  const agentMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!docMenu) return
@@ -79,6 +82,13 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [promptMenu])
+
+  useEffect(() => {
+    if (!agentMenu) return
+    const onDoc = (e: MouseEvent) => { if (agentMenuRef.current && !agentMenuRef.current.contains(e.target as HTMLElement)) setAgentMenu(false) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [agentMenu])
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
@@ -344,6 +354,37 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
                     setPromptMenu(false)
                     window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
                   }}>➕ {t('v2.chat.newPrompt', 'Nuevo prompt')}</button>
+                </div>
+              )}
+            </div>
+            {/* Agentes: mismo patrón que Prompts — ver los existentes (clic abre su
+                ficha) o crear uno nuevo. Antes solo se podía crear desde la tab
+                Elementos, tras seleccionar el filtro «Agentes» — poco descubrible
+                (Alberto, 15 jul: "sigo sin saber cómo crear... un agente"). */}
+            <div style={{ position: 'relative' }} ref={agentMenuRef}>
+              <button className="v2-iconbtn" title={t('v2.chat.agentsTitle', 'Agentes')} onClick={() => setAgentMenu(o => !o)}>🤖</button>
+              {agentMenu && (
+                <div className="v2-doc-menu v2-doc-menu-up">
+                  {listAllAgents().map(a => {
+                    const data = getAgentData(a.id)
+                    return (
+                      <button key={a.id} onClick={() => {
+                        setAgentMenu(false)
+                        window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: a.id } }))
+                      }}>{data?.icon || '🤖'} {(a.text || t('common.noTitle', 'Sin título')).replace(/^🤖\s*/, '')}</button>
+                    )
+                  })}
+                  {listAllAgents().length === 0 && (
+                    <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.noAgents', 'Sin agentes todavía')}</div>
+                  )}
+                  <div className="v2-doc-menu-sep" />
+                  <button onClick={() => {
+                    const name = window.prompt(t('v2.chat.newAgentName', 'Nombre del agente:'))
+                    if (!name || !name.trim()) return
+                    const created = createAgentUnder({ parentId: currentNodeId, label: name.trim(), icon: '🤖' })
+                    setAgentMenu(false)
+                    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
+                  }}>➕ {t('v2.chat.newAgent', 'Nuevo agente')}</button>
                 </div>
               )}
             </div>

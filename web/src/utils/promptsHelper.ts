@@ -26,6 +26,7 @@ import type { Node } from '../types'
 import { aiInlineStream, getToken } from '../api/client'
 import { structuralId } from './deterministicId'
 import { findRootByKey, findContextRoot } from './rootLookup'
+import { isInPapelera } from './papeleraHelper'
 
 export const PROMPTS_ROOT_NAME = '⚡ Prompts'
 
@@ -116,9 +117,16 @@ export function createPromptUnder(opts: {
  * el desplegable del chat, que debe ver prompts de CUALQUIER contexto, no solo
  * los que cuelgan del root). NO reemplaza listPrompts() (v1 sigue usándola tal
  * cual para el root único).
+ * Excluye la Papelera: en Fromly un nodo eliminado se REPARENTA bajo 🗑 Papelera
+ * en vez de marcarse `deletedAt` (ver papeleraHelper.ts) — sigue siendo "activo"
+ * a efectos de `store.allActive()`. Sin este filtro, prompts ya borrados por el
+ * usuario reaparecían en el desplegable del chat (Alberto, 15 jul: 5 copias de
+ * "Diario del día" y "Brainstorming" — los duplicados de ejemplo creados por una
+ * carrera antigua en `ensurePromptsNode`, ya eliminados, pero nunca desaparecían
+ * de esta lista).
  */
 export function listAllPrompts(): Node[] {
-  return store.allActive().filter(n => isPromptNode(n))
+  return store.allActive().filter(n => isPromptNode(n) && !isInPapelera(n.id))
 }
 
 // ── Contenido del prompt (sus hijos) ──────────────────────────────────────────
