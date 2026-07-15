@@ -427,15 +427,15 @@ export function ensureAgentesNode(): void {
     agentesNode = store.getNode(created.id)!
   }
 
-  // Agentes existentes (por _agentId) — se busca en TODO el árbol activo, no solo
-  // en los hijos actuales de 🤖 Agentes: un predefinido que el usuario eliminó se
-  // reparenta a 🗑 Papelera (no se marca deletedAt, ver papeleraHelper.ts) y seguía
-  // siendo hijo de "otro sitio" — si solo miráramos store.children(agentesNode.id)
-  // no lo veríamos ahí y se recreaba solo, resucitando algo que el usuario borró
-  // a propósito (Alberto, 15 jul: "borra el resto de agentes, deja solo este").
+  // Agentes existentes (por _agentId) — se busca en store.nodes DIRECTAMENTE (sin
+  // el filtro !deletedAt de store.allActive()): un predefinido que el usuario
+  // elimina vía deleteNode() queda con deletedAt marcado, no desaparece del mapa.
+  // Si el dedup solo mirara allActive() no lo vería ahí y lo recrearía en cada
+  // arranque, resucitando algo que el usuario borró a propósito (Alberto, 15 jul:
+  // "borra el resto de agentes, deja solo este" — probado en vivo: con
+  // allActive() los 5 predefinidos volvían solos en la siguiente recarga).
   const existingIds = new Set<string>()
-  for (const n of store.allActive()) {
-    if (n.deletedAt) continue
+  for (const n of store.nodes.values()) {
     try {
       const ed = JSON.parse(n.extraData || '{}')
       if (ed._agentDef === '1' && ed._agentId) existingIds.add(ed._agentId)
