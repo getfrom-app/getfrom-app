@@ -6,12 +6,8 @@
 
 ## Fromly 2.0 — what you see when you open it today
 
-Since July 2026, **Fromly opens in the chat by default** (Fromly 2.0). This manual documents that
-experience, which is what you'll see by default on web, Mac and iPhone. If you prefer the classic
-tree-and-infinite-canvas model (Fromly 1.0), it's still available at
-[fromly.app/v1](https://fromly.app/v1) — the data model is the same (nodes, tasks, contexts,
-resources), only the interface changes. At the end of this manual there's a short appendix on that
-classic view.
+Since July 2026, **Fromly opens in the chat** (Fromly 2.0). This manual documents that
+experience, which is the only one available on web, Mac and iPhone.
 
 When you open Fromly you have **three columns**:
 
@@ -800,20 +796,6 @@ or Google keys. Usage will be billed to your account and won't be deducted from 
 **What happens if I run out of my monthly AI tokens?**
 You can buy a one-time top-up of 5,000,000 extra tokens from **Settings → AI**, or wait for them
 to renew with your next billing cycle.
-
----
-
-## Appendix: the classic view (Fromly 1.0)
-
-Before July 2026, Fromly opened in a bullet tree with an infinite canvas as the main screen: a
-slash menu (`/`) for creating node types, a sidebar with panels and contexts, a four-mode side
-panel (assistant, filter, planner, context), and its own keyboard shortcuts for navigating the
-tree (indent with Tab, collapse nodes, drag with a handle, etc.).
-
-That data model — nodes, tasks, contexts, resources — is the same one Fromly 2.0 uses under the
-hood. If you prefer working that way, the classic view is still active at
-[fromly.app/v1](https://fromly.app/v1) with its own tree-and-canvas interface. It's not the
-default entry point, nor the one the rest of this manual documents.
 
 ---
 

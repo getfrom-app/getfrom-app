@@ -6,11 +6,8 @@
 
 ## Fromly 2.0 — lo que ves al entrar hoy
 
-Desde julio de 2026, **Fromly abre por defecto en el chat** (Fromly 2.0). Este manual documenta esa
-experiencia, que es la que verás por defecto en web, Mac e iPhone. Si prefieres el modelo clásico de
-árbol y lienzo infinito (Fromly 1.0), sigue disponible en [fromly.app/v1](https://fromly.app/v1) —
-el modelo de datos es el mismo (nodos, tareas, contextos, recursos), solo cambia la interfaz. Al
-final de este manual tienes un apéndice breve sobre esa vista clásica.
+Desde julio de 2026, **Fromly abre en el chat** (Fromly 2.0). Este manual documenta esa
+experiencia, que es la única disponible en web, Mac e iPhone.
 
 Al entrar en Fromly tienes **tres columnas**:
 
@@ -820,20 +817,6 @@ o Google. El consumo irá a tu cuenta y no descuenta de los tokens de Fromly.
 **¿Qué pasa si se me acaban los tokens de IA del mes?**
 Puedes comprar una recarga puntual de 5.000.000 tokens adicionales desde Ajustes → IA, o esperar a
 que se renueven con tu siguiente ciclo de facturación.
-
----
-
-## Apéndice: la vista clásica (Fromly 1.0)
-
-Antes de julio de 2026, Fromly abría en un árbol de bullets con un lienzo infinito como pantalla
-principal: slash menu (`/`) para crear tipos de nodo, sidebar con paneles y contextos, un panel
-lateral de cuatro modos (asistente, filtro, planificador, contexto) y atajos de teclado propios
-para navegar el árbol (indentar con Tab, colapsar nodos, arrastrar con un handle, etc.).
-
-Ese modelo de datos — nodos, tareas, contextos, recursos — es el mismo que usa Fromly 2.0 por
-debajo. Si prefieres trabajar así, la vista clásica sigue activa en
-[fromly.app/v1](https://fromly.app/v1) con su propia interfaz de árbol y lienzo. No es la puerta de
-entrada por defecto ni la que documenta el resto de este manual.
 
 ---
 
