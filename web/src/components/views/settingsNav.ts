@@ -9,48 +9,48 @@ export type Tab =
   | 'exportar' | 'importar' | 'backups'
   | 'captura'
 
-export interface NavItem { id: Tab; label: string; icon: string }
+export interface NavItem { id: Tab; label: string }
 export interface NavSection { title: string; items: NavItem[] }
 
 export const NAV: NavSection[] = [
   {
     title: 'Cuenta',
     items: [
-      { id: 'cuenta', label: 'Mi cuenta', icon: '👤' },
-      { id: 'google', label: 'Google', icon: '🟢' },
+      { id: 'cuenta', label: 'Mi cuenta' },
+      { id: 'google', label: 'Google' },
     ],
   },
   {
     title: 'Apariencia',
     items: [
-      { id: 'apariencia', label: 'Apariencia', icon: '🎨' },
+      { id: 'apariencia', label: 'Apariencia' },
     ],
   },
   {
     title: 'IA',
     items: [
-      { id: 'ia', label: 'Inteligencia Artificial', icon: '✦' },
-      { id: 'magic', label: 'Magic', icon: '💫' },
+      { id: 'ia', label: 'Inteligencia Artificial' },
+      { id: 'magic', label: 'Magic' },
     ],
   },
   {
     title: 'Productividad',
     items: [
-      { id: 'atajos', label: 'Atajos', icon: '⌨' },
+      { id: 'atajos', label: 'Atajos' },
     ],
   },
   {
     title: 'Integraciones',
     items: [
-      { id: 'captura', label: 'Accesorios', icon: '⚡' },
+      { id: 'captura', label: 'Accesorios' },
     ],
   },
   {
     title: 'Datos',
     items: [
-      { id: 'backups', label: 'Backups', icon: '🗂' },
-      { id: 'exportar', label: 'Exportar', icon: '↗' },
-      { id: 'importar', label: 'Importar', icon: '↙' },
+      { id: 'backups', label: 'Backups' },
+      { id: 'exportar', label: 'Exportar' },
+      { id: 'importar', label: 'Importar' },
     ],
   },
 ]

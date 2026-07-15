@@ -36,12 +36,11 @@ export default function SettingsListPanel() {
                   padding: '7px 16px', border: 'none', cursor: 'pointer', fontSize: 14,
                   fontFamily: 'inherit',
                   color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
-                  background: isActive ? 'rgba(139,92,246,0.08)' : 'transparent',
+                  background: isActive ? 'var(--accent-soft)' : 'transparent',
                 }}
                 onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'var(--bg-hover)' }}
                 onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
               >
-                <span style={{ fontSize: 14, width: 18, flexShrink: 0, textAlign: 'center' }}>{item.icon}</span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
               </button>
             )

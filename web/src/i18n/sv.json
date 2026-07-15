@@ -2258,5 +2258,12 @@
   "pricing.ctaGoLifetime": "Köp Lifetime",
   "v2.chat.attachFromDrive": "Bifoga från Google Drive",
   "v2.chat.driveShort": "Drive",
-  "v2.driveImportFailed": "Det gick inte att importera från Google Drive"
+  "v2.driveImportFailed": "Det gick inte att importera från Google Drive",
+  "settingsView.colorSteel": "Stål",
+  "v2.ctxMenu.rename": "Byt namn",
+  "v2.ctxMenu.accentColor": "Accentfärg",
+  "v2.ctxMenu.moveTo": "Flytta till…",
+  "v2.ctxMenu.delete": "Ta bort",
+  "v2.ctxMenu.noTargets": "Ingen annan kontext tillgänglig",
+  "v2.ctxDeletedToast": "Kontext flyttad till papperskorgen"
 }

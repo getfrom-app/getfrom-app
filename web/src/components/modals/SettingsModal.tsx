@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../i18n/config'
-import LanguageSelector from '../settings/LanguageSelector'
 import { isICloudBackupEnabled, setICloudBackupEnabled } from '../../utils/icloudBackup'
 import {
   updateMe, deleteAccount, cancelSubscription, changePlan, getBillingPortalUrl,
@@ -11,33 +10,11 @@ import {
 } from '../../api/client'
 import { userStore, useUserStore } from '../../store/userStore'
 import { useTheme, type AccentColor } from '../../hooks/useTheme'
-import { store, useStore } from '../../store/nodeStore'
-import type { Node } from '../../types'
+import { store } from '../../store/nodeStore'
 import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
 import HotkeysPane from '../settings/HotkeysPane'
 import { getGoogleOAuthUrl, disconnectGoogle } from '../../api/googleCalendar'
-import { aiLangBCP47 } from '../../utils/aiLang'
 import { downloadFullTextExport } from '../../utils/bulkTextExport'
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-interface CustomTemplate { id: string; name: string; body: string }
-const TEMPLATES_KEY = 'from_custom_templates'
-function getTemplates(): CustomTemplate[] {
-  try { return JSON.parse(localStorage.getItem(TEMPLATES_KEY) || '[]') } catch { return [] }
-}
-function saveTemplates(ts: CustomTemplate[]) {
-  localStorage.setItem(TEMPLATES_KEY, JSON.stringify(ts))
-}
-
-// ── Tab definitions ───────────────────────────────────────────────────────────
-
-type Tab = 'cuenta' | 'apariencia' | 'ia' | 'magic' | 'estadisticas'
-  | 'atajos' | 'plantillas' | 'google' | 'mcp' | 'captura'
-  | 'tags' | 'estados' | 'voz' | 'agentes' | 'timeline' | 'prompts'
-  | 'backups' | 'exportar' | 'importar' | 'idioma'
-
-interface Section { id: Tab; label: string; icon: string }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -179,14 +156,6 @@ export function CuentaPane() {
       clearTokens(); userStore.reset()
       navigate('/login', { replace: true })
     } catch (err: unknown) { setDeleteError(err instanceof Error ? err.message : 'Error'); setDeleteLoading(false) }
-  }
-
-  function getPlanBadge() {
-    if (user?.licenseStatus === 'active') return <span className="plan-badge plan-badge--license">{t('account.planBadgeLicense')}</span>
-    if (user?.subscriptionStatus === 'active') return <span className="plan-badge plan-badge--active">{t('account.planBadgeActive')}</span>
-    if (user?.subscriptionStatus === 'trialing') return <span className="plan-badge plan-badge--active">{t('account.planBadgeTrial')}</span>
-    if (user?.subscriptionStatus === 'cancelled' || user?.subscriptionStatus === 'expired') return <span className="plan-badge plan-badge--cancelled">{t('account.planBadgeCancelled')}</span>
-    return <span className="plan-badge plan-badge--free">{t('account.planBadgeFree')}</span>
   }
 
   return (
@@ -340,6 +309,7 @@ export function CuentaPane() {
 
 // Paleta de color de acento — compartida con SettingsView (v1 embebido).
 export const ACCENT_COLORS: { value: AccentColor; label: string; hex: string }[] = [
+  { value: 'steel',  label: 'settingsView.colorSteel',  hex: '#3E5C76' },
   { value: 'purple', label: 'settingsView.colorPurple', hex: '#8b5cf6' },
   { value: 'indigo', label: 'settingsView.colorIndigo', hex: '#6366f1' },
   { value: 'blue',   label: 'settingsView.colorBlue',   hex: '#3b82f6' },
@@ -358,7 +328,7 @@ export const ACCENT_COLORS: { value: AccentColor; label: string; hex: string }[]
 function PlannerColorRow() {
   const { t } = useTranslation()
   const [color, setColor] = useState(() => localStorage.getItem('from_planner_color') || '')
-  const accentHex = (typeof document !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()) || '#8b5cf6'
+  const accentHex = (typeof document !== 'undefined' && getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()) || '#3E5C76'
   const current = color || accentHex
   function apply(v: string) { setColor(v); localStorage.setItem('from_planner_color', v) }
   function reset() { setColor(''); localStorage.removeItem('from_planner_color') }
@@ -551,8 +521,8 @@ function ProviderKeyEditor({ provider, hasPaidPlan }: { provider: ProviderConfig
           style={{ flex: 1, fontFamily: 'monospace', fontSize: 12, opacity: hasPaidPlan ? 1 : 0.5 }}
           disabled={!hasPaidPlan}
         />
-        <button className="btn-secondary" onClick={() => setShowKey(v => !v)} style={{ fontSize: 12 }} title={showKey ? t('ai.hideKeyButton') : t('ai.showKeyButton')} disabled={!hasPaidPlan}>
-          {showKey ? '🙈' : '👁'}
+        <button className="btn-secondary" onClick={() => setShowKey(v => !v)} style={{ fontSize: 12 }} disabled={!hasPaidPlan}>
+          {showKey ? t('ai.hideKeyButton') : t('ai.showKeyButton')}
         </button>
       </div>
       <div className="st-actions">
@@ -619,99 +589,10 @@ export function IAPane() {
   )
 }
 
-const CLAUDE_CUSTOM_INSTRUCTIONS = `Tienes acceso a Fromly, mi segundo cerebro, vía MCP. Úsalo de forma proactiva y automática.
+// La conexión con Claude (MCP) vive solo en la tarjeta "Claude" de CapturaRapidaPane
+// (más abajo) — enlaza a fromly.app/claude, que ya explica pasos + URL + Claude Code.
+// (Antes había un ClaudeMcpPane duplicado con su propia UI de pasos; eliminado.)
 
-ARQUITECTURA DE FROM (crítico):
-Fromly es un árbol de nodos. No existe body. Todo el contenido son nodos hijos.
-HEADINGS Y BULLETS AL MISMO NIVEL — nunca anidar bullets bajo un heading.
-Correcto: [{heading:2,text:"Sección"},{text:"bullet 1"},{text:"bullet 2"},{heading:2,text:"Otra sección"}]
-Incorrecto: [{heading:2,text:"Sección",children:[{text:"bullet 1"}]}]
-
-INICIO DE CONVERSACIÓN:
-- Si menciono un área (La Isla, inversión, piloto, coding, Fromly...), llama a from_get_context("nombre-kebab").
-- Llama a from_get_today_note() y guarda el ID.
-- Busca sesión existente: from_search("Sesión " + fecha). Si existe, guarda su ID y transcriptId.
-
-DURANTE LA CONVERSACIÓN (automático):
-- Análisis o documento → from_create_tree con lista FLAT de headings y bullets + transcript.
-- Tarea → from_create_node(isTask:true, parentId=ID_DIARIO).
-- No pidas permiso. Confírmame en una línea qué guardaste.
-
-AL TERMINAR ("fin"):
-- PRIMERA VEZ: from_create_tree(text="Sesión FECHA — TEMA", parentId=ID_DIARIO, children=[{heading:2,text:"Resumen"},{text:"punto 1"},{text:"punto 2"},{heading:2,text:"Decisiones"},{text:"..."}], transcript="conversación íntegra").
-- CONTINUACIÓN: from_update_session(sessionId=ID_SESION, transcriptId=ID_TRANSCRIPCION, appendTranscript="texto nuevo", newChildren=[{heading:2,text:"Actualización FECHA"},{text:"..."}]).
-- Si hay info nueva del área → from_update_context(contexto, info).
-- Confirma: "Guardado en Fromly (cuenta: X) — [título sesión]".`
-
-const MCP_SERVER_URL = 'https://from-server-production.up.railway.app/mcp'
-
-export function ClaudeMcpPane() {
-  const { t } = useTranslation()
-  const [urlCopied, setUrlCopied] = useState(false)
-  const steps = [
-    t('mcp.step1'),
-    t('mcp.step2'),
-    t('mcp.step3'),
-    t('mcp.step4'),
-    t('mcp.step5'),
-  ]
-
-  function copyUrl() {
-    navigator.clipboard.writeText(MCP_SERVER_URL).catch(() => {})
-    setUrlCopied(true)
-    setTimeout(() => setUrlCopied(false), 2000)
-  }
-
-  return (
-    <div className="st-pane">
-      <SectionTitle>{t('mcp.directoryTitle')}</SectionTitle>
-      <div className="st-row-hint" style={{ marginBottom: 16 }}>
-        {t('mcp.directoryHint')}
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-        {steps.map((step, i) => (
-          <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-            <div style={{
-              width: 24, height: 24, borderRadius: '50%', background: 'var(--accent)',
-              color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 12, fontWeight: 700, flexShrink: 0, marginTop: 1,
-            }}>{i + 1}</div>
-            <div style={{ fontSize: 14, lineHeight: 1.5, paddingTop: 3 }}>{step}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 24 }}>
-        <code style={{
-          flex: 1, padding: '6px 10px', background: 'var(--bg-secondary)', borderRadius: 6,
-          fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          border: '1px solid var(--border)',
-        }}>{MCP_SERVER_URL}</code>
-        <button className="btn-secondary" onClick={copyUrl} style={{ flexShrink: 0, fontSize: 12 }}>
-          {urlCopied ? t('common.copied') : t('common.copy')}
-        </button>
-      </div>
-
-      <div style={{ marginTop: 8 }}>
-        <a href="https://fromly.app/claude" target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: 'var(--accent)' }}>
-          {t('mcp.docsButton')}
-        </a>
-      </div>
-
-      {/* Claude Code (CLI) — opción avanzada */}
-      <div style={{ marginTop: 28, padding: '12px 14px', background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 8 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 6 }}>{t('mcp.cliTitle')}</div>
-        <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-          {t('mcp.cliHint')}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const RAYCAST_API_BASE = 'https://from-server-production.up.railway.app'
-const APPLE_SHORTCUT_URL = 'from://capture?text=[Texto]&silent=1'
 const APPLE_SHORTCUT_ICLOUD = 'https://www.icloud.com/shortcuts/d77a969efecf414bbb44a8e9bb05f52f'
 
 const isTauriDesktop = import.meta.env.VITE_TAURI === 'true'
@@ -810,7 +691,7 @@ export function CapturaRapidaPane() {
         {t('settingsModal.appleShortcutHint')}
       </div>
       <a href={APPLE_SHORTCUT_ICLOUD} target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize: 12, display: 'inline-flex' }}>
-        ↓ {t('settingsModal.installAppleShortcut')}
+        {t('settingsModal.installAppleShortcut')}
       </a>
 
       {/* Raycast */}
@@ -819,7 +700,7 @@ export function CapturaRapidaPane() {
         {t('settingsModal.raycastHint')}
       </div>
       <a href="https://fromly.app/accesorios" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
-        {t('settingsModal.installRaycast')} →
+        {t('settingsModal.installRaycast')}
       </a>
 
       {/* Chrome */}
@@ -828,7 +709,7 @@ export function CapturaRapidaPane() {
         {t('settingsModal.chromeHint')}
       </div>
       <a href="https://fromly.app/accesorios" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
-        {t('settingsModal.installChrome')} →
+        {t('settingsModal.installChrome')}
       </a>
 
       {/* Claude (MCP) */}
@@ -837,7 +718,7 @@ export function CapturaRapidaPane() {
         {t('settingsModal.claudeHintPre')} <strong style={{ color: 'var(--text)' }}>{t('settingsModal.claudeHintBold')}</strong>{t('settingsModal.claudeHintPost')}
       </div>
       <a href="https://fromly.app/claude" target="_blank" rel="noopener noreferrer" className="btn-secondary" style={{ fontSize: 12, display: 'inline-flex' }}>
-        {t('settingsModal.connectClaude')} →
+        {t('settingsModal.connectClaude')}
       </a>
     </div>
   )
@@ -917,61 +798,9 @@ function AtajosPaneTextExpansion() {
   )
 }
 
-export function PlantillasPane() {
-  const { t } = useTranslation()
-  const [templates, setTemplates] = useState<CustomTemplate[]>(getTemplates)
-  const [name, setName] = useState('')
-  const [body, setBody] = useState('')
-
-  function handleAdd() {
-    if (!name.trim()) return
-    const templ: CustomTemplate = { id: Date.now().toString(), name: name.trim(), body: body.trim() }
-    const updated = [...templates, templ]
-    saveTemplates(updated); setTemplates(updated)
-    setName(''); setBody('')
-  }
-
-  function handleDelete(id: string) {
-    const updated = templates.filter(templ => templ.id !== id)
-    saveTemplates(updated); setTemplates(updated)
-  }
-
-  return (
-    <div className="st-pane">
-      <SectionTitle>{t('templates.sectionTitle')}</SectionTitle>
-      <div className="st-row-hint" style={{ marginBottom: 12 }}>
-        {t('templates.hint')}
-      </div>
-
-      {templates.length > 0 && (
-        <table className="st-table">
-          <thead>
-            <tr><th>{t('templates.nameColumn')}</th><th>{t('templates.contentColumn')}</th><th /></tr>
-          </thead>
-          <tbody>
-            {templates.map(templ => (
-              <tr key={templ.id}>
-                <td style={{ fontWeight: 500 }}>{templ.name}</td>
-                <td style={{ color: 'var(--text-tertiary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {templ.body ? templ.body.slice(0, 50) + (templ.body.length > 50 ? '…' : '') : <em>{t('templates.noContent')}</em>}
-                </td>
-                <td><button onClick={() => handleDelete(templ.id)} className="st-delete-btn" title={t('templates.deleteTitle')}>×</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      <div className="st-template-form">
-        <input type="text" placeholder={t('templates.namePlaceholder')} value={name} onChange={e => setName(e.target.value)} className="st-input" />
-        <textarea placeholder={t('templates.contentPlaceholder')} value={body} onChange={e => setBody(e.target.value)} rows={4} className="st-input" style={{ resize: 'vertical' }} />
-        <div className="st-actions">
-          <button className="btn-primary" onClick={handleAdd}>{t('templates.addButton')}</button>
-        </div>
-      </div>
-    </div>
-  )
-}
+// La gestión de plantillas vive en V2TemplatesModal (v2/components/V2TemplatesModal.tsx,
+// crear/editar/eliminar completo) — accesible desde "Gestionar plantillas" en el
+// composer del chat. El PlantillasPane que había aquí duplicaba esa función.
 
 export function GooglePane() {
   const { t } = useTranslation()
@@ -1119,12 +948,12 @@ export function ExportarPane() {
 
 type ImportSource = 'obsidian' | 'notion' | 'apple' | 'markdown' | 'from'
 
-const IMPORT_SOURCES: { id: ImportSource; icon: string; nameKey: string; descKey: string }[] = [
-  { id: 'obsidian', icon: '🪨', nameKey: 'import.sourceObsidianName',  descKey: 'import.sourceObsidianDesc' },
-  { id: 'notion',   icon: '⬛', nameKey: 'import.sourceNotionName',    descKey: 'import.sourceNotionDesc' },
-  { id: 'apple',    icon: '🍎', nameKey: 'import.sourceAppleName',     descKey: 'import.sourceAppleDesc' },
-  { id: 'markdown', icon: '📝', nameKey: 'import.sourceMarkdownName',  descKey: 'import.sourceMarkdownDesc' },
-  { id: 'from',     icon: '📦', nameKey: 'import.sourceFromName',      descKey: 'import.sourceFromDesc' },
+const IMPORT_SOURCES: { id: ImportSource; nameKey: string; descKey: string }[] = [
+  { id: 'obsidian', nameKey: 'import.sourceObsidianName',  descKey: 'import.sourceObsidianDesc' },
+  { id: 'notion',   nameKey: 'import.sourceNotionName',    descKey: 'import.sourceNotionDesc' },
+  { id: 'apple',    nameKey: 'import.sourceAppleName',     descKey: 'import.sourceAppleDesc' },
+  { id: 'markdown', nameKey: 'import.sourceMarkdownName',  descKey: 'import.sourceMarkdownDesc' },
+  { id: 'from',     nameKey: 'import.sourceFromName',      descKey: 'import.sourceFromDesc' },
 ]
 
 const IMPORT_STEPS: Record<ImportSource, string[]> = {
@@ -1201,7 +1030,6 @@ export function ImportarPane() {
               onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover)')}
               onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-secondary)')}
             >
-              <span style={{ fontSize: 20, flexShrink: 0 }}>{s.icon}</span>
               <span style={{ flex: 1 }}>
                 <span style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>{t(s.nameKey)}</span>
                 <span style={{ display: 'block', fontSize: 12, color: 'var(--text-tertiary)' }}>{t(s.descKey)}</span>
@@ -1224,7 +1052,7 @@ export function ImportarPane() {
       <button onClick={() => { setSource(null); setResult(null); setError(null) }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--text-secondary)', padding: '2px 0 8px' }}>
         ← {t('import.allSources')}
       </button>
-      <SectionTitle>{meta.icon} {t(meta.nameKey)}</SectionTitle>
+      <SectionTitle>{t(meta.nameKey)}</SectionTitle>
 
       <ol style={{ margin: '4px 0 14px', paddingLeft: 18, lineHeight: 1.7, color: 'var(--text-secondary)', fontSize: 13 }}>
         {IMPORT_STEPS[source].map((step, i) => <li key={i}>{t(step)}</li>)}
@@ -1264,244 +1092,6 @@ export function ImportarPane() {
 
       <div className="st-row-hint" style={{ marginTop: 14, fontSize: 11.5 }}>
         {t('import.footerHint')}
-      </div>
-    </div>
-  )
-}
-
-// ── Main modal ────────────────────────────────────────────────────────────────
-
-interface Props {
-  onClose: () => void
-  initialTab?: Tab
-}
-
-// ── Panes nuevos (paridad Mac v8.30) ──────────────────────────────────────
-
-function MagicPane() {
-  const { t } = useTranslation()
-  const [autoTitles, setAutoTitles] = useState(() => localStorage.getItem('from_magic_autoTitles') === '1')
-  const [autoTags, setAutoTags]     = useState(() => localStorage.getItem('from_magic_autoTags') === '1')
-  const [autoUnfurl, setAutoUnfurl] = useState(() => localStorage.getItem('from_magic_autoUnfurl') !== '0')
-  function toggle(key: string, val: boolean, set: (v: boolean) => void) {
-    set(val); localStorage.setItem(key, val ? '1' : '0')
-  }
-  return (
-    <div className="st-pane">
-      <SectionTitle>{t('magic.sectionTitle')}</SectionTitle>
-      <Row label={t('magic.autoTitlesLabel')} hint={t('magic.autoTitlesHint')}>
-        <input type="checkbox" checked={autoTitles} onChange={e => toggle('from_magic_autoTitles', e.target.checked, setAutoTitles)} />
-      </Row>
-      <Row label={t('magic.autoTagsLabel')} hint={t('magic.autoTagsHint')}>
-        <input type="checkbox" checked={autoTags} onChange={e => toggle('from_magic_autoTags', e.target.checked, setAutoTags)} />
-      </Row>
-      <Row label={t('magic.autoUnfurlLabel')} hint={t('magic.autoUnfurlHint')}>
-        <input type="checkbox" checked={autoUnfurl} onChange={e => toggle('from_magic_autoUnfurl', e.target.checked, setAutoUnfurl)} />
-      </Row>
-    </div>
-  )
-}
-
-function EstadisticasPane() {
-  const { t } = useTranslation()
-  const s = useStore()
-  const all = s.allActive()
-  const total = all.length
-  const tasks = all.filter((n: Node) => n.status !== null)
-  const done = tasks.filter((n: Node) => n.status === 'done').length
-  const pending = tasks.filter((n: Node) => n.status === 'pending').length
-  const resources = all.filter((n: Node) => n.isResource).length
-  const events = all.filter((n: Node) => n.isEvent).length
-  return (
-    <div className="st-pane">
-      <SectionTitle>{t('stats.sectionTitle')}</SectionTitle>
-      <Row label={t('stats.notesAndTasksLabel')}><span className="st-value">{t('stats.activeNodesCount', { count: total })}</span></Row>
-      <Row label={t('stats.pendingTasksLabel')}><span className="st-value">{pending}</span></Row>
-      <Row label={t('stats.completedTasksLabel')}><span className="st-value">{done}</span></Row>
-      <Row label={t('stats.eventsLabel')}><span className="st-value">{events}</span></Row>
-      <Row label={t('stats.resourcesLabel')}><span className="st-value">{resources}</span></Row>
-      <Row label={t('stats.completionRateLabel')} hint={t('stats.completionRateHint')}>
-        <span className="st-value">{tasks.length > 0 ? Math.round((done / tasks.length) * 100) : 0}%</span>
-      </Row>
-    </div>
-  )
-}
-
-function TagsPane() {
-  const { t } = useTranslation()
-  const s = useStore()
-  const tags = (s.allUsedTags?.() ?? []) as string[]
-  return (
-    <div className="st-pane">
-      <SectionTitle>{t('tags.sectionTitle')}</SectionTitle>
-      <Row label={t('tags.tagsCount', { count: tags.length })} hint={t('tags.hint')} />
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-        {tags.map((tag: string) => (
-          <span key={tag} style={{ padding: '4px 10px', background: 'var(--bg-secondary)', borderRadius: 6, fontSize: 12 }}>#{tag}</span>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function EstadosPane() {
-  const { t } = useTranslation()
-  return (
-    <div className="st-pane">
-      <SectionTitle>{t('states.sectionTitle')}</SectionTitle>
-      <Row label="pending" hint={t('states.pendingHint')} />
-      <Row label="done" hint={t('states.doneHint')} />
-      <Row label="cancelled" hint={t('states.cancelledHint')} />
-      <Row label="future" hint={t('states.futureHint')} />
-      <Row label={t('states.customizationLabel')} hint={t('states.customizationHint')} />
-    </div>
-  )
-}
-
-function VozPane() {
-  const { t } = useTranslation()
-  const [recording, setRecording] = useState(false)
-  const [transcript, setTranscript] = useState('')
-  const recognitionRef = useRef<any>(null)
-
-  const supported = typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)
-
-  function start() {
-    if (!supported) return
-    const SR: any = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
-    const rec = new SR()
-    rec.continuous = true
-    rec.interimResults = true
-    rec.lang = aiLangBCP47()
-    rec.onresult = (event: any) => {
-      let text = ''
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        text += event.results[i][0].transcript
-      }
-      setTranscript(text)
-    }
-    rec.onend = () => setRecording(false)
-    rec.start()
-    recognitionRef.current = rec
-    setRecording(true)
-  }
-
-  function stop() {
-    recognitionRef.current?.stop()
-    setRecording(false)
-  }
-
-  return (
-    <div className="st-pane">
-      <SectionTitle>{t('voice.sectionTitle')}</SectionTitle>
-      {!supported ? (
-        <Row label={t('voice.notAvailableLabel')} hint={t('voice.notAvailableHint')} />
-      ) : (
-        <>
-          <Row label={t('voice.languageLabel')} hint={t('voice.languageHint')} />
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            {!recording
-              ? <button className="btn-primary" onClick={start}>{t('voice.startDictationButton')}</button>
-              : <button className="btn-secondary btn-danger-outline" onClick={stop}>{t('voice.stopButton')}</button>
-            }
-          </div>
-          <textarea
-            value={transcript}
-            onChange={e => setTranscript(e.target.value)}
-            rows={6}
-            className="st-input"
-            placeholder={t('voice.transcriptPlaceholder')}
-            style={{ width: '100%', marginTop: 10 }}
-          />
-        </>
-      )}
-    </div>
-  )
-}
-
-function AgentesPane() {
-  const { t } = useTranslation()
-  const s = useStore()
-  const agents = s.allActive().filter((n: Node) => (n.types || []).includes('agente'))
-  return (
-    <div className="st-pane">
-      <SectionTitle>{t('agents.sectionTitle')}</SectionTitle>
-      <Row label={t('agents.definedCount', { count: agents.length })} hint={t('agents.hint')} />
-      <div style={{ marginTop: 12 }}>
-        {agents.map(a => (
-          <div key={a.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-            <span>{a.text || t('agents.unnamedAgent')}</span>
-            <button className="btn-secondary" style={{ fontSize: 11 }}>{t('agents.runButton')}</button>
-          </div>
-        ))}
-        {agents.length === 0 && <Row label={t('agents.noAgentsLabel')} hint={t('agents.noAgentsHint')} />}
-      </div>
-    </div>
-  )
-}
-
-function TimelinePane() {
-  const { t } = useTranslation()
-  const [startHour, setStartHour] = useState<number>(() => Number(localStorage.getItem('from_timelineStart') || '7'))
-  const [endHour, setEndHour]     = useState<number>(() => Number(localStorage.getItem('from_timelineEnd')   || '22'))
-  function update(s: number, e: number) {
-    setStartHour(s); setEndHour(e)
-    localStorage.setItem('from_timelineStart', String(s))
-    localStorage.setItem('from_timelineEnd', String(e))
-  }
-  return (
-    <div className="st-pane">
-      <SectionTitle>{t('timeline.sectionTitle')}</SectionTitle>
-      <Row label={t('timeline.startHourLabel')} hint={t('timeline.startHourHint')}>
-        <select value={startHour} onChange={e => update(Number(e.target.value), endHour)}>
-          {Array.from({ length: 13 }, (_, i) => i).map(h => <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>)}
-        </select>
-      </Row>
-      <Row label={t('timeline.endHourLabel')} hint={t('timeline.endHourHint')}>
-        <select value={endHour} onChange={e => update(startHour, Number(e.target.value))}>
-          {Array.from({ length: 24 }, (_, i) => i + 1).map(h => <option key={h} value={h} disabled={h <= startHour}>{String(h).padStart(2, '0')}:00</option>)}
-        </select>
-      </Row>
-    </div>
-  )
-}
-
-function PromptsPane() {
-  const { t } = useTranslation()
-  const PROMPTS_LS = 'from_prompts_v1'
-  const [prompts, setPrompts] = useState<{ id: string; name: string; body: string }[]>(() => {
-    try { return JSON.parse(localStorage.getItem(PROMPTS_LS) || '[]') } catch { return [] }
-  })
-  const [newName, setNewName] = useState('')
-  const [newBody, setNewBody] = useState('')
-  function save(list: typeof prompts) {
-    setPrompts(list)
-    localStorage.setItem(PROMPTS_LS, JSON.stringify(list))
-  }
-  function add() {
-    if (!newName.trim() || !newBody.trim()) return
-    save([...prompts, { id: 'p' + Date.now(), name: newName.trim(), body: newBody.trim() }])
-    setNewName(''); setNewBody('')
-  }
-  return (
-    <div className="st-pane">
-      <SectionTitle>{t('prompts.sectionTitle')}</SectionTitle>
-      <Row label={t('prompts.promptsCount', { count: prompts.length })} hint={t('prompts.hint')} />
-      <div style={{ marginTop: 10 }}>
-        <input className="st-input" placeholder={t('prompts.namePlaceholder')} value={newName} onChange={e => setNewName(e.target.value)} style={{ width: '100%', marginBottom: 6 }} />
-        <textarea className="st-input" placeholder={t('prompts.contentPlaceholder')} value={newBody} onChange={e => setNewBody(e.target.value)} rows={4} style={{ width: '100%' }} />
-        <button className="btn-primary" onClick={add} style={{ marginTop: 8 }}>{t('prompts.addButton')}</button>
-      </div>
-      <div style={{ marginTop: 14 }}>
-        {prompts.map(p => (
-          <div key={p.id} style={{ borderBottom: '1px solid var(--border)', padding: '8px 0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <strong>{p.name}</strong>
-              <button className="btn-secondary btn-danger-outline" style={{ fontSize: 11 }} onClick={() => save(prompts.filter(x => x.id !== p.id))}>{t('prompts.deleteButton')}</button>
-            </div>
-            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>{p.body.slice(0, 120)}{p.body.length > 120 ? '…' : ''}</div>
-          </div>
-        ))}
       </div>
     </div>
   )
@@ -1596,8 +1186,8 @@ export function BackupsPane() {
           {creating ? t('settingsView.creating') : t('settingsView.createSnapshotNow')}
         </button>
       </div>
-      {error && <div style={{ color: '#ef4444', fontSize: 13, marginBottom: 8 }}>⚠️ {error}</div>}
-      {info && <div style={{ color: '#22c55e', fontSize: 13, marginBottom: 8 }}>✓ {info}</div>}
+      {error && <div style={{ color: '#ef4444', fontSize: 13, marginBottom: 8 }}>{error}</div>}
+      {info && <div style={{ color: '#22c55e', fontSize: 13, marginBottom: 8 }}>{info}</div>}
       {loading ? (
         <div style={{ opacity: 0.6, fontSize: 13 }}>{t('common.loading')}</div>
       ) : snapshots.length === 0 ? (
@@ -1630,159 +1220,14 @@ export function BackupsPane() {
                 className="btn-secondary btn-sm"
                 disabled={busyId === s.id}
                 onClick={() => handleDelete(s.id)}
-                title={t('settingsView.deleteSnapshot')}
                 style={{ opacity: 0.6 }}
               >
-                🗑
+                {t('common.delete')}
               </button>
             </div>
           ))}
         </div>
       )}
     </div>
-  )
-}
-
-export default function SettingsModal({ onClose, initialTab = 'cuenta' }: Props) {
-  const { t } = useTranslation()
-  const [activeTab, setActiveTab] = useState<Tab>(initialTab)
-
-  const SECTIONS: { title?: string; items: Section[] }[] = [
-    {
-      items: [
-        { id: 'cuenta', label: t('settings.tabAccount'), icon: '👤' },
-        { id: 'google', label: t('settings.tabGoogle'), icon: '📅' },
-      ],
-    },
-    {
-      title: t('settings.groupAppearance'),
-      items: [
-        { id: 'apariencia', label: t('settings.tabAppearance'), icon: '🎨' },
-        { id: 'estadisticas', label: t('settings.tabStatistics'), icon: '📊' },
-      ],
-    },
-    {
-      title: t('settings.groupAI'),
-      items: [
-        { id: 'ia', label: t('settings.tabAI'), icon: '✦' },
-        { id: 'magic', label: t('settings.tabMagic'), icon: '🪄' },
-      ],
-    },
-    {
-      title: t('settings.groupProductivity'),
-      items: [
-        { id: 'atajos', label: t('settings.tabShortcuts'), icon: '⌨' },
-        { id: 'plantillas', label: t('settings.tabTemplates'), icon: '📋' },
-        { id: 'voz', label: t('settings.tabVoice'), icon: '🎤' },
-      ],
-    },
-    {
-      title: t('settings.groupIntegrations'),
-      items: [
-        { id: 'mcp', label: t('settings.tabMCP'), icon: '🔌' },
-        { id: 'captura', label: t('settings.tabAccessories'), icon: '⚡' },
-      ],
-    },
-    {
-      title: t('settings.groupAdvanced'),
-      items: [
-        { id: 'tags', label: t('settings.tabTags'), icon: '🏷' },
-        { id: 'estados', label: t('settings.tabStates'), icon: '✓' },
-        { id: 'agentes', label: t('settings.tabAgents'), icon: '🤖' },
-        { id: 'timeline', label: t('settings.tabTimeline'), icon: '⏱' },
-        { id: 'prompts', label: t('settings.tabPrompts'), icon: '⚡' },
-      ],
-    },
-    {
-      title: t('settings.groupData'),
-      items: [
-        { id: 'backups', label: t('settings.tabBackups'), icon: '💾' },
-        { id: 'exportar', label: t('settings.tabExport'), icon: '↗' },
-        { id: 'importar', label: t('settings.tabImport'), icon: '↙' },
-        { id: 'idioma', label: t('settings.tabLanguage', 'Idioma'), icon: '🌐' },
-      ],
-    },
-  ]
-
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [onClose])
-
-  function renderPane() {
-    switch (activeTab) {
-      case 'cuenta': return <CuentaPane />
-      case 'apariencia': return <AparienciaPane />
-      case 'ia': return <IAPane />
-      case 'magic': return <MagicPane />
-      case 'estadisticas': return <EstadisticasPane />
-      case 'atajos': return <AtajosPane />
-      case 'plantillas': return <PlantillasPane />
-      case 'google': return <GooglePane />
-      case 'mcp': return <ClaudeMcpPane />
-      case 'captura': return <CapturaRapidaPane />
-      case 'tags': return <TagsPane />
-      case 'estados': return <EstadosPane />
-      case 'voz': return <VozPane />
-      case 'agentes': return <AgentesPane />
-      case 'timeline': return <TimelinePane />
-      case 'prompts': return <PromptsPane />
-      case 'backups': return <BackupsPane />
-      case 'exportar': return <ExportarPane />
-      case 'importar': return <ImportarPane />
-      case 'idioma': return (
-        <div className="settings-pane">
-          <p className="settings-pane-hint">{t('settings.language.hint', 'Selecciona el idioma de la interfaz. Se detecta automáticamente del navegador.')}</p>
-          <LanguageSelector />
-        </div>
-      )
-    }
-  }
-
-  return createPortal(
-    <div className="settings-overlay" onClick={onClose}>
-      <div className="settings-window" onClick={e => e.stopPropagation()}>
-        {/* Sidebar */}
-        <div className="settings-sidebar">
-          <div className="settings-sidebar-header">{t('settings.title')}</div>
-          {SECTIONS.map((section, si) => (
-            <div key={si} className="settings-sidebar-section">
-              {section.title && <div className="settings-sidebar-section-title">{section.title}</div>}
-              {section.items.map(item => (
-                <button
-                  key={item.id}
-                  className={`settings-sidebar-item ${activeTab === item.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(item.id)}
-                >
-                  <span className="settings-sidebar-icon">{item.icon}</span>
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="settings-content">
-          <div className="settings-content-header">
-            <h2 className="settings-content-title">
-              {SECTIONS.flatMap(s => s.items).find(i => i.id === activeTab)?.label}
-            </h2>
-            <button className="settings-close-btn" onClick={onClose} title={t('settings.closeButton')}>
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-              </svg>
-            </button>
-          </div>
-          <div className="settings-content-body">
-            {renderPane()}
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
   )
 }

@@ -2258,5 +2258,12 @@
   "pricing.ctaGoLifetime": "Lifetime kopen",
   "v2.chat.attachFromDrive": "Bijvoegen vanuit Google Drive",
   "v2.chat.driveShort": "Drive",
-  "v2.driveImportFailed": "Importeren vanuit Google Drive is mislukt"
+  "v2.driveImportFailed": "Importeren vanuit Google Drive is mislukt",
+  "settingsView.colorSteel": "Staal",
+  "v2.ctxMenu.rename": "Hernoemen",
+  "v2.ctxMenu.accentColor": "Accentkleur",
+  "v2.ctxMenu.moveTo": "Verplaatsen naar…",
+  "v2.ctxMenu.delete": "Verwijderen",
+  "v2.ctxMenu.noTargets": "Geen andere context beschikbaar",
+  "v2.ctxDeletedToast": "Context naar prullenbak verplaatst"
 }

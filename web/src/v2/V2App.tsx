@@ -11,7 +11,8 @@ import { aiChatStore, useAIChat } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
-import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge } from '../utils/cajones'
+import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent } from '../utils/cajones'
+import { darkenHex, lightenHex, hexToRgba } from '../utils/color'
 import { htmlToMarkdown } from '../utils/htmlMarkdown'
 import { applyTemplate } from '../utils/tagsHelper'
 import { createMarkdownNode } from '../utils/importMarkdown'
@@ -22,6 +23,9 @@ import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2RightColumn, { RightMode } from './components/V2RightColumn'
+import V2SettingsNav from './components/V2SettingsNav'
+import { SettingsPaneContent } from '../components/views/SettingsView'
+import type { Tab as SettingsTab } from '../components/views/settingsNav'
 import type { ElemKind } from '../components/panels/ElementsPanel'
 import V2Onboarding from './components/V2Onboarding'
 import RightColMenu from '../components/panels/RightColMenu'
@@ -46,12 +50,58 @@ function findOriginSession(id: string): string | null {
   return null
 }
 
+// Color de acento PROPIO de un contexto (sube por la cadena de padres) — a
+// diferencia de `contextColor()` de cajones.ts, NO cae al acento del tema si
+// nadie en la cadena tiene `_tagColor`: null significa "usa el tema normal".
+function resolveOwnAccentColor(nodeId: string | null): string | null {
+  let cur = nodeId
+  let guard = 0
+  while (cur && guard++ < 40) {
+    const n = store.getNode(cur)
+    if (!n) return null
+    try {
+      const ed = JSON.parse(n.extraData || '{}')
+      if (typeof ed._tagColor === 'string' && ed._tagColor) return ed._tagColor
+    } catch { /* extraData no-JSON */ }
+    const p = contextParent(cur)
+    cur = p ? p.id : null
+  }
+  return null
+}
+
 export default function V2App() {
   useStore()
   const { t } = useTranslation()
   const chat = useAIChat()
   const [ready, setReady] = useState(store.isLoaded)
   const [selectedCtxId, setSelectedCtxId] = useState<string | null>(null)
+
+  // Acento dinámico: si el contexto abierto (o alguno de sus padres) tiene un color
+  // propio (menú de clic derecho en la sidebar), TODA la app cambia a ese acento
+  // mientras esté abierto — botones, líneas, chips… (todo lee var(--accent)/-soft/
+  // -hover/text-accent). `useStore()` re-renderiza al editar el color en vivo.
+  const ownAccent = selectedCtxId ? resolveOwnAccentColor(selectedCtxId) : null
+  useEffect(() => {
+    const root = document.documentElement
+    if (ownAccent) {
+      const isDark = root.getAttribute('data-theme') === 'dark'
+      root.style.setProperty('--accent', ownAccent)
+      root.style.setProperty('--accent-hover', darkenHex(ownAccent, 0.22))
+      root.style.setProperty('--accent-soft', hexToRgba(ownAccent, 0.12))
+      root.style.setProperty('--text-accent', isDark ? lightenHex(ownAccent, 0.35) : darkenHex(ownAccent, 0.22))
+    } else {
+      root.style.removeProperty('--accent')
+      root.style.removeProperty('--accent-hover')
+      root.style.removeProperty('--accent-soft')
+      root.style.removeProperty('--text-accent')
+    }
+    return () => {
+      root.style.removeProperty('--accent')
+      root.style.removeProperty('--accent-hover')
+      root.style.removeProperty('--accent-soft')
+      root.style.removeProperty('--text-accent')
+    }
+  }, [ownAccent])
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
   const [rightMode, setRightMode] = useState<RightMode>('hoy')
   // ¿La tab Contexto muestra la FICHA del contexto (true) o el panel de la
@@ -60,6 +110,10 @@ export default function V2App() {
   const [viewingCtxFicha, setViewingCtxFicha] = useState(false)
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // elemento abierto en la columna derecha
+  // Ajustes a pantalla completa: null = modo normal; si no, la pestaña activa.
+  // Sustituye al modal — nav a la izquierda (donde van los contextos), contenido
+  // al centro, columna derecha vacía.
+  const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null)
   const [elementsFilter, setElementsFilter] = useState<ElemKind | 'all' | 'favorite' | null>(null) // filtro inicial pedido para la tab Elementos (p.ej. «← Agentes»)
   const [rightWidth, setRightWidth] = useState(() => {
     const v = Number(localStorage.getItem('v2_right_w'))
@@ -538,10 +592,27 @@ export default function V2App() {
     return <div className="v2-loading">{t('v2.loadingFromly', 'Cargando Fromly 2.0…')}</div>
   }
 
+  if (settingsTab) {
+    return (
+      <ToastProvider>
+      <div className="v2-root" style={{ ['--v2-right' as string]: '0px' }}>
+        <V2SettingsNav activeTab={settingsTab} onSelect={setSettingsTab} onClose={() => setSettingsTab(null)} />
+        <main className="v2-col v2-center" style={{ padding: 0 }}>
+          <div className="settings-view-content" style={{ height: '100%' }}>
+            <SettingsPaneContent activeTab={settingsTab} />
+          </div>
+        </main>
+        <aside className="v2-col v2-right" />
+        <span className="v2-version">{WEB_VERSION}</span>
+      </div>
+      </ToastProvider>
+    )
+  }
+
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} />
       <V2Chat
         currentNodeId={currentNodeId}
         contextLabel={contextLabel}

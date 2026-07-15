@@ -2258,5 +2258,12 @@
   "pricing.ctaGoLifetime": "Buy Lifetime",
   "v2.chat.attachFromDrive": "Attach from Google Drive",
   "v2.chat.driveShort": "Drive",
-  "v2.driveImportFailed": "Couldn't import from Google Drive"
+  "v2.driveImportFailed": "Couldn't import from Google Drive",
+  "settingsView.colorSteel": "Steel",
+  "v2.ctxMenu.rename": "Rename",
+  "v2.ctxMenu.accentColor": "Accent color",
+  "v2.ctxMenu.moveTo": "Move to…",
+  "v2.ctxMenu.delete": "Delete",
+  "v2.ctxMenu.noTargets": "No other context available",
+  "v2.ctxDeletedToast": "Context moved to trash"
 }

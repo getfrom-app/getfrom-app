@@ -2258,5 +2258,12 @@
   "pricing.ctaGoLifetime": "Αγορά Lifetime",
   "v2.chat.attachFromDrive": "Επισύναψη από το Google Drive",
   "v2.chat.driveShort": "Drive",
-  "v2.driveImportFailed": "Δεν ήταν δυνατή η εισαγωγή από το Google Drive"
+  "v2.driveImportFailed": "Δεν ήταν δυνατή η εισαγωγή από το Google Drive",
+  "settingsView.colorSteel": "Ατσάλι",
+  "v2.ctxMenu.rename": "Μετονομασία",
+  "v2.ctxMenu.accentColor": "Χρώμα έμφασης",
+  "v2.ctxMenu.moveTo": "Μετακίνηση σε…",
+  "v2.ctxMenu.delete": "Διαγραφή",
+  "v2.ctxMenu.noTargets": "Δεν υπάρχει άλλο διαθέσιμο πλαίσιο",
+  "v2.ctxDeletedToast": "Το πλαίσιο μετακινήθηκε στον κάδο"
 }

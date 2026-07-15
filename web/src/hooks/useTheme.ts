@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 
 export type Theme = 'light' | 'dark' | 'system'
 export type Density = 'normal' | 'compact' | 'comfortable'
-export type AccentColor = 'purple' | 'blue' | 'green' | 'orange' | 'rose' | 'teal'
+export type AccentColor = 'steel' | 'purple' | 'blue' | 'green' | 'orange' | 'rose' | 'teal'
   | 'indigo' | 'cyan' | 'amber' | 'pink' | 'red' | 'lime'
 
 const THEME_KEY = 'from_theme'
@@ -29,8 +29,8 @@ export function getStoredDensity(): Density {
 
 export function getStoredAccent(): AccentColor {
   const stored = localStorage.getItem(ACCENT_KEY)
-  const valid: AccentColor[] = ['purple', 'blue', 'green', 'orange', 'rose', 'teal', 'indigo', 'cyan', 'amber', 'pink', 'red', 'lime']
-  return valid.includes(stored as AccentColor) ? stored as AccentColor : 'purple'
+  const valid: AccentColor[] = ['steel', 'purple', 'blue', 'green', 'orange', 'rose', 'teal', 'indigo', 'cyan', 'amber', 'pink', 'red', 'lime']
+  return valid.includes(stored as AccentColor) ? stored as AccentColor : 'steel'
 }
 
 export function applyTheme(theme: Theme) {
@@ -45,7 +45,7 @@ export function applyDensity(density: Density) {
 }
 
 export function applyAccent(accent: AccentColor) {
-  if (accent === 'purple') {
+  if (accent === 'steel') {
     document.documentElement.removeAttribute('data-accent')
   } else {
     document.documentElement.setAttribute('data-accent', accent)

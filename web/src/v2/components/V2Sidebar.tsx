@@ -6,12 +6,23 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
-import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent } from '../../utils/cajones'
+import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent, reparentContext, listContextsForParent } from '../../utils/cajones'
 import { useTheme } from '../../hooks/useTheme'
 import { clearTokens } from '../../api/client'
-import SettingsModal from '../../components/modals/SettingsModal'
 import V2Trash from './V2Trash'
 import type { Node } from '../../types'
+
+// Misma paleta que el menú de clic derecho de un contexto en la Pizarra (v1) —
+// escribe extraData._tagColor, que contextColor() ya lee con prioridad sobre
+// el heredado/acento por defecto.
+const ACCENT_SWATCHES = ['#3E5C76', '#e03131', '#f76707', '#f59f00', '#2f9e44', '#1098ad', '#1971c2', '#7048e8', '#9c36b5', '#e64980', '#495057']
+
+function setContextAccentColor(id: string, color: string) {
+  const n = store.getNode(id); if (!n) return
+  let eo: Record<string, unknown> = {}; try { eo = JSON.parse(n.extraData || '{}') } catch { /* noop */ }
+  eo._tagColor = color
+  store.updateNode(id, { extraData: JSON.stringify(eo) })
+}
 
 interface Props {
   selectedCtxId: string | null
@@ -23,6 +34,9 @@ interface Props {
   // NO tiene una ruta propia por-contexto (daba error al subir; una sola ruta).
   onFilesDropped: (files: File[]) => void
   onDragStateChange?: (active: boolean) => void
+  // Ajustes ahora es un modo de V2App (pantalla completa: nav a la izquierda,
+  // contenido al centro), no un modal — el estado vive arriba.
+  onOpenSettings: () => void
 }
 
 // Ordena por nombre (ignorando emoji/espacios iniciales), estable.
@@ -37,7 +51,7 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onFilesDropped, onDragStateChange }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onFilesDropped, onDragStateChange, onOpenSettings }: Props) {
   useStore()
   const { t } = useTranslation()
   const user = useUserStore()
@@ -53,9 +67,56 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
   const { theme, setTheme } = useTheme()
   const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
   const [userMenu, setUserMenu] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
   const userWrap = useRef<HTMLDivElement>(null)
+
+  // Menú de clic derecho de un contexto: renombrar / color / mover / eliminar.
+  const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [moveSubmenu, setMoveSubmenu] = useState(false)
+  const [renaming, setRenaming] = useState<string | null>(null)
+  const [renameVal, setRenameVal] = useState('')
+  const renameRef = useRef<HTMLInputElement>(null)
+
+  const openCtxMenu = (e: React.MouseEvent, id: string) => {
+    e.preventDefault(); e.stopPropagation()
+    setMoveSubmenu(false)
+    setCtxMenu({ id, x: e.clientX, y: e.clientY })
+  }
+  const startRename = (id: string) => {
+    const n = store.getNode(id)
+    setRenameVal(n?.text || '')
+    setRenaming(id)
+    setCtxMenu(null)
+    setTimeout(() => { renameRef.current?.focus(); renameRef.current?.select() }, 20)
+  }
+  const commitRename = () => {
+    if (renaming && renameVal.trim()) store.updateNode(renaming, { text: renameVal.trim() })
+    setRenaming(null); setRenameVal('')
+  }
+  const deleteContext = (id: string) => {
+    const deletedIds = store.deleteNode(id)
+    setCtxMenu(null)
+    if (selectedCtxId === id) onSelectCtx(null)
+    if (deletedIds.length === 0) return
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: {
+        message: t('v2.ctxDeletedToast', 'Contexto movido a la papelera'),
+        type: 'success',
+        action: { label: t('tip.undo', 'Deshacer'), onClick: () => store.restoreDeleted(deletedIds) },
+      },
+    }))
+  }
+  // Destinos válidos para «Mover a…»: cualquier contexto que no sea el propio ni
+  // uno de sus descendientes (evita ciclos; reparentContext también los bloquea).
+  const moveTargets = (id: string): Node[] => {
+    const isDescendant = (candidateId: string): boolean => {
+      let cur = store.getNode(candidateId)
+      let guard = 0
+      while (cur?.parentId && guard++ < 60) { if (cur.parentId === id) return true; cur = store.getNode(cur.parentId) }
+      return false
+    }
+    return listContextsForParent().filter(n => n.id !== id && !isDescendant(n.id))
+  }
 
   useEffect(() => {
     if (!userMenu) return
@@ -66,10 +127,9 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
 
   // ⌘, abre Ajustes desde cualquier sitio (evento global disparado por V2App).
   useEffect(() => {
-    const h = () => setShowSettings(true)
-    window.addEventListener('from:open-settings', h)
-    return () => window.removeEventListener('from:open-settings', h)
-  }, [])
+    window.addEventListener('from:open-settings', onOpenSettings)
+    return () => window.removeEventListener('from:open-settings', onOpenSettings)
+  }, [onOpenSettings])
 
   // La izquierda sigue a `selectedCtxId` venga de donde venga (clic aquí, abrir una
   // nota con contexto, un chip de contexto…): recompone el «pasillo» de drill-down
@@ -134,9 +194,22 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
           <div
             className={`v2-ctx-row ${selectedCtxId === currentParent.id ? 'active' : ''}`}
             onClick={() => onSelectCtx(currentParent.id)}
+            onContextMenu={(e) => openCtxMenu(e, currentParent.id)}
           >
             <span className="v2-ctx-dot" style={{ background: contextColor(currentParent.id) }} />
-            <span className="v2-el-title" style={{ fontWeight: 600 }}>{currentParent.text || t('v2.context', 'Contexto')}</span>
+            {renaming === currentParent.id ? (
+              <input
+                ref={renameRef}
+                className="v2-ctx-rename-input"
+                value={renameVal}
+                onChange={(e) => setRenameVal(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+                onBlur={commitRename}
+                onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); else if (e.key === 'Escape') { setRenaming(null); setRenameVal('') } }}
+              />
+            ) : (
+              <span className="v2-el-title" style={{ fontWeight: 600 }}>{currentParent.text || t('v2.context', 'Contexto')}</span>
+            )}
             <button
               className="v2-ctx-add"
               title={t('v2.newConversationInThisContext', 'Nueva conversación en este contexto')}
@@ -162,9 +235,22 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
               key={c.id}
               className={`v2-ctx-row ${currentParent ? 'child' : ''} ${selectedCtxId === c.id ? 'active' : ''}`}
               onClick={() => enter(c)}
+              onContextMenu={(e) => openCtxMenu(e, c.id)}
             >
               <span className="v2-ctx-dot" style={{ background: contextColor(c.id) }} />
-              <span className="v2-el-title">{c.text || t('v2.untitled', 'Sin título')}</span>
+              {renaming === c.id ? (
+                <input
+                  ref={renameRef}
+                  className="v2-ctx-rename-input"
+                  value={renameVal}
+                  onChange={(e) => setRenameVal(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  onBlur={commitRename}
+                  onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); else if (e.key === 'Escape') { setRenaming(null); setRenameVal('') } }}
+                />
+              ) : (
+                <span className="v2-el-title">{c.text || t('v2.untitled', 'Sin título')}</span>
+              )}
               <button
                 className="v2-ctx-add"
                 title={t('v2.newConversationInThisContext', 'Nueva conversación en este contexto')}
@@ -182,10 +268,46 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         )}
       </div>
 
+      {/* Menú de clic derecho de un contexto: renombrar / color / mover / eliminar. */}
+      {ctxMenu && store.getNode(ctxMenu.id) && (
+        <>
+          <div onPointerDown={() => setCtxMenu(null)} onContextMenu={(e) => { e.preventDefault(); setCtxMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
+          <div className="v2-ctx-menu" style={{ position: 'fixed', top: ctxMenu.y, left: ctxMenu.x, zIndex: 2000 }}>
+            {!moveSubmenu ? (
+              <>
+                <button className="v2-ctx-menu-item" onClick={() => startRename(ctxMenu.id)}>{t('v2.ctxMenu.rename', 'Renombrar')}</button>
+                <div className="v2-ctx-menu-label">{t('v2.ctxMenu.accentColor', 'Color de acento')}</div>
+                <div className="v2-ctx-menu-swatches">
+                  {ACCENT_SWATCHES.map(c => (
+                    <button key={c} title={c} className="v2-ctx-swatch" style={{ background: c }}
+                      onClick={() => { setContextAccentColor(ctxMenu.id, c); setCtxMenu(null) }} />
+                  ))}
+                </div>
+                <button className="v2-ctx-menu-item" onClick={() => setMoveSubmenu(true)}>{t('v2.ctxMenu.moveTo', 'Mover a…')}</button>
+                <div className="v2-ctx-menu-sep" />
+                <button className="v2-ctx-menu-item v2-ctx-menu-item--danger" onClick={() => deleteContext(ctxMenu.id)}>{t('v2.ctxMenu.delete', 'Eliminar')}</button>
+              </>
+            ) : (
+              <>
+                <button className="v2-ctx-menu-item" onClick={() => setMoveSubmenu(false)}>‹ {t('v2.back', 'Volver')}</button>
+                <div className="v2-ctx-menu-sep" />
+                {moveTargets(ctxMenu.id).length === 0 ? (
+                  <div className="v2-ctx-menu-label">{t('v2.ctxMenu.noTargets', 'No hay otro contexto disponible')}</div>
+                ) : moveTargets(ctxMenu.id).map(target => (
+                  <button key={target.id} className="v2-ctx-menu-item" onClick={() => { reparentContext(ctxMenu.id, target.id); setCtxMenu(null) }}>
+                    {target.text || t('v2.untitled', 'Sin título')}
+                  </button>
+                ))}
+              </>
+            )}
+          </div>
+        </>
+      )}
+
       <div className="v2-sidebar-foot" ref={userWrap}>
         {userMenu && (
           <div className="v2-usermenu">
-            <button className="v2-usermenu-item" onClick={() => { setShowSettings(true); setUserMenu(false) }}>⚙︎ {t('v2.settings', 'Ajustes')}</button>
+            <button className="v2-usermenu-item" onClick={() => { onOpenSettings(); setUserMenu(false) }}>⚙︎ {t('v2.settings', 'Ajustes')}</button>
             <button className="v2-usermenu-item" onClick={() => { setShowTrash(true); setUserMenu(false) }}>🗑 {t('v2.trash', 'Papelera')}</button>
             <div className="v2-usermenu-sep" />
             <div className="v2-usermenu-label">{t('v2.theme', 'Tema')}</div>
@@ -212,7 +334,6 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
           <span className="v2-userchip-caret">⌄</span>
         </button>
       </div>
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showTrash && <V2Trash onClose={() => setShowTrash(false)} />}
     </aside>
   )

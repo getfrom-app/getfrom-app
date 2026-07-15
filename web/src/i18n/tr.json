@@ -2258,5 +2258,12 @@
   "pricing.ctaGoLifetime": "Lifetime Satın Al",
   "v2.chat.attachFromDrive": "Google Drive'dan ekle",
   "v2.chat.driveShort": "Drive",
-  "v2.driveImportFailed": "Google Drive'dan içe aktarılamadı"
+  "v2.driveImportFailed": "Google Drive'dan içe aktarılamadı",
+  "settingsView.colorSteel": "Çelik",
+  "v2.ctxMenu.rename": "Yeniden adlandır",
+  "v2.ctxMenu.accentColor": "Vurgu rengi",
+  "v2.ctxMenu.moveTo": "Taşı…",
+  "v2.ctxMenu.delete": "Sil",
+  "v2.ctxMenu.noTargets": "Başka bağlam yok",
+  "v2.ctxDeletedToast": "Bağlam çöp kutusuna taşındı"
 }

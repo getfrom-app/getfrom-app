@@ -110,14 +110,13 @@ function CuentaViewPane() {
   return <CuentaPane />
 }
 
-// ── View ──────────────────────────────────────────────────────────────────────
-// BackupsPane vive en SettingsModal.tsx (compartida con v2) — se reutiliza tal cual.
+// ── Contenido compartido ──────────────────────────────────────────────────────
+// Extraído para que v2 (a pantalla completa, estado local — sin ruta) y v1 (aquí
+// abajo, dirigido por ?tab= de la URL) usen EXACTAMENTE el mismo contenido por
+// pestaña, sin duplicar el switch. BackupsPane vive en SettingsModal.tsx
+// (compartida con v2) — se reutiliza tal cual.
 
-export default function SettingsView() {
-  const [searchParams] = useSearchParams()
-  const param = searchParams.get('tab') as Tab | null
-  const activeTab: Tab = param && ALL_ITEMS.some(i => i.id === param) ? param : 'cuenta'
-
+export function SettingsPaneContent({ activeTab }: { activeTab: Tab }) {
   function renderPane() {
     switch (activeTab) {
       case 'cuenta':      return <CuentaViewPane />
@@ -136,20 +135,32 @@ export default function SettingsView() {
   const current = ALL_ITEMS.find(i => i.id === activeTab)
 
   return (
+    <div className="settings-view-content-inner">
+      <div className="settings-view-content-header">
+        <h1 className="settings-view-content-title">{current?.label}</h1>
+        {SUBTITLES[activeTab] && (
+          <div className="settings-view-content-subtitle">{SUBTITLES[activeTab]}</div>
+        )}
+      </div>
+      <div className="settings-view-content-body">
+        {renderPane()}
+      </div>
+    </div>
+  )
+}
+
+// ── View (v1) ─────────────────────────────────────────────────────────────────
+
+export default function SettingsView() {
+  const [searchParams] = useSearchParams()
+  const param = searchParams.get('tab') as Tab | null
+  const activeTab: Tab = param && ALL_ITEMS.some(i => i.id === param) ? param : 'cuenta'
+
+  return (
     <div className="settings-view settings-view--embedded">
       {/* La lista de pestañas vive en la columna derecha. Aquí solo el contenido. */}
       <main className="settings-view-content">
-        <div className="settings-view-content-inner">
-          <div className="settings-view-content-header">
-            <h1 className="settings-view-content-title">{current?.label}</h1>
-            {SUBTITLES[activeTab] && (
-              <div className="settings-view-content-subtitle">{SUBTITLES[activeTab]}</div>
-            )}
-          </div>
-          <div className="settings-view-content-body">
-            {renderPane()}
-          </div>
-        </div>
+        <SettingsPaneContent activeTab={activeTab} />
       </main>
     </div>
   )

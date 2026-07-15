@@ -2258,5 +2258,12 @@
   "pricing.ctaGoLifetime": "Купить Lifetime",
   "v2.chat.attachFromDrive": "Прикрепить из Google Drive",
   "v2.chat.driveShort": "Drive",
-  "v2.driveImportFailed": "Не удалось импортировать из Google Drive"
+  "v2.driveImportFailed": "Не удалось импортировать из Google Drive",
+  "settingsView.colorSteel": "Сталь",
+  "v2.ctxMenu.rename": "Переименовать",
+  "v2.ctxMenu.accentColor": "Акцентный цвет",
+  "v2.ctxMenu.moveTo": "Переместить в…",
+  "v2.ctxMenu.delete": "Удалить",
+  "v2.ctxMenu.noTargets": "Нет другого доступного контекста",
+  "v2.ctxDeletedToast": "Контекст перемещён в корзину"
 }

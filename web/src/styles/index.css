@@ -14,11 +14,11 @@
   --text-primary:   #1a1a1a;
   --text-secondary: #666;
   --text-tertiary:  #999;
-  --text-accent:    #7c3aed;
+  --text-accent:    #2C4356;
 
-  --accent:       #8b5cf6;
-  --accent-hover: #7c3aed;
-  --accent-soft:  rgba(139,92,246,0.12);
+  --accent:       #3E5C76;
+  --accent-hover: #2C4356;
+  --accent-soft:  rgba(62,92,118,0.12);
 
   --success:  #16a34a;
   --warning:  #d97706;
@@ -30,10 +30,10 @@
   --radius-lg: 10px;
 
   /* ── From Ghost Text — sistema de predicción ─────────────────────────── */
-  --ghost-color:      rgba(139, 92, 246, 0.55);   /* acento atenuado */
-  --ghost-bg:         rgba(139, 92, 246, 0.07);
-  --ghost-border:     rgba(139, 92, 246, 0.18);
-  --ghost-hint-color: rgba(139, 92, 246, 0.35);
+  --ghost-color:      rgba(62, 92, 118, 0.55);   /* acento atenuado */
+  --ghost-bg:         rgba(62, 92, 118, 0.07);
+  --ghost-border:     rgba(62, 92, 118, 0.18);
+  --ghost-hint-color: rgba(62, 92, 118, 0.35);
 
   /* Aliases para compatibilidad — apuntan a las vars principales */
   --bg:      var(--bg-primary);
@@ -61,7 +61,7 @@
   --text-primary:   #e8e8e8;
   --text-secondary: #888;
   --text-tertiary:  #555;
-  --text-accent:    #a78bfa;
+  --text-accent:    #8FB4D9;
 
   --success:  #4ade80;
   --warning:  #fbbf24;
@@ -74,10 +74,10 @@
   --text:    var(--text-primary);
 
   /* Ghost Text en dark mode — más luminoso sobre fondo oscuro */
-  --ghost-color:      rgba(167, 139, 250, 0.65);
-  --ghost-bg:         rgba(139, 92, 246, 0.10);
-  --ghost-border:     rgba(139, 92, 246, 0.22);
-  --ghost-hint-color: rgba(167, 139, 250, 0.38);
+  --ghost-color:      rgba(143, 180, 217, 0.65);
+  --ghost-bg:         rgba(62, 92, 118, 0.10);
+  --ghost-border:     rgba(62, 92, 118, 0.22);
+  --ghost-hint-color: rgba(143, 180, 217, 0.38);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -578,11 +578,11 @@ a { color: inherit; text-decoration: none; }
   --ghost-hint-color: rgba(100, 116, 139, 0.4);
 }
 
-/* Variante tarea+fecha: combina acento morado con prefijo checkbox */
+/* Variante tarea+fecha: combina el acento del tema con prefijo checkbox */
 .from-ghost--task-date {
-  --ghost-color: rgba(139, 92, 246, 0.75);
-  --ghost-bg: rgba(139, 92, 246, 0.09);
-  --ghost-border: rgba(139, 92, 246, 0.22);
+  --ghost-color: rgba(62, 92, 118, 0.75);
+  --ghost-bg: rgba(62, 92, 118, 0.09);
+  --ghost-border: rgba(62, 92, 118, 0.22);
 }
 
 /* Animación: checkbox aparece deslizándose desde la derecha hacia su posición */
@@ -6924,6 +6924,19 @@ body.outliner-drag-active {
 }
 
 /* ── Accent color themes ─────────────────────────────────────────────────── */
+
+/* "steel" es el acento por defecto (definido directamente en :root, sin atributo).
+   "purple" queda disponible como opción seleccionable — era el acento original. */
+[data-accent="purple"] {
+  --accent: #8b5cf6;
+  --accent-hover: #7c3aed;
+  --accent-soft: rgba(139,92,246,0.12);
+  --text-accent: #7c3aed;
+}
+
+[data-theme="dark"][data-accent="purple"] {
+  --text-accent: #a78bfa;
+}
 
 [data-accent="blue"] {
   --accent: #3b82f6;
