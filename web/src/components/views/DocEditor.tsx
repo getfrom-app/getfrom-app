@@ -185,8 +185,20 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     if (isContextKnowledge(n.text) || isProfileKnowledge(n.text)) return true
     try { return JSON.parse(n.extraData || '{}')._containerNotes === '1' } catch { return false }
   }
-  // Construye el update de guardado: incluye `text` salvo en nodos de título canónico.
-  const bodySave = (html: string) => keepsOwnTitle() ? { body: html } : { body: html, text: firstLineTitle(html) }
+  // Título vs. primer encabezado del body: son cosas DISTINTAS. El título solo se
+  // deriva del primer renglón mientras el documento sigue SIN TÍTULO (nace en
+  // blanco con «+Nota» y el usuario empieza a escribir — esa es la única situación
+  // en la que "lo que escribes arriba se convierte en el título" tiene sentido).
+  // En cuanto el documento YA tiene un título propio (puesto por el usuario, por la
+  // IA al crearlo, o ya derivado antes), nunca más se vuelve a pisar por editar o
+  // simplemente ABRIR el body — antes se recalculaba en cada guardado y CADA
+  // APERTURA («Sanear título al abrir», más abajo), así que un documento titulado
+  // "15 jul 26 — Santander: inscripción registral..." cuyo primer encabezado del
+  // body fuera "Resumen" (patrón habitual en los resúmenes que genera la IA) se
+  // renombraba a «Resumen» solo con abrirlo (Alberto, 15 jul).
+  const hasOwnTitle = () => !!(store.getNode(node.id)?.text || '').trim()
+  // Construye el update de guardado: incluye `text` solo en nodos SIN título propio.
+  const bodySave = (html: string) => (keepsOwnTitle() || hasOwnTitle()) ? { body: html } : { body: html, text: firstLineTitle(html) }
 
   // Sube una imagen a R2 y la inserta en el cursor.
   const insertImage = async (file: File) => {
@@ -400,12 +412,14 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   }, [node.id])
   editorRef.current = editor
 
-  // Sanear título al abrir + clic en enlaces internos/externos.
+  // Título del documento en blanco al abrirlo por primera vez: si NACE sin título
+  // (p.ej. «+Nota»), toma el primer renglón del body como título inicial. Si YA
+  // tiene título propio, no se toca — abrir el documento nunca debe retitularlo.
   useEffect(() => {
     if (!editor) return
-    if (keepsOwnTitle()) return   // nota diaria: conserva el título de la fecha
+    if (keepsOwnTitle() || hasOwnTitle()) return
     const t = firstLineTitle(editor.getHTML())
-    if (t && t !== node.text) store.updateNode(node.id, { text: t })
+    if (t) store.updateNode(node.id, { text: t })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, node.id])
 
