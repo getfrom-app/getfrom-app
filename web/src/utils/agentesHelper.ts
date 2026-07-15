@@ -157,19 +157,24 @@ export function createAgentUnder(opts: {
   userMessage?: string
   schedule?: string
   enabled?: boolean
+  /** Agente CONVERSACIONAL: en vez de ejecutarse solo, abre un chat con
+   *  `userMessage` como primera pregunta y espera la respuesta del usuario
+   *  (ver openAgentConversation en el servidor). */
+  conversational?: boolean
 }): Node {
   const icon = opts.icon || '🤖'
   const node = store.createNode({ text: `${icon} ${opts.label}`.trim(), parentId: opts.parentId })
   const userMessage = opts.userMessage || ''
   store.updateNode(node.id, {
     extraData: JSON.stringify({
-      _agentDef:          '1',
-      _agentId:           node.id,
-      _agentIcon:         icon,
-      _agentSystemPrompt: opts.systemPrompt || '',
-      _agentUserMessage:  userMessage,
-      _agentEnabled:      opts.enabled ? 'true' : 'false',
-      _agentSchedule:     opts.schedule ?? '',
+      _agentDef:            '1',
+      _agentId:             node.id,
+      _agentIcon:           icon,
+      _agentSystemPrompt:   opts.systemPrompt || '',
+      _agentUserMessage:    userMessage,
+      _agentEnabled:        opts.enabled ? 'true' : 'false',
+      _agentSchedule:       opts.schedule ?? '',
+      _agentConversational: opts.conversational ? '1' : '',
     }),
   })
   // La nota central del agente es un DOCUMENTO (editor de texto normal, sin viñetas
@@ -217,7 +222,7 @@ export function getOrCreateAgentInstructionDoc(agentId: string): Node {
 /** Lee los datos de agente de un nodo */
 export function getAgentData(nodeId: string): {
   icon: string; systemPrompt: string; userMessage: string
-  enabled: boolean; schedule: string; agentId: string
+  enabled: boolean; schedule: string; agentId: string; conversational: boolean
 } | null {
   const n = store.getNode(nodeId)
   if (!n) return null
@@ -231,6 +236,7 @@ export function getAgentData(nodeId: string): {
       enabled:      ed._agentEnabled !== 'false',
       schedule:     ed._agentSchedule || '',
       agentId:      ed._agentId || nodeId,
+      conversational: ed._agentConversational === '1',
     }
   } catch { return null }
 }

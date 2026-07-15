@@ -25,6 +25,8 @@ import { isContextKnowledge } from '../utils/knowledgeNodes'
 import { extractUserKnowledge } from '../api/autoClassify'
 import { aiLangBase, aiLangBCP47 } from '../utils/aiLang'
 import { saveUserKnowledgeToProfile, readProfileLines } from '../api/userKnowledge'
+import { getAgentData } from '../utils/agentesHelper'
+import { isInPapelera } from '../utils/papeleraHelper'
 
 export interface UndoBundle {
   createdIds: string[]        // node IDs to delete on undo
@@ -93,6 +95,15 @@ export function isQuickCommandSession(sessionId: string): boolean {
   const content = ed(assistantMsgs[0])._aiMsgContent
   const text = (typeof content === 'string' ? content : (assistantMsgs[0].text || '')).trim()
   return text.length > 0 && text.length <= 160
+}
+
+/** Conversaciones abiertas PROACTIVAMENTE por un agente (openAgentConversation,
+ *  servidor) que siguen esperando la primera respuesta del usuario — Fase 0 del
+ *  aviso de agentes conversacionales: sin push real (no existe canal para avisar
+ *  con la app cerrada, ver diseño 15 jul), así que se muestran destacadas la
+ *  próxima vez que se abre la app en vez de perderse como una nota silenciosa. */
+export function listPendingAgentConversations(): Node[] {
+  return store.allActive().filter(n => ed(n)._pendingReply === '1' && !isInPapelera(n.id))
 }
 
 export interface ExecutedAction {
@@ -349,6 +360,23 @@ class AIChatStore {
       }
     }
     const sid = this.sessionId
+
+    // Si esta sesión la abrió un agente proactivo y estaba esperando la PRIMERA
+    // respuesta del usuario (_pendingReply='1', ver openAgentConversation en el
+    // servidor), este mensaje la resuelve — deja de contar como pendiente en el
+    // aviso de la barra lateral (listPendingAgentConversations).
+    if (sid) {
+      const sessionNode = store.getNode(sid)
+      if (sessionNode) {
+        try {
+          const ed = JSON.parse(sessionNode.extraData || '{}')
+          if (ed._pendingReply === '1') {
+            delete ed._pendingReply
+            store.updateNode(sid, { extraData: JSON.stringify(ed) })
+          }
+        } catch { /* ignore */ }
+      }
+    }
 
     // ¿Este mensaje viene de una grabación de voz? El audio se adjunta AL MENSAJE
     // (se reproduce dentro del chat) y la conversación se guarda en el nodo (se recarga
@@ -996,8 +1024,27 @@ class AIChatStore {
       } catch { /* prompt inválido — ignorar */ }
     }
 
+    // ── Conversación abierta por un AGENTE conversacional ──────────────────
+    // Si esta sesión la abrió un agente proactivo (openAgentConversation, en el
+    // servidor, vía cron), su system_prompt define CÓMO debe responder Magic
+    // aquí — mismo mecanismo que activePromptBlock pero automático, sin que el
+    // usuario tenga que elegir nada (Alberto, 15 jul: agente "Pensamientos
+    // diarios" que pregunta y responde de una forma predefinida).
+    let originAgentBlock: string | undefined
+    if (this.sessionId) {
+      const session = store.getNode(this.sessionId)
+      let originAgentId: string | undefined
+      try { originAgentId = session ? (JSON.parse(session.extraData || '{}')._originAgentId as string | undefined) : undefined } catch { /* ignore */ }
+      if (originAgentId) {
+        const agentData = getAgentData(originAgentId)
+        if (agentData?.systemPrompt?.trim()) {
+          originAgentBlock = `INSTRUCCIÓN DEL AGENTE QUE ABRIÓ ESTA CONVERSACIÓN (sigue esto en tu respuesta):\n${agentData.systemPrompt.trim()}`
+        }
+      }
+    }
+
     // Combinar con el perfil de usuario
-    const combinedProfile = [activePromptBlock, dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
+    const combinedProfile = [activePromptBlock, originAgentBlock, dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
 
     return {
       messages: compactedMessages,

@@ -210,16 +210,18 @@ function createAgentAction(a: Record<string, unknown>, sessionId?: string, curre
   const systemPrompt = (a.system_prompt as string) || (a.systemPrompt as string) || ''
   const userMessage = (a.user_message as string) || (a.userMessage as string) || ''
   const schedule = (a.schedule as string) || ''
+  const conversational = a.conversational === true || a.conversational === 'true'
   const rawParent = (a.parent_id as string | undefined) || null
   const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
   const parentId = explicitParent ?? sessionId ?? currentNodeId ?? null
 
   const created = createAgentUnder({
-    parentId, label, systemPrompt, userMessage, schedule, enabled: false,
+    parentId, label, systemPrompt, userMessage, schedule, enabled: false, conversational,
   })
   const schedulePart = schedule ? ` (programado: ${schedule})` : ' (sin programar todavía)'
+  const convoPart = conversational ? ' Al ejecutarse, abrirá una conversación nueva con esa pregunta y esperará tu respuesta.' : ''
   return result('create_agent', true,
-    `Agente «${label}» creado${schedulePart}. Está DESACTIVADO — revísalo y actívalo cuando estés listo.`,
+    `Agente «${label}» creado${schedulePart}. Está DESACTIVADO — revísalo y actívalo cuando estés listo.${convoPart}`,
     [created.id])
 }
 

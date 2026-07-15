@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent, reparentContext, listContextsForParent } from '../../utils/cajones'
+import { listPendingAgentConversations } from '../../store/aiChatStore'
 import { useTheme } from '../../hooks/useTheme'
 import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
@@ -39,6 +40,9 @@ interface Props {
   // Ajustes ahora es un modo de V2App (pantalla completa: nav a la izquierda,
   // contenido al centro), no un modal — el estado vive arriba.
   onOpenSettings: () => void
+  // Abre una conversación existente (chat al centro + sus elementos a la
+  // derecha) — lo usa el aviso de conversaciones pendientes de un agente.
+  onOpenConversation?: (id: string) => void
 }
 
 // Ordena por nombre (ignorando emoji/espacios iniciales), estable.
@@ -53,7 +57,7 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onFilesDropped, onDragStateChange, onOpenSettings }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation }: Props) {
   useStore()
   const { t } = useTranslation()
   const user = useUserStore()
@@ -178,6 +182,24 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         <span className="v2-brand">Fromly <span className="v2-brand-badge">2.0</span></span>
       </div>
       <button className="v2-newchat" onClick={onNewChat}>＋ {t('v2.newConversation', 'Nueva conversación')}</button>
+
+      {/* Aviso de conversaciones abiertas por un agente proactivo (Alberto, 15 jul:
+          "quiero un agente que cada día me pregunte..."). Fase 0 sin push real: sin
+          canal para avisar con la app cerrada, así que se destaca aquí en cuanto se
+          abre la app — mejor que perderse silenciosamente como una nota más. */}
+      {(() => {
+        const pending = listPendingAgentConversations()
+        if (pending.length === 0 || !onOpenConversation) return null
+        return (
+          <button className="v2-newchat" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent)', marginTop: -2 }}
+            onClick={() => onOpenConversation(pending[0].id)}
+            title={pending.length > 1 ? t('v2.pendingConversationsHint', 'Hay más de una esperando respuesta') : undefined}>
+            💬 {pending.length === 1
+              ? t('v2.pendingConversationOne', '1 conversación esperando')
+              : t('v2.pendingConversationsMany', '{{count}} conversaciones esperando', { count: pending.length })}
+          </button>
+        )
+      })()}
 
       {/* Cabecera de nivel: raíz = «Contextos»; dentro = volver + nombre del contexto */}
       {currentParent ? (
