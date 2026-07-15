@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import {
   contextColor, contextParent, isContextClosed, setContextClosed,
+  isContextFollowed, setContextFollowed,
   getOrCreateContextKnowledgeDoc, nodesInContext,
   containerNotesNode, reparentContext, clearContextParent,
   firstContextOf,
@@ -40,7 +41,13 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
   const node = store.getNode(ctxId)
   const parent = contextParent(ctxId)
   const closed = node ? isContextClosed(node) : false
+  const followed = node ? isContextFollowed(node) : false
   const canArchive = !!parent // solo subcontextos (las áreas no se archivan)
+  // Mismo alcance que Archivar: solo subcontextos. Un contexto nace neutro (ni
+  // seguido ni archivado) — «Seguir» es el opt-in explícito para que aparezca en
+  // Seguimiento (tab Hoy). Sin él, es un simple contenedor de elementos (Alberto,
+  // 15 jul: "Documentos personales" no necesita seguimiento; "Radio Elche" sí).
+  const canFollow = !!parent
 
   // Contexto PADRE — picker inline (mismo patrón que «Cambiar contexto» de nota/tarea).
   const [parentPickerOpen, setParentPickerOpen] = useState(false)
@@ -217,11 +224,23 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           )}
         </div>
         {!parent && <span className="v2-el-meta">{t('v2.context.noParent', 'Sin contexto padre')}</span>}
-        {canArchive && (
-          <button className="v2-ctx-archive-btn-inline" style={{ marginLeft: 'auto' }} onClick={() => setContextClosed(ctxId, !closed)}
-            title={closed ? t('v2.context.restoreToTree', 'Devolver al árbol de contextos') : t('v2.context.removeFromTree', 'Sacar del árbol (sigue buscable y en el RAG)')}>
-            {closed ? t('v2.context.unarchive', 'Desarchivar') : t('v2.context.archive', 'Archivar')}
-          </button>
+        {(canFollow || canArchive) && (
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+            {canFollow && (
+              <button className="v2-ctx-archive-btn-inline" onClick={() => setContextFollowed(ctxId, !followed)}
+                title={followed
+                  ? t('v2.context.unfollowHint', 'Dejar de mostrarlo en Seguimiento (tab Hoy)')
+                  : t('v2.context.followHint', 'Mostrarlo en Seguimiento (tab Hoy) para revisarlo día a día')}>
+                {followed ? t('v2.context.unfollow', 'Dejar de seguir') : t('v2.context.follow', 'Seguir')}
+              </button>
+            )}
+            {canArchive && (
+              <button className="v2-ctx-archive-btn-inline" onClick={() => setContextClosed(ctxId, !closed)}
+                title={closed ? t('v2.context.restoreToTree', 'Devolver al árbol de contextos') : t('v2.context.removeFromTree', 'Sacar del árbol (sigue buscable y en el RAG)')}>
+                {closed ? t('v2.context.unarchive', 'Desarchivar') : t('v2.context.archive', 'Archivar')}
+              </button>
+            )}
+          </div>
         )}
       </div>
 

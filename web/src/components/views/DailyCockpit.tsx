@@ -13,7 +13,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import TaskRow from '../panels/TaskRow'
 import NewTaskModal from '../modals/NewTaskModal'
-import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, firstContextOf, clearContextParent, convertToTask } from '../../utils/cajones'
+import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, isContextFollowed, setContextFollowed, firstContextOf, clearContextParent, convertToTask } from '../../utils/cajones'
 import ContextChip from '../panels/ContextChip'
 import type { Node } from '../../types'
 
@@ -171,7 +171,10 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
   // salen salvo que tengan tareas de hoy → «Para hacer»). Los contextos en estado
   // «Algún día» viven en su árbol, no en la columna del día.
   const activeCtxs = listActiveContexts()
-  const seguimientoCtxs = activeCtxs.filter(c => !ctxTasks.has(c.id) && !!contextParent(c.id))
+  // Solo los contextos EN SEGUIMIENTO explícito (botón «Seguir» en su ficha) — un
+  // contexto que nace neutro (p.ej. un contenedor de documentos sin más) no debe
+  // aparecer aquí solo por estar abierto (Alberto, 15 jul).
+  const seguimientoCtxs = activeCtxs.filter(c => !ctxTasks.has(c.id) && !!contextParent(c.id) && isContextFollowed(c))
 
   // Fila de un contexto (dot color + padre + contadores + tareas anidadas si las
   // hay). Reutilizada en «Para hacer» y «Seguimiento».
@@ -286,6 +289,10 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
                   {closed ? '↻ Reabrir contexto' : '✓ Cerrar contexto'}
                 </button>
               )}
+              <button className="dc-ctxmenu-item" style={ctxMenuItem}
+                onClick={() => { setContextFollowed(ctxMenu.id, false); setCtxMenu(null) }}>
+                ✕ Dejar de seguir
+              </button>
               <button className="dc-ctxmenu-item" style={ctxMenuItem}
                 onClick={() => { convertToTask(ctxMenu.id); setCtxMenu(null) }}>
                 ☑ Convertir en tarea

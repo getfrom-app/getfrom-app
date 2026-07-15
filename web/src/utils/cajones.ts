@@ -213,6 +213,39 @@ export function setContextClosed(nodeId: string, closed: boolean): void {
   store.updateNode(nodeId, { extraData: JSON.stringify(e) })
 }
 
+// ── Seguimiento («Seguir») ──────────────────────────────────────────────────
+// Un contexto NUEVO nace neutro: ni archivado ni en seguimiento, un simple
+// contenedor de elementos (Alberto, 15 jul: "Documentos personales" no necesita
+// aparecer en Hoy, pero "Radio Elche" sí, si lo quiero revisar día a día).
+// Antes CUALQUIER subcontexto abierto sin tareas de hoy aparecía en «Seguimiento»
+// — sin forma de sacar un contenedor puramente de archivo de esa lista salvo
+// archivándolo del todo. `_ctxFollowed='1'` es el opt-in explícito: el botón
+// «Seguir» de la ficha del contexto. Independiente de abierto/cerrado.
+
+export function isContextFollowed(n: Node | null | undefined): boolean {
+  return ed(n)._ctxFollowed === '1'
+}
+
+/** SOLO subcontextos (con contexto padre) — igual que setContextClosed: los
+ *  contextos RAÍZ no participan de la columna del día. */
+export function setContextFollowed(nodeId: string, followed: boolean): void {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  if (!contextParent(nodeId)) return
+  const e = ed(n)
+  if (followed) e._ctxFollowed = '1'
+  else delete e._ctxFollowed
+  store.updateNode(nodeId, { extraData: JSON.stringify(e) })
+}
+
+// Deliberadamente SIN migración de "todos los contextos abiertos ya existentes
+// pasan a seguidos": el propio ejemplo de Alberto (15 jul) para explicar la
+// regla fue "Documentos personales" — un contexto YA EXISTENTE que hoy aparece
+// mal en Seguimiento y que, con la nueva regla, NO debe aparecer salvo que se
+// pulse «Seguir» explícitamente. Grandfacer todo lo ya abierto habría dejado el
+// problema intacto para ese caso exacto. El usuario sigue explícitamente los
+// contextos que le interesan (p.ej. "Casa Alicante") con el nuevo botón.
+
 /** Reparenta un contexto bajo otro (lo convierte en su subcontexto). */
 export function reparentContext(nodeId: string, newParentContextId: string): void {
   const n = store.getNode(nodeId)
