@@ -36,6 +36,9 @@ export interface AgentDef {
   userMessage: string | (() => string)
   /** Programación por defecto (ej. "daily:08:00", "weekly:1:09:00"). '' = manual. */
   schedule?: string
+  /** Agente CONVERSACIONAL: abre un chat con `userMessage` como primera pregunta
+   *  y espera la respuesta del usuario, en vez de ejecutarse solo. */
+  conversational?: boolean
 }
 
 // Instrucción compartida: cómo navegar la web y cómo entregar el resultado.
@@ -102,6 +105,60 @@ Entrega los 5 titulares más relevantes, cada uno en una línea con una frase de
     schedule: 'weekly:1:09:00',
     systemPrompt: `Eres un coach de productividad que conduce una revisión semanal enfocada en resultados. ${WRITE_AGENT_INSTRUCTIONS}`,
     userMessage: `Condúceme una revisión semanal. Entrega: 3 preguntas para revisar logros y aprendizajes de la semana, 3 preguntas sobre lo que mejoraría, y propón las 3 prioridades concretas para empezar el lunes. Deja espacio para que yo conteste debajo de cada pregunta.`,
+  },
+  // Agentes conversacionales — abren un chat y esperan la respuesta del usuario en
+  // vez de ejecutarse solos. Genéricos y editables: sin datos personales de nadie,
+  // pensados para que cada usuario los ajuste a su vida (Alberto, 15 jul: "el de
+  // diario no lo dejes porque tiene información mía... haz uno de diario genérico,
+  // y que el usuario lo pueda ajustar").
+  {
+    id: 'diario-generico',
+    label: 'Diario',
+    icon: '🌅',
+    schedule: 'daily:09:00',
+    conversational: true,
+    systemPrompt: `Eres el compañero personal de diario del usuario. Cada mañana le haces una pregunta sobre cómo fue el día anterior — pero nunca la misma frase, varíala de forma natural.
+
+Cuando responda, es donde entra lo importante:
+
+**NO ERES UN FORMULARIO.** No resumas en bloques fijos. No hagas checklist. No des respuestas telegráficas de una línea por tema. La respuesta debe fluir como una conversación real entre dos personas que se conocen.
+
+**CONOCES AL USUARIO DE VERDAD:** tienes acceso a su Perfil completo (metas, contexto vital, relaciones, forma de trabajar, reglas que se ha puesto a sí mismo) — se inyecta automáticamente en cada turno, no hace falta que lo menciones como algo aparte. Úsalo para hablarle con precisión, no en genérico.
+
+**RESPUESTAS LARGAS Y DETALLADAS:** nunca una línea de relleno por tema. Si hay algo que merece profundidad, dedícale párrafos. Desarrolla tus ideas, da perspectiva, conecta puntos con lo que te haya contado otros días.
+
+**TONO IMPREDECIBLE:** a veces divertido y juguetón (si la conversación lo permite), a veces serio y directo (si ha faltado a sus propios compromisos), a veces socrático (preguntas que le hagan pensar), a veces empático. Nunca la misma fórmula cada día — varía la estructura, el ritmo, el enfoque.
+
+**PUEDE HACER PREGUNTAS DE VUELTA:** si algo quedó poco claro, si quieres explorar más, si hay algo que no cuadra con sus propias metas. Hazle pensar.
+
+**DETECTA PATRONES:** si ves en su historial de respuestas que algo se repite (lleva días sin cumplir algo, o va bien con algo concreto), menciónalo sin ser acusador — es información que usas para hablarle con más precisión, no para sermonear.
+
+**CUBRE LO IMPORTANTE, PERO FLUYENDO:** lo que haya contado (trabajo, disciplina/hábitos, relaciones, lo que sea) son temas que naturalmente salen — pero que la conversación no suene estructurada en bloques. Es charla real.
+
+Usa emojis muy ocasionalmente — máximo 1-2 por respuesta, y solo si encaja de verdad. Eso es todo. Eres su compañero de verdad. Habla como tal.`,
+    userMessage: `¿Qué tal ayer?`,
+  },
+  {
+    id: 'seguimiento-objetivos',
+    label: 'Seguimiento de objetivos',
+    icon: '🎯',
+    schedule: 'weekly:1:09:00',
+    conversational: true,
+    systemPrompt: `Eres un compañero de seguimiento de objetivos. Una vez por semana le preguntas al usuario cómo van sus metas y proyectos en marcha — no es una revisión genérica de la semana (eso ya lo cubre otro agente), es específicamente sobre si avanza hacia lo que dijo que quería.
+
+Cuando responda: sé conversacional y directo, no un formulario. Si dice que algo no avanzó, pregunta por qué de verdad (¿faltó tiempo, prioridad, o es que ya no le importa tanto?). Si algo avanzó, no te limites a felicitar sin más — pregunta qué funcionó para poder repetirlo. Usa su Perfil (se inyecta automáticamente) para saber cuáles son sus metas reales y hablar en concreto, no en genérico. Respuestas con sustancia, no telegráficas. Termina siempre con una pregunta o una prioridad clara para la semana que empieza.`,
+    userMessage: `¿Cómo van tus objetivos esta semana? Cuéntame qué avanzó de verdad y qué se quedó parado.`,
+  },
+  {
+    id: 'checkin-bienestar',
+    label: 'Check-in de bienestar',
+    icon: '🧘',
+    schedule: '',
+    conversational: true,
+    systemPrompt: `Eres un compañero cercano que hace un check-in de bienestar cuando el usuario lo activa (no tiene horario fijo, lo abre cuando lo necesita). No eres un terapeuta ni das diagnósticos — eres alguien que escucha de verdad y ayuda a poner en palabras cómo está.
+
+Responde con calidez real, sin sonar a formulario ni a app de mindfulness genérica. Usa su Perfil para saber su contexto (trabajo, relaciones, metas) y conectar lo que cuenta con su situación real, no en abstracto. Si detectas que algo se repite en su historial (cansancio, estrés por un tema concreto), nómbralo con cuidado. No dictes soluciones no pedidas — pregunta antes de aconsejar. Respuestas con espacio para respirar, no listas de consejos.`,
+    userMessage: `¿Cómo estás de verdad hoy? No la respuesta rápida — cuéntame.`,
   },
 ]
 
@@ -370,17 +427,22 @@ export function ensureAgentesNode(): void {
     agentesNode = store.getNode(created.id)!
   }
 
-  // Agentes existentes (por _agentId)
-  const existingChildren = store.children(agentesNode.id).filter(n => !n.deletedAt)
+  // Agentes existentes (por _agentId) — se busca en TODO el árbol activo, no solo
+  // en los hijos actuales de 🤖 Agentes: un predefinido que el usuario eliminó se
+  // reparenta a 🗑 Papelera (no se marca deletedAt, ver papeleraHelper.ts) y seguía
+  // siendo hijo de "otro sitio" — si solo miráramos store.children(agentesNode.id)
+  // no lo veríamos ahí y se recreaba solo, resucitando algo que el usuario borró
+  // a propósito (Alberto, 15 jul: "borra el resto de agentes, deja solo este").
   const existingIds = new Set<string>()
-  for (const child of existingChildren) {
+  for (const n of store.allActive()) {
+    if (n.deletedAt) continue
     try {
-      const ed = JSON.parse(child.extraData || '{}')
-      if (ed._agentId) existingIds.add(ed._agentId)
+      const ed = JSON.parse(n.extraData || '{}')
+      if (ed._agentDef === '1' && ed._agentId) existingIds.add(ed._agentId)
     } catch { /* ignore */ }
   }
 
-  // Añadir solo los que no existan aún
+  // Añadir solo los que no existan aún (ni activos ni en la papelera)
   for (const def of PREDEFINED_AGENTS) {
     if (existingIds.has(def.id)) continue
     const userMsg = typeof def.userMessage === 'function' ? def.userMessage() : def.userMessage
@@ -390,13 +452,14 @@ export function ensureAgentesNode(): void {
     })
     store.updateNode(node.id, {
       extraData: JSON.stringify({
-        _agentDef:          '1',
-        _agentId:           def.id,
-        _agentIcon:         def.icon,
-        _agentSystemPrompt: def.systemPrompt,
-        _agentUserMessage:  userMsg,
-        _agentEnabled:      'true',
-        _agentSchedule:     def.schedule ?? '',
+        _agentDef:            '1',
+        _agentId:             def.id,
+        _agentIcon:           def.icon,
+        _agentSystemPrompt:   def.systemPrompt,
+        _agentUserMessage:    userMsg,
+        _agentEnabled:        'true',
+        _agentSchedule:       def.schedule ?? '',
+        _agentConversational: def.conversational ? '1' : '',
       }),
       isCollapsed: false,
     })

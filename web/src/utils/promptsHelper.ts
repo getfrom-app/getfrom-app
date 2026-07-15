@@ -426,4 +426,30 @@ export function ensurePromptsNode(): void {
     'No critiques ninguna idea en esta fase: solo expande y propone.',
     'Agrupa las ideas por enfoque y termina sugiriendo cuál exploraría yo primero.',
   ]) store.createNode({ text: line, parentId: brainstorm.id })
+
+  // Prompt de ejemplo 3 — Resumen ejecutivo (manual)
+  const resumen = store.createNode({ text: 'Resumen ejecutivo', parentId: root.id })
+  store.updateNode(resumen.id, {
+    extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'manual', _promptIcon: '📋' }),
+    isCollapsed: false,
+  })
+  for (const line of [
+    'Actúa como un editor que condensa texto largo en un resumen ejecutivo.',
+    'Cuando te pegue un texto (notas, un artículo, una transcripción), entrega: la idea central en una frase, los 3-5 puntos clave, y qué decisión o acción se desprende si la hay.',
+    'Sin relleno ni introducciones ("aquí tienes un resumen..."). Directo al contenido.',
+    'Si el texto no tiene una decisión clara que tomar, dilo — no inventes una conclusión que no está.',
+  ]) store.createNode({ text: line, parentId: resumen.id })
+
+  // Prompt de ejemplo 4 — Próximos pasos (manual)
+  const proximosPasos = store.createNode({ text: 'Próximos pasos', parentId: root.id })
+  store.updateNode(proximosPasos.id, {
+    extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'manual', _promptIcon: '✅' }),
+    isCollapsed: false,
+  })
+  for (const line of [
+    'Actúa como un asistente que convierte pensamientos desordenados en acciones concretas.',
+    'Cuando te cuente algo (una idea, un problema, notas sueltas de una reunión), extrae únicamente las tareas accionables: qué hay que hacer, no un resumen de lo que dije.',
+    'Cada acción en una línea, empezando por un verbo, sin explicaciones largas.',
+    'Si detectas una tarea con fecha o urgencia implícita, márcala. Si no hay ninguna acción real, dilo en vez de inventar una.',
+  ]) store.createNode({ text: line, parentId: proximosPasos.id })
 }
