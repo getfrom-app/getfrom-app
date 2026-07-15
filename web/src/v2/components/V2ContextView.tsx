@@ -13,7 +13,6 @@ import {
   firstContextOf,
 } from '../../utils/cajones'
 import { htmlToMarkdown } from '../../utils/htmlMarkdown'
-import { isQuickCommandSession } from '../../store/aiChatStore'
 import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
@@ -141,15 +140,14 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
         for (const child of store.children(m.id)) consider(child)
       }
     }
-    // Conversaciones del contexto: mismas reglas que el Historial (_aiSession='1',
-    // fuera de papelera, sin sesiones de comando rápido de 1 turno), filtradas a las
-    // que pertenecen a ESTE contexto (firstContextOf).
+    // Conversaciones del contexto: TODOS los chats (_aiSession='1', fuera de papelera,
+    // incluidas las sesiones de comando rápido — ya no se ocultan, 15 jul), filtradas a
+    // las que pertenecen a ESTE contexto (firstContextOf).
     for (const n of store.allActive()) {
       if (seen.has(n.id) || n.deletedAt) continue
       const ed = parseExtraData(n.extraData)
       if (ed._aiSession !== '1') continue
       if (isInPapelera(n.id)) continue
-      if (isQuickCommandSession(n.id)) continue
       if (firstContextOf(n)?.id !== ctxId) continue
       seen.add(n.id)
       out.push({ node: n, icon: '💬', kind: 'conversation', isConversation: true })

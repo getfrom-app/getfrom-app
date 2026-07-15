@@ -75,28 +75,6 @@ function ed(n: Node): Record<string, unknown> {
   try { return JSON.parse(n.extraData || '{}') } catch { return {} }
 }
 
-/** ¿Es una sesión de «solo comando» (créame una tarea, ponme un evento…) sin
- *  valor conversacional real? Criterio (decisión de Alberto): exactamente 1
- *  turno (1 mensaje tuyo + 1 de Magic), esa respuesta ejecutó al menos una
- *  acción de escritura (hay algo creado, hermano del transcript, bajo la
- *  sesión) y el texto de la respuesta es corto (confirmación, no contenido
- *  sustancial). Se usa para NO mostrarla en Historial — sigue en la BD y
- *  buscable, solo no ensucia la lista. En cuanto se añade un 2º mensaje deja
- *  de cumplir el criterio y aparece sola. */
-export function isQuickCommandSession(sessionId: string): boolean {
-  const transcript = store.children(sessionId).find(c => !c.deletedAt && ed(c)._aiTranscript === '1')
-  if (!transcript) return false
-  const msgs = store.children(transcript.id).filter(c => !c.deletedAt)
-  const userMsgs = msgs.filter(m => ed(m)._aiMsgRole === 'user')
-  const assistantMsgs = msgs.filter(m => ed(m)._aiMsgRole === 'assistant')
-  if (userMsgs.length !== 1 || assistantMsgs.length !== 1) return false
-  const createdSiblings = store.children(sessionId).filter(c => !c.deletedAt && c.id !== transcript.id)
-  if (createdSiblings.length === 0) return false // no ejecutó ninguna acción → puede ser una pregunta real
-  const content = ed(assistantMsgs[0])._aiMsgContent
-  const text = (typeof content === 'string' ? content : (assistantMsgs[0].text || '')).trim()
-  return text.length > 0 && text.length <= 160
-}
-
 /** Conversaciones abiertas PROACTIVAMENTE por un agente (openAgentConversation,
  *  servidor) que siguen esperando la primera respuesta del usuario — Fase 0 del
  *  aviso de agentes conversacionales: sin push real (no existe canal para avisar

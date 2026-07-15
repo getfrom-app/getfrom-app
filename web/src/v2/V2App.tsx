@@ -11,7 +11,7 @@ import { aiChatStore, useAIChat } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
-import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent } from '../utils/cajones'
+import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent, mostRecentConversationOf } from '../utils/cajones'
 import { darkenHex, lightenHex, hexToRgba } from '../utils/color'
 import { htmlToMarkdown } from '../utils/htmlMarkdown'
 import { applyTemplate } from '../utils/tagsHelper'
@@ -196,9 +196,13 @@ export default function V2App() {
     setDetailNodeId(null)
     setViewingCtxFicha(!!id)  // clic en un contexto = ver su ficha
     setRightMode(id ? 'contexto' : 'hoy')
-    // Cambiar de contexto RESETEA el chat: la conversación activa NO se arrastra al nuevo
-    // contexto — queda guardada en el suyo (Historial) y la pantalla vuelve a vacío.
-    aiChatStore.startNewSession()
+    // Retomar la última conversación de este contexto si existe, en vez de siempre
+    // resetear a un chat en blanco (Alberto, 15 jul: "cuando se vuelva el contexto,
+    // me gustaría que se mantuviese el último chat que sea abierto, por si el
+    // usuario quiere continuarlo").
+    const recent = id ? mostRecentConversationOf(id) : null
+    if (recent) aiChatStore.loadSession(recent.id)
+    else aiChatStore.startNewSession()
   }
 
   // Botón «Nueva conversación» (barra izquierda) → SIEMPRE sin contexto (General).

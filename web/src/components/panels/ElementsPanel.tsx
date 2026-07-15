@@ -22,7 +22,6 @@ import TaskRow from './TaskRow'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
-import { isQuickCommandSession } from '../../store/aiChatStore'
 import { createAgentUnder } from '../../utils/agentesHelper'
 import { createPromptUnder } from '../../utils/promptsHelper'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
@@ -45,8 +44,10 @@ function classify(n: Node): ElemKind | null {
   // la sesión en sí lo es, como tipo 'conversation' — ver más abajo).
   if (e._aiTranscript != null || e._aiMsgRole != null) return null
   // La conversación (sesión ✦) SÍ es un elemento — Alberto: "la conversación en sí también
-  // debería ser un elemento". Las sesiones de comando rápido (1 turno, sin continuidad) no cuentan.
-  if (e._aiSession === '1') return isQuickCommandSession(n.id) ? null : 'conversation'
+  // debería ser un elemento". Antes se ocultaban aquí las sesiones de comando rápido (1
+  // turno, sin continuidad); ahora TODOS los chats se guardan y se listan (15 jul: "quiero
+  // que se guarden todos los chats").
+  if (e._aiSession === '1') return 'conversation'
   if (e._containerNotes === '1') return null   // espacio de notas libres (estructural, no un elemento)
   if (e._pdfSelection != null) return 'highlight'   // subrayado guardado de un PDF (cita)
   if (e._agentDef === '1') return 'agent'           // agente (v2: puede colgar de cualquier contexto)

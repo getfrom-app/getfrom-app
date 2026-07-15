@@ -490,6 +490,23 @@ export function nodesInContext(contextId: string): Node[] {
   })
 }
 
+/** Conversación más reciente de un contexto (por updatedAt), o null si no tiene
+ *  ninguna. Al volver a un contexto se retoma esta en vez de abrir un chat en
+ *  blanco (Alberto, 15 jul: "cuando se vuelva el contexto, me gustaría que se
+ *  mantuviese el último chat que sea abierto, por si el usuario quiere
+ *  continuarlo"). Incluye también las sesiones de comando rápido — ya no se
+ *  ocultan, solo dejaban de mostrarse en listados. */
+export function mostRecentConversationOf(contextId: string): Node | null {
+  let best: Node | null = null
+  for (const n of store.allActive()) {
+    if (n.deletedAt || ed(n)._aiSession !== '1') continue
+    if (isInPapelera(n.id)) continue
+    if (firstContextOf(n)?.id !== contextId) continue
+    if (!best || (n.updatedAt || '') > (best.updatedAt || '')) best = n
+  }
+  return best
+}
+
 // ── Conocimiento del contexto ("🧠 Lo que Fromly sabe") ───────────────────────
 // Memoria que Fromly acumula de cada contexto. Vive como un bloque editable en la
 // columna derecha, FUSIONADO con las notas libres del usuario (Alberto: "lo que
