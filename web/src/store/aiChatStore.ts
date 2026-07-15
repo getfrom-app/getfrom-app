@@ -854,7 +854,12 @@ class AIChatStore {
       // en cuenta nada de lo que Fromly ya sabía del contexto). readContextKnowledge
       // ya soporta ambos formatos.
       const knowledge = readContextKnowledge(defNode.id)
-      if (knowledge) resolvedBody += '\n\n## Lo que Fromly sabe de este contexto:\n' + knowledge
+      // Frase EXACTA "Lo que Fromly sabe" evitada a propósito: el modelo la veía en
+      // este header y la echoaba como título de nota nueva (Alberto, 15 jul: nota
+      // suelta "🍿 Lo que Fromly sabe sobre ti" creada dentro de Diario, visible en
+      // Elementos — la memoria real ya está oculta ahí por isContextKnowledge(),
+      // esto era una nota normal con un título que colisionaba con el nombre reservado).
+      if (knowledge) resolvedBody += '\n\n## Memoria de este contexto (uso interno, no crear una nota nueva con esto — ya está guardado):\n' + knowledge
 
       if (prompts.length === 0) return resolvedBody
       const section = '\n\n## Prompts disponibles para este tag:\n' +
