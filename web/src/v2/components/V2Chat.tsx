@@ -16,6 +16,7 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
 import { listAllPrompts, resolvePrompt } from '../../utils/promptsHelper'
 import { listAllAgents } from '../../utils/agentesHelper'
+import { isMentionable } from '../elementKind'
 
 interface Props {
   currentNodeId: string | null
@@ -136,18 +137,8 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
   const mentionResults = useMemo(() => {
     if (mentionQuery == null) return []
     const q = mentionQuery.trim().toLowerCase()
-    // Excluir mensajes/transcripciones de chat y espacios de notas libres — no son
-    // "elementos" mencionables, igual que classify()/classifyElement() en otros sitios.
-    const mentionable = (n: ReturnType<typeof store.getNode>) => {
-      if (!n || n.deletedAt || !(n.text || '').trim()) return false
-      try {
-        const ed = JSON.parse(n.extraData || '{}')
-        if (ed._aiTranscript != null || ed._aiMsgRole != null || ed._containerNotes === '1') return false
-      } catch { /* ignore */ }
-      return true
-    }
     return store.allActive()
-      .filter(n => mentionable(n) && (!q || (n.text || '').toLowerCase().includes(q)))
+      .filter(n => isMentionable(n) && (!q || (n.text || '').toLowerCase().includes(q)))
       .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
       .slice(0, 8)
   }, [mentionQuery]) // eslint-disable-line react-hooks/exhaustive-deps

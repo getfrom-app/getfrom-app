@@ -23,6 +23,18 @@ export function isPdfResource(n: Node, e: Record<string, unknown>): boolean {
   return isRes && /\.pdf$/i.test(n.text || '')
 }
 
+/** ¿Puede mencionarse/referenciarse este nodo (con @ en el chat, o como "elemento
+ *  a tener en cuenta" de un agente)? Deliberadamente más permisivo que
+ *  classifyElement: SÍ incluye tareas, eventos, conversaciones, agentes y
+ *  prompts (cualquier elemento real de Fromly) — solo excluye lo puramente
+ *  estructural (mensajes/transcript de chat, el espacio de Notas libres). */
+export function isMentionable(n: Node): boolean {
+  if (n.deletedAt || !(n.text || '').trim()) return false
+  const e = parseExtraData(n.extraData)
+  if (e._aiTranscript != null || e._aiMsgRole != null || e._containerNotes === '1') return false
+  return true
+}
+
 export function classifyElement(n: Node): { kind: ElKind; icon: string; label: string } | null {
   // OJO: antes también exigía `n.text` no vacío — eso descartaba un documento RECIÉN
   // creado (nace con text:'' hasta que escribes algo), así que no aparecía en

@@ -22,6 +22,7 @@ import DocEditorBoundary from '../../components/DocEditorBoundary'
 import DocInspector from '../../components/views/DocInspector'
 import AgentPropertiesPanel from '../../components/panels/AgentPropertiesPanel'
 import { V2NoteContext } from './V2DetailView'
+import { isMentionable } from '../elementKind'
 
 interface Props {
   node: Node
@@ -39,7 +40,7 @@ function ElementRefSearch({ excludeIds, onPick, onClose }: { excludeIds: string[
     const query = q.trim().toLowerCase()
     if (!query) return []
     return store.allActive()
-      .filter(n => !n.deletedAt && !excludeIds.includes(n.id) && (n.text || '').toLowerCase().includes(query))
+      .filter(n => isMentionable(n) && !excludeIds.includes(n.id) && (n.text || '').toLowerCase().includes(query))
       .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
       .slice(0, 12)
   }, [q, excludeIds]) // eslint-disable-line react-hooks/exhaustive-deps
