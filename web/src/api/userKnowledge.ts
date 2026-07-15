@@ -12,6 +12,8 @@
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { PROFILE_KNOWLEDGE, PROFILE_KNOWLEDGE_OLD, CONTEXT_KNOWLEDGE, CONTEXT_KNOWLEDGE_OLD, CONTEXT_KNOWLEDGE_OLD_FROMLY, isProfileKnowledge, isContextKnowledge } from '../utils/knowledgeNodes'
+import { markdownToHtml } from '../utils/importMarkdown'
+import { htmlToMarkdown } from '../utils/htmlMarkdown'
 
 // Canónico de creación (Fase 2 = texto nuevo "Fromly"). Los finders reconocen viejo + nuevo.
 const LEARN_SECTION = PROFILE_KNOWLEDGE
@@ -26,6 +28,29 @@ export function ensurePerfilSync(): Node {
   if (existing) return existing
   const contexto = store.children(null).find(n => !n.deletedAt && n.text === '🧠 Contexto') ?? null
   return store.createNode({ text: '🧠 Perfil de IA', parentId: contexto?.id ?? null, extraData: { _perfilIA: '1' } })
+}
+
+/**
+ * Nodo perfil de IA con migración in situ del formato ANTIGUO (hijos-línea del
+ * tipo "Hechos: ...", "Personas: ...", ver saveUserKnowledgeToProfile) al nuevo
+ * (documento real, contenido en `.body`) — mismo patrón que
+ * getOrCreateContextKnowledgeDoc (cajones.ts) para la Memoria de un contexto.
+ * Antes de este cambio, un perfil con años de hechos acumulados aparecía VACÍO
+ * en la pantalla de Perfil de v2 (que solo lee/edita `.body`), aunque el chat
+ * lo siguiera usando bien vía sus hijos (Alberto, 15 jul: "tenía un perfil...
+ * no sé si habrá sobrevivido al cambio"). Mismo id, sin duplicar. Idempotente:
+ * una vez migrado (o si ya nace vacío), es un simple get.
+ */
+export function getOrCreateProfileDoc(): Node {
+  const perfil = ensurePerfilSync()
+  const hasRealBody = !!(perfil.body && perfil.body.trim() && perfil.body.trim() !== '<p></p>')
+  if (hasRealBody) return perfil
+  const legacyChildren = store.children(perfil.id).filter(c => !c.deletedAt)
+  if (legacyChildren.length === 0) return perfil
+  const legacyText = legacyChildren.map(n => (n.text || '').trim()).filter(Boolean).join('\n\n')
+  for (const child of legacyChildren) store.deleteNode(child.id)
+  store.updateNode(perfil.id, { body: legacyText ? markdownToHtml(legacyText) : '<p></p>' })
+  return store.getNode(perfil.id)!
 }
 
 /**
@@ -44,10 +69,15 @@ export function getProfileContainer(name: string, create = true): Node | null {
   return store.createNode({ text: name, parentId: perfil.id, siblingOrder: maxOrder + 1000 })
 }
 
-/** Líneas actuales del perfil IA (hijos directos) — para dar contexto al extractor. */
+/** Líneas actuales del perfil IA — para dar contexto al extractor (qué ya se
+ *  sabe, evitar duplicar). Soporta AMBOS formatos: documento migrado (`.body`,
+ *  ver getOrCreateProfileDoc) o, si por lo que sea aún quedan hijos-línea
+ *  legacy sin migrar, esos. */
 export function readProfileLines(): string[] {
   const perfil = store.perfilIANode?.() ?? null
   if (!perfil) return []
+  const bodyText = htmlToMarkdown(perfil.body || '').trim()
+  if (bodyText) return [bodyText]
   return store.children(perfil.id)
     .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
     .slice(0, 50)

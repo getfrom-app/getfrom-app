@@ -10,7 +10,7 @@
 // (DocEditor), no una pantalla nueva a reinventar.
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ensurePerfilSync } from '../../api/userKnowledge'
+import { getOrCreateProfileDoc } from '../../api/userKnowledge'
 import DocEditor from '../../components/views/DocEditor'
 import DocEditorBoundary from '../../components/DocEditorBoundary'
 import DocInspector from '../../components/views/DocInspector'
@@ -21,7 +21,7 @@ interface Props {
 
 export default function V2ProfileView({ onClose }: Props) {
   const { t } = useTranslation()
-  const node = useMemo(() => ensurePerfilSync(), [])
+  const node = useMemo(() => getOrCreateProfileDoc(), [])
 
   return (
     <main className="v2-col v2-center">
