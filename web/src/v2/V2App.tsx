@@ -33,6 +33,7 @@ import RightColMenu from '../components/panels/RightColMenu'
 import UnifiedCapture from '../components/modals/UnifiedCapture'
 import { ToastProvider } from '../components/Toast'
 import { WEB_VERSION } from '../components/layout/StatusBar'
+import { runStartupMigrations } from '../utils/appInit'
 import PaywallModal from '../components/paywall/PaywallModal'
 import './styles/v2.css'
 
@@ -178,7 +179,12 @@ export default function V2App() {
     if (store.isLoaded) { setReady(true); return }
     store.isGuest = false
     store.initialLoad()
-      .then(() => {
+      .then(async () => {
+        // Nodos de sistema (Plantillas, Atajos, Agentes, Prompts, Papelera, Perfil,
+        // Contexto) y migraciones — MISMA cadena que MainLayout (v1), ver appInit.ts.
+        // Antes del 15 jul 2026 esto nunca corría en v2 (la app principal en /app):
+        // un usuario 100% nuevo no recibía ni los agentes ni los prompts predefinidos.
+        try { await runStartupMigrations() } catch (e) { console.warn('[v2] runStartupMigrations falló:', e) }
         try { store.setLoaded() } catch { /* idempotente */ }
         try { store.startRemotePolling() } catch { /* ya activo */ }
         setReady(true)

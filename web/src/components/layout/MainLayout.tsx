@@ -25,14 +25,14 @@ import RecFab from './RecFab'
 import SettingsListPanel from '../panels/SettingsListPanel'
 import TemplatePropertiesPanel from '../panels/TemplatePropertiesPanel'
 import { aiChatStore } from '../../store/aiChatStore'
-import { ensurePromptsNode, getPromptsRoot } from '../../utils/promptsHelper'
+import { getPromptsRoot } from '../../utils/promptsHelper'
 import { findContextRoot } from '../../utils/rootLookup'
 import { maybeICloudBackup } from '../../utils/icloudBackup'
 
 import WFHomeView from '../views/WFHomeView'
 import { ensureCanvasRoot } from '../../utils/canvasRoot'
-import { revertContextReferenceOnce } from '../../utils/migrateContextReference'
-import { relocateRootDiariesToAgenda, getTodayDiaryUnderAgenda, AGENDA_ROOT_NAME, cleanupYearMonthContexts, findAgendaRoot } from '../../utils/agendaHelper'
+import { getTodayDiaryUnderAgenda, findAgendaRoot } from '../../utils/agendaHelper'
+import { runStartupMigrations } from '../../utils/appInit'
 import { createNodeFromText, labelForType } from '../../utils/captureHelper'
 
 // Redirige /followup → /node/{diario de hoy} (ruta legacy).
@@ -137,12 +137,9 @@ import WFTopBar from './WFTopBar'
 import TrialBanner from './TrialBanner'
 import { useTaskNotifications } from '../../hooks/useTaskNotifications'
 import { ToastProvider } from '../Toast'
-import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode, cleanupNonAgendaContexts, getPlantillasRoot } from '../../utils/tagsHelper'
-import { ensureAtajosNode, migrateLocalStorageShortcuts, migrateNodeShortcutsToFavorites } from '../../utils/atajosHelper'
-import { ensureAgentesNode, migrateAgentsV2, migrateAgentMetaChildren, getAgentesNode } from '../../utils/agentesHelper'
-import { cleanupOrphanProfileKnowledge, migrateKnowledgeNodesToFromly, migrateContextKnowledgeToMemoria } from '../../api/userKnowledge'
-import { ensurePapeleraNode } from '../../utils/papeleraHelper'
-import { ensureHomeRootAndReparent, classifyNodeRoot } from '../../utils/homeHelper'
+import { getPlantillasRoot } from '../../utils/tagsHelper'
+import { getAgentesNode } from '../../utils/agentesHelper'
+import { classifyNodeRoot } from '../../utils/homeHelper'
 import { isMarkedContext } from '../../utils/cajones'
 import { TaskPropsBody } from '../modals/TaskPropsModal'
 import NodeConfigModal, { type ConfigKind } from '../modals/NodeConfigModal'
@@ -783,38 +780,9 @@ export default function MainLayout() {
     store.isGuest = false
     store.initialLoad()
       .then(async () => {
-        // Migrar 🏷 Tags → 🧠 Contexto si existe el nodo antiguo
-        migrateTagsToContexto()
-        ensurePerfilInsideContexto()
-        cleanupOrphanProfileKnowledge()  // borra el nodo huérfano "🧠 Lo que From sabe" del Perfil
-        migrateKnowledgeNodesToFromly()  // Fase 2 rebrand: renombra in situ los nodos de conocimiento "From"→"Fromly"
-        migrateContextKnowledgeToMemoria()  // Fase 3: renombra la memoria de contexto "Lo que Fromly sabe"→"Memoria"
-        // Nodos de sistema: Plantillas (se crea solo si no existe)
-        ensurePlantillasNode()
-        // Nodo de sistema: 📌 Atajos
-        ensureAtajosNode()
-        migrateLocalStorageShortcuts()
-        // Unifica favoritos: convierte los nodos-puntero legacy en isFavorite y los borra
-        migrateNodeShortcutsToFavorites()
-        migrateAgentsV2()   // elimina agentes-ejemplo v1 (una vez) antes de añadir los v2
-        ensureAgentesNode()
-        migrateAgentMetaChildren()  // limpia líneas «⏰ Se ejecuta…» y prefijo «📨 » (una vez)
-        ensurePromptsNode()
-        ensurePapeleraNode()
-        // Raíz 🏠 From por encima de Agenda: reparenta las 5 raíces visibles bajo ella.
-        // DESPUÉS de los ensure*() (deben existir) y ANTES del sync(true) que persiste.
-        ensureHomeRootAndReparent()
-        // Reubicar diarios de root bajo 📅 Agenda — ANTES de marcar isLoaded
-        await relocateRootDiariesToAgenda()
-        cleanupYearMonthContexts()
-        cleanupNonAgendaContexts()  // quita chips de contexto heredados en contextos/raíces
-        cleanupSpuriousTags()
-        syncTagDefinitions()
-        // Forzar sync inmediato para que todos los cambios de inicialización
-        // (Plantillas, Contexto, Perfil) se persistan en el servidor.
-        // Sin esto, si el usuario recarga antes del debounce (1.5s),
-        // los nodos de sistema se recrean en cada recarga.
-        await store.sync(true)
+        // Nodos de sistema (Plantillas, Atajos, Agentes, Prompts, Papelera, Perfil,
+        // Contexto) y migraciones — cadena compartida con V2App, ver appInit.ts.
+        await runStartupMigrations()
         // Colapsado por defecto: el árbol abre colapsado en cada arranque. Lo que el
         // usuario expanda es efímero (en memoria, sin sync). ANTES de setLoaded para
         // que no haya parpadeo expandido→colapsado.
@@ -832,13 +800,6 @@ export default function MainLayout() {
         // (CanvasApp), sin navegar a ningún nodo. No hace falta redirect. Solo
         // asegurar que el nodo-lienzo raíz existe (contenedor interno de cámara/trazos).
         try { ensureCanvasRoot() } catch { /* no bloquear el arranque */ }
-        // REVERSIÓN (no destructiva): devuelve las secciones de referencia que se
-        // movieron dentro de «Lo que Fromly sabe» a ser contenido del contexto. El
-        // usuario cura «Lo que Fromly sabe» a mano. Reparent → reversible.
-        try {
-          const r = revertContextReferenceOnce()
-          if (r && r.moved > 0) console.info(`[from] reversión conocimiento→contexto: ${r.moved} nodos`)
-        } catch (e) { console.warn('[from] reversión conocimiento→contexto falló:', e) }
       })
       .catch((err: unknown) => {
         const msg = err instanceof Error ? err.message : String(err)
