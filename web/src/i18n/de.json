@@ -2208,6 +2208,8 @@
   "v2.rightColumn.tabElements": "Elemente",
   "v2.rightColumn.tabToday": "Heute",
   "v2.settings": "Einstellungen",
+  "v2.profile.title": "Profil",
+  "v2.profile.hint": "Schreib hier, was Fromly über dich wissen soll: deine Ziele, deine Situation, deine Arbeitsweise, wie du angesprochen werden möchtest… Das wird in allen deinen Unterhaltungen und Agenten berücksichtigt, du musst es also nicht jedes Mal wiederholen.",
   "v2.subcontexts": "Unterkontexte",
   "v2.taskDetail.noContext": "Kein Kontext",
   "v2.tasks": "Aufgaben",

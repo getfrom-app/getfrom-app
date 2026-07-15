@@ -2209,6 +2209,8 @@
   "v2.noSubcontexts": "Sin subcontextos.",
   "v2.noContextsYet": "Aún no tienes contextos. Créalos en la v1 y aparecerán aquí.",
   "v2.settings": "Ajustes",
+  "v2.profile.title": "Perfil",
+  "v2.profile.hint": "Escribe aquí lo que quieras que Fromly sepa de ti: tus metas, tu situación, tu forma de trabajar, cómo prefieres que te hable… Se tiene en cuenta en todas tus conversaciones y agentes, así que no hace falta repetirlo cada vez.",
   "v2.trash": "Papelera",
   "v2.theme": "Tema",
   "v2.themeLight": "Claro",

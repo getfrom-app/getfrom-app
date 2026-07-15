@@ -43,6 +43,9 @@ interface Props {
   // Abre una conversación existente (chat al centro + sus elementos a la
   // derecha) — lo usa el aviso de conversaciones pendientes de un agente.
   onOpenConversation?: (id: string) => void
+  // Perfil — la nota personal que Fromly tiene siempre en cuenta (metas, contexto
+  // vital…). Se abre en lugar del chat (Alberto, 15 jul).
+  onOpenProfile: () => void
 }
 
 // Ordena por nombre (ignorando emoji/espacios iniciales), estable.
@@ -57,7 +60,7 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenProfile }: Props) {
   useStore()
   const { t } = useTranslation()
   const user = useUserStore()
@@ -331,6 +334,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
       <div className="v2-sidebar-foot" ref={userWrap}>
         {userMenu && (
           <div className="v2-usermenu">
+            <button className="v2-usermenu-item" onClick={() => { onOpenProfile(); setUserMenu(false) }}>🧠 {t('v2.profile.title', 'Perfil')}</button>
             <button className="v2-usermenu-item" onClick={() => { onOpenSettings(); setUserMenu(false) }}>⚙︎ {t('v2.settings', 'Ajustes')}</button>
             <button className="v2-usermenu-item" onClick={() => { setShowTrash(true); setUserMenu(false) }}>🗑 {t('v2.trash', 'Papelera')}</button>
             <div className="v2-usermenu-sep" />

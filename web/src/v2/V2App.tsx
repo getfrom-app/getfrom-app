@@ -22,6 +22,7 @@ import type { DriveImportResult } from '../api/googleDrive'
 import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
+import V2ProfileView from './components/V2ProfileView'
 import V2RightColumn, { RightMode } from './components/V2RightColumn'
 import V2SettingsNav from './components/V2SettingsNav'
 import { SettingsPaneContent } from '../components/views/SettingsView'
@@ -110,6 +111,7 @@ export default function V2App() {
   // Sustituye al modal — nav a la izquierda (donde van los contextos), contenido
   // al centro, columna derecha vacía.
   const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null)
+  const [showProfile, setShowProfile] = useState(false)
   const [elementsFilter, setElementsFilter] = useState<ElemKind | 'all' | 'favorite' | null>(null) // filtro inicial pedido para la tab Elementos (p.ej. «← Agentes»)
   const [rightWidth, setRightWidth] = useState(() => {
     const v = Number(localStorage.getItem('v2_right_w'))
@@ -189,6 +191,7 @@ export default function V2App() {
   // Detalles es independiente — no se toca aquí, así que lo que hubiera abierto
   // sigue disponible al volver a ella (Alberto, 15 jul).
   const onSelectCtx = (id: string | null) => {
+    setShowProfile(false)
     setSelectedCtxId(id)
     setFocusNodeId(null)
     setDetailNodeId(null)
@@ -204,6 +207,7 @@ export default function V2App() {
 
   // Botón «Nueva conversación» (barra izquierda) → SIEMPRE sin contexto (General).
   const onNewChat = () => {
+    setShowProfile(false)
     setSelectedCtxId(null)
     setFocusNodeId(null)
     setDetailNodeId(null)
@@ -215,6 +219,7 @@ export default function V2App() {
   // Al escribir el 1er mensaje, send() la vincula al contexto (assignContext) → sale en
   // su Historial y su ficha.
   const onNewChatInCtx = (id: string) => {
+    setShowProfile(false)
     setSelectedCtxId(id)
     setFocusNodeId(null)
     setDetailNodeId(null)
@@ -226,6 +231,7 @@ export default function V2App() {
   // la vez. 1 elemento → se abre en detalle; varios → listados en el panel de la
   // conversación. La tab Contexto se mantiene intacta (ficha del contexto, si lo hay).
   const onOpenConversation = (id: string) => {
+    setShowProfile(false)
     aiChatStore.loadSession(id)
     // Mantener el contexto de la conversación en la barra lateral y el breadcrumb
     // (antes se limpiaba SIEMPRE — Alberto, 15 jul: "cuando se abre una conversación
@@ -417,6 +423,7 @@ export default function V2App() {
   const recorder = useV2Recorder(onAudioSaved)
 
   const onOpenNode = (id: string) => {
+    setShowProfile(false)
     // Un CONTEXTO (marcado o área raíz) siempre abre su FICHA completa (tareas +
     // elementos + «Archivar» + «Lo que Fromly sabe»), sea cual sea la ruta de entrada
     // (sidebar, cockpit «Hoy», chip de contexto…). Antes solo la sidebar llegaba a
@@ -623,17 +630,21 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} />
-      <V2Chat
-        currentNodeId={currentNodeId}
-        contextLabel={contextLabel}
-        onFilesDropped={onFilesDropped}
-        onNewDocument={onNewDocument}
-        onNewCanvas={onNewCanvas}
-        recorder={recorder}
-        onOpenPlanner={() => { setDetailNodeId(null); setRightMode('hoy') }}
-        onOpenDrivePicker={onOpenDrivePicker}
-      />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenProfile={() => setShowProfile(true)} />
+      {showProfile ? (
+        <V2ProfileView onClose={() => setShowProfile(false)} />
+      ) : (
+        <V2Chat
+          currentNodeId={currentNodeId}
+          contextLabel={contextLabel}
+          onFilesDropped={onFilesDropped}
+          onNewDocument={onNewDocument}
+          onNewCanvas={onNewCanvas}
+          recorder={recorder}
+          onOpenPlanner={() => { setDetailNodeId(null); setRightMode('hoy') }}
+          onOpenDrivePicker={onOpenDrivePicker}
+        />
+      )}
       <V2RightColumn
         mode={rightMode}
         onMode={setRightMode}

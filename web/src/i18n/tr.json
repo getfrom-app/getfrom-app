@@ -2208,6 +2208,8 @@
   "v2.rightColumn.tabElements": "Öğeler",
   "v2.rightColumn.tabToday": "Bugün",
   "v2.settings": "Ayarlar",
+  "v2.profile.title": "Profil",
+  "v2.profile.hint": "Fromly’nin senin hakkında bilmesini istediğin her şeyi buraya yaz: hedeflerin, durumun, çalışma şeklin, seninle nasıl konuşulmasını tercih ettiğin… Bu, tüm konuşmalarında ve aracılarında dikkate alınır, bu yüzden her seferinde tekrar etmene gerek yok.",
   "v2.subcontexts": "Alt bağlamlar",
   "v2.taskDetail.noContext": "Bağlam yok",
   "v2.tasks": "Görevler",
