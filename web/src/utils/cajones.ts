@@ -25,6 +25,7 @@ import { isInPapelera } from './papeleraHelper'
 import { markdownToHtml } from './importMarkdown'
 import { htmlToMarkdown } from './htmlMarkdown'
 import { updateContextKnowledgeFromElement } from '../api/autoClassify'
+import { structuralId } from './deterministicId'
 import i18n from '../i18n/config'
 
 const CONTEXT_DEFAULT_COLOR = '#2C4356'
@@ -500,7 +501,18 @@ function readLegacyKnowledgeLines(kn: Node): string {
  *  convierte esas líneas a HTML en `.body` y borra los hijos-línea viejos — mismo
  *  patrón que `getOrCreateAgentInstructionDoc` para agentes. Idempotente. */
 export function getOrCreateContextKnowledgeDoc(contextId: string): Node {
-  let kn = contextKnowledgeNode(contextId)
+  // Id determinista (mismo patrón que Papelera/Contexto/Perfil, ver deterministicId.ts):
+  // evita que una lectura local incompleta de los hijos del contexto (op-log aún sin
+  // aplicar del todo, carrera con otra creación simultánea del mismo documento) falle
+  // en encontrar el nodo REAL y cree uno nuevo vacío por encima, perdiendo de vista el
+  // que tenía contenido (Alberto, 15 jul: "Lo que Fromly sabe" de Casa Alicante volvió
+  // a aparecer vacío tras tener contenido real ya arreglado el día anterior). Con id
+  // determinista, dos clientes/pestañas que intenten crearlo "a la vez" calculan el
+  // MISMO id y el op-log los fusiona en vez de duplicar — antes cada creación usaba un
+  // id aleatorio, así que una carrera podía producir dos nodos con el mismo título.
+  const detId = structuralId(`ctxknowledge.${contextId}`)
+  const byDetId = detId ? store.getNode(detId) : null
+  let kn = (byDetId && !byDetId.deletedAt) ? byDetId : contextKnowledgeNode(contextId)
   if (kn && isKnowledgeDoc(kn)) return kn
   if (kn) {
     // ⚠️ CAUSA REAL de pérdida de datos (14 jul 2026): un nodo con el título de
@@ -529,7 +541,7 @@ export function getOrCreateContextKnowledgeDoc(contextId: string): Node {
   }
   const sibs = store.children(contextId).filter(n => !n.deletedAt)
   const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
-  const created = store.createNode({ text: CONTEXT_KNOWLEDGE, parentId: contextId, siblingOrder: maxOrder + 1000 })
+  const created = store.createNode({ text: CONTEXT_KNOWLEDGE, parentId: contextId, siblingOrder: maxOrder + 1000, predefinedId: detId ?? undefined })
   store.updateNode(created.id, { extraData: JSON.stringify({ _doc: '1' }), body: '<p></p>' })
   return store.getNode(created.id)!
 }

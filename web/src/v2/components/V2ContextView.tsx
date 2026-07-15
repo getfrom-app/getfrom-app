@@ -100,7 +100,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
   // llenar la columna) y las tareas tienen su propia lista arriba (con due/checkbox).
   const elements = useMemo(() => {
     void store.nodesVersion
-    const out: { node: Node; icon: string; isConversation?: boolean }[] = []
+    const out: { node: Node; icon: string; kind: string; isConversation?: boolean }[] = []
     const seen = new Set<string>()
     const consider = (n: Node) => {
       if (seen.has(n.id) || n.deletedAt) return
@@ -112,18 +112,18 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
       // Defensa extra: un nodo movido a la papelera por una vía que no reparenta (además
       // del caso normal, ya cubierto porque deja de ser hijo directo) nunca debe listarse.
       if (isInPapelera(n.id)) return
-      if (isAgentNode(n)) { seen.add(n.id); out.push({ node: n, icon: getAgentData(n.id)?.icon || '🤖' }); return }
+      if (isAgentNode(n)) { seen.add(n.id); out.push({ node: n, icon: getAgentData(n.id)?.icon || '🤖', kind: 'agent' }); return }
       if (isPromptNode(n)) {
         seen.add(n.id)
         let icon = '⚡'
         try { icon = JSON.parse(n.extraData || '{}')._promptIcon || '⚡' } catch { /* ignore */ }
-        out.push({ node: n, icon })
+        out.push({ node: n, icon, kind: 'prompt' })
         return
       }
       const c = classifyElement(n)
       if (!c || c.kind === 'note') return
       seen.add(n.id)
-      out.push({ node: n, icon: c.icon })
+      out.push({ node: n, icon: c.icon, kind: c.kind })
     }
     for (const n of store.children(ctxId)) consider(n)      // hijos directos (incluye agentes)
     const members = nodesInContext(ctxId)
@@ -145,10 +145,34 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
       if (isQuickCommandSession(n.id)) continue
       if (firstContextOf(n)?.id !== ctxId) continue
       seen.add(n.id)
-      out.push({ node: n, icon: '💬', isConversation: true })
+      out.push({ node: n, icon: '💬', kind: 'conversation', isConversation: true })
     }
     return out.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Filtro por tipo de la lista de Elementos — mismo estilo que la tab Elementos
+  // (ElementsPanel): chips en una fila con subrayado activo, solo los tipos que
+  // realmente aparecen en este contexto (con su recuento).
+  const [elFilter, setElFilter] = useState<string>('all')
+  const ELKIND_ORDER: { key: string; label: string; icon: string }[] = [
+    { key: 'document',     icon: '📝', label: t('elements.texts', 'Textos') },
+    { key: 'pdf',          icon: '📄', label: t('elements.pdfs', 'PDFs') },
+    { key: 'image',        icon: '🖼', label: t('elements.images', 'Imágenes') },
+    { key: 'link',         icon: '🔗', label: t('elements.links', 'Enlaces') },
+    { key: 'audio',        icon: '🎙', label: t('elements.audios', 'Audios') },
+    { key: 'highlight',    icon: '🖍️', label: t('elements.highlights', 'Subrayados') },
+    { key: 'agent',        icon: '🤖', label: t('elements.agents', 'Agentes') },
+    { key: 'prompt',       icon: '⚡', label: t('elements.prompts', 'Prompts') },
+    { key: 'conversation', icon: '💬', label: t('elements.conversations', 'Conversaciones') },
+  ]
+  const elCounts = useMemo(() => {
+    const acc: Record<string, number> = {}
+    for (const el of elements) acc[el.kind] = (acc[el.kind] || 0) + 1
+    return acc
+  }, [elements])
+  const elKindChips = ELKIND_ORDER.filter(k => elCounts[k.key] > 0)
+  useEffect(() => { if (elFilter !== 'all' && !elCounts[elFilter]) setElFilter('all') }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
+  const filteredElements = elFilter === 'all' ? elements : elements.filter(e => e.kind === elFilter)
 
   // Migración de notas antiguas → documento del contexto.
   const legacyCount = legacyNotesOf(ctxId).length
@@ -239,7 +263,26 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
       {elements.length > 0 && (
         <>
           <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>{t('v2.context.elements', 'Elementos')} ({elements.length})</div>
-          {elements.map(({ node: n, icon, isConversation }) => {
+          {elKindChips.length > 1 && (
+            <div className="el-filterbar" style={{ marginBottom: 4 }}>
+              {[{ key: 'all', icon: '', label: t('elements.all', 'Todos') }, ...elKindChips].map(c => {
+                const active = elFilter === c.key
+                const n = c.key === 'all' ? elements.length : elCounts[c.key]
+                return (
+                  <button key={c.key} onClick={() => setElFilter(c.key)}
+                    style={{
+                      flex: '0 0 auto', border: 'none', background: 'transparent', cursor: 'pointer', padding: '3px 0',
+                      fontSize: 12.5, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
+                      color: active ? 'var(--accent,#3E5C76)' : 'var(--text-tertiary,#999)',
+                      borderBottom: '2px solid ' + (active ? 'var(--accent,#3E5C76)' : 'transparent'),
+                    }}>
+                    {c.icon ? c.icon + ' ' : ''}{c.label} <span style={{ opacity: 0.55, fontWeight: 400 }}>{n}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          {filteredElements.map(({ node: n, icon, isConversation }) => {
             const agentData = isAgentNode(n) ? getAgentData(n.id) : null
             return (
               <V2ElementRow

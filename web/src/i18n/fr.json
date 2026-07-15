@@ -2029,6 +2029,7 @@
   "elements.selections": "Sélections",
   "elements.images": "Images",
   "elements.pdfs": "PDF",
+  "elements.audios": "Audios",
   "elements.searchPlaceholder": "Rechercher sur la toile…",
   "elements.empty": "Aucun élément pour l'instant.",
   "tip.saveSelection": "Enregistrer",

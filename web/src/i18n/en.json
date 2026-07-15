@@ -2029,6 +2029,7 @@
   "elements.selections": "Selections",
   "elements.images": "Images",
   "elements.pdfs": "PDFs",
+  "elements.audios": "Audios",
   "elements.searchPlaceholder": "Search the canvas…",
   "elements.empty": "No elements yet.",
   "tip.saveSelection": "Save",

@@ -2029,6 +2029,7 @@
   "elements.selections": "Selecciones",
   "elements.images": "Imágenes",
   "elements.pdfs": "PDFs",
+  "elements.audios": "Audios",
   "elements.searchPlaceholder": "Buscar en el lienzo…",
   "elements.empty": "Sin elementos todavía.",
   "tip.saveSelection": "Guardar",
