@@ -424,6 +424,14 @@ export default function V2App() {
     const node = store.getNode(id)
     if (isMarkedContext(node) || isRootContext(id)) { onSelectCtx(id); return }
 
+    // Una CONVERSACIÓN nunca se abre como detalle genérico (Alberto, 15 jul: "eso
+    // es una conversación, entonces debería guardarse como conversación... no
+    // abrirse en la columna derecha, sino... abrirse en el espacio de chat como
+    // conversación") — antes caía aquí abajo y se veía como un nodo del outliner
+    // clásico ("Convertir a documento"), porque una sesión de chat no es un
+    // documento ni una nota, es su propia estructura (transcript + mensajes).
+    if (node && parseExtraData(node.extraData)._aiSession === '1') { onOpenConversation(id); return }
+
     // Elemento normal: las 3 columnas se sincronizan con él. (1) Si nació dentro de
     // una conversación, esa conversación pasa al CENTRO (sustituye la actual — igual
     // que clicar la conversación en Historial). (2) Si pertenece a un contexto, la
