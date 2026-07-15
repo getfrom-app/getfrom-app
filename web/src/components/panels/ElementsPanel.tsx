@@ -13,7 +13,7 @@ import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { isDocNode, elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
-import { isMarkedContext, listMarkedContexts, contextColor, assignContext, firstContextOf } from '../../utils/cajones'
+import { isMarkedContext, listMarkedContexts, contextColor, assignContext, firstContextOf, contextParent } from '../../utils/cajones'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { renderInline } from '../outliner/InlineRenderer'
 import RowContextChip from './RowContextChip'
@@ -159,20 +159,71 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   }), [rows, filter, taskSub, showTaskSub, nq])
 
   // Sub-filtro por CONTEXTO — segundo nivel, para CUALQUIER tipo (no solo tareas).
-  // Solo ofrece contextos que de verdad tienen algo en el conjunto ya filtrado arriba.
-  const [ctxFilter, setCtxFilter] = useState<string | 'all'>('all')
-  const availableContexts = useMemo(() => {
-    const ids = new Set<string>()
-    for (const r of byTypeAndSearch) if (r.ctxId) ids.add(r.ctxId)
-    return [...ids].map(id => store.getNode(id)).filter((n): n is Node => !!n && !!(n.text || '').trim())
-      .sort((a, b) => a.text.localeCompare(b.text))
+  // JERÁRQUICO: primero los contextos RAÍZ; clic en uno con subcontextos entre los
+  // disponibles sustituye la fila por sus hijos (con animación) para seguir
+  // filtrando, igual que el drill-down de la sidebar. Solo se construyen ramas
+  // que de verdad llevan a algo en el conjunto ya filtrado arriba (byTypeAndSearch).
+  const contextTree = useMemo(() => {
+    const leafIds = new Set<string>()
+    for (const r of byTypeAndSearch) if (r.ctxId) leafIds.add(r.ctxId)
+    const allIds = new Set<string>()
+    const childrenOf = new Map<string, Set<string>>()
+    for (const leaf of leafIds) {
+      const chain: Node[] = []
+      let cur: Node | null = store.getNode(leaf) ?? null
+      let guard = 0
+      while (cur && guard++ < 40) { chain.unshift(cur); const p = contextParent(cur.id); cur = p ?? null }
+      for (let i = 0; i < chain.length; i++) {
+        allIds.add(chain[i].id)
+        if (i > 0) {
+          const parentId = chain[i - 1].id
+          if (!childrenOf.has(parentId)) childrenOf.set(parentId, new Set())
+          childrenOf.get(parentId)!.add(chain[i].id)
+        }
+      }
+    }
+    const roots = [...allIds].filter(id => { const p = contextParent(id); return !p || !allIds.has(p.id) })
+    return { allIds, childrenOf, roots }
   }, [byTypeAndSearch])
+
+  const [ctxFilter, setCtxFilter] = useState<string | 'all'>('all')
+  const [ctxStack, setCtxStack] = useState<Node[]>([]) // ruta de drill-down (contextos padre)
+  const ctxParent = ctxStack.length ? ctxStack[ctxStack.length - 1] : null
+  const availableContexts = useMemo(() => {
+    const ids = ctxParent ? [...(contextTree.childrenOf.get(ctxParent.id) ?? [])] : contextTree.roots
+    return ids.map(id => store.getNode(id)).filter((n): n is Node => !!n && !!(n.text || '').trim())
+      .sort((a, b) => a.text.localeCompare(b.text))
+  }, [contextTree, ctxParent])
   useEffect(() => {
-    if (ctxFilter !== 'all' && !availableContexts.some(c => c.id === ctxFilter)) setCtxFilter('all')
-  }, [availableContexts, ctxFilter])
+    if (ctxFilter !== 'all' && !contextTree.allIds.has(ctxFilter)) { setCtxFilter('all'); setCtxStack([]) }
+  }, [contextTree, ctxFilter])
+
+  // Elige un contexto del sub-filtro: filtra por él (Y sus descendientes) y, si
+  // tiene subcontextos entre los disponibles, entra en él para seguir refinando.
+  const enterCtxFilter = (c: Node) => {
+    setCtxFilter(c.id)
+    if ((contextTree.childrenOf.get(c.id)?.size ?? 0) > 0) setCtxStack(prev => [...prev, c])
+  }
+  const backCtxFilter = () => setCtxStack(prev => prev.slice(0, -1))
+  const clearCtxFilter = () => { setCtxFilter('all'); setCtxStack([]) }
+
+  // ¿El contexto de la fila es `filterId` o uno de sus descendientes? Al elegir un
+  // contexto RAÍZ (o cualquiera con hijos) en el sub-filtro, deben verse también
+  // los elementos que cuelgan de sus subcontextos, no solo los asignados a él.
+  function ctxMatchesFilter(rowCtxId: string | null, filterId: string): boolean {
+    if (!rowCtxId) return false
+    let cur: Node | null = store.getNode(rowCtxId) ?? null
+    let guard = 0
+    while (cur && guard++ < 40) {
+      if (cur.id === filterId) return true
+      const p = contextParent(cur.id)
+      cur = p ?? null
+    }
+    return false
+  }
 
   const filtered = useMemo(() => {
-    const out = ctxFilter === 'all' ? byTypeAndSearch : byTypeAndSearch.filter(r => r.ctxId === ctxFilter)
+    const out = ctxFilter === 'all' ? byTypeAndSearch : byTypeAndSearch.filter(r => ctxMatchesFilter(r.ctxId, ctxFilter))
     const sorted = [...out]
     if (sortBy === 'title') sorted.sort((a, b) => a.title.localeCompare(b.title))
     else if (sortBy === 'created') sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -389,28 +440,41 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             })}
           </div>
         )}
-        {/* Sub-filtro por CONTEXTO — segundo nivel, para cualquier tipo (no solo tareas). */}
-        {availableContexts.length > 0 && (
-          <div className="el-filterbar" style={{ marginTop: 4 }}>
-            <button onClick={() => setCtxFilter('all')}
+        {/* Sub-filtro por CONTEXTO — segundo nivel, para cualquier tipo (no solo tareas).
+            Jerárquico: raíces primero; clic en uno con subcontextos sustituye la fila
+            por sus hijos (key=ctxParent.id remonta el div → animación de entrada). */}
+        {(availableContexts.length > 0 || ctxStack.length > 0) && (
+          <div className="el-filterbar el-filterbar--ctx" style={{ marginTop: 4 }} key={ctxParent?.id ?? 'root'}>
+            <button onClick={clearCtxFilter}
               style={{
                 flex: '0 0 auto', border: 'none', background: 'transparent', cursor: 'pointer', padding: '2px 0',
                 fontSize: 11.5, fontWeight: ctxFilter === 'all' ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
-                color: ctxFilter === 'all' ? 'var(--accent,#6c5ce7)' : 'var(--text-tertiary,#999)',
+                color: ctxFilter === 'all' ? 'var(--accent)' : 'var(--text-tertiary,#999)',
               }}>
               {t('elements.allContexts', 'Todos los contextos')}
             </button>
+            {ctxParent && (
+              <button onClick={backCtxFilter}
+                style={{
+                  flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', cursor: 'pointer', padding: '2px 0',
+                  fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'inherit', color: 'var(--text-primary)',
+                }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: contextColor(ctxParent.id), flexShrink: 0 }} />
+                ‹ {ctxParent.text}
+              </button>
+            )}
             {availableContexts.map(c => {
               const active = ctxFilter === c.id
+              const hasKids = (contextTree.childrenOf.get(c.id)?.size ?? 0) > 0
               return (
-                <button key={c.id} onClick={() => setCtxFilter(c.id)}
+                <button key={c.id} onClick={() => enterCtxFilter(c)}
                   style={{
                     flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', cursor: 'pointer', padding: '2px 0',
                     fontSize: 11.5, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
-                    color: active ? 'var(--accent,#6c5ce7)' : 'var(--text-tertiary,#999)',
+                    color: active ? 'var(--accent)' : 'var(--text-tertiary,#999)',
                   }}>
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: contextColor(c.id), flexShrink: 0 }} />
-                  {c.text}
+                  {c.text}{hasKids ? ' ›' : ''}
                 </button>
               )
             })}
@@ -422,7 +486,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
           view={view}
           onChange={changeView}
           count={filtered.length}
-          onClear={() => { setQ(''); setFilter('all'); setTaskSub('all') }}
+          onClear={() => { setQ(''); setFilter('all'); setTaskSub('all'); setCtxFilter('all'); setCtxStack([]) }}
           allowBoardViews={filter === 'task'}
         />
         {/* Barra de acciones en bloque — visible solo en modo selección. */}

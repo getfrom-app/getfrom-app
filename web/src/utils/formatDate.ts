@@ -1,15 +1,31 @@
 // Formato de fechas compartido — listas de elementos (Elementos/Historial) y cabecera
-// del elemento abierto. Corto para filas (poco espacio), largo con hora para tooltips
-// y la cabecera de detalle, donde sí hay sitio para creación + modificación.
+// del elemento abierto. Corto para filas (poco espacio, sin año) pero SIEMPRE con
+// hora cuando la fecha TIENE una hora real — una fecha con hora nunca debe
+// mostrarse sin ella, en ningún sitio de Fromly. Medianoche exacta (00:00) se trata
+// como "sin hora específica" (todo el día) y no se muestra — mismo criterio que
+// `timeLabel()` en TaskRow.tsx (fuente de verdad ya existente para tareas/eventos).
+// Largo (fmtDateFull) añade año, para tooltips y la cabecera de detalle.
+function hasRealTime(d: Date): boolean {
+  return d.getHours() !== 0 || d.getMinutes() !== 0
+}
+
 export function fmtDate(iso: string | null | undefined, locale: string): string {
   if (!iso) return ''
-  try { return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short' }) } catch { return '' }
+  try {
+    const d = new Date(iso)
+    const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
+    if (hasRealTime(d)) { opts.hour = '2-digit'; opts.minute = '2-digit' }
+    return d.toLocaleDateString(locale, opts)
+  } catch { return '' }
 }
 
 export function fmtDateFull(iso: string | null | undefined, locale: string): string {
   if (!iso) return ''
   try {
-    return new Date(iso).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    const d = new Date(iso)
+    const opts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' }
+    if (hasRealTime(d)) { opts.hour = '2-digit'; opts.minute = '2-digit' }
+    return d.toLocaleDateString(locale, opts)
   } catch { return '' }
 }
 

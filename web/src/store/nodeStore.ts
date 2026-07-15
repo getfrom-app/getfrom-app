@@ -1016,21 +1016,6 @@ export class NodeStore {
       })
   }
 
-  /** Get the full breadcrumb path for a node as text */
-  getNodePath(nodeId: string): string {
-    const parts: string[] = []
-    let cur = this.nodes.get(nodeId)
-    const visited = new Set<string>([nodeId])
-    while (cur?.parentId && !visited.has(cur.parentId)) {
-      visited.add(cur.parentId)
-      const parent = this.nodes.get(cur.parentId)
-      if (!parent) break
-      parts.unshift(parent.text || 'Sin título')
-      cur = parent
-    }
-    return parts.join(' / ')
-  }
-
   /** Recently edited nodes (non-diary, non-deleted), sorted by updatedAt */
   recentlyEdited(limit = 10): Node[] {
     return this.allActive()

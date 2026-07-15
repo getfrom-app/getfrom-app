@@ -6,6 +6,9 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
+import { firstContextOf } from '../../utils/cajones'
+import { fmtDate } from '../../utils/formatDate'
+import RowContextChip from '../panels/RowContextChip'
 import type { Node } from '../../types'
 
 // ── Mismo SVG que NodeView ─────────────────────────────────────────────────
@@ -31,24 +34,11 @@ function getDayDate(node: Node): string | null {
   return node.due ?? null
 }
 
-// ── Breadcrumb ─────────────────────────────────────────────────────────────
-function getBreadcrumb(node: Node, max = 3): string {
-  const crumbs: string[] = []
-  let cur = node.parentId ? store.getNode(node.parentId) : undefined
-  const vis = new Set<string>()
-  while (cur && !vis.has(cur.id) && crumbs.length < max) {
-    vis.add(cur.id)
-    if (cur.text) crumbs.unshift(cur.text.slice(0, 25))
-    cur = cur.parentId ? store.getNode(cur.parentId) : undefined
-  }
-  return crumbs.join(' › ')
-}
-
 // ── Vista tabla ────────────────────────────────────────────────────────────
 function TableView({ matchIds }: { matchIds: Set<string> }) {
   const s = useStore()
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const nodes = useMemo(() =>
     Array.from(matchIds)
       .map(id => s.getNode(id))
@@ -74,10 +64,8 @@ function TableView({ matchIds }: { matchIds: Set<string> }) {
                 <span className={`filter-status-dot ${n.status === 'done' ? 'done' : n.status === 'pending' ? 'pending' : ''}`} />
               </td>
               <td className="filter-table-text">{n.text || t('common.noTitle')}</td>
-              <td className="filter-table-crumb">{getBreadcrumb(n)}</td>
-              <td className="filter-table-date">
-                {n.due ? new Date(n.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }) : '—'}
-              </td>
+              <td className="filter-table-crumb" onClick={e => e.stopPropagation()}><RowContextChip node={n} /></td>
+              <td className="filter-table-date">{fmtDate(n.due, i18n.language) || '—'}</td>
             </tr>
           ))}
         </tbody>
@@ -126,7 +114,7 @@ function KanbanView({ matchIds }: { matchIds: Set<string> }) {
               {colNodes.map(n => (
                 <div key={n.id} className="filter-kanban-card" onClick={() => navigate(`/node/${n.id}`)}>
                   <div className="filter-kanban-card-text">{n.text || t('common.noTitle')}</div>
-                  <div className="filter-kanban-card-crumb">{getBreadcrumb(n, 2)}</div>
+                  {firstContextOf(n) && <div className="filter-kanban-card-crumb">{firstContextOf(n)!.text}</div>}
                 </div>
               ))}
             </div>

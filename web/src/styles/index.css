@@ -7798,6 +7798,13 @@ textarea:focus-visible,
 /* Barra de filtros de Elementos — fila con scroll horizontal, sin barra visible. */
 .el-filterbar { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; -ms-overflow-style: none; }
 .el-filterbar::-webkit-scrollbar { display: none; }
+/* Sub-filtro de contexto (jerárquico): al entrar/salir de un nivel el div se
+   remonta (key=id del padre) — anima la entrada del nuevo nivel de chips. */
+.el-filterbar--ctx { animation: el-ctx-level-in 0.16s ease-out; }
+@keyframes el-ctx-level-in {
+  from { opacity: 0; transform: translateX(6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
 /* Popup de menciones @ del editor de documento. */
 .doc-mention-pop {
   z-index: 3200; width: 260px; max-height: 288px; overflow-y: auto; padding: 5px;
