@@ -11,13 +11,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
-import { firstContextOf, contextColor } from '../../utils/cajones'
 import { getAgentData, getOrCreateAgentInstructionDoc, syncAgentUserMessage } from '../../utils/agentesHelper'
 import { trashNode } from '../../utils/papeleraHelper'
+import { apiRequest, getToken } from '../../api/client'
 import DocEditor from '../../components/views/DocEditor'
 import DocEditorBoundary from '../../components/DocEditorBoundary'
 import DocInspector from '../../components/views/DocInspector'
 import AgentPropertiesPanel from '../../components/panels/AgentPropertiesPanel'
+import { V2NoteContext } from './V2DetailView'
 
 interface Props {
   node: Node
@@ -28,7 +29,6 @@ interface Props {
 export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFiltered }: Props) {
   const s = useStore()
   const { t } = useTranslation()
-  const ctx = firstContextOf(node)
   const data = getAgentData(node.id)
   // Propiedades a la derecha, dentro de la misma columna (debajo, ya que v2 no
   // tiene una columna extra): panel plegable con el control real de v1.
@@ -43,6 +43,34 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
   // con lo que el usuario edita en el documento-instrucción (mismo patrón que
   // AgentPropertiesPanel.handleRun/setSchedule, aquí en cada cambio del árbol).
   useEffect(() => { syncAgentUserMessage(node.id) }, [node.id, s.nodesVersion])
+
+  // «Cómo debe responder» — _agentSystemPrompt, ANTES invisible en la UI (solo se
+  // veía la pregunta de apertura en «Instrucción del agente») — el usuario no podía
+  // ver ni editar el formato de respuesta (Alberto, 15 jul: "si no tiene esas
+  // instrucciones no va a saber cómo contestarme"). Editable directamente, igual
+  // que KnowledgeBlock en ContextPropertiesPanel.tsx.
+  const [systemPrompt, setSystemPrompt] = useState(data?.systemPrompt || '')
+  const [spFocused, setSpFocused] = useState(false)
+  useEffect(() => { if (!spFocused) setSystemPrompt(data?.systemPrompt || '') }, [data?.systemPrompt, spFocused])
+  const commitSystemPrompt = () => {
+    setSpFocused(false)
+    if (!data || systemPrompt.trim() === data.systemPrompt.trim()) return
+    const ed = JSON.parse(node.extraData || '{}')
+    ed._agentSystemPrompt = systemPrompt
+    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
+    // Mismo patrón que AgentPropertiesPanel: sync al servidor si ya hay schedule.
+    if (getToken() && data.schedule) {
+      apiRequest('/agents/schedule', {
+        method: 'POST',
+        body: JSON.stringify({
+          nodeId: node.id, agentId: data.agentId, agentTitle: node.text,
+          systemPrompt, userMessage: data.userMessage,
+          schedule: data.schedule, enabled: data.enabled,
+          expiresAt: data.scheduleExpiresAt || undefined,
+        }),
+      }).catch(() => { /* silencioso */ })
+    }
+  }
 
   return (
     <div style={{ padding: '4px 18px 18px' }}>
@@ -69,28 +97,47 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
         </button>
       </div>
 
-      {/* Contexto — clic navega (sidebar + columna derecha), mismo patrón que tarea/nota. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-        {ctx ? (
-          <button className="v2-el-ctxchip" style={{ ['--chip' as string]: contextColor(ctx.id), cursor: 'pointer', border: '1px solid var(--border)', background: 'transparent' }}
-            onClick={() => onSelectCtx(ctx.id)}>
-            {ctx.text}
-          </button>
-        ) : (
-          <span className="v2-el-meta">{t('v2.taskDetail.noContext', 'Sin contexto')}</span>
-        )}
-      </div>
+      {/* Contexto — chip + botón de editar (igual que cualquier nota/tarea): antes
+          solo mostraba el chip si ya tenía uno, sin forma de asignarlo o cambiarlo
+          desde aquí (Alberto, 15 jul: "falta el botón de contexto y de editar
+          contexto"). Todas las interacciones/conversaciones de este agente se
+          guardan por defecto en este mismo contexto (ver openAgentConversation). */}
+      <V2NoteContext node={node} onSelectCtx={onSelectCtx} />
 
       {/* Prompt del agente — UN hijo-documento del propio nodo agente ES la
           instrucción (createAgentUnder/readAgentNote/getOrCreateAgentInstructionDoc),
           editado con el editor de documento normal (párrafos, formato), NUNCA con
-          viñetas de outliner. */}
+          viñetas de outliner. Esto es SOLO la pregunta/tarea de apertura — el
+          formato de respuesta va en el bloque de abajo. */}
       <div style={{ marginTop: 10 }}>
         <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('agents.promptLabel', 'Instrucción del agente')}</div>
         <div className="v2-note-formatbar"><DocInspector bar /></div>
         <DocEditorBoundary compact>
           <DocEditor node={docNode} compact registerActive autofocus={false} />
         </DocEditorBoundary>
+      </div>
+
+      {/* Cómo debe responder — _agentSystemPrompt. Antes de este cambio no se veía
+          en ningún sitio de la UI, aunque SÍ se usaba internamente (originAgentBlock
+          en aiChatStore.ts) para que Fromly sepa cómo estructurar su respuesta tras
+          la primera pregunta de un agente conversacional. */}
+      <div style={{ marginTop: 18 }}>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>💬 {t('agents.responseFormatLabel', 'Cómo debe responder')}</div>
+        <textarea
+          value={systemPrompt}
+          placeholder={t('agents.responseFormatPlaceholder', 'Formato y estilo de la respuesta que debe dar el agente (p. ej. secciones, tono, longitud)…')}
+          onFocus={() => setSpFocused(true)}
+          onChange={e => setSystemPrompt(e.target.value)}
+          onBlur={commitSystemPrompt}
+          rows={Math.max(3, Math.min(14, systemPrompt.split('\n').length + 1))}
+          style={{
+            width: '100%', minWidth: 0, maxWidth: '100%', resize: 'none',
+            fontSize: 13, lineHeight: 1.5,
+            color: 'var(--text-primary)', background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px',
+            fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
+          }}
+        />
       </div>
 
       {/* Propiedades reales del agente (activar/pausar, ejecutar, programación) —

@@ -222,7 +222,7 @@ export function getOrCreateAgentInstructionDoc(agentId: string): Node {
 /** Lee los datos de agente de un nodo */
 export function getAgentData(nodeId: string): {
   icon: string; systemPrompt: string; userMessage: string
-  enabled: boolean; schedule: string; agentId: string; conversational: boolean
+  enabled: boolean; schedule: string; scheduleExpiresAt: string; agentId: string; conversational: boolean
 } | null {
   const n = store.getNode(nodeId)
   if (!n) return null
@@ -235,6 +235,7 @@ export function getAgentData(nodeId: string): {
       userMessage:  ed._agentUserMessage  || '',
       enabled:      ed._agentEnabled !== 'false',
       schedule:     ed._agentSchedule || '',
+      scheduleExpiresAt: ed._agentScheduleExpiresAt || '',
       agentId:      ed._agentId || nodeId,
       conversational: ed._agentConversational === '1',
     }

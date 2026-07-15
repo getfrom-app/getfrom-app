@@ -15,19 +15,26 @@ import { scheduleNextLabel } from '../../utils/scheduleHelper'
 import { userStore } from '../../store/userStore'
 import { firstContextOf } from '../../utils/cajones'
 import { markdownToHtml } from '../../utils/importMarkdown'
+import AgentScheduleModal from '../modals/AgentScheduleModal'
 
-const SCHEDULE_OPTIONS = [
-  { value: '',               labelEs: 'Sin programar',            labelEn: 'Not scheduled' },
-  { value: 'daily:07:30',    labelEs: 'Diario · 07:30',           labelEn: 'Daily · 07:30' },
-  { value: 'daily:08:00',    labelEs: 'Diario · 08:00',           labelEn: 'Daily · 08:00' },
-  { value: 'daily:09:00',    labelEs: 'Diario · 09:00',           labelEn: 'Daily · 09:00' },
-  { value: 'daily:12:00',    labelEs: 'Diario · 12:00',           labelEn: 'Daily · 12:00' },
-  { value: 'daily:18:00',    labelEs: 'Diario · 18:00',           labelEn: 'Daily · 18:00' },
-  { value: 'daily:21:00',    labelEs: 'Diario · 21:00',           labelEn: 'Daily · 21:00' },
-  { value: 'weekly:1:09:00', labelEs: 'Semanal · lunes 09:00',    labelEn: 'Weekly · Mon 09:00' },
-  { value: 'weekly:5:09:00', labelEs: 'Semanal · viernes 09:00',  labelEn: 'Weekly · Fri 09:00' },
-  { value: 'weekly:0:21:00', labelEs: 'Semanal · domingo 21:00',  labelEn: 'Weekly · Sun 21:00' },
-]
+/** Etiqueta legible de un schedule "daily:HH:MM" / "weekly:D:HH:MM", para el botón. */
+function scheduleButtonLabel(schedule: string, expiresAt: string, isEn: boolean): string {
+  if (!schedule) return isEn ? 'Not scheduled' : 'Sin programar'
+  const DAYS_ES = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
+  const DAYS_EN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  let label = ''
+  if (schedule.startsWith('daily:')) label = `${isEn ? 'Daily' : 'Diario'} · ${schedule.slice(6)}`
+  else if (schedule.startsWith('weekly:')) {
+    const [, d, t] = schedule.split(':')
+    const dayLabel = (isEn ? DAYS_EN : DAYS_ES)[parseInt(d) || 0]
+    label = `${isEn ? 'Weekly' : 'Semanal'} · ${dayLabel} ${t}`
+  } else label = schedule
+  if (expiresAt) {
+    const d = new Date(expiresAt)
+    label += ` (${isEn ? 'until' : 'hasta'} ${d.toLocaleDateString(isEn ? 'en-US' : 'es-ES', { day: 'numeric', month: 'short' })})`
+  }
+  return label
+}
 
 interface Props {
   nodeId: string
@@ -43,22 +50,18 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
   const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
+  const [scheduleModalOpen, setScheduleModalOpen] = useState(false)
   const isLoggedIn = !!getToken()
   if (!node || !data) return null
 
-  // El schedule guardado puede no estar en la lista (ej. 'daily:07:30' de un
-  // agente predefinido) — lo añadimos al vuelo para que el <select> lo refleje.
-  const options = SCHEDULE_OPTIONS.some(o => o.value === data.schedule)
-    ? SCHEDULE_OPTIONS
-    : [...SCHEDULE_OPTIONS, { value: data.schedule, labelEs: data.schedule, labelEn: data.schedule }]
-
-  function setSchedule(schedule: string) {
+  function setSchedule(schedule: string, expiresAt: string) {
     const n = store.getNode(nodeId)
     if (!n || !data) return
     try {
       const userMessage = syncAgentUserMessage(nodeId)  // la nota = instrucción
       const ed = JSON.parse((store.getNode(nodeId)?.extraData) || '{}')
       ed._agentSchedule = schedule
+      ed._agentScheduleExpiresAt = expiresAt
       store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
       // Sync al servidor (registra/actualiza el cron) si hay sesión e instrucciones.
       if (!getToken()) return
@@ -69,6 +72,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
           nodeId, agentId: data.agentId, agentTitle: n.text,
           systemPrompt: data.systemPrompt, userMessage,
           schedule, enabled: data.enabled,
+          expiresAt: expiresAt || undefined,
         }),
       }).catch(err => console.warn('[schedule sync]', err))
     } catch { /* ignore */ }
@@ -94,6 +98,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
           nodeId, agentId: data.agentId, agentTitle: node!.text,
           systemPrompt: data.systemPrompt, userMessage,
           schedule: data.schedule, enabled: next,
+          expiresAt: data.scheduleExpiresAt || undefined,
         }),
       }).catch(() => { /* silencioso */ })
     }
@@ -172,62 +177,61 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
-        {/* Activar / pausar */}
+        {/* Activar/pausar + ejecutar ahora, en la misma fila — antes cada botón
+            ocupaba el 100% del ancho apilado, muy anchos y feos (Alberto, 15 jul). */}
         <div>
           <div className="rc-section-label" style={{ marginBottom: 6 }}>
             {t('agents.stateTitle', 'Estado')}
           </div>
-          <button
-            onClick={toggleEnabled}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-              background: data.enabled ? 'rgba(34,197,94,0.10)' : 'var(--bg-secondary)',
-              border: '1px solid', borderColor: data.enabled ? 'rgba(34,197,94,0.4)' : 'var(--border)',
-              borderRadius: 8, padding: '9px 11px', cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            <span style={{ width: 9, height: 9, borderRadius: '50%', background: data.enabled ? '#22c55e' : 'var(--text-tertiary)', flexShrink: 0 }} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
-              {data.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')}
-            </span>
-            <span style={{ flex: 1 }} />
-            <span style={{ fontSize: 11.5, color: 'var(--text-tertiary)' }}>{t('agents.toggleHint', 'clic para cambiar')}</span>
-          </button>
-        </div>
-
-        {/* Ejecutar ahora */}
-        <div>
-          <button
-            onClick={handleRun}
-            disabled={running || !isLoggedIn}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%',
-              background: 'var(--accent)', color: '#fff', border: 'none',
-              borderRadius: 8, padding: '10px 11px', fontFamily: 'inherit',
-              fontSize: 13, fontWeight: 600,
-              cursor: running || !isLoggedIn ? 'default' : 'pointer',
-              opacity: running || !isLoggedIn ? 0.6 : 1,
-            }}
-            title={isLoggedIn ? t('ai.runAgent', 'Ejecutar') : (isEn ? 'Sign in to run' : 'Inicia sesión para ejecutar')}
-          >
-            {running ? t('ai.running', 'Ejecutando…') : `▶ ${t('agents.runButton', 'Ejecutar')}`}
-          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={toggleEnabled}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0,
+                background: data.enabled ? 'rgba(34,197,94,0.10)' : 'var(--bg-secondary)',
+                border: '1px solid', borderColor: data.enabled ? 'rgba(34,197,94,0.4)' : 'var(--border)',
+                borderRadius: 8, padding: '9px 11px', cursor: 'pointer', fontFamily: 'inherit',
+              }}
+              title={t('agents.toggleHint', 'clic para cambiar')}
+            >
+              <span style={{ width: 9, height: 9, borderRadius: '50%', background: data.enabled ? '#22c55e' : 'var(--text-tertiary)', flexShrink: 0 }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {data.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')}
+              </span>
+            </button>
+            <button
+              onClick={handleRun}
+              disabled={running || !isLoggedIn}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, flex: 1, minWidth: 0,
+                background: 'var(--accent)', color: '#fff', border: 'none',
+                borderRadius: 8, padding: '9px 11px', fontFamily: 'inherit',
+                fontSize: 13, fontWeight: 600,
+                cursor: running || !isLoggedIn ? 'default' : 'pointer',
+                opacity: running || !isLoggedIn ? 0.6 : 1,
+              }}
+              title={isLoggedIn ? t('ai.runAgent', 'Ejecutar') : (isEn ? 'Sign in to run' : 'Inicia sesión para ejecutar')}
+            >
+              {running ? t('ai.running', 'Ejecutando…') : `▶ ${t('agents.runButton', 'Ejecutar')}`}
+            </button>
+          </div>
           {error && <div style={{ fontSize: 11.5, color: 'var(--danger, #ef4444)', marginTop: 8 }}>{error}</div>}
           {saved && <div style={{ fontSize: 11.5, color: 'var(--success, #22c55e)', marginTop: 8 }}>{t('ai.resultSaved', '✓ Resultado guardado en el diario')}</div>}
         </div>
 
-        {/* Programación */}
+        {/* Programación — modal con hora/repetición/expiración (Alberto, 15 jul:
+            "mismo modal que el de las tareas, ligeramente modificado"), en vez del
+            desplegable de horas fijas de antes. */}
         <div>
           <div className="rc-section-label" style={{ marginBottom: 6 }}>
             {t('agents.scheduleTitle', 'Programación')}
           </div>
-          <select
-            value={data.schedule}
-            onChange={e => setSchedule(e.target.value)}
-            style={{ width: '100%', fontSize: 12.5, padding: '8px 9px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontFamily: 'inherit' }}
+          <button
+            onClick={() => setScheduleModalOpen(true)}
+            style={{ width: '100%', textAlign: 'left', fontSize: 12.5, padding: '8px 9px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            {options.map(o => <option key={o.value} value={o.value}>{isEn ? o.labelEn : o.labelEs}</option>)}
-          </select>
+            📅 {scheduleButtonLabel(data.schedule, data.scheduleExpiresAt, isEn)}
+          </button>
           {nextRun && (
             <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 8 }}>
               {nextRun}
@@ -244,6 +248,15 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
           {t('agents.editHintCenter', 'En la ventana central editas el prompt del usuario (lo que el agente debe hacer).')}
         </div>
       </div>
+
+      {scheduleModalOpen && (
+        <AgentScheduleModal
+          schedule={data.schedule}
+          expiresAt={data.scheduleExpiresAt}
+          onClose={() => setScheduleModalOpen(false)}
+          onSave={(schedule, expiresAt) => setSchedule(schedule, expiresAt)}
+        />
+      )}
     </div>
   )
 }

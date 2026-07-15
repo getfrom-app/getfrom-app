@@ -65,7 +65,9 @@ function V2Backlinks({ nodeId }: { nodeId: string }) {
 // Contexto de una nota: chips de los contextos asignados + «Añadir a contexto» (opcional).
 // Si no se añade ninguno, la nota queda sin contexto (no pasa nada) — pero SIEMPRE se
 // puede añadir desde aquí, así que una nota nueva ya no queda sin forma de asignarla.
-function V2NoteContext({ node, onSelectCtx, inline }: { node: Node; onSelectCtx?: (id: string) => void; inline?: boolean }) {
+// Exportado: V2AgentDetailView también lo reutiliza tal cual para su contexto (Alberto,
+// 15 jul: "arriba falta el botón de contexto y de editar contexto").
+export function V2NoteContext({ node, onSelectCtx, inline }: { node: Node; onSelectCtx?: (id: string) => void; inline?: boolean }) {
   useStore()
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
