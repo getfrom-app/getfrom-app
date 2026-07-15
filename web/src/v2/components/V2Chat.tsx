@@ -15,7 +15,7 @@ import { renderInline } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
 import { listAllPrompts, createPromptUnder, resolvePrompt } from '../../utils/promptsHelper'
-import { listAllAgents, createAgentUnder, getAgentData } from '../../utils/agentesHelper'
+import { listAllAgents, createAgentUnder } from '../../utils/agentesHelper'
 
 interface Props {
   currentNodeId: string | null
@@ -365,15 +365,15 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
               <button className="v2-iconbtn" title={t('v2.chat.agentsTitle', 'Agentes')} onClick={() => setAgentMenu(o => !o)}>🤖</button>
               {agentMenu && (
                 <div className="v2-doc-menu v2-doc-menu-up">
-                  {listAllAgents().map(a => {
-                    const data = getAgentData(a.id)
-                    return (
-                      <button key={a.id} onClick={() => {
-                        setAgentMenu(false)
-                        window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: a.id } }))
-                      }}>{data?.icon || '🤖'} {(a.text || t('common.noTitle', 'Sin título')).replace(/^🤖\s*/, '')}</button>
-                    )
-                  })}
+                  {listAllAgents().map(a => (
+                    // El icono ya viene incluido como prefijo de `a.text` (createAgentUnder
+                    // lo escribe así al crear el agente) — no volver a anteponerlo aparte,
+                    // o se ve duplicado (p.ej. "📈📈 Informe de mercado").
+                    <button key={a.id} onClick={() => {
+                      setAgentMenu(false)
+                      window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: a.id } }))
+                    }}>{a.text || t('common.noTitle', 'Sin título')}</button>
+                  ))}
                   {listAllAgents().length === 0 && (
                     <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.noAgents', 'Sin agentes todavía')}</div>
                   )}
