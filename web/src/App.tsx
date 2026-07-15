@@ -9,7 +9,6 @@ import AuthPage from './components/auth/AuthPage'
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
 import ResetPasswordPage from './components/auth/ResetPasswordPage'
 import ClaudeConnectPage from './components/auth/ClaudeConnectPage'
-import MainLayout from './components/layout/MainLayout'
 import PricingView from './components/views/PricingView'
 import CaptureWindow from './components/modals/CaptureWindow'
 
@@ -230,8 +229,10 @@ function AppInner() {
           </Suspense>
         </PrivateRoute>
       } />
-      {/* v1 (clásica) preservada como RESPALDO reversible en /v1. */}
-      <Route path="/v1/*" element={<PrivateRoute><MainLayout /></PrivateRoute>} />
+      {/* v1 (clásica) retirada de la web (15 jul 2026, Alberto: "quita la v1 de web, ya no
+          debe ser accesible") — el componente MainLayout.tsx y sus paneles quedan como
+          código muerto, sin ruta que los monte. No borrados de golpe por si algo interno
+          seguía importándolos; limpiar en una pasada aparte si se confirma que nada los usa. */}
       {/* Por defecto: Fromly 2.0. Toda la app requiere cuenta. */}
       <Route path="/*" element={
         <PrivateRoute>
