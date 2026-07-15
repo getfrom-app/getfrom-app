@@ -83,15 +83,16 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
         onClick={e => { e.stopPropagation(); toggleTaskDone(node) }}
         title={t('daily.markDone')} aria-label={t('daily.markDone')}
       >{done ? '✓' : ''}</button>
-      <span className="dc-text">{node.text ? renderInline(node.text) : t('common.noTitle')}</span>
+      <span className="dc-text dc-text--tight">{node.text ? renderInline(node.text) : t('common.noTitle')}</span>
       {extra}
-      {time && <span className="dc-time">{time}</span>}
       {due && (
         <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(node), flexShrink: 0 }}
           title={t('dailyCockpit.editDateRecurrence')}
           onClick={e => { e.stopPropagation(); onOpenDate(node) }}>{due}</span>
       )}
+      {time && <span className="dc-time">{time}</span>}
       {rec && <span className="dc-rec" title={rec}>🔁 {rec}</span>}
+      <span style={{ flex: 1 }} />
       <RowContextChip node={node} />
       <TaskHoverActions node={node} onOpenDate={onOpenDate} />
     </div>

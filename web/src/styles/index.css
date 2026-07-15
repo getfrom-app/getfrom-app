@@ -13665,12 +13665,14 @@ textarea:focus-visible,
   border-radius: 50%;
   background: #2563eb;
 }
-/* Badge de evento: hora + repetición (clic → editor) */
+/* Badge de evento: hora + repetición (clic → editor). Va en CABECERA de la fila
+   (hora primero, título después) — ancho fijo para que todas las horas alineen
+   en columna, aunque el evento sea de un solo dígito de diferencia. */
 .dc-ev-badge {
-  margin-left: auto;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 5px;
   background: var(--bg-subtle, #f1f3f5);
   border: 1px solid var(--border-subtle, #e6e6e6);
@@ -13682,6 +13684,7 @@ textarea:focus-visible,
   cursor: pointer;
   white-space: nowrap;
 }
+.dc-ev-badge--lead { min-width: 44px; }
 .dc-ev-badge:hover { border-color: var(--accent, #6c5ce7); color: var(--text, #222); }
 .dc-ev-rec { color: var(--accent, #6c5ce7); }
 .dc-ev-edit {
@@ -13757,6 +13760,11 @@ textarea:focus-visible,
    chip de contexto quedan al lado a la derecha. (No afecta a filas de dos líneas,
    cuyo texto va dentro de .dc-row-l1.) */
 .dc-row > .dc-text { flex: 1 1 auto; min-width: 0; }
+/* TaskRow: texto de ancho NATURAL (como .dc-row-l1) — la fecha/hora quedan pegadas
+   al título con el gap normal de la fila, en vez de saltar al otro extremo con un
+   hueco en blanco. El spacer explícito tras los chips empuja el contexto y las
+   acciones al borde derecho. */
+.dc-row > .dc-text.dc-text--tight { flex: 0 1 auto; min-width: 0; }
 .dc-due {
   flex-shrink: 0;
   font-size: 11px;

@@ -184,8 +184,8 @@ export default function DayColumn({
                 onClick={() => setEditingGcal(ev)} style={{ cursor: 'pointer' }}
                 title={t('tip.editGcalEvent')}>
                 <span className="dc-event-dot" style={ev.backgroundColor ? { background: ev.backgroundColor } : undefined} />
+                <span className="dc-ev-badge dc-ev-badge--lead">{timeLabel}</span>
                 <span className="dc-text">{ev.title || t('search.chipEvent')}</span>
-                <span className="dc-ev-badge">{timeLabel}</span>
               </div>
             )
           })}
@@ -201,16 +201,16 @@ export default function DayColumn({
                   onDragStart={e => { e.dataTransfer.setData('nodeId', ev.id); e.dataTransfer.effectAllowed = 'copy' }}
                   onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
                   <span className="dc-event-dot" style={color ? { background: color } : undefined} />
-                  <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
-                    {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
-                  </span>
                   <button
-                    className="dc-ev-badge"
+                    className="dc-ev-badge dc-ev-badge--lead"
                     onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
                     title={t('tip.editTimeAndRepeat')}
                   >
                     {timeLabel}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
                   </button>
+                  <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
+                    {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
+                  </span>
                   {delBtn(ev)}
                 </div>
                 {editEv === ev.id && !allDay && ev.due && (
