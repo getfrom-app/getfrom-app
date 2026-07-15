@@ -585,9 +585,10 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                       className={`dc-check ${n.status === 'done' ? 'dc-check--done' : ''}`}
                       onClick={(e) => { e.stopPropagation(); toggleTaskDone(n) }}
                     >{n.status === 'done' ? '✓' : ''}</button>
-                    <span className="dc-text" onClick={() => openNodeDetail(n.id)}>{n.text ? renderInline(n.text) : t('tip.task', 'Tarea')}</span>
-                    <RowContextChip node={n} />
+                    <span className="dc-text dc-text--tight" onClick={() => openNodeDetail(n.id)}>{n.text ? renderInline(n.text) : t('tip.task', 'Tarea')}</span>
+                    <span style={{ flex: 1 }} />
                     <TaskHoverActions node={n} onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
+                    <RowContextChip node={n} />
                   </div>
                 )
               } else {

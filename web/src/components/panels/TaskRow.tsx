@@ -93,8 +93,8 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
       {time && <span className="dc-time">{time}</span>}
       {rec && <span className="dc-rec" title={rec}>🔁 {rec}</span>}
       <span style={{ flex: 1 }} />
-      <RowContextChip node={node} />
       <TaskHoverActions node={node} onOpenDate={onOpenDate} />
+      <RowContextChip node={node} />
     </div>
   )
 }
