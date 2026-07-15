@@ -43,7 +43,15 @@ function TableView({ matchIds }: { matchIds: Set<string> }) {
     Array.from(matchIds)
       .map(id => s.getNode(id))
       .filter((n): n is Node => !!n && !n.deletedAt)
-      .sort((a, b) => (a.text || '').localeCompare(b.text || ''))
+      // Creación más reciente primero, sin fecha al final — mismo criterio que la
+      // vista lista (Alberto, 15 jul: antes ordenaba por título, sin relación con
+      // "más nuevo a más antiguo").
+      .sort((a, b) => {
+        if (!a.createdAt && !b.createdAt) return 0
+        if (!a.createdAt) return 1
+        if (!b.createdAt) return -1
+        return b.createdAt.localeCompare(a.createdAt)
+      })
   , [matchIds, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
