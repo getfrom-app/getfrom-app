@@ -240,7 +240,7 @@ function StepDone({ onClose }: { onClose: () => void }) {
 
 const linkBtnStyle: React.CSSProperties = {
   flex: 1, textAlign: 'center', textDecoration: 'none',
-  background: '#f5f3ff', border: '1px solid #D6DEE4',
+  background: '#EAF2FA', border: '1px solid #D6DEE4',
   borderRadius: 8, padding: '8px 4px', fontSize: 12,
   fontWeight: 500, color: '#2C4356', display: 'block',
   transition: 'background 0.15s',

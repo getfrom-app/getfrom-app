@@ -186,7 +186,7 @@ function Logo() {
 
 const containerStyle: React.CSSProperties = {
   minHeight: '100vh',
-  background: '#f5f3ff',
+  background: '#EAF2FA',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',

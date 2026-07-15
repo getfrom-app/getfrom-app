@@ -68,7 +68,7 @@ export default function FeedbackButton() {
           background: '#ffffff', border: '1px solid rgba(62,92,118,0.25)',
           borderRadius: 999, padding: '7px 13px 7px 11px',
           boxShadow: '0 2px 12px rgba(0,0,0,0.10)', cursor: 'pointer',
-          fontSize: 13, fontWeight: 600, color: '#5b21b6',
+          fontSize: 13, fontWeight: 600, color: '#245680',
           transition: 'box-shadow 0.15s, transform 0.15s',
         }}
         onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 18px rgba(62,92,118,0.25)'; e.currentTarget.style.transform = 'translateY(-1px)' }}

@@ -208,7 +208,7 @@ function StepCanvas({ onClose, onSkip }: { onClose: () => void; onSkip: () => vo
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
           {t('onboarding.v2.canvasTextBefore')} <strong>{t('onboarding.v2.doubleClick')}</strong> {t('onboarding.v2.canvasTextAfter')}
         </div>
-        <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: '#5b21b6', marginBottom: 14, letterSpacing: 0.1 }}>
+        <div style={{ background: '#EAF2FA', border: '1px solid #B3D4EE', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: '#245680', marginBottom: 14, letterSpacing: 0.1 }}>
           {t('onboarding.v2.canvasHint')}
         </div>
         <WaitingDots label={t('onboarding.v2.canvasWaiting')} />
@@ -231,7 +231,7 @@ function StepMagic({ onClose, onSkip }: { onClose: () => void; onSkip: () => voi
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
           {t('onboarding.v2.magicTextBefore')} <strong>Enter</strong>.
         </div>
-        <div style={{ background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: '#5b21b6', marginBottom: 12 }}>
+        <div style={{ background: '#EAF2FA', border: '1px solid #B3D4EE', borderRadius: 8, padding: '8px 12px', fontSize: 13, fontWeight: 600, color: '#245680', marginBottom: 12 }}>
           ☐ {t('onboarding.v2.magicExample')}
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, background: '#fafafa', border: '1px solid #ebebeb', borderRadius: 8, padding: '8px 10px', marginBottom: 12 }}>
@@ -330,7 +330,7 @@ function StepDone({ onClose }: { onClose: () => void }) {
 
 const linkBtnStyle: React.CSSProperties = {
   flex: 1, textAlign: 'center', textDecoration: 'none',
-  background: '#f5f3ff', border: '1px solid #D6DEE4',
+  background: '#EAF2FA', border: '1px solid #D6DEE4',
   borderRadius: 8, padding: '8px 4px', fontSize: 12,
   fontWeight: 500, color: '#2C4356', display: 'block',
   transition: 'background 0.15s',
