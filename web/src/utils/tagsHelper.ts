@@ -487,7 +487,20 @@ export function ensurePerfilInsideContexto(): void {
   const hasBody = !!(perfil.body?.trim())
   const hasChildren = store.children(perfil.id).filter(n => !n.deletedAt).length > 0
 
-  if (hasBody && !hasChildren) {
+  // Salvaguarda: esta migración asume body = texto plano/markdown VIEJO (plantilla
+  // con secciones ## o texto libre de un editor markdown v1). El Perfil v2 real
+  // (getOrCreateProfileDoc, api/userKnowledge.ts) escribe HTML real en .body vía
+  // el editor TipTap — si esto se trata como texto plano, cada línea se mete tal
+  // cual (con las etiquetas <p> incluidas) en un nodo hijo, y luego
+  // getOrCreateProfileDoc migra ese texto-con-tags de vuelta a .body pasándolo
+  // por markdownToHtml(), que ESCAPA los `<`/`>` literales y los envuelve en un
+  // <p> nuevo — el resultado son las etiquetas <p> visibles como texto en el
+  // editor (Alberto, 15 jul: detectado en cuenta de prueba justo tras activar
+  // runStartupMigrations en v2, ver appInit.ts). Si el body ya es HTML de verdad,
+  // esta migración no tiene nada que hacer — se deja tal cual.
+  const looksLikeHtml = /<[a-z][\s\S]*>/i.test(perfil.body || '')
+
+  if (hasBody && !hasChildren && !looksLikeHtml) {
     // El body puede ser: el template antiguo con secciones ## o texto libre del usuario
     const bodyText = perfil.body!.trim()
     const sections = bodyText.split(/\n{2,}/).map(s => s.trim()).filter(Boolean)
