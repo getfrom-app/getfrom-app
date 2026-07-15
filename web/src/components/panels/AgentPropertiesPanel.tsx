@@ -109,6 +109,35 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
     const userMessage = syncAgentUserMessage(nodeId)  // ejecutar lo que dice la nota
     if (!userMessage) { setError(isEn ? 'Write an instruction in the note first' : 'Escribe una instrucción en la nota primero'); return }
     setRunning(true); setError(null); setSaved(false)
+
+    // Agente conversacional: "Ejecutar" debe abrir un chat de verdad (misma estructura
+    // que crea el cron en openAgentConversation — sesión + transcripción + mensaje),
+    // no volcar el resultado en un documento. Antes se creaba siempre un nodo _doc,
+    // por eso al pulsar Ejecutar aparecía el saludo del agente como nota en vez de chat.
+    if (data.conversational) {
+      try {
+        const ctx = firstContextOf(node!)
+        const parentId = ctx ? ctx.id : getTodayDiaryUnderAgenda().id
+        const session = store.createNode({ text: `✦ ${node!.text}`, parentId, extraData: { _aiSession: '1', _originAgentId: nodeId } })
+        store.updateNode(session.id, { isCollapsed: true, isChat: true })
+        const transcript = store.createNode({ text: '💬 Conversación', parentId: session.id, extraData: { _aiTranscript: '1' } })
+        store.updateNode(transcript.id, { isCollapsed: true })
+        store.createNode({ text: `Magic: ${userMessage}`, parentId: transcript.id, extraData: { _aiMsgRole: 'assistant', _aiMsgContent: userMessage } })
+        try {
+          const ed = JSON.parse(node!.extraData || '{}')
+          ed._agentLastRun = new Date().toISOString()
+          store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+        } catch { /* ignore */ }
+        setSaved(true)
+        openNodeDetail(session.id)
+      } catch (e) {
+        setError(e instanceof Error ? e.message : (isEn ? 'Connection error' : 'Error de conexión'))
+      } finally {
+        setRunning(false)
+      }
+      return
+    }
+
     try {
       const res = await apiRequest<{ ok: boolean; result?: string; error?: string }>('/agents/run', {
         method: 'POST',
