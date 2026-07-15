@@ -593,9 +593,17 @@ export function readContextKnowledge(contextId: string): string {
 
 /** Añade hechos ESPECÍFICOS del contexto a su memoria ("Lo que Fromly sabe"),
  *  deduplicando por substring normalizado (no vuelve a meter algo ya sabido). Es la
- *  vía de ENRUTADO: un dato de un tema va a la memoria de su contexto, no al perfil. */
+ *  vía de ENRUTADO: un dato de un tema va a la memoria de su contexto, no al perfil.
+ *  Guarda de seguridad (Alberto, 15 jul): el extractor de IA del servidor puede
+ *  devolver, por error, un bloque ENTERO (cientos de líneas de otro documento,
+ *  p.ej. "Morning Formula") como si fuera "un hecho" — un hecho real es una línea
+ *  corta, no un documento. Sin este límite, ese bloque se cuela tal cual en la
+ *  memoria del contexto activo (visto: contaminó "Lo que Fromly sabe" de Casa
+ *  Alicante con el contenido íntegro de Morning Formula). Se descarta, no se
+ *  trunca — un fragmento cortado a medias sería igual de incorrecto. */
+const MAX_FACT_LENGTH = 400
 export function appendContextFacts(contextId: string, facts: string[]): void {
-  const clean = facts.map(f => f.trim()).filter(Boolean)
+  const clean = facts.map(f => f.trim()).filter(Boolean).filter(f => f.length <= MAX_FACT_LENGTH)
   if (!clean.length) return
   const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
   const lines = readContextKnowledge(contextId).split('\n').map(l => l.trim()).filter(Boolean)
