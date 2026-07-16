@@ -144,7 +144,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
         body: JSON.stringify({
           agentId: data.agentId, agentTitle: node!.text,
           systemPrompt: data.systemPrompt, firstUserMessage: userMessage,
-          modelTier: 'fast',
+          modelTier: 'fast', nodeId,
         }),
       })
       if (res.ok && res.result) {
