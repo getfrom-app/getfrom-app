@@ -53,6 +53,11 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
       localStorage.setItem('from_dc_groups_collapsed', JSON.stringify([...set]))
       localStorage.setItem('from_dc_algundia_collapsed_init', '1')
     }
+    if (localStorage.getItem('from_dc_futuro_collapsed_init') !== '1') {
+      set.add('futuro')
+      localStorage.setItem('from_dc_groups_collapsed', JSON.stringify([...set]))
+      localStorage.setItem('from_dc_futuro_collapsed_init', '1')
+    }
     return set
   })
   function toggleG(k: string) {
@@ -270,6 +275,14 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {!collapsedG.has('algundia') && data.seguimiento.map(n => renderTaskRow(n, {}))}
         </div>
       )}
+      {/* FUTURO — tareas aparcadas explícitamente con status='future'. Colapsado
+          por defecto, igual que «Por planificar»: no debe competir por atención hoy. */}
+      {data.future.length > 0 && (
+        <div className="dc-group">
+          {gHeader('futuro', `Futuro · ${data.future.length}`)}
+          {!collapsedG.has('futuro') && data.future.map(n => renderTaskRow(n, { showDue: true }))}
+        </div>
+      )}
 
       {/* Menú contextual de una fila de contexto: abrir/cerrar · eliminar */}
       {ctxMenu && (() => {
@@ -310,7 +323,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
 
   // Modal de fecha+recurrencia (al tocar el badge de fecha de una tarea).
   const propsNode = propsNodeId
-    ? [...data.overdue, ...data.today, ...data.seguimiento].find(n => n.id === propsNodeId)
+    ? [...data.overdue, ...data.today, ...data.seguimiento, ...data.future].find(n => n.id === propsNodeId)
     : null
   const propsModal = propsNode
     ? <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />

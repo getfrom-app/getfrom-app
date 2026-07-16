@@ -2743,6 +2743,16 @@ body.outliner-drag-active {
   color: var(--text-secondary);
   font-style: italic;
 }
+/* Cada fila del outliner es un .outliner-node independiente (contentEditable propio,
+   sin <ol> compartido) — sin esto, `counter-increment` no tenía ningún `counter-reset`
+   ancestro y cada fila creaba su propio contador implícito, mostrando siempre "1."
+   (bug real, reportado). Reinicia el contador al primer .outliner-node de cada RUN de
+   numeradas: el primero de la lista, o el que sigue a una fila que no es numerada.
+   :has() soportado en todos los navegadores modernos (Chrome 105+/Safari 15.4+/FF 121+). */
+.outliner-node:has(> * .block-numbered):first-child,
+.outliner-node:not(:has(> * .block-numbered)) + .outliner-node:has(> * .block-numbered) {
+  counter-reset: list-counter 0;
+}
 .block-numbered {
   padding-left: 4px;
   list-style: decimal;

@@ -13,6 +13,8 @@ export interface DailyCockpitData {
   /** SEGUIMIENTO: tareas abiertas SIN fecha (sustituye a los «bucles»; incluye
    *  los bucles antiguos por compatibilidad). Permanecen hasta hechas/borradas. */
   seguimiento: Node[]
+  /** Tareas con status='future' — aparcadas explícitamente para más adelante. */
+  future: Node[]
 }
 
 /** Fecha local YYYY-MM-DD de hoy — formato de extraData._doneAt. */
@@ -109,10 +111,18 @@ export function collectDailyCockpit(): DailyCockpitData {
   const overdue: Node[] = []
   const todayTasks: Node[] = []
   const seguimiento: Node[] = []
+  const future: Node[] = []
 
   for (const n of store.allActive()) {
     if (n.isDiaryEntry) continue
     if (n.isEvent) continue // los eventos GCal tienen su propio bloque, no son tareas
+
+    // FUTURO: tarea aparcada explícitamente (status='future'), con o sin fecha.
+    if (n.status === 'future') {
+      if (isInPapelera(n.id)) continue
+      future.push(n)
+      continue
+    }
     const legacyBucle = (n.types || []).includes('bucle')
 
     // SEGUIMIENTO: tarea ABIERTA y SIN fecha (incluye los bucles antiguos).
@@ -145,6 +155,7 @@ export function collectDailyCockpit(): DailyCockpitData {
   overdue.sort(byDue)
   todayTasks.sort(byDue)
   seguimiento.sort((a, b) => (a.text || '').localeCompare(b.text || ''))
+  future.sort((a, b) => (a.text || '').localeCompare(b.text || ''))
 
-  return { overdue, today: todayTasks, seguimiento }
+  return { overdue, today: todayTasks, seguimiento, future }
 }
