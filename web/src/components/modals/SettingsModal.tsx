@@ -57,6 +57,11 @@ export function CuentaPane() {
   const [emailSuccess, setEmailSuccess] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
 
+  const [showNameForm, setShowNameForm] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [nameError, setNameError] = useState('')
+  const [nameLoading, setNameLoading] = useState(false)
+
   const [subLoading, setSubLoading] = useState(false)
   const [subError, setSubError] = useState('')
 
@@ -99,6 +104,17 @@ export function CuentaPane() {
       setShowPasswordForm(false)
     } catch (err: unknown) { setPasswordError(err instanceof Error ? err.message : 'Error') }
     finally { setPasswordLoading(false) }
+  }
+
+  async function handleChangeName(e: React.FormEvent) {
+    e.preventDefault(); setNameError('')
+    setNameLoading(true)
+    try {
+      await updateMe({ name: nameInput.trim() })
+      await us.fetchMe()
+      setShowNameForm(false)
+    } catch (err: unknown) { setNameError(err instanceof Error ? err.message : t('auth.errorUnknown')) }
+    finally { setNameLoading(false) }
   }
 
   async function handleChangeEmail(e: React.FormEvent) {
@@ -171,6 +187,24 @@ export function CuentaPane() {
       </div>
 
       <SectionTitle>{t('account.sectionProfile')}</SectionTitle>
+
+      {/* Nombre mostrado en el sidebar en vez del email. Puramente cosmético —
+          no toca login ni identidad de la cuenta. */}
+      <Row label={t('account.nameRow')} hint={user?.name || t('account.nameNotSet')}>
+        <button className="btn-secondary" onClick={() => { setNameInput(user?.name ?? ''); setShowNameForm(v => !v); setNameError('') }}>
+          {t('account.changeButton')}
+        </button>
+      </Row>
+      {showNameForm && (
+        <form className="st-form" onSubmit={handleChangeName}>
+          <div className="st-form-field"><label>{t('account.nameLabel')}</label><input type="text" value={nameInput} onChange={e => setNameInput(e.target.value)} placeholder={t('account.namePlaceholder')} maxLength={100} /></div>
+          {nameError && <div className="auth-error">{nameError}</div>}
+          <div className="st-form-actions">
+            <button type="submit" className="btn-primary" disabled={nameLoading}>{nameLoading ? t('common.saving') : t('common.save')}</button>
+            <button type="button" className="btn-secondary" onClick={() => setShowNameForm(false)}>{t('common.cancel')}</button>
+          </div>
+        </form>
+      )}
 
       {/* Cambiar email solo si la cuenta tiene contraseña: en cuentas Google/Apple
           el email es la identidad de login y cambiarlo la rompería. */}

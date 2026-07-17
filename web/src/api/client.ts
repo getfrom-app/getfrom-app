@@ -156,6 +156,8 @@ export async function sendFeedback(message: string, version: string) {
 export interface UserProfile {
   id: string
   email: string
+  /** Nombre mostrado en el sidebar en vez del email. Opcional. */
+  name?: string | null
   subscriptionStatus: 'active' | 'trialing' | 'past_due' | 'expired' | 'cancelled' | null
   subscriptionRenewsAt: string | null
   trialEndsAt: string | null
@@ -192,6 +194,8 @@ export async function updateMe(data: {
   currentPassword?: string
   newPassword?: string
   newEmail?: string
+  /** Nombre mostrado en el sidebar en vez del email. "" borra (vuelve a mostrar el email). */
+  name?: string
   /** Pasar `null` o `{}` borra todas las keys del usuario en server.
    * Cifrado AES-256-GCM, gating server-side por plan (paridad Mac). */
   aiApiKeys?: { anthropic?: string; openai?: string; google?: string } | null

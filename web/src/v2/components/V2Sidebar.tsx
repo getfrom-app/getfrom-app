@@ -166,7 +166,8 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
 
   const items: Node[] = currentParent ? subContextsOf(currentParent.id) : areas
 
-  const initial = (user.user?.email || 'A').charAt(0).toUpperCase()
+  const displayName = user.user?.name || user.user?.email || t('v2.guest', 'Invitado')
+  const initial = (user.user?.name || user.user?.email || 'A').charAt(0).toUpperCase()
 
   const enter = (c: Node) => {
     onSelectCtx(c.id)
@@ -356,7 +357,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         <button className="v2-userchip" onClick={() => setUserMenu(o => !o)} title={t('v2.accountAndSettings', 'Cuenta y ajustes')}>
           <span className="v2-avatar">{initial}</span>
           <span className="v2-el-main">
-            <span className="v2-el-title">{user.user?.email || t('v2.guest', 'Invitado')}</span>
+            <span className="v2-el-title">{displayName}</span>
             <span className="v2-el-meta">{user.planLabel}</span>
           </span>
           <span className="v2-userchip-caret">⌄</span>
