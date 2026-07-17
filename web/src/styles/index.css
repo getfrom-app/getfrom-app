@@ -13068,11 +13068,19 @@ textarea:focus-visible,
 .pp-block--task:active,.pp-block--standalone:active { cursor: grabbing; }
 .pp-block--gcal { cursor: grab; }  /* GCal también arrastrable */
 .pp-block--gcal:active { cursor: grabbing; }
-.pp-block-time { font-size: 8px; font-weight: 700; color: rgba(45,38,70,.62); line-height:1; }
-.pp-block-text { font-size: 10px; font-weight: 600; color: rgba(45,38,70,.92); overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; line-height:1.3; }
+/* Color por defecto: tema (--text-primary/secondary) — cubre las tareas, que van
+   con fondo transparente (border-only) y por tanto muestran el fondo de la página
+   detrás; un rgba oscuro fijo se volvía invisible en modo oscuro (Alberto, 17 jul).
+   Los eventos de Google SÍ llevan relleno pastel siempre claro (pastelize(), 80%
+   lightness fijo pase lo que pase el tema) — para esos, texto oscuro fijo sigue
+   siendo lo correcto, así que se sobrescribe abajo. */
+.pp-block-time { font-size: 8px; font-weight: 700; color: var(--text-secondary); line-height:1; }
+.pp-block-text { font-size: 10px; font-weight: 600; color: var(--text-primary); overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; line-height:1.3; }
+.pp-block--gcal .pp-block-time { color: rgba(45,38,70,.62); }
+.pp-block--gcal .pp-block-text { color: rgba(45,38,70,.92); }
 /* Resize handle más grande y visible — 10px en lugar de 5px */
-.pp-block-resize { position:absolute; bottom:0; left:0; right:0; height:10px; cursor:ns-resize; background:rgba(45,38,70,.04); border-radius:0 0 4px 4px; display:flex; align-items:center; justify-content:center; }
-.pp-block-resize::after { content:''; display:block; width:24px; height:2px; background:rgba(45,38,70,.22); border-radius:1px; }
+.pp-block-resize { position:absolute; bottom:0; left:0; right:0; height:10px; cursor:ns-resize; background:rgba(128,128,128,.08); border-radius:0 0 4px 4px; display:flex; align-items:center; justify-content:center; }
+.pp-block-resize::after { content:''; display:block; width:24px; height:2px; background:var(--text-tertiary); opacity:.5; border-radius:1px; }
 .pp-block-resize:hover { background:rgba(255,255,255,.25); }
 .pp-block-resize:hover::after { background:rgba(255,255,255,.8); }
 /* Feedback visual cuando se arrastra un nodo sobre una columna del planificador */
