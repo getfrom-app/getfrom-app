@@ -11778,6 +11778,10 @@ textarea:focus-visible,
 .md-lite li { line-height: 1.5; }
 .md-lite .md-code { background: var(--bg-secondary); border-radius: 4px; padding: 1px 5px; font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .md-lite a { color: var(--accent); text-decoration: underline; }
+.md-lite .md-table { border-collapse: collapse; margin: 2px 0; font-size: 13px; max-width: 100%; overflow-x: auto; display: block; }
+.md-lite .md-table th, .md-lite .md-table td { border: 1px solid var(--border); padding: 5px 9px; text-align: left; line-height: 1.4; }
+.md-lite .md-table th { background: var(--bg-secondary); font-weight: 600; }
+.md-lite .md-table tbody tr:nth-child(even) { background: var(--bg-secondary); }
 /* El contenedor de markdown no usa pre-wrap (los bloques ya gestionan saltos) */
 .magic-chat-bubble--ai .magic-chat-bubble-text { white-space: normal; }
 

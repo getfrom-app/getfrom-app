@@ -11,7 +11,7 @@ import NewEventModal from '../../components/modals/NewEventModal'
 import PlannerPanel from '../../components/panels/PlannerPanel'
 import V2TemplatesModal from './V2TemplatesModal'
 import { listTemplates } from '../../utils/tagsHelper'
-import { renderInline } from '../../components/outliner/InlineRenderer'
+import { renderChatContent } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
 import { listAllPrompts, resolvePrompt } from '../../utils/promptsHelper'
@@ -331,7 +331,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
                 <div className="v2-msg-body">
                   {(() => {
                     const disp = stripActions(m.content)
-                    if (disp) return disp.split('\n').map((line, i) => <p key={i}>{line ? renderInline(line) : ' '}</p>)
+                    if (disp) return renderChatContent(disp)
                     if (streaming && m.role === 'assistant') {
                       return <span className="v2-creating">✨ {t('v2.chat.creating', 'Creando')}<span className="v2-creating-dots" /></span>
                     }

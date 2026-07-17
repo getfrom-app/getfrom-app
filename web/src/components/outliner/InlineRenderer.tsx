@@ -218,6 +218,97 @@ export function renderInline(text: string): React.ReactNode {
   return <>{tokens}</>
 }
 
+// ── Tablas GFM (`| a | b |` + fila separadora `|---|---|`) ──────────────────
+// Usado por el chat de Magic (V2Chat), que renderiza la respuesta línea a
+// línea con renderInline: sin esto, una tabla markdown del modelo se veía
+// como texto plano con pipes literales (Alberto, 17 jul).
+
+function isTableRow(line: string): boolean {
+  return /\|/.test(line.trim().replace(/^\|/, '').replace(/\|$/, ''))
+}
+
+function isTableSeparator(line: string): boolean {
+  return /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$/.test(line.trim())
+}
+
+function splitTableRow(line: string): string[] {
+  const t = line.trim().replace(/^\|/, '').replace(/\|$/, '')
+  return t.split('|').map(c => c.trim())
+}
+
+/** Núcleo recursivo: procesa un array de líneas y devuelve bloques React.
+ *  `keyPrefix` evita colisiones de key cuando se llama recursivamente desde
+ *  dentro de un fence ```markdown (ver más abajo). */
+function parseChatBlocks(lines: string[], keyPrefix: string): React.ReactNode[] {
+  const blocks: React.ReactNode[] = []
+  let i = 0
+
+  while (i < lines.length) {
+    const line = lines[i]
+    const trimmed = line.trim()
+
+    // Bloque de código ```lang ... ```. El modelo a veces envuelve una tabla
+    // en ```markdown — en ese caso el contenido no es código literal, así que
+    // se reprocesa igual que el resto (detecta la tabla igualmente). Cualquier
+    // otro lenguaje (o vacío-sin-tag que no sea markdown) se trata como código.
+    if (trimmed.startsWith('```')) {
+      const lang = trimmed.slice(3).trim().toLowerCase()
+      const startI = i
+      i++
+      const inner: string[] = []
+      while (i < lines.length && !lines[i].trim().startsWith('```')) {
+        inner.push(lines[i])
+        i++
+      }
+      if (i < lines.length) i++ // consumir el fence de cierre
+      if (lang === '' || lang === 'markdown' || lang === 'md') {
+        blocks.push(...parseChatBlocks(inner, `${keyPrefix}-f${startI}`))
+      } else {
+        blocks.push(
+          <pre key={`${keyPrefix}-code${startI}`} className="chat-code-block"><code>{inner.join('\n')}</code></pre>
+        )
+      }
+      continue
+    }
+
+    if (isTableRow(trimmed) && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+      const header = splitTableRow(trimmed)
+      const startI = i
+      i += 2
+      const rows: string[][] = []
+      while (i < lines.length && isTableRow(lines[i].trim())) {
+        rows.push(splitTableRow(lines[i]))
+        i++
+      }
+      blocks.push(
+        <table key={`${keyPrefix}-tbl${startI}`} className="chat-table">
+          <thead>
+            <tr>{header.map((c, ci) => <th key={ci}>{renderInline(c)}</th>)}</tr>
+          </thead>
+          <tbody>
+            {rows.map((r, ri) => (
+              <tr key={ri}>{r.map((c, ci) => <td key={ci}>{renderInline(c)}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>
+      )
+      continue
+    }
+
+    blocks.push(<p key={`${keyPrefix}-p${i}`}>{line ? renderInline(line) : ' '}</p>)
+    i++
+  }
+
+  return blocks
+}
+
+/** Renderiza texto multilínea con renderInline por línea, detectando y
+ *  agrupando bloques de tabla GFM (`<table>`) y bloques de código (```)
+ *  en vez de dejarlos como texto plano con marcas literales. */
+export function renderChatContent(text: string): React.ReactNode[] {
+  return parseChatBlocks(text.split('\n'), 'root')
+}
+
 interface Props {
   text: string
   className?: string

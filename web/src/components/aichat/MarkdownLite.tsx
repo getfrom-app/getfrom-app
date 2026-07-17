@@ -6,6 +6,22 @@
 import React from 'react'
 
 /** Convierte el inline markdown (**negrita**, *cursiva*, `code`, [txt](url)) a nodos React. */
+/** ¿Es una fila de tabla GFM (`| a | b |`)? Exige al menos un `|` interior, no solo bordes. */
+function isTableRow(line: string): boolean {
+  return /\|/.test(line.trim().replace(/^\|/, '').replace(/\|$/, ''))
+}
+
+/** ¿Es la fila separadora bajo la cabecera (`|---|:--:|--:|`)? */
+function isTableSeparator(line: string): boolean {
+  return /^\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?$/.test(line.trim())
+}
+
+/** Divide una fila `| a | b |` en celdas, sin los pipes de borde. */
+function splitTableRow(line: string): string[] {
+  const t = line.trim().replace(/^\|/, '').replace(/\|$/, '')
+  return t.split('|').map(c => c.trim())
+}
+
 function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
   const nodes: React.ReactNode[] = []
   // Tokenizador simple por prioridad: código → enlace → negrita → cursiva.
@@ -76,6 +92,30 @@ export default function MarkdownLite({ content }: { content: string }) {
         i++
       }
       blocks.push(<ol key={`ol${i}`} className="md-ol">{items}</ol>)
+      continue
+    }
+
+    // Tabla GFM: fila de cabecera + separadora + N filas de datos.
+    if (isTableRow(line) && i + 1 < lines.length && isTableSeparator(lines[i + 1].trim())) {
+      const header = splitTableRow(line)
+      i += 2
+      const rows: string[][] = []
+      while (i < lines.length && isTableRow(lines[i].trim())) {
+        rows.push(splitTableRow(lines[i].trim()))
+        i++
+      }
+      blocks.push(
+        <table key={`tbl${i}`} className="md-table">
+          <thead>
+            <tr>{header.map((c, ci) => <th key={ci}>{renderInline(c, `th${i}-${ci}`)}</th>)}</tr>
+          </thead>
+          <tbody>
+            {rows.map((r, ri) => (
+              <tr key={ri}>{r.map((c, ci) => <td key={ci}>{renderInline(c, `td${i}-${ri}-${ci}`)}</td>)}</tr>
+            ))}
+          </tbody>
+        </table>
+      )
       continue
     }
 
