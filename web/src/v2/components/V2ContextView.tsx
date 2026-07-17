@@ -28,7 +28,7 @@ import { fmtDate, fmtRelative, fmtDateFull } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
 interface Props {
-  ctxId: string
+  ctxId: string | null
   onSelectCtx: (id: string) => void
   onOpenNode: (id: string) => void
   onOpenConversation?: (id: string) => void
@@ -37,16 +37,21 @@ interface Props {
 export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenConversation }: Props) {
   const { t, i18n } = useTranslation()
   useStore()
-  const node = store.getNode(ctxId)
-  const parent = contextParent(ctxId)
+  // General = sin contexto asignado (ctxId null). No es un nodo real: no tiene
+  // padre, no se archiva, no se sigue, no tiene documento de conocimiento propio
+  // — pero sí sus propias tareas/elementos (todo lo que no cuelga de ningún
+  // contexto), que es lo mínimo que pidió Alberto (17 jul).
+  const isGeneral = ctxId === null
+  const node = isGeneral ? null : store.getNode(ctxId)
+  const parent = isGeneral ? null : contextParent(ctxId)
   const closed = node ? isContextClosed(node) : false
   const followed = node ? isContextFollowed(node) : false
-  const canArchive = !!parent // solo subcontextos (las áreas no se archivan)
+  const canArchive = !isGeneral && !!parent // solo subcontextos (las áreas no se archivan)
   // Mismo alcance que Archivar: solo subcontextos. Un contexto nace neutro (ni
   // seguido ni archivado) — «Seguir» es el opt-in explícito para que aparezca en
   // Seguimiento (tab Hoy). Sin él, es un simple contenedor de elementos (Alberto,
   // 15 jul: "Documentos personales" no necesita seguimiento; "Radio Elche" sí).
-  const canFollow = !!parent
+  const canFollow = !isGeneral && !!parent
 
   // Contexto PADRE — picker inline (mismo patrón que «Cambiar contexto» de nota/tarea).
   const [parentPickerOpen, setParentPickerOpen] = useState(false)
@@ -71,6 +76,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
   // línea) la primera vez que se abre el contexto. Get-or-create UNA vez por
   // contexto (no en cada render), igual que notesNode antes.
   const knowledgeDoc = useMemo(() => {
+    if (ctxId === null) return null
     const doc = getOrCreateContextKnowledgeDoc(ctxId)
     // Fusión con las "Notas" antiguas (ahora eliminadas de la UI de contexto): si el
     // usuario ya había escrito algo en el bloque "📝 Notas" separado y el nuevo
@@ -93,8 +99,12 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
   }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // TAREAS del contexto (hijas directas con estado/tipo tarea), estilo Hoy.
+  // En General (ctxId null) no hay hijos directos que recorrer — en su lugar,
+  // todas las tareas activas que no cuelgan de ningún contexto (firstContextOf null).
   const tasks = useMemo(() => {
-    return store.children(ctxId).filter(n => !n.deletedAt && (n.status != null || (n.types || []).includes('tarea')))
+    const isTask = (n: Node) => !n.deletedAt && (n.status != null || (n.types || []).includes('tarea'))
+    if (ctxId === null) return store.allActive().filter(n => isTask(n) && !firstContextOf(n))
+    return store.children(ctxId).filter(isTask)
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ELEMENTOS del contexto: TODO lo que cuelga de él — documentos, PDF, imágenes,
@@ -131,26 +141,43 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
       seen.add(n.id)
       out.push({ node: n, icon: c.icon, kind: c.kind })
     }
-    for (const n of store.children(ctxId)) consider(n)      // hijos directos (incluye agentes)
-    const members = nodesInContext(ctxId)
-    for (const m of members) {
-      consider(m)                                            // miembros por referencia
-      // Recursos dentro de una conversación-miembro (PDF/imagen subidos al chat).
-      if (parseExtraData(m.extraData)._aiSession === '1') {
-        for (const child of store.children(m.id)) consider(child)
+    if (ctxId === null) {
+      // General: todo lo que no pertenece a ningún contexto real, en un único
+      // barrido (no hay "hijos directos" ni "miembros por referencia" que valgan
+      // aquí — el criterio es puramente firstContextOf === null).
+      for (const n of store.allActive()) {
+        if (seen.has(n.id) || n.deletedAt || firstContextOf(n)) continue
+        const ed = parseExtraData(n.extraData)
+        if (ed._aiSession === '1') {
+          if (isInPapelera(n.id)) continue
+          seen.add(n.id)
+          out.push({ node: n, icon: '💬', kind: 'conversation', isConversation: true })
+          continue
+        }
+        consider(n)
       }
-    }
-    // Conversaciones del contexto: TODOS los chats (_aiSession='1', fuera de papelera,
-    // incluidas las sesiones de comando rápido — ya no se ocultan, 15 jul), filtradas a
-    // las que pertenecen a ESTE contexto (firstContextOf).
-    for (const n of store.allActive()) {
-      if (seen.has(n.id) || n.deletedAt) continue
-      const ed = parseExtraData(n.extraData)
-      if (ed._aiSession !== '1') continue
-      if (isInPapelera(n.id)) continue
-      if (firstContextOf(n)?.id !== ctxId) continue
-      seen.add(n.id)
-      out.push({ node: n, icon: '💬', kind: 'conversation', isConversation: true })
+    } else {
+      for (const n of store.children(ctxId)) consider(n)      // hijos directos (incluye agentes)
+      const members = nodesInContext(ctxId)
+      for (const m of members) {
+        consider(m)                                            // miembros por referencia
+        // Recursos dentro de una conversación-miembro (PDF/imagen subidos al chat).
+        if (parseExtraData(m.extraData)._aiSession === '1') {
+          for (const child of store.children(m.id)) consider(child)
+        }
+      }
+      // Conversaciones del contexto: TODOS los chats (_aiSession='1', fuera de papelera,
+      // incluidas las sesiones de comando rápido — ya no se ocultan, 15 jul), filtradas a
+      // las que pertenecen a ESTE contexto (firstContextOf).
+      for (const n of store.allActive()) {
+        if (seen.has(n.id) || n.deletedAt) continue
+        const ed = parseExtraData(n.extraData)
+        if (ed._aiSession !== '1') continue
+        if (isInPapelera(n.id)) continue
+        if (firstContextOf(n)?.id !== ctxId) continue
+        seen.add(n.id)
+        out.push({ node: n, icon: '💬', kind: 'conversation', isConversation: true })
+      }
     }
     return out.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -179,24 +206,29 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
   useEffect(() => { if (elFilter !== 'all' && !elCounts[elFilter]) setElFilter('all') }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
   const filteredElements = elFilter === 'all' ? elements : elements.filter(e => e.kind === elFilter)
 
-  // Migración de notas antiguas → documento del contexto.
-  const legacyCount = legacyNotesOf(ctxId).length
+  // Migración de notas antiguas → documento del contexto (no aplica a General).
+  const legacyCount = ctxId === null ? 0 : legacyNotesOf(ctxId).length
   const doMigrate = () => {
+    if (ctxId === null) return
     if (!window.confirm(t('v2.context.confirmMigrate', '¿Convertir {{count}} nota(s) antigua(s) de este contexto en un documento?\n\nEs reversible: los originales van a la papelera.', { count: legacyCount }))) return
     const docId = migrateContextNotesToDoc(ctxId)
     if (docId) onOpenNode(docId)
   }
 
-  if (!node) return <div className="v2-right-empty">{t('v2.context.notFound', 'Contexto no encontrado.')}</div>
+  if (!isGeneral && !node) return <div className="v2-right-empty">{t('v2.context.notFound', 'Contexto no encontrado.')}</div>
 
   return (
     <div>
       {/* Título del contexto — antes no se mostraba en ningún sitio de esta tab (solo
           el chip del padre). Alberto: "como título en la parte superior del tab pon el
           nombre del contexto". */}
-      <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8, lineHeight: 1.3 }}>{node.text}</div>
+      <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8, lineHeight: 1.3 }}>
+        {isGeneral ? t('v2.general', 'General') : node!.text}
+      </div>
 
-      {/* Contexto PADRE — chip navegable + cambiar/quitar (mismo patrón que el resto). */}
+      {/* Contexto PADRE — chip navegable + cambiar/quitar (mismo patrón que el resto).
+          General no tiene padre ni se archiva/sigue — no es un nodo real. */}
+      {!isGeneral && ctxId !== null && (
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
         {parent ? (
           <span className="v2-chip" style={{ ['--chip' as string]: contextColor(parent.id), cursor: 'default' }}>
@@ -241,6 +273,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           </div>
         )}
       </div>
+      )}
 
       {/* Migración: notas antiguas del contexto → un documento colgado del contexto. */}
       {legacyCount > 0 && (
@@ -256,23 +289,30 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           la misma comodidad que en cualquier documento. Sin cabecera ni fila de acciones
           propia (Alberto: no hace falta título "Lo que Fromly sabe" ni sus botones) —
           es la descripción viva del contexto, va justo debajo del título y antes de
-          tareas/elementos, no al final. */}
-      {!!knowledgeDoc.body && knowledgeDoc.body.trim() !== '<p></p>' && (
-        <div
-          style={{ fontSize: 11, color: 'var(--text-tertiary,#999)', marginBottom: 4 }}
-          title={fmtDateFull(knowledgeDoc.updatedAt, i18n.language)}
-        >
-          {t('v2.context.knowledgeUpdated', 'Actualizado')} {fmtRelative(knowledgeDoc.updatedAt, i18n.language)}
-        </div>
+          tareas/elementos, no al final. General no tiene documento de conocimiento
+          propio (no es un nodo real). */}
+      {knowledgeDoc && (
+        <>
+          {!!knowledgeDoc.body && knowledgeDoc.body.trim() !== '<p></p>' && (
+            <div
+              style={{ fontSize: 11, color: 'var(--text-tertiary,#999)', marginBottom: 4 }}
+              title={fmtDateFull(knowledgeDoc.updatedAt, i18n.language)}
+            >
+              {t('v2.context.knowledgeUpdated', 'Actualizado')} {fmtRelative(knowledgeDoc.updatedAt, i18n.language)}
+            </div>
+          )}
+          <V2NoteBody node={knowledgeDoc} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
+        </>
       )}
-      <V2NoteBody node={knowledgeDoc} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
 
       {/* Tareas del contexto — estilo Hoy. */}
       <div className="v2-section-label" style={{ padding: '18px 0 6px' }}>
         <span>{t('v2.context.tasks', 'Tareas')}</span>
       </div>
       <V2TaskList tasks={tasks} />
-      <V2QuickAddTask parentId={ctxId} />
+      {/* Añadir tarea rápida cuelga la tarea del contexto — en General no hay un
+          nodo real del que colgarla, así que se omite (la lista sigue viéndose). */}
+      {ctxId !== null && <V2QuickAddTask parentId={ctxId} />}
 
       {/* Elementos del contexto: documentos, archivos, audios, enlaces, AGENTES y
           CONVERSACIONES — todo junto, ordenado de más reciente a más antigua, cada

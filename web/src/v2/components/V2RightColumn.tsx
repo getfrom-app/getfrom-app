@@ -261,10 +261,10 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
       <div className="v2-right-body">
         {mode === 'contexto' && (
           // SIEMPRE la ficha del contexto — nunca el panel de conversación (eso vive
-          // en la tab Detalles, independiente).
-          selectedCtxId
-            ? <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} onOpenConversation={onOpenConversation} />
-            : <div className="v2-right-empty">{t('v2.rightColumn.chooseContextEmpty', 'Elige un contexto a la izquierda para ver su ficha.')}</div>
+          // en la tab Detalles, independiente). selectedCtxId===null es «General»
+          // (sin contexto asignado), no «nada que mostrar» — también tiene ficha,
+          // con sus propias tareas y elementos sin contexto (Alberto, 17 jul).
+          <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} onOpenConversation={onOpenConversation} />
         )}
 
         {mode === 'hoy' && (
