@@ -13163,7 +13163,10 @@ textarea:focus-visible,
 .pp-month-daynum { font-size: 12px; font-weight: 500; color: var(--text-secondary); align-self: flex-start; line-height: 1.4; padding: 1px 5px; border-radius: 999px; }
 .pp-month-daynum--today { background: var(--accent, #6c5ce7); color: #fff; font-weight: 700; }
 .pp-month-items { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.pp-month-chip { font-size: 10.5px; color: var(--text-primary); background: var(--bg-elevated, #fff); border-radius: 3px; padding: 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; cursor: pointer; }
+/* background era var(--bg-elevated, #fff) — esa variable no existe en el tema,
+   así que siempre caía al blanco fijo del fallback: en modo oscuro, texto claro
+   (--text-primary) sobre fondo blanco, prácticamente invisible (Alberto, 17 jul). */
+.pp-month-chip { font-size: 10.5px; color: var(--text-primary); background: var(--bg-secondary); border-radius: 3px; padding: 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; cursor: pointer; }
 .pp-month-chip:hover { background: var(--bg-hover, rgba(108,92,231,0.08)); }
 .pp-month-more { font-size: 10px; color: var(--text-tertiary); padding: 0 4px; }
 
