@@ -84,9 +84,21 @@ function setFilter(a: Record<string, unknown>): ExecutedAction {
   return result('set_filter', true, query ? `Filtrando: ${query}` : 'Filtro limpio.')
 }
 
+/** ¿El body trae una jerarquía real (encabezados markdown o sub-items indentados)?
+ *  create_note aplana todo a hijos de un solo nivel — si el modelo manda esto
+ *  (a veces pide "nota" para algo que en realidad tiene secciones con sub-items,
+ *  pese a la regla del prompt), es mejor crear un documento y conservar la
+ *  estructura que perderla en una lista plana (Alberto, 17 jul). */
+function hasNestedStructure(body: string): boolean {
+  return body.split('\n').some(l => /^#{1,3}\s+\S/.test(l.trim()) || /^\s{2,}[-*•]\s+\S/.test(l))
+}
+
 function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
-  const text = cleanNodeTitle((a.text as string) || 'Nota sin título')
   const body = a.body as string | undefined
+  if (body && hasNestedStructure(body)) {
+    return createDocument(a, sessionId, currentNodeId)
+  }
+  const text = cleanNodeTitle((a.text as string) || 'Nota sin título')
   const tags = (a.tags as string[]) || []
   // Validar parent_id: solo usarlo si es un UUID real que existe en el store
   const rawParent = (a.parent_id as string | undefined) || null
