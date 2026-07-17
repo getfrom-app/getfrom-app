@@ -13154,7 +13154,7 @@ textarea:focus-visible,
 .pp-month { display: flex; flex-direction: column; }
 .pp-month-dow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); flex-shrink: 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 3; background: var(--bg-primary); }
 .pp-month-dow-cell { padding: 6px 8px; font-size: 11px; font-weight: 600; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
-.pp-month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: minmax(96px, auto); align-content: start; }
+.pp-month-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-auto-rows: minmax(192px, auto); align-content: start; }
 .pp-month-cell { min-width: 0; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 4px 5px; cursor: pointer; display: flex; flex-direction: column; gap: 3px; transition: background 0.1s; }
 .pp-month-cell:hover { background: var(--accent-soft, rgba(108,92,231,0.06)); }
 .pp-month-cell--empty { background: var(--bg-secondary, #fafafa); cursor: default; }
