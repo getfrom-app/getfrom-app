@@ -89,6 +89,17 @@
   font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
   color: var(--text-tertiary); padding: 2px 0 10px;
 }
+/* Tab Agenda/Día: fila de botones (CAL/HOY) + título grande del día elegido —
+   antes usaba .v2-panel-title (pensado para etiquetas pequeñas de 11px en
+   mayúsculas) y quedaba apretado y feo (Alberto, 22 jul: "haz esa parte más
+   bonita, con espacio"). Botones con el mismo recuadro que el resto de Fromly
+   (.v2-head-action) y cabecera propia, grande, con aire alrededor. */
+.v2-agenda-toolbar { display: flex; gap: 8px; margin-bottom: 18px; }
+.v2-agenda-day-title {
+  font-size: 21px; font-weight: 700; color: var(--text-primary);
+  letter-spacing: -0.01em; line-height: 1.3;
+  margin: 2px 0 20px;
+}
 .v2-el-active > .v2-el-row { background: var(--accent-soft); }
 /* Cabecera de nota: fila única con el toggle a la izquierda y las acciones a la derecha. */
 .v2-note-toolbar {
