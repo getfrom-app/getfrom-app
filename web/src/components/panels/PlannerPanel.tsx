@@ -43,6 +43,7 @@ const MAX_SLOT_H      = 110
 const MIN_DAY_CNT     = 2
 const MAX_DAY_CNT     = 7
 const PRE_DAYS        = 10
+const MIN_BLOCK_H_FOR_TIME = 28 // px — por debajo de esto, la hora se oculta y solo queda el título
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function sameDay(a: Date, b: Date) {
@@ -199,16 +200,28 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
 // PlannerPanel
 // ══════════════════════════════════════════════════════════════════════════
 
-interface Props { onClose: () => void; initialView?: ViewMode; initialDays?: number }
+interface Props {
+  onClose: () => void
+  initialView?: ViewMode
+  initialDays?: number
+  /** Qué pestañas día/semana/mes/año se muestran en el selector. Por defecto, las 4
+      (v1 y el overlay embebido del planner). El tab «Día» de la columna derecha v2
+      pasa solo ['day'] (Alberto, 21 jul: «quitamos Día del planificador, va a su
+      propio tab») y el overlay del planificador (v2, abierto desde el tab Agenda)
+      pasa ['week','month','year'] — Día ya no vive ahí. */
+  viewTabs?: ViewMode[]
+}
 
-export default function PlannerPanel({ onClose, initialView, initialDays }: Props) {
+const ALL_VIEW_TABS: ViewMode[] = ['day', 'week', 'month', 'year']
+
+export default function PlannerPanel({ onClose, initialView, initialDays, viewTabs = ALL_VIEW_TABS }: Props) {
   const s        = useStore()
   const us       = useUserStore()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
 
   const today = startOfDay(new Date())
-  const [viewMode,      setViewMode]      = useState<ViewMode>(initialView ?? 'day')
+  const [viewMode,      setViewMode]      = useState<ViewMode>(initialView ?? viewTabs[0] ?? 'day')
   const [centerDate,    setCenterDate]    = useState(today)
   const [slotH,         setSlotH]         = useState(DEFAULT_SLOT_H)
   const [visibleDayCnt, setVisibleDayCnt] = useState(initialDays ?? DEFAULT_DAY_CNT)
@@ -685,7 +698,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
         }}
         title={`${b.text}\n${fmtHH(b.start)} – ${fmtHH(b.end)}`}
       >
-        <div className="pp-block-time">{fmtHH(b.start)}</div>
+        {/* Bloques muy cortos (reuniones de 15-30min entre otras) no tienen alto para
+            mostrar hora + título sin cortarse — se prioriza el título (Alberto, 21 jul). */}
+        {blockH >= MIN_BLOCK_H_FOR_TIME && <div className="pp-block-time">{fmtHH(b.start)}</div>}
         <div className="pp-block-text">{b.text || t('common.noTitle')}</div>
         <div className="pp-block-resize" onMouseDown={e=>handleBlockResize(e,b)} />
       </div>
@@ -915,13 +930,15 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
 
       {/* Header */}
       <div className="pp-header">
-        <div className="pp-view-tabs">
-          {(['day','week','month','year'] as ViewMode[]).map(m => (
-            <button key={m} className={`pp-tab ${viewMode===m?'pp-tab--active':''}`} onClick={()=>setViewMode(m)}>
-              {m==='day'?t('timeline.dayMode'):m==='week'?t('timeline.weekMode'):m==='month'?t('timeline.monthMode'):t('tip.year')}
-            </button>
-          ))}
-        </div>
+        {viewTabs.length > 1 && (
+          <div className="pp-view-tabs">
+            {viewTabs.map(m => (
+              <button key={m} className={`pp-tab ${viewMode===m?'pp-tab--active':''}`} onClick={()=>setViewMode(m)}>
+                {m==='day'?t('timeline.dayMode'):m==='week'?t('timeline.weekMode'):m==='month'?t('timeline.monthMode'):t('tip.year')}
+              </button>
+            ))}
+          </div>
+        )}
         <button className="pp-nav-btn" onClick={()=>navDelta(-1)}>‹</button>
         <span className="pp-nav-title">{navTitle}</span>
         <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>

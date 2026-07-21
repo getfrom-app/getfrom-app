@@ -1,4 +1,4 @@
-// Columna derecha contextual de Fromly 2.0 — 4 modos.
+// Columna derecha contextual de Fromly 2.0 — 5 modos.
 // Contexto:  qué sabe Fromly del contexto activo + sus miembros. SIEMPRE la
 //            ficha del contexto — nunca cambia a otra cosa (antes competía con
 //            el panel de conversación/detalle y se perdía sin forma de volver,
@@ -29,11 +29,12 @@ import V2ContextView from './V2ContextView'
 import V2ConversationView from './V2ConversationView'
 import V2DetailView from './V2DetailView'
 import V2AgendaView from './V2AgendaView'
+import PlannerPanel from '../../components/panels/PlannerPanel'
 import { elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
-export type RightMode = 'contexto' | 'detalles' | 'elementos' | 'hoy'
+export type RightMode = 'contexto' | 'detalles' | 'elementos' | 'dia' | 'hoy'
 
 interface Props {
   mode: RightMode
@@ -132,6 +133,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
     { id: 'contexto', label: t('v2.rightColumn.tabContext', 'Contexto') },
     { id: 'detalles', label: t('v2.rightColumn.tabDetails', 'Detalles') },
     { id: 'elementos', label: t('v2.rightColumn.tabElements', 'Elementos') },
+    { id: 'dia', label: t('v2.rightColumn.tabDia', 'Día') },
     { id: 'hoy', label: t('v2.rightColumn.tabAgenda', 'Agenda') },
   ]
 
@@ -273,6 +275,15 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
 
         {mode === 'hoy' && <V2AgendaView todayNode={today} />}
       </div>
+      )}
+
+      {/* Día: timeline de un vistazo, misma rejilla horaria del Planificador pero
+          sola (sin Semana/Mes/Año, sin selector — es un tab fijo a un solo día,
+          Alberto 21 jul: "así se puede ver rápidamente el día de un vistazo"). */}
+      {!isRecordingActive && mode === 'dia' && (
+        <div className="v2-right-fill v2-right-dia">
+          <PlannerPanel initialView="day" initialDays={1} viewTabs={['day']} onClose={() => {}} />
+        </div>
       )}
     </aside>
   )

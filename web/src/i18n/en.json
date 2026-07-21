@@ -2208,6 +2208,7 @@
   "v2.rightColumn.element": "Element",
   "v2.rightColumn.preparingToday": "Preparing today's column…",
   "v2.rightColumn.tabAgenda": "Agenda",
+  "v2.rightColumn.tabDia": "Day",
   "v2.rightColumn.tabDetails": "Details",
   "v2.rightColumn.noDetailEmpty": "Nothing open yet. Open a note, a file, or start a conversation.",
   "v2.rightColumn.tabContext": "Context",

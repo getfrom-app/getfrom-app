@@ -647,7 +647,7 @@ export default function V2App() {
           onNewDocument={onNewDocument}
           onNewCanvas={onNewCanvas}
           recorder={recorder}
-          onOpenPlanner={() => { setDetailNodeId(null); setRightMode('hoy') }}
+          showPlanner={rightMode === 'hoy'}
           onOpenDrivePicker={onOpenDrivePicker}
         />
       )}

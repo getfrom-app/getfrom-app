@@ -25,10 +25,12 @@ interface Props {
   onNewDocument: (templateId?: string) => void
   onNewCanvas: () => void
   recorder: { recording: boolean; busy: boolean; start: () => void; stop: () => void }
-  /** Al abrir el Planificador, la columna derecha pasa a «Hoy» (tareas/eventos del
-   *  día) y se cierra cualquier detalle abierto — para poder arrastrar tareas
-   *  desde ahí al propio planificador y agendar, como en la v1. */
-  onOpenPlanner: () => void
+  /** El Planificador ya no tiene botón propio ni X para cerrarlo (Alberto, 21 jul:
+   *  "yo quitaría el botón... cuando se abre cualquier otra cosa en su lugar el
+   *  planificador se quita") — se muestra solo/siempre que la columna derecha está
+   *  en la tab Agenda (`rightMode === 'hoy'`, ver V2App.tsx) y desaparece solo al
+   *  cambiar a cualquier otra tab o abrir otra cosa. */
+  showPlanner: boolean
   /** Abre el selector de Google Drive (Picker) y adjunta/importa el archivo elegido. */
   onOpenDrivePicker: () => void
 }
@@ -45,7 +47,7 @@ function stripActions(s: string): string {
     .trim()
 }
 
-export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, onNewDocument, onNewCanvas, recorder, onOpenPlanner, onOpenDrivePicker }: Props) {
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, onNewDocument, onNewCanvas, recorder, showPlanner, onOpenDrivePicker }: Props) {
   const { t } = useTranslation()
   const SUGGESTIONS = [
     { t: t('v2.chat.suggestSummarizeDayTitle', 'Resume mi día'), d: t('v2.chat.suggestSummarizeDayDesc', 'Tareas y eventos de hoy'), p: t('v2.chat.suggestSummarizeDayPrompt', '¿Qué tengo para hoy? Resume mis tareas y eventos.') },
@@ -59,7 +61,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
   const [dragOver, setDragOver] = useState(false)
   const [showTask, setShowTask] = useState(false)
   const [showEvent, setShowEvent] = useState(false)
-  const [showPlanner, setShowPlanner] = useState(false)
   const [docMenu, setDocMenu] = useState(false)
   const [promptMenu, setPromptMenu] = useState(false)
   const [agentMenu, setAgentMenu] = useState(false)
@@ -293,7 +294,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           <button className="v2-head-action" title={t('v2.chat.newCanvas', 'Nuevo lienzo')} onClick={onNewCanvas}>＋ {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
           <button className="v2-head-action" title={t('v2.chat.newTask', 'Nueva tarea')} onClick={() => setShowTask(true)}>＋ {t('v2.chat.newTaskShort', 'Tarea')}</button>
           <button className="v2-head-action" title={t('v2.chat.newEvent', 'Nuevo evento')} onClick={() => setShowEvent(true)}>＋ {t('v2.chat.newEventShort', 'Evento')}</button>
-          <button className="v2-head-action" title={t('v2.plannerOpen', 'Abrir el planificador')} onClick={() => { setShowPlanner(true); onOpenPlanner() }}>📅 {t('wftopbar.planner', 'Planificador')}</button>
           <button className="v2-head-action" title={t('v2.chat.attachFromDrive', 'Adjuntar desde Google Drive')} onClick={onOpenDrivePicker}>📎 {t('v2.chat.driveShort', 'Drive')}</button>
           <button
             className={`v2-head-action ${recorder.recording ? 'recording' : ''}`}
@@ -499,15 +499,17 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
         />
       )}
 
-      {/* Planificador — reutiliza el PlannerPanel completo de la v1 (día/semana/mes/año,
-          drag&drop, GCal sync) a pantalla completa, sin recortar funcionalidad. */}
+      {/* Planificador — reutiliza el PlannerPanel completo de la v1 (semana/mes/año —
+          Día vive ahora en su propio tab de la columna derecha, ver V2RightColumn),
+          a pantalla completa, sin recortar funcionalidad. Sin botón propio ni X: se
+          muestra en cuanto la columna derecha está en la tab Agenda y desaparece
+          solo al cambiar a otra tab o abrir cualquier otra cosa (Alberto, 21 jul). */}
       {showPlanner && (
         <div className="v2-planner-overlay">
           <div className="v2-planner-overlay-bar">
             <span className="v2-planner-overlay-title">📅 {t('wftopbar.planner', 'Planificador')}</span>
-            <button className="v2-planner-overlay-close" title={t('common.close', 'Cerrar')} onClick={() => setShowPlanner(false)}>✕</button>
           </div>
-          <PlannerPanel initialView="week" initialDays={7} onClose={() => setShowPlanner(false)} />
+          <PlannerPanel initialView="week" initialDays={7} viewTabs={['week', 'month', 'year']} onClose={() => {}} />
         </div>
       )}
 

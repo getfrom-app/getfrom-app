@@ -12991,6 +12991,8 @@ textarea:focus-visible,
 /* Planner como vista CENTRAL (modo Planificar). */
 .plan-center { height: 100%; display: flex; min-height: 0; }
 .plan-center .pp-root { border-left: none; flex: 1; width: 100%; }
+/* Planner embebido como tab «Día» de la columna derecha v2 (Alberto, 21 jul). */
+.v2-right-dia .pp-root { border-left: none; }
 
 /* Cola «Por planificar» (columna derecha del modo Planificar). */
 .pp-queue { display: flex; flex-direction: column; height: 100%; min-height: 0; }
