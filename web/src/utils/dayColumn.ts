@@ -8,7 +8,7 @@ import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { collectDailyCockpit, collectDayTasks } from './dailyCockpit'
 import { getGcalEventId } from './gcalNodesSync'
-import { parseExtraData } from './papeleraHelper'
+import { parseExtraData, isInPapelera } from './papeleraHelper'
 import { isProtectedSystemRoot } from './rootLookup'
 
 export function isCaptureNode(n: Node): boolean {
@@ -67,8 +67,14 @@ export function getDayColumnData(dayNode: Node): DayColumnData {
     const d = new Date(iso)
     return d.getFullYear() === dayDate.getFullYear() && d.getMonth() === dayDate.getMonth() && d.getDate() === dayDate.getDate()
   }
-  const eventNodes = children
-    .filter(c => !c.deletedAt && (c.isEvent || getGcalEventId(c)) && sameDay(c.due))
+  // Escaneo GLOBAL por fecha (no solo hijos del día): un evento creado por el
+  // chat puede quedar colgado bajo otro padre (contexto/sesión) en vez de bajo
+  // el nodo diario — con `children.filter(...)` esos eventos eran invisibles en
+  // «Eventos de hoy» aunque sí aparecían en el Planificador (que ya escaneaba
+  // por fecha globalmente, no por padre). Alberto, 22 jul: "los eventos [deben
+  // aparecer] en el suyo siempre".
+  const eventNodes = store.allActive()
+    .filter(c => !c.deletedAt && !isInPapelera(c.id) && (c.isEvent || getGcalEventId(c)) && sameDay(c.due))
     .sort((a, b) => (a.due || '').localeCompare(b.due || ''))
 
   // HOY → cockpit (atrasadas/hoy). Otros días → tareas con due ese día.
