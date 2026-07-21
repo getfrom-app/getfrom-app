@@ -7,6 +7,12 @@
       "runtimeArgs": ["run", "dev", "--", "--port", "5173"],
       "port": 5173,
       "cwd": "/Users/lezaun/Developer/from/landing/web"
+    },
+    {
+      "name": "from-landing-static",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8931", "--directory", "/Users/lezaun/Developer/from/landing"],
+      "port": 8931
     }
   ]
 }
