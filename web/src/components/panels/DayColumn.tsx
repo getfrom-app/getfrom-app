@@ -170,11 +170,29 @@ export default function DayColumn({
     | { kind: 'gcal'; sortTime: number; ev: CalendarEvent }
     | { kind: 'eventNode'; sortTime: number; n: Node }
     | { kind: 'task'; sortTime: number; n: Node }
-  const agendaRows: AgendaRow[] = [
+  // Dedup: un nodo con gcalEventId puede colar en eventNodes (dayColumn.ts lo
+  // incluye por tener gcalEventId, no solo isEvent) Y en todayTasks (el cockpit
+  // solo excluye isEvent) a la vez — mismo id, dos filas. Y un evento recurrente
+  // puede llegar de Google con un id de instancia que no coincide con el
+  // gcalEventId guardado en el nodo, así que linkedGcalIds no lo detecta y
+  // aparece también como fila cruda. Se deduplica primero por id de nodo y
+  // luego por título+hora, quedándonos con la representación más "editable"
+  // (task > eventNode > gcal crudo).
+  const todayTaskIds = new Set(todayTasks.map(n => n.id))
+  const agendaRowsRaw: AgendaRow[] = [
     ...extraEvents.map(ev => ({ kind: 'gcal' as const, sortTime: new Date(ev.start).getTime(), ev })),
-    ...eventNodes.map(n => ({ kind: 'eventNode' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
+    ...eventNodes.filter(n => !todayTaskIds.has(n.id)).map(n => ({ kind: 'eventNode' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
     ...todayTasks.map(n => ({ kind: 'task' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
-  ].sort((a, b) => a.sortTime - b.sortTime)
+  ]
+  const rowTitle = (r: AgendaRow) => ((r.kind === 'gcal' ? r.ev.title : r.n.text) || '').trim().toLowerCase()
+  const rowRank = (r: AgendaRow) => (r.kind === 'task' ? 2 : r.kind === 'eventNode' ? 1 : 0)
+  const byKey = new Map<string, AgendaRow>()
+  for (const r of agendaRowsRaw) {
+    const key = `${rowTitle(r)}|${r.sortTime}`
+    const existing = byKey.get(key)
+    if (!existing || rowRank(r) > rowRank(existing)) byKey.set(key, r)
+  }
+  const agendaRows = [...byKey.values()].sort((a, b) => a.sortTime - b.sortTime)
 
   // Reparación: una tarea de hoy con hora que no se completó a tiempo pasa a
   // «atrasada» al día siguiente — le quitamos la hora para que vuelva como
