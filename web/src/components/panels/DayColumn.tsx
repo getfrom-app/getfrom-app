@@ -276,7 +276,8 @@ export default function DayColumn({
                 <span className="dc-text" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
                   {task.text ? renderInline(task.text) : t('common.noTitle')}
                 </span>
-                {delBtn(task)}
+                <span style={{ flex: 1 }} />
+                <TaskHoverActions node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
               </div>
             )
           }
@@ -306,7 +307,36 @@ export default function DayColumn({
                 <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
                   {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
                 </span>
-                {delBtn(ev)}
+                <span style={{ flex: 1 }} />
+                {/* Mismos hover actions que una tarea normal (Alberto, 22 jul: "las
+                    tareas que son eventos necesitan igual que las que no lo son los
+                    botones para reprogramar, eliminar o enviar a futuro"). Reprogramar
+                    reutiliza el mismo popover de fecha (TaskPropsPopover) que las
+                    tareas — la hora se sigue editando aparte con el badge de arriba.
+                    Eliminar usa deleteRow (borra también en Google), no el trashNode
+                    genérico de TaskHoverActions. Mover a Futuro sigue el mismo patrón
+                    que «Convertir en tarea»: pierde isEvent/hora y pasa a tarea
+                    aparcada sin fecha. */}
+                <span className="dc-actions">
+                  <button className="dc-action" title={t('dailyCockpit.editDateRecurrence', 'Cambiar fecha')}
+                    onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === ev.id ? null : ev.id) }}>
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4.5" width="14" height="13" rx="2" /><path d="M3 8.5h14M7 3v3M13 3v3" />
+                    </svg>
+                  </button>
+                  <button className="dc-action" title={t('taskHover.moveToFuture', 'Mover a Futuro')}
+                    onClick={e => { e.stopPropagation(); store.updateNode(ev.id, { isEvent: false, status: 'future', due: null, dueEnd: null }) }}>
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 10h11M11 5.5l4.5 4.5-4.5 4.5" />
+                    </svg>
+                  </button>
+                  <button className="dc-action dc-action--del" title={t('common.delete')}
+                    onClick={e => { e.stopPropagation(); deleteRow(ev) }}>
+                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" />
+                    </svg>
+                  </button>
+                </span>
               </div>
               {editEv === ev.id && !allDay && ev.due && (
                 <div className="dc-ev-edit" onClick={e => e.stopPropagation()}>
