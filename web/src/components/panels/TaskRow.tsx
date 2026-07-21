@@ -27,7 +27,14 @@ export function timeLabel(n: Node, lang: string): string | null {
 export function dueLabel(n: Node, lang: string): string {
   if (!n.due) return ''
   const d = new Date(n.due)
-  return d.toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', { weekday: 'short', day: 'numeric' })
+  // Mes SIEMPRE (día suelto sin mes es ambiguo en listas como «Futuro», donde
+  // las fechas pueden caer meses después — Alberto, 22 jul: "falta el mes y el
+  // año"). Año solo si distinto del actual, para no recargar las fechas cercanas.
+  const sameYear = d.getFullYear() === new Date().getFullYear()
+  return d.toLocaleDateString(lang === 'en' ? 'en-US' : 'es-ES', {
+    weekday: 'short', day: 'numeric', month: 'short',
+    ...(sameYear ? {} : { year: 'numeric' }),
+  })
 }
 /** Color del chip de fecha: atrasada=rojo, hoy=ámbar, futura=azul. */
 export function dueColor(n: Node): string {
