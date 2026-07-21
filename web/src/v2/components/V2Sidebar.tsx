@@ -11,6 +11,7 @@ import { listPendingAgentConversations } from '../../store/aiChatStore'
 import { useTheme } from '../../hooks/useTheme'
 import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
+import NewContextModal from '../../components/modals/NewContextModal'
 import type { Node } from '../../types'
 
 // Misma paleta que el menú de clic derecho de un contexto en la Pizarra (v1) —
@@ -77,6 +78,10 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
   const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
   const [userMenu, setUserMenu] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
+  // La v1 (donde antes había que crear contextos para que "aparecieran aquí") ya no
+  // existe — el sidebar de v2 necesita su propio botón para crear contextos, con
+  // nombre + padre en un modal (Alberto, 21 jul).
+  const [showNewContext, setShowNewContext] = useState(false)
   const userWrap = useRef<HTMLDivElement>(null)
 
   // Menú de clic derecho de un contexto: renombrar / color / mover / eliminar.
@@ -205,15 +210,21 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         )
       })()}
 
-      {/* Cabecera de nivel: raíz = «Contextos»; dentro = volver + nombre del contexto */}
+      {/* Cabecera de nivel: raíz = «Contextos»; dentro = volver + nombre del contexto.
+          El «+» crea un contexto con el padre correcto ya preseleccionado (ninguno en
+          raíz, el contexto actual si hemos entrado en uno) — editable en el modal. */}
       {currentParent ? (
-        <div className="v2-section-label" style={{ cursor: 'pointer' }} onClick={back}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div className="v2-section-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={back}>
             <span style={{ fontSize: 14 }}>‹</span> {t('v2.back', 'Volver')}
           </span>
+          <button className="v2-ctx-add" title={t('v2.newContext', 'Nuevo contexto')} onClick={() => setShowNewContext(true)}>＋</button>
         </div>
       ) : (
-        <div className="v2-section-label">{t('v2.contexts', 'Contextos')}</div>
+        <div className="v2-section-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          {t('v2.contexts', 'Contextos')}
+          <button className="v2-ctx-add" title={t('v2.newContext', 'Nuevo contexto')} onClick={() => setShowNewContext(true)}>＋</button>
+        </div>
       )}
 
       <div className="v2-ctx-list">
@@ -291,7 +302,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
 
         {items.length === 0 && (
           <div className="v2-right-empty" style={{ padding: '16px 14px' }}>
-            {currentParent ? t('v2.noSubcontexts', 'Sin subcontextos.') : t('v2.noContextsYet', 'Aún no tienes contextos. Créalos en la v1 y aparecerán aquí.')}
+            {currentParent ? t('v2.noSubcontexts', 'Sin subcontextos.') : t('v2.noContextsYet', 'Aún no tienes contextos.')}
           </div>
         )}
       </div>
@@ -350,7 +361,6 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
               ))}
             </div>
             <div className="v2-usermenu-sep" />
-            <a className="v2-usermenu-item" href="/app/v1">↩︎ {t('v2.classicFromly', 'Fromly clásico (v1)')}</a>
             <button className="v2-usermenu-item v2-usermenu-item--danger" onClick={() => { clearTokens(); window.location.href = '/login' }}>{t('v2.logOut', 'Cerrar sesión')}</button>
           </div>
         )}
@@ -364,6 +374,13 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         </button>
       </div>
       {showTrash && <V2Trash onClose={() => setShowTrash(false)} />}
+      {showNewContext && (
+        <NewContextModal
+          defaultParentId={currentParent?.id ?? null}
+          onClose={() => setShowNewContext(false)}
+          onCreated={id => onSelectCtx(id)}
+        />
+      )}
     </aside>
   )
 }

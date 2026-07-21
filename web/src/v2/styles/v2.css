@@ -293,15 +293,18 @@
 }
 .v2-trash-empty:hover { background: var(--color-error, #e0393e); color: #fff; }
 
-/* Planificador — overlay que envuelve el PlannerPanel real de la v1 (día/semana/
-   mes/año, drag&drop, GCal). Necesita todo el ancho disponible para el timeline
-   multi-columna, por eso NO usa el .v2-modal pequeño sino un overlay grande —
-   pero SIN tapar la columna derecha (queda en su tab «Hoy»): así se puede
-   arrastrar una tarea desde ahí al planificador para agendarla, como en la v1
-   (Alberto: «el planificador siempre se abrirá en conjunto con la columna
-   derecha de hoy»). `right: var(--v2-right)` en vez de `inset:0`. */
+/* Planificador — overlay que envuelve el PlannerPanel real de la v1 (semana/mes/
+   año, drag&drop, GCal — Día vive aparte, en su propio tab de la columna
+   derecha). Necesita todo el ancho disponible para el timeline multi-columna,
+   por eso NO usa el .v2-modal pequeño sino un overlay grande — pero SIN tapar
+   la columna derecha (queda en su tab Agenda, Alberto: «el planificador
+   siempre se abrirá en conjunto con la columna derecha de hoy») NI el sidebar
+   de contextos (antes usaba left:0 y lo tapaba entero — visible sobre todo
+   ahora que Agenda es la tab por defecto y el planificador se ve nada más
+   abrir la app, Alberto 21 jul). `left: var(--v2-sidebar)` / `right: var(--v2-right)`
+   en vez de `inset:0`. */
 .v2-planner-overlay {
-  position: fixed; top: 0; left: 0; bottom: 0; right: var(--v2-right); z-index: 210;
+  position: fixed; top: 0; left: var(--v2-sidebar, 260px); bottom: 0; right: var(--v2-right); z-index: 210;
   background: var(--bg-primary);
   display: flex; flex-direction: column;
 }
