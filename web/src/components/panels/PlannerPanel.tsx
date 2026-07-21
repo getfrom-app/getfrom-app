@@ -668,7 +668,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
             const gid = node?.gcalEventId
             const ev = gid ? gcalEvents.find(x => x.id === gid) : null
             if (ev) { setEditingGcal(ev); return }
-            navigate(`/node/${b.nodeId}`)
+            // `navigate('/node/:id')` es una ruta que solo existe en el router de
+            // v1 — el Planificador se reutiliza dentro del overlay del shell v2
+            // (V2Chat.tsx), así que navegar por URL rompía el overlay en vez de
+            // abrir nada (Alberto, 21 jul: "no se abre el modal"). Mismo patrón
+            // que ya usa ElementsPanel para abrir nodos sin salir de v2.
+            window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: b.nodeId } }))
           }
         }}
         onContextMenu={e => {
@@ -763,7 +768,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                   return (
                     <div key={d}
                       className={`pp-year-day ${isTod?'pp-year-day--today':''}`}
-                      onClick={() => { const dayNode = ensureDayPath(date); navigate(`/node/${dayNode.id}`); setCenterDate(date); setViewMode('day') }}
+                      onClick={() => { const dayNode = ensureDayPath(date); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: dayNode.id } })); setCenterDate(date); setViewMode('day') }}
                       title={date.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' })}
                     >
                       {d}
@@ -807,16 +812,32 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
 
   // ── Franja «todo el día»: tareas con fecha ese día pero SIN hora ────────────
   function getAllDayTasks(day: Date) {
+    // Incluye tareas sin hora (como antes) Y EVENTOS de todo el día (due a
+    // medianoche local, sin hora) — antes `!n.isEvent` excluía SIEMPRE los
+    // eventos de esta fila, así que arrastrar un evento aquí lo hacía
+    // desaparecer del Planificador entero (ni fila de todo el día ni timeline,
+    // ver `handleAllDayDrop`) en vez de convertirlo — Alberto, 21 jul: "arrastrar
+    // eventos a todo el día debería convertirlos... ahora no se puede".
     return store.allActive().filter(n =>
-      n.due && !n.deletedAt && !isInPapelera(n.id) && n.status != null && !n.isEvent && sameDay(new Date(n.due), day) && !hasTime(n.due))
+      n.due && !n.deletedAt && !isInPapelera(n.id) && (n.isEvent || n.status != null) &&
+      sameDay(new Date(n.due), day) && !hasTime(n.due))
   }
   function handleAllDayDrop(e: React.DragEvent, day: Date) {
     e.preventDefault(); e.stopPropagation()
-    const nodeId = e.dataTransfer.getData('nodeId') || e.dataTransfer.getData('plannerTaskId') || e.dataTransfer.getData('text/plain')
+    // `plannerBlockId`: arrastre desde un bloque con hora del propio timeline
+    // (`handleBlockDragStart`, línea ~577) — sin leer esta clave, arrastrar un
+    // evento/tarea DESDE su hueco horario hasta esta fila no encontraba nodeId
+    // y el drop no hacía nada.
+    const nodeId = e.dataTransfer.getData('nodeId') || e.dataTransfer.getData('plannerTaskId')
+      || e.dataTransfer.getData('plannerBlockId') || e.dataTransfer.getData('text/plain')
     if (!nodeId) return
     const n = store.getNode(nodeId); if (!n) return
     const had = !!n.due
-    store.updateNode(nodeId, { due: toMidnight(day), dueEnd: null, status: n.status ?? 'pending' })
+    // Los eventos no llevan `status` (el resto de la app decide "es tarea" por
+    // status != null) — forzar 'pending' aquí los convertiría en tarea a medias.
+    store.updateNode(nodeId, n.isEvent
+      ? { due: toMidnight(day), dueEnd: null }
+      : { due: toMidnight(day), dueEnd: null, status: n.status ?? 'pending' })
     if (had) bumpReschedule(nodeId)
   }
 
@@ -843,7 +864,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
               <div key={date.toISOString()} className={`pp-month-cell ${isTod ? 'pp-month-cell--today' : ''}`}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleMonthDrop(e, date)}
-                onClick={() => { const dn = ensureDayPath(date); navigate(`/node/${dn.id}`) }}
+                onClick={() => { const dn = ensureDayPath(date); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: dn.id } })) }}
                 title={date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}>
                 <div className={`pp-month-daynum ${isTod ? 'pp-month-daynum--today' : ''}`}>{date.getDate()}</div>
                 <div className="pp-month-items">
@@ -852,7 +873,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                       onClick={e => {
                         e.stopPropagation() // no navegar al día: ir a la tarea
                         const node = store.getNode(it.id)
-                        if (node) { navigate(`/node/${it.id}`); return }
+                        if (node) { window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: it.id } })); return }
                         const ev = gcalEvents.find(x => x.id === it.id)
                         if (ev) setEditingGcal(ev)
                       }}
@@ -972,7 +993,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
                         style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)', borderLeft: `3px solid ${plannerBase}` }}
                         draggable
                         onDragStart={e=>{ e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed='move' }}
-                        onClick={e=>{ e.stopPropagation(); navigate(`/node/${n.id}`) }}
+                        onClick={e=>{ e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: n.id } })) }}
                         onContextMenu={e=>{ e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
                         title={n.text}>
                         {n.text || t('common.noTitle')}
@@ -1025,7 +1046,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
               }}>📄 {t('tip.createNode')}</button>
             )}
             {ctxMenu.b.kind !== 'gcal' && ctxMenu.b.nodeId && (
-              <button onClick={()=>{ navigate(`/node/${ctxMenu.b.nodeId!}`); setCtxMenu(null) }}>
+              <button onClick={()=>{ window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: ctxMenu.b.nodeId! } })); setCtxMenu(null) }}>
                 → {t('tip.goToNode')}
               </button>
             )}
@@ -1104,7 +1125,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays }: Prop
               gcalEventId: ev.id, // columna: la usa el dedup del planner (n.gcalEventId)
               extraData: JSON.stringify({ _gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '' }),
             })
-            navigate(`/node/${node.id}`)
+            window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: node.id } }))
           }}
           onUpdated={ev=>{setGcalEvents(p=>p.map(x=>x.id===ev.id?ev:x));setEditingGcal(null)}}
           onDeleted={id=>{setGcalEvents(p=>p.filter(x=>x.id!==id));setEditingGcal(null)}} />

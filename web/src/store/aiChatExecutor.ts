@@ -589,9 +589,26 @@ function result(action: string, ok: boolean, summary: string, createdIds: string
   return { action, ok, summary, createdIds }
 }
 
+/// Normaliza la fecha/hora que manda la IA antes de parsearla. Dos bugs reales
+/// (Alberto, 21 jul) compartían la misma causa: el string llegaba con un sufijo
+/// de zona horaria ("Z"/offset) etiquetando como UTC una hora que en realidad
+/// era LOCAL — "15:00" guardado como "15:00Z" se mostraba como 17:00 en Madrid
+/// verano. Y una fecha "solo día" ("2026-07-21", sin hora) el motor JS la trata
+/// como medianoche UTC (no local) — se mostraba como evento "todo el día" a las
+/// 02:00 en vez de medianoche. Aquí forzamos SIEMPRE hora local explícita: quita
+/// cualquier sufijo de zona de un datetime, y completa "T00:00:00" (local, sin Z)
+/// si solo viene la fecha — mismo criterio que ya usa correctamente
+/// `utils/dates.ts` `makeDueISO()`/`NewEventModal.tsx`.
 function parseDate(raw: unknown): string | undefined {
   if (typeof raw !== 'string' || !raw) return undefined
-  const d = new Date(raw)
+  let normalized = raw.trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    normalized = `${normalized}T00:00:00`
+  } else {
+    const withZone = normalized.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?)(Z|[+-]\d{2}:?\d{2})$/)
+    if (withZone) normalized = withZone[1]
+  }
+  const d = new Date(normalized)
   if (isNaN(d.getTime())) return undefined
   return d.toISOString()
 }

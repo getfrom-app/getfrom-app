@@ -1,4 +1,4 @@
-// Columna derecha contextual de Fromly 2.0 — 5 modos.
+// Columna derecha contextual de Fromly 2.0 — 4 modos.
 // Contexto:  qué sabe Fromly del contexto activo + sus miembros. SIEMPRE la
 //            ficha del contexto — nunca cambia a otra cosa (antes competía con
 //            el panel de conversación/detalle y se perdía sin forma de volver,
@@ -12,8 +12,11 @@
 //            conversaciones…) — Historial se retiró (10 jul 26): era el mismo
 //            buscador con el filtro "conversación" implícito y sus elementos
 //            anidados, y esos elementos ya se ven al abrir la conversación.
-// Hoy:       columna de referencia del día REAL de la v1 (DayColumn):
-//            eventos de Google Calendar, atrasadas, para hoy.
+// Agenda:    columna del día real (DayColumn: eventos, atrasadas, para hoy) +
+//            calendario anual bajo demanda (botón) para saltar a cualquier día
+//            (mismo DayColumn) — antes eran DOS tabs («Hoy»/«Agenda») separadas,
+//            fusionadas en `V2AgendaView` (Alberto, 21 jul: "eliminar el tab de
+//            Agenda actual, y simplificar").
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
@@ -21,7 +24,6 @@ import { useAIChat } from '../../store/aiChatStore'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import PublishButton from '../../components/PublishButton'
-import DayColumn from '../../components/panels/DayColumn'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
 import V2ContextView from './V2ContextView'
 import V2ConversationView from './V2ConversationView'
@@ -31,7 +33,7 @@ import { elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
-export type RightMode = 'contexto' | 'detalles' | 'elementos' | 'hoy' | 'agenda'
+export type RightMode = 'contexto' | 'detalles' | 'elementos' | 'hoy'
 
 interface Props {
   mode: RightMode
@@ -123,12 +125,14 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
     }
   }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // «Hoy» y «Agenda» eran dos tabs separadas (columna del día real + calendario
+  // anual); se fusionan en una — la tab ahora se llama «Agenda» y el calendario
+  // anual vive DENTRO de ella, vía un botón (ver V2AgendaView) — Alberto, 21 jul.
   const tabs: { id: RightMode; label: string }[] = [
     { id: 'contexto', label: t('v2.rightColumn.tabContext', 'Contexto') },
     { id: 'detalles', label: t('v2.rightColumn.tabDetails', 'Detalles') },
     { id: 'elementos', label: t('v2.rightColumn.tabElements', 'Elementos') },
-    { id: 'hoy', label: t('v2.rightColumn.tabToday', 'Hoy') },
-    { id: 'agenda', label: t('v2.rightColumn.tabAgenda', 'Agenda') },
+    { id: 'hoy', label: t('v2.rightColumn.tabAgenda', 'Agenda') },
   ]
 
   // Arrastrar el borde izquierdo para ensanchar/estrechar la columna derecha.
@@ -267,13 +271,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
           <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} onOpenConversation={onOpenConversation} />
         )}
 
-        {mode === 'hoy' && (
-          today
-            ? <DayColumn node={today} includeNodes={false} />
-            : <div className="v2-right-empty">{t('v2.rightColumn.preparingToday', 'Preparando la columna de hoy…')}</div>
-        )}
-
-        {mode === 'agenda' && <V2AgendaView />}
+        {mode === 'hoy' && <V2AgendaView todayNode={today} />}
       </div>
       )}
     </aside>

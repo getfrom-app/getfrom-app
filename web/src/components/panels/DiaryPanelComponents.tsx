@@ -423,10 +423,18 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, l
       const end = endDate
         ? (endTime ? `${endDate}T${endTime}:00` : `${endDate}T23:59:00`)
         : new Date(new Date(start).getTime() + 3600000).toISOString().slice(0, 19)
-      const updated = await updateCalendarEvent(event.id, {
-        title, start: new Date(start).toISOString(), end: new Date(end).toISOString()
-      })
+      const startISO = new Date(start).toISOString()
+      const endISO = new Date(end).toISOString()
+      const updated = await updateCalendarEvent(event.id, { title, start: startISO, end: endISO })
       onUpdated(updated)
+      // Sin esto, el Planificador seguía mostrando la hora vieja tras "guardar":
+      // solo se actualizaba Google Calendar, nunca el nodo Fromly — y el
+      // Planificador siempre lee `due`/`dueEnd` del NODO, no del evento de Google
+      // (Alberto, 21 jul: "aunque lo modifique manualmente... sigue mostrando la
+      // hora equivocada").
+      if (linkedNodeId) {
+        store.updateNode(linkedNodeId, { text: title, due: startISO, dueEnd: endISO })
+      }
       setMsg(`✓ ${t('gcal.savedToGoogle')}`)
       setTimeout(onClose, 800)
     } catch { setMsg(t('gcal.saveError')) }
