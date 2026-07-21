@@ -21,6 +21,7 @@ import { ensureDayPath } from '../../utils/agendaHelper'
 import { bumpReschedule } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { gcalEventNodeId } from '../../utils/deterministicId'
+import { firstContextOf, contextColor } from '../../utils/cajones'
 import {
   getCalendarEventsRange,
   createCalendarEvent,
@@ -656,6 +657,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     // tareas (nodos locales) van sin relleno: borde fino + barra de acento.
     const isGcal = b.kind === 'gcal'
     const bg = isGcal ? (isGreyish(b.color) ? taskPastel : pastelize(b.color)) : 'transparent'
+    // Barra de acento del bloque: si el nodo tiene contexto asignado, su color
+    // manda sobre el acento genérico del Planificador (Alberto, 22 jul: "si el
+    // evento tiene contexto, se colorea del color del contexto").
+    const blockNode = b.nodeId ? store.getNode(b.nodeId) : null
+    const blockCtx = blockNode ? firstContextOf(blockNode) : null
+    const accentColor = blockCtx ? contextColor(blockCtx.id) : plannerBase
     // Clampar al día: un bloque NUNCA se sale del rango 06–24 (evita que un evento
     // multi-día o con duración errónea infle el scroll con espacio vacío).
     const gridH = TOTAL_HOURS * hourH
@@ -666,7 +673,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
         className={`pp-block pp-block--${b.kind}`}
         style={{ top: blockTop, height: blockH,
           background: bg, left: 2, right: 2,
-          ...(isGcal ? {} : { border: '1px solid var(--border)', borderLeft: `3px solid ${plannerBase}` }) }}
+          ...(isGcal ? {} : { border: '1px solid var(--border)', borderLeft: `3px solid ${accentColor}` }) }}
         draggable
         onDragStart={e => handleBlockDragStart(e, b)}
         onClick={e => {
@@ -1005,9 +1012,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                     onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}
                     title={t('tip.clickAddUntimed')}
                     onClick={e=>{ if ((e.target as HTMLElement).closest('.pp-allday-chip, input')) return; setNewAllDay({ day: d, text: '' }); setTimeout(()=>newAllDayRef.current?.focus(), 20) }}>
-                    {items.slice(0, 5).map(n => (
+                    {items.slice(0, 5).map(n => {
+                      const chipCtx = firstContextOf(n)
+                      const chipAccent = chipCtx ? contextColor(chipCtx.id) : plannerBase
+                      return (
                       <div key={n.id} className={`pp-allday-chip ${n.status==='done'?'pp-allday-chip--done':''}`}
-                        style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)', borderLeft: `3px solid ${plannerBase}` }}
+                        style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)', borderLeft: `3px solid ${chipAccent}` }}
                         draggable
                         onDragStart={e=>{ e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed='move' }}
                         onClick={e=>{ e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: n.id } })) }}
@@ -1015,7 +1025,8 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                         title={n.text}>
                         {n.text || t('common.noTitle')}
                       </div>
-                    ))}
+                      )
+                    })}
                     {items.length > 5 && <div style={{ fontSize: 10, color: 'var(--text-tertiary)', padding: '0 4px' }}>+{items.length - 5}</div>}
                     {editing ? (
                       <input ref={newAllDayRef} className="pp-allday-new" value={newAllDay!.text}

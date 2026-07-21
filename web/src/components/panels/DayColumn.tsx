@@ -263,7 +263,11 @@ export default function DayColumn({
             )
           }
           const ev = row.n
-          const color = getGcalColor(ev)
+          // Si el evento tiene contexto asignado, su color manda sobre el color
+          // de Google (Alberto, 22 jul: "si el evento tiene contexto, se colorea
+          // del color del contexto").
+          const evCtx = firstContextOf(ev)
+          const color = evCtx ? contextColor(evCtx.id) : getGcalColor(ev)
           const allDay = isAllDay(ev)
           const rec = recShort(ev.recurrence, t)
           const timeStr = allDay ? t('tip.allDay') : (ev.due ? `${hhmm(ev.due)}–${hhmm(ev.dueEnd)}` : '')
