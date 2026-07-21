@@ -60,7 +60,13 @@ function withTime(baseIso: string, hm: string): string {
   return d.toISOString()
 }
 function isAllDay(n: Node): boolean {
-  try { return JSON.parse(n.extraData || '{}')._gcalAllDay === '1' } catch { return false }
+  try { if (JSON.parse(n.extraData || '{}')._gcalAllDay === '1') return true } catch { /* extraData corrupto, sigue con la hora */ }
+  // Eventos creados localmente (chat/Magic) no llevan el flag `_gcalAllDay` de
+  // Google — un due a medianoche sin hora es igualmente "todo el día" (Alberto,
+  // 22 jul: mostraba "00:00–" en vez de "Todo el día" para estos).
+  if (!n.due) return false
+  const d = new Date(n.due)
+  return d.getHours() === 0 && d.getMinutes() === 0
 }
 function recShort(rec: string | null | undefined, t: TFn): string | null {
   if (!rec) return null
