@@ -1439,6 +1439,7 @@
   "tagNodes.deletePrompt": "Διαγραφή prompt",
   "timelinePanel.close": "Κλείσιμο χρονολογίου",
   "taskHover.scheduleToday": "Προγραμματισμός για σήμερα",
+  "taskHover.moveToFuture": "Μετακίνηση στο Μέλλον",
   "rowContextChip.assign": "Ανάθεση πλαισίου",
   "nodeRightPanel.addTime": "Προσθήκη ώρας",
   "nodeRightPanel.addTimeBtn": "+ ώρα",

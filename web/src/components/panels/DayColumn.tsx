@@ -19,12 +19,13 @@ import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcal
 import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
 import { diaryDayTitle } from '../../utils/agendaHelper'
+import { collectDailyCockpit, toggleTaskDone } from '../../utils/dailyCockpit'
 import { getCalendarEvents, type CalendarEvent } from '../../api/googleCalendar'
 import { gcalEventNodeId } from '../../utils/deterministicId'
 import { useUserStore } from '../../store/userStore'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
-import TaskRow from './TaskRow'
+import TaskRow, { timeLabel } from './TaskRow'
 import { firstContextOf, contextColor } from '../../utils/cajones'
 import { TaskPropsPopover, GCalEventEditor } from './DiaryPanelComponents'
 import NewEventModal from '../modals/NewEventModal'
@@ -78,7 +79,7 @@ export default function DayColumn({
 }) {
   useStore()
   const us = useUserStore()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
 
   // Eventos de Google del día: se traen de Google (NO se materializan como nodos).
   // Se pintan en el bloque de eventos; clic → modal de edición + botón «Crear nodo».
@@ -149,6 +150,47 @@ export default function DayColumn({
   // Áreas: pulsar = la cámara del lienzo vuela a esa vista guardada.
   const flyToArea = (id: string) => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
 
+  // Tareas de HOY (todo el día + con hora) — se fusionan en «Eventos de hoy» en
+  // vez de duplicarse también en «Para hacer» (Alberto, 22 jul: "poner la tarea
+  // solamente en el bloque eventos de hoy, pero poner el checkbox junto al
+  // título"). DailyCockpit las oculta de Para Hacer vía `hideToday`.
+  const cockpit = isToday ? collectDailyCockpit() : null
+  const todayTasks = cockpit?.today ?? []
+
+  // Lista única de «Eventos de hoy»: gcal crudo + eventos-nodo + tareas de hoy,
+  // ordenada cronológicamente (Alberto: "deben aparecer ordenados
+  // cronológicamente" — antes gcal crudo y eventos-nodo se renderizaban en dos
+  // pasadas separadas, sin mezclar ni ordenar entre sí).
+  type AgendaRow =
+    | { kind: 'gcal'; sortTime: number; ev: CalendarEvent }
+    | { kind: 'eventNode'; sortTime: number; n: Node }
+    | { kind: 'task'; sortTime: number; n: Node }
+  const agendaRows: AgendaRow[] = [
+    ...extraEvents.map(ev => ({ kind: 'gcal' as const, sortTime: new Date(ev.start).getTime(), ev })),
+    ...eventNodes.map(n => ({ kind: 'eventNode' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
+    ...todayTasks.map(n => ({ kind: 'task' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
+  ].sort((a, b) => a.sortTime - b.sortTime)
+
+  // Reparación: una tarea de hoy con hora que no se completó a tiempo pasa a
+  // «atrasada» al día siguiente — le quitamos la hora para que vuelva como
+  // tarea de TODO EL DÍA, no arrastrando una hora ya obsoleta (Alberto: "en
+  // caso de no completarla, volvería al día siguiente como tarea de todo el
+  // día"). Efecto defensivo, igual que la reparación del título del diario.
+  const overdueTimedSig = cockpit ? cockpit.overdue.map(n => `${n.id}:${n.due}`).join('|') : ''
+  useEffect(() => {
+    if (!cockpit) return
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+    for (const n of cockpit.overdue) {
+      if (!n.due) continue
+      const d = new Date(n.due)
+      if (d.getHours() === 0 && d.getMinutes() === 0) continue // ya es todo el día
+      if (d >= todayStart) continue
+      d.setHours(0, 0, 0, 0)
+      store.updateNode(n.id, { due: d.toISOString() })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [overdueTimedSig])
+
   // Eliminar una fila de la columna (evento → también en Google; resto → Papelera).
   const deleteRow = (n: Node) => {
     deleteGcalEventForNode(n)
@@ -169,75 +211,100 @@ export default function DayColumn({
 
   return (
     <>
-      {/* 1. Eventos de Google Calendar del día — cabecera SIEMPRE visible (aunque no
-          haya eventos aún) para poder crear el primero con el «+». */}
+      {/* 1. Eventos del día — gcal crudo + eventos-nodo + (HOY) tareas con fecha hoy,
+          fusionados en una única lista cronológica (Alberto: "deben aparecer
+          ordenados cronológicamente"; las tareas de hoy se muestran aquí con
+          checkbox en vez de duplicarse en «Para hacer»). Cabecera SIEMPRE visible
+          (aunque no haya eventos aún) para poder crear el primero con el «+». */}
       <div className="dc-group">
         <div className="dc-group-headrow">
           {header('eventos', isToday ? t('tip.eventsToday') : t('tip.eventsDay'), 'dc-group-label--event')}
           <button className="dc-group-add" onClick={() => setShowNewEvent(true)} title={t('modal.newEvent')}>+</button>
         </div>
-        {!collapsed.has('eventos') && extraEvents.map(ev => {
+        {!collapsed.has('eventos') && agendaRows.map(row => {
+          if (row.kind === 'gcal') {
+            const ev = row.ev
             const allDay = ev.allDay
-            const timeLabel = allDay ? t('tip.allDay') : `${hhmm(ev.start)}–${hhmm(ev.end)}`
+            const timeStr = allDay ? t('tip.allDay') : `${hhmm(ev.start)}–${hhmm(ev.end)}`
             return (
-              <div key={ev.id} className="dc-row dc-row--event"
+              <div key={`gcal:${ev.id}`} className="dc-row dc-row--event"
                 onClick={() => setEditingGcal(ev)} style={{ cursor: 'pointer' }}
                 title={t('tip.editGcalEvent')}>
                 <span className="dc-event-dot" style={ev.backgroundColor ? { background: ev.backgroundColor } : undefined} />
-                <span className="dc-ev-badge dc-ev-badge--lead">{timeLabel}</span>
+                <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
                 <span className="dc-text">{ev.title || t('search.chipEvent')}</span>
               </div>
             )
-          })}
-          {!collapsed.has('eventos') && eventNodes.map(ev => {
-            const color = getGcalColor(ev)
-            const allDay = isAllDay(ev)
-            const rec = recShort(ev.recurrence, t)
-            const timeLabel = allDay ? t('tip.allDay') : (ev.due ? `${hhmm(ev.due)}–${hhmm(ev.dueEnd)}` : '')
+          }
+          if (row.kind === 'task') {
+            const task = row.n
+            const done = task.status === 'done'
+            const timeStr = timeLabel(task, i18n.language) || t('tip.allDay')
             return (
-              <div key={ev.id}>
-                <div className="dc-row dc-row--event" data-node-id={ev.id}
-                  draggable
-                  onDragStart={e => { e.dataTransfer.setData('nodeId', ev.id); e.dataTransfer.effectAllowed = 'copy' }}
-                  onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
-                  <span className="dc-event-dot" style={color ? { background: color } : undefined} />
-                  <button
-                    className="dc-ev-badge dc-ev-badge--lead"
-                    onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
-                    title={t('tip.editTimeAndRepeat')}
-                  >
-                    {timeLabel}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
-                  </button>
-                  <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
-                    {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
-                  </span>
-                  {delBtn(ev)}
-                </div>
-                {editEv === ev.id && !allDay && ev.due && (
-                  <div className="dc-ev-edit" onClick={e => e.stopPropagation()}>
-                    <label>{t('tip.start')}
-                      <input type="time" defaultValue={hhmm(ev.due)}
-                        onChange={e => e.target.value && patchEvent(ev.id, { due: withTime(ev.due!, e.target.value) })} />
-                    </label>
-                    <label>{t('tip.end')}
-                      <input type="time" defaultValue={hhmm(ev.dueEnd || ev.due)}
-                        onChange={e => e.target.value && patchEvent(ev.id, { dueEnd: withTime(ev.dueEnd || ev.due!, e.target.value) })} />
-                    </label>
-                    <label>{t('tip.repeat')}
-                      <select defaultValue={ev.recurrence || ''}
-                        onChange={e => patchEvent(ev.id, { recurrence: e.target.value || null })}>
-                        {recOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                      </select>
-                    </label>
-                  </div>
-                )}
+              <div key={`task:${task.id}`} className={`dc-row dc-row--event ${done ? 'dc-row--done' : ''}`} data-node-id={task.id}
+                draggable
+                onDragStart={e => { e.dataTransfer.setData('nodeId', task.id); e.dataTransfer.effectAllowed = 'move' }}
+                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: task.id, x: e.clientX, y: e.clientY } })) }}>
+                <button className={`dc-check ${done ? 'dc-check--done' : ''}`}
+                  onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
+                  title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
+                <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
+                <span className="dc-text" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
+                  {task.text ? renderInline(task.text) : t('common.noTitle')}
+                </span>
+                {delBtn(task)}
               </div>
             )
-          })}
+          }
+          const ev = row.n
+          const color = getGcalColor(ev)
+          const allDay = isAllDay(ev)
+          const rec = recShort(ev.recurrence, t)
+          const timeStr = allDay ? t('tip.allDay') : (ev.due ? `${hhmm(ev.due)}–${hhmm(ev.dueEnd)}` : '')
+          return (
+            <div key={`node:${ev.id}`}>
+              <div className="dc-row dc-row--event" data-node-id={ev.id}
+                draggable
+                onDragStart={e => { e.dataTransfer.setData('nodeId', ev.id); e.dataTransfer.effectAllowed = 'copy' }}
+                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
+                <span className="dc-event-dot" style={color ? { background: color } : undefined} />
+                <button
+                  className="dc-ev-badge dc-ev-badge--lead"
+                  onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
+                  title={t('tip.editTimeAndRepeat')}
+                >
+                  {timeStr}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
+                </button>
+                <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
+                  {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
+                </span>
+                {delBtn(ev)}
+              </div>
+              {editEv === ev.id && !allDay && ev.due && (
+                <div className="dc-ev-edit" onClick={e => e.stopPropagation()}>
+                  <label>{t('tip.start')}
+                    <input type="time" defaultValue={hhmm(ev.due)}
+                      onChange={e => e.target.value && patchEvent(ev.id, { due: withTime(ev.due!, e.target.value) })} />
+                  </label>
+                  <label>{t('tip.end')}
+                    <input type="time" defaultValue={hhmm(ev.dueEnd || ev.due)}
+                      onChange={e => e.target.value && patchEvent(ev.id, { dueEnd: withTime(ev.dueEnd || ev.due!, e.target.value) })} />
+                  </label>
+                  <label>{t('tip.repeat')}
+                    <select defaultValue={ev.recurrence || ''}
+                      onChange={e => patchEvent(ev.id, { recurrence: e.target.value || null })}>
+                      {recOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                    </select>
+                  </label>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
 
-      {/* 2-3. HOY → cockpit (Atrasadas · Para hoy). */}
-      {isToday && <DailyCockpit bare disablePlanner />}
+      {/* 2-3. HOY → cockpit (Atrasadas · Para hoy — hideToday: hoy ya vive en Eventos). */}
+      {isToday && <DailyCockpit bare disablePlanner hideToday />}
 
       {/* Otros días → tareas con due en ESE día. TaskRow ÚNICO (mismo que Hoy/Elementos). */}
       {!isToday && dayTasks.length > 0 && (

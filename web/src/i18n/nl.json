@@ -1439,6 +1439,7 @@
   "tagNodes.deletePrompt": "Prompt verwijderen",
   "timelinePanel.close": "Tijdlijn sluiten",
   "taskHover.scheduleToday": "Plannen voor vandaag",
+  "taskHover.moveToFuture": "Verplaats naar Toekomst",
   "rowContextChip.assign": "Context toewijzen",
   "nodeRightPanel.addTime": "Tijd toevoegen",
   "nodeRightPanel.addTimeBtn": "+ tijd",

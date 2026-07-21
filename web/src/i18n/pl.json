@@ -1439,6 +1439,7 @@
   "tagNodes.deletePrompt": "Usuń prompt",
   "timelinePanel.close": "Zamknij oś czasu",
   "taskHover.scheduleToday": "Zaplanuj na dziś",
+  "taskHover.moveToFuture": "Przenieś do Przyszłość",
   "rowContextChip.assign": "Przypisz kontekst",
   "nodeRightPanel.addTime": "Dodaj godzinę",
   "nodeRightPanel.addTimeBtn": "+ godzina",

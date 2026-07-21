@@ -8,6 +8,7 @@ import type { Node } from '../../types'
 import { useTranslation } from 'react-i18next'
 import { scheduleTask } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
+import { store } from '../../store/nodeStore'
 
 export default function TaskHoverActions({ node, onOpenDate }: {
   node: Node
@@ -31,6 +32,18 @@ export default function TaskHoverActions({ node, onOpenDate }: {
           onClick={e => { e.stopPropagation(); onOpenDate(node) }}>
           <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <rect x="3" y="4.5" width="14" height="13" rx="2" /><path d="M3 8.5h14M7 3v3M13 3v3" />
+          </svg>
+        </button>
+      )}
+      {/* → Futuro: aparca la tarea (status='future') para sacarla rápido del día sin
+          borrarla ni tener que abrir el modal de fecha (Alberto, 22 jul: "que el
+          usuario pueda desplazar rápidamente una tarea... y volverla a dejar en ese
+          bloque futuro para volverla a agendar"). */}
+      {!done && node.status !== 'future' && (
+        <button className="dc-action" title={t('taskHover.moveToFuture', 'Mover a Futuro')}
+          onClick={e => { e.stopPropagation(); store.updateNode(node.id, { status: 'future' }) }}>
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 10h11M11 5.5l4.5 4.5-4.5 4.5" />
           </svg>
         </button>
       )}

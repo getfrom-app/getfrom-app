@@ -1439,6 +1439,7 @@
   "tagNodes.deletePrompt": "Удалить промпт",
   "timelinePanel.close": "Закрыть таймлайн",
   "taskHover.scheduleToday": "Запланировать на сегодня",
+  "taskHover.moveToFuture": "Переместить в Будущее",
   "rowContextChip.assign": "Назначить контекст",
   "nodeRightPanel.addTime": "Добавить время",
   "nodeRightPanel.addTimeBtn": "+ время",

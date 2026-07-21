@@ -12991,8 +12991,17 @@ textarea:focus-visible,
 /* Planner como vista CENTRAL (modo Planificar). */
 .plan-center { height: 100%; display: flex; min-height: 0; }
 .plan-center .pp-root { border-left: none; flex: 1; width: 100%; }
-/* Planner embebido como tab «Día» de la columna derecha v2 (Alberto, 21 jul). */
-.v2-right-dia .pp-root { border-left: none; }
+/* Planner embebido como TIMELINE del tab Agenda (columna derecha v2, Alberto 22
+   jul) — vive dentro de .v2-right-body (con padding:14px y overflow-y:auto,
+   pensado para texto), así que se «rompe» del padding con márgenes negativos
+   para poder llenar todo el alto disponible como hace .v2-right-fill en el
+   resto de tabs (si no, el PlannerPanel mide su 100% contra una caja más baja
+   de lo que parece y deja un hueco en blanco arriba del todo). */
+.v2-agenda-timeline {
+  margin: -14px; height: calc(100% + 28px);
+  display: flex; flex-direction: column; min-height: 0;
+}
+.v2-agenda-timeline .pp-root { border-left: none; }
 
 /* Cola «Por planificar» (columna derecha del modo Planificar). */
 .pp-queue { display: flex; flex-direction: column; height: 100%; min-height: 0; }

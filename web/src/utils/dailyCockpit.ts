@@ -104,6 +104,28 @@ export function collectDayTasks(date: Date): Node[] {
   return out
 }
 
+/** Tareas pendientes con `due` en un día FUTURO (después de hoy), en orden
+ *  cronológico — completan el bloque «Futuro» de la agenda junto a las
+ *  aparcadas explícitamente (status='future'): Alberto, 22 jul: "incluiría
+ *  además, debajo, las tareas de los próximos días en orden cronológico". No
+ *  duplica las de status='future' (esas ya se listan aparte). */
+export function collectUpcomingTasks(): Node[] {
+  const today0 = startOfToday()
+  const out: Node[] = []
+  for (const n of store.allActive()) {
+    if (n.isDiaryEntry || n.isEvent || !n.due) continue
+    if (n.status !== 'pending') continue
+    if (isInPapelera(n.id)) continue
+    const due = new Date(n.due)
+    if (isNaN(due.getTime())) continue
+    const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate())
+    if (dueDay.getTime() <= today0.getTime()) continue // hoy/atrasada ya viven en sus bloques
+    out.push(n)
+  }
+  out.sort((a, b) => (a.due || '').localeCompare(b.due || ''))
+  return out
+}
+
 /** Recolecta atrasadas + hoy + bucles abiertos, excluyendo papelera y nodos temporales. */
 export function collectDailyCockpit(): DailyCockpitData {
   const today0 = startOfToday()

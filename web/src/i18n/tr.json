@@ -1439,6 +1439,7 @@
   "tagNodes.deletePrompt": "İstemi sil",
   "timelinePanel.close": "Zaman çizelgesini kapat",
   "taskHover.scheduleToday": "Bugüne planla",
+  "taskHover.moveToFuture": "Geleceğe taşı",
   "rowContextChip.assign": "Bağlam ata",
   "nodeRightPanel.addTime": "Saat ekle",
   "nodeRightPanel.addTimeBtn": "+ saat",

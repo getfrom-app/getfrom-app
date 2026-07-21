@@ -1439,6 +1439,7 @@
   "tagNodes.deletePrompt": "Ta bort prompt",
   "timelinePanel.close": "Stäng tidslinje",
   "taskHover.scheduleToday": "Schemalägg för idag",
+  "taskHover.moveToFuture": "Flytta till Framtid",
   "rowContextChip.assign": "Tilldela kontext",
   "nodeRightPanel.addTime": "Lägg till tid",
   "nodeRightPanel.addTimeBtn": "+ tid",

@@ -7,7 +7,7 @@ import { useState, useRef, useLayoutEffect, type CSSProperties } from 'react'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
-import { collectDailyCockpit } from '../../utils/dailyCockpit'
+import { collectDailyCockpit, collectUpcomingTasks } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
@@ -25,7 +25,7 @@ const ctxMenuItem: CSSProperties = {
   padding: '7px 10px', borderRadius: 6,
 }
 
-export default function DailyCockpit({ disablePlanner = false, bare = false }: { disablePlanner?: boolean; bare?: boolean } = {}) {
+export default function DailyCockpit({ disablePlanner = false, bare = false, hideToday = false }: { disablePlanner?: boolean; bare?: boolean; hideToday?: boolean } = {}) {
   useStore() // suscripción: re-render con cada cambio del store
   const { t } = useTranslation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
@@ -71,6 +71,8 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
 
   // Recalculado en cada render — un pase O(n) sobre el store, barato (~6k nodos)
   const data = collectDailyCockpit()
+  // Tareas con fecha en próximos días (completan «Futuro» junto a status='future').
+  const upcoming = collectUpcomingTasks()
 
   // ── Tareas de hoy/atrasadas que pertenecen a un CONTEXTO ──────────────────
   // Se muestran bajo su contexto (sección Contextos), NO en las listas planas de
@@ -242,7 +244,10 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
     <>
       {/* PARA HACER — unifica atrasadas + hoy + contextos. Las tareas se agrupan
           bajo su contexto; las que no tienen contexto, bajo «Sin contexto». Cabecera
-          SIEMPRE visible (aunque no haya tareas) para poder crear la primera con el «+». */}
+          SIEMPRE visible (aunque no haya tareas) para poder crear la primera con el «+».
+          `hideToday`: las tareas de HOY ya viven en «Eventos de hoy» (DayColumn las
+          fusiona ahí con checkbox — Alberto, 22 jul: "la tarea solamente en el
+          bloque eventos de hoy"), aquí solo quedan las atrasadas. */}
       {(() => {
         // Lista PLANA: todas las tareas (atrasadas + hoy) en filas de una línea, cada una
         // con su contexto como chip al lado. Sin agrupar por contexto (más concentrado).
@@ -254,7 +259,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
               <button className="dc-group-add" onClick={() => setShowNewTask(true)} title={t('modal.newTask')}>+</button>
             </div>
             {open && data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
-            {open && data.today.map(n => renderTaskRow(n, { showDue: true }))}
+            {open && !hideToday && data.today.map(n => renderTaskRow(n, { showDue: true }))}
           </div>
         )
       })()}
@@ -275,12 +280,15 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
           {!collapsedG.has('algundia') && data.seguimiento.map(n => renderTaskRow(n, {}))}
         </div>
       )}
-      {/* FUTURO — tareas aparcadas explícitamente con status='future'. Colapsado
-          por defecto, igual que «Por planificar»: no debe competir por atención hoy. */}
-      {data.future.length > 0 && (
+      {/* FUTURO — tareas aparcadas explícitamente (status='future') PRIMERO, y debajo
+          las tareas con fecha en próximos días en orden cronológico (Alberto, 22 jul:
+          "así, realmente, el bloque futuro se completa"). Colapsado por defecto, igual
+          que «Por planificar»: no debe competir por atención hoy. */}
+      {(data.future.length > 0 || upcoming.length > 0) && (
         <div className="dc-group">
-          {gHeader('futuro', `Futuro · ${data.future.length}`)}
+          {gHeader('futuro', `Futuro · ${data.future.length + upcoming.length}`)}
           {!collapsedG.has('futuro') && data.future.map(n => renderTaskRow(n, { showDue: true }))}
+          {!collapsedG.has('futuro') && upcoming.map(n => renderTaskRow(n, { showDue: true }))}
         </div>
       )}
 
@@ -323,7 +331,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false }: {
 
   // Modal de fecha+recurrencia (al tocar el badge de fecha de una tarea).
   const propsNode = propsNodeId
-    ? [...data.overdue, ...data.today, ...data.seguimiento, ...data.future].find(n => n.id === propsNodeId)
+    ? [...data.overdue, ...data.today, ...data.seguimiento, ...data.future, ...upcoming].find(n => n.id === propsNodeId)
     : null
   const propsModal = propsNode
     ? <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />
