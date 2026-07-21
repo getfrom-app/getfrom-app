@@ -20,7 +20,7 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
 import { diaryDayTitle } from '../../utils/agendaHelper'
 import { collectDailyCockpit, toggleTaskDone } from '../../utils/dailyCockpit'
-import { getCalendarEvents, type CalendarEvent } from '../../api/googleCalendar'
+import { getCalendarEvents, deleteCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 import { gcalEventNodeId } from '../../utils/deterministicId'
 import { useUserStore } from '../../store/userStore'
 import RowContextChip from './RowContextChip'
@@ -128,6 +128,11 @@ export default function DayColumn({
   // Evento cuyo badge está en edición (popover hora/repetición).
   const [editEv, setEditEv] = useState<string | null>(null)
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
+  // Menú clic derecho de un evento GCal crudo (sin nodo local — el menú global
+  // `from:open-rowmenu`/RightColMenu necesita un nodeId real, así que este es
+  // aparte, igual que hace PlannerPanel para sus bloques 'gcal' (Alberto, 22 jul:
+  // "el bloque de eventos de hoy también tiene que tener su botón derecho").
+  const [gcalCtxMenu, setGcalCtxMenu] = useState<{ x: number; y: number; ev: CalendarEvent } | null>(null)
   const [editArea, setEditArea] = useState<string | null>(null) // id del área en renombrado inline
   const patchEvent = (id: string, updates: Partial<Node>) => {
     store.updateNode(id, updates)
@@ -229,6 +234,7 @@ export default function DayColumn({
             return (
               <div key={`gcal:${ev.id}`} className="dc-row dc-row--event"
                 onClick={() => setEditingGcal(ev)} style={{ cursor: 'pointer' }}
+                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setGcalCtxMenu({ x: e.clientX, y: e.clientY, ev }) }}
                 title={t('tip.editGcalEvent')}>
                 <span className="dc-event-dot" style={ev.backgroundColor ? { background: ev.backgroundColor } : undefined} />
                 <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
@@ -418,20 +424,56 @@ export default function DayColumn({
         return pn ? <TaskPropsPopover node={pn} allowRename allowDelete onClose={() => setPropsNodeId(null)} /> : null
       })()}
 
+      {/* Menú clic derecho de un evento GCal crudo — Renombrar (reutiliza el mismo
+          modal de edición, ya tiene el campo de título), Convertir en tarea
+          (materializa sin hora, tarea de hoy) y Eliminar. */}
+      {gcalCtxMenu && (
+        <>
+          <div onPointerDown={() => setGcalCtxMenu(null)} onContextMenu={e => { e.preventDefault(); setGcalCtxMenu(null) }}
+            style={{ position: 'fixed', inset: 0, zIndex: 2999 }} />
+          <div className="node-ctx-menu" style={{ position: 'fixed', top: gcalCtxMenu.y, left: gcalCtxMenu.x, zIndex: 3000 }}
+            onClick={e => e.stopPropagation()}>
+            <button className="node-ctx-item" onClick={() => { setEditingGcal(gcalCtxMenu.ev); setGcalCtxMenu(null) }}>
+              {t('rightColMenu.rename', 'Renombrar')}
+            </button>
+            <button className="node-ctx-item" onClick={() => {
+              const ev = gcalCtxMenu.ev
+              const today = new Date(); today.setHours(0, 0, 0, 0)
+              const newNode = store.createNode({ text: ev.title || t('search.chipEvent'), parentId: node.id, predefinedId: gcalEventNodeId(ev.id) ?? undefined })
+              store.updateNode(newNode.id, {
+                status: 'pending', due: today.toISOString(),
+                gcalEventId: ev.id, extraData: JSON.stringify({ _gcalEventId: ev.id }),
+              })
+              setGcalCtxMenu(null)
+            }}>{t('rightColMenu.convertToTask')}</button>
+            <div className="node-ctx-sep" />
+            <button className="node-ctx-item node-ctx-item--danger" onClick={async () => {
+              const ev = gcalCtxMenu.ev
+              try { await deleteCalendarEvent(ev.id) } catch { /* noop */ }
+              setGcalEvents(p => p.filter(x => x.id !== ev.id))
+              setGcalCtxMenu(null)
+            }}>{t('rightColMenu.delete')}</button>
+          </div>
+        </>
+      )}
+
       {/* Modal de edición del evento de Google (clic en una fila de evento) */}
       {editingGcal && (
         <GCalEventEditor event={editingGcal} modal onClose={() => setEditingGcal(null)}
           linkedNodeId={store.allActive().find(n => n.gcalEventId === editingGcal.id)?.id}
           onCreateNode={() => {
-            // Crear bajo demanda un nodo local vinculado al evento (no por defecto).
+            // Crear bajo demanda un DOCUMENTO local vinculado al evento (no por
+            // defecto). `_doc:'1'` — es un documento, no un nodo genérico
+            // (Alberto, 22 jul: "en lugar de eso, se debe crear documento").
             const ev = editingGcal
             const newNode = store.createNode({ text: ev.title || t('search.chipEvent'), parentId: node.id, predefinedId: gcalEventNodeId(ev.id) ?? undefined })
             store.updateNode(newNode.id, {
               isEvent: true, due: ev.start, dueEnd: ev.end,
               gcalEventId: ev.id, // columna: la usa el dedup del planner (n.gcalEventId)
-              extraData: JSON.stringify({ _gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '' }),
+              extraData: JSON.stringify({ _doc: '1', _gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '' }),
             })
             openNodeDetail(newNode.id)
+            return newNode.id
           }}
           onUpdated={ev => { setGcalEvents(p => p.map(x => x.id === ev.id ? ev : x)); setEditingGcal(null) }}
           onDeleted={id => { setGcalEvents(p => p.filter(x => x.id !== id)); setEditingGcal(null) }} />

@@ -9,7 +9,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { trashNode } from '../../utils/papeleraHelper'
-import { firstContextOf, setNodeContext, convertToContext, convertToTask, isContextNode } from '../../utils/cajones'
+import { firstContextOf, setNodeContext, convertToTask, isContextNode } from '../../utils/cajones'
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from './ContextPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
@@ -75,8 +75,12 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
   }
 
   function convertTask() {
-    if (isTask) {
-      store.updateNode(nodeId, { status: null })
+    if (isEvent) {
+      // Evento → tarea de HOY: se quita la hora, pasa a tarea de todo el día
+      // (Alberto, 22 jul: "se quitaría la hora del evento y pasaría a ser una
+      // tarea para el día de hoy").
+      const today = new Date(); today.setHours(0, 0, 0, 0)
+      store.updateNode(nodeId, { isEvent: false, status: 'pending', due: today.toISOString(), dueEnd: null })
     } else if (isContextNode(nodeId)) {
       // Un contexto → tarea: limpia marcas de contexto y lo asigna a su contexto padre.
       convertToTask(nodeId)
@@ -109,18 +113,13 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
         ) : (
           <button className="node-ctx-item" onClick={() => setRenaming(true)}>{t('rightColMenu.rename', 'Renombrar')}</button>
         )}
-        {!isEvent && (
-          <button className="node-ctx-item" onClick={convertTask}>
-            {isTask ? t('rightColMenu.removeTask') : t('rightColMenu.convertToTask')}
-          </button>
-        )}
-        {!isEvent && !isContextNode(nodeId) && (
-          <button className="node-ctx-item" onClick={() => {
-            if (convertToContext(nodeId)) {
-              window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `🧠 Convertido en contexto: "${(node!.text || '').slice(0, 30)}"`, type: 'success' } }))
-            }
-            onClose()
-          }}>{t('rightColMenu.convertToContext')}</button>
+        {/* Ni «Quitar tarea» ni «Convertir en contexto» tenían sentido para el usuario
+            (Alberto, 22 jul: "esas dos opciones se tienen que eliminar") — este botón
+            ahora es de una sola dirección: solo ofrece convertir, nunca deshacer, y
+            ya no se oculta para eventos (un evento también puede pasar a tarea, ver
+            convertTask()). */}
+        {!isTask && (
+          <button className="node-ctx-item" onClick={convertTask}>{t('rightColMenu.convertToTask')}</button>
         )}
         <button ref={ctxBtnRef} className="node-ctx-item" onClick={toggleCtxFlyout}>
           {current ? t('rightColMenu.changeContext') : t('rightColMenu.addContext')} <span style={{ float: 'right', opacity: 0.6 }}>›</span>

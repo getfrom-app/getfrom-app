@@ -1057,10 +1057,24 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           <div className="pp-ctx" style={{left:ctxMenu.x,top:ctxMenu.y}}>
             {ctxMenu.b.kind === 'gcal' && (
               <button onClick={()=>{
+                // DOCUMENTO enlazado al evento (mismo materializado que el botón del
+                // modal) — antes creaba un nodo suelto, sin due/gcalEventId, que no
+                // se enlazaba con el evento (Alberto, 22 jul: "se enlaza con el
+                // propio evento").
+                const ev = ctxMenu.b.gcalEvent
                 const d = ensureDayPath(ctxMenu.b.start)
-                store.createNode({text:ctxMenu.b.text, parentId:d.id})
+                const newNode = store.createNode({ text: ctxMenu.b.text, parentId: d.id, predefinedId: ev ? (gcalEventNodeId(ev.id) ?? undefined) : undefined })
+                if (ev) {
+                  store.updateNode(newNode.id, {
+                    isEvent: true, due: ev.start, dueEnd: ev.end, gcalEventId: ev.id,
+                    extraData: JSON.stringify({ _doc: '1', _gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '' }),
+                  })
+                } else {
+                  store.updateNode(newNode.id, { extraData: JSON.stringify({ _doc: '1' }) })
+                }
+                window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: newNode.id } }))
                 setCtxMenu(null)
-              }}>📄 {t('tip.createNode')}</button>
+              }}>📄 {t('tip.createDocument', 'Crear documento')}</button>
             )}
             {ctxMenu.b.kind !== 'gcal' && ctxMenu.b.nodeId && (
               <button onClick={()=>{ window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: ctxMenu.b.nodeId! } })); setCtxMenu(null) }}>
@@ -1133,16 +1147,18 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
         <GCalEventEditor event={editingGcal} modal onClose={()=>setEditingGcal(null)}
           linkedNodeId={store.allActive().find(n=>n.gcalEventId===editingGcal.id)?.id}
           onCreateNode={()=>{
-            // Crear bajo demanda un nodo local vinculado al evento (no se crea por defecto).
+            // Crear bajo demanda un DOCUMENTO local vinculado al evento (no se crea
+            // por defecto). `_doc:'1'` — es un documento, no un nodo genérico.
             const ev = editingGcal
             const dayNode = ensureDayPath(new Date(ev.start))
             const node = store.createNode({ text: ev.title || t('search.chipEvent'), parentId: dayNode.id, predefinedId: gcalEventNodeId(ev.id) ?? undefined })
             store.updateNode(node.id, {
               isEvent: true, due: ev.start, dueEnd: ev.end,
               gcalEventId: ev.id, // columna: la usa el dedup del planner (n.gcalEventId)
-              extraData: JSON.stringify({ _gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '' }),
+              extraData: JSON.stringify({ _doc: '1', _gcalEventId: ev.id, _gcalColor: ev.backgroundColor || '' }),
             })
             window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: node.id } }))
+            return node.id
           }}
           onUpdated={ev=>{setGcalEvents(p=>p.map(x=>x.id===ev.id?ev:x));setEditingGcal(null)}}
           onDeleted={id=>{setGcalEvents(p=>p.filter(x=>x.id!==id));setEditingGcal(null)}} />

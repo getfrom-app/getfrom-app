@@ -12,6 +12,9 @@ import { useUserStore } from '../../store/userStore'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate } from '../../utils/dates'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { pushEventToGcal } from '../../utils/gcalNodesSync'
+import ContextChip from './ContextChip'
+import ContextPicker from './ContextPicker'
+import { firstContextOf, setNodeContext } from '../../utils/cajones'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -384,14 +387,16 @@ export interface GCalEventEditorProps {
   onDeleted: (id: string) => void
   /** Si true, se renderiza como modal centrado con backdrop. */
   modal?: boolean
-  /** Si el evento tiene un nodo Fromly vinculado, su id → botón «Abrir nota». */
+  /** Si el evento tiene un nodo Fromly vinculado, su id → botón «Abrir nota» + selector de contexto. */
   linkedNodeId?: string
-  /** Crear un nodo local vinculado a este evento (bajo demanda). Si se provee y no
-   *  hay nodo vinculado, se muestra el botón «Crear nodo». */
-  onCreateNode?: () => void
+  /** Crea (bajo demanda) el documento local vinculado a este evento y devuelve su id —
+   *  lo usan tanto el botón «Crear documento» como el selector de contexto (que
+   *  materializa el vínculo la primera vez que se elige un contexto). */
+  onCreateNode?: () => string
 }
 
 export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, linkedNodeId, onCreateNode }: GCalEventEditorProps) {
+  useStore()
   const { t } = useTranslation()
   const gcalNavigate = useNavigate()
   const [title, setTitle] = useState(event.title)
@@ -401,7 +406,40 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, l
   const [endTime, setEndTime] = useState(event.end && !event.allDay ? event.end.slice(11, 16) : '')
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  // El vínculo con el nodo puede nacer DURANTE la edición (al elegir un contexto
+  // sin haber creado el documento todavía) — de ahí el estado propio en vez de
+  // usar `linkedNodeId` directamente (Alberto, 22 jul: "puede estar sin ningún
+  // contexto, pero se debe poder poner contexto").
+  const [linkedId, setLinkedId] = useState(linkedNodeId)
+  const [ctxPicker, setCtxPicker] = useState<{ x: number; y: number } | null>(null)
+  const ctxBtnRef = useRef<HTMLButtonElement>(null)
+  const ctxPickerRef = useRef<HTMLDivElement>(null)
   const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!ctxPicker) return
+    // Cierra al hacer clic fuera del popover — NO del botón que lo abrió (con
+    // contexto ya asignado, el disparador es el propio ContextChip, no un botón
+    // con `ctxBtnRef`, así que comprobar el popover en sí es lo único fiable).
+    function onDoc(e: MouseEvent) { if (ctxPickerRef.current && !ctxPickerRef.current.contains(e.target as globalThis.Node)) setCtxPicker(null) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [ctxPicker])
+
+  const linkedNode = linkedId ? store.getNode(linkedId) : null
+  const currentCtx = linkedNode ? firstContextOf(linkedNode) : null
+
+  function openCtxPicker(e?: React.MouseEvent) {
+    const r = (e?.currentTarget as HTMLElement | undefined)?.getBoundingClientRect() ?? ctxBtnRef.current?.getBoundingClientRect()
+    if (r) setCtxPicker({ x: r.left, y: r.bottom + 4 })
+  }
+  /** Elegir un contexto materializa el documento primero si aún no existía. */
+  function pickContext(contextId: string | null) {
+    let id = linkedId
+    if (!id && onCreateNode) { id = onCreateNode(); setLinkedId(id) }
+    if (id) setNodeContext(id, contextId)
+    setCtxPicker(null)
+  }
 
   // En modo modal, ESC + click-out vienen ya de <CenteredModal>.
 
@@ -432,8 +470,8 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, l
       // Planificador siempre lee `due`/`dueEnd` del NODO, no del evento de Google
       // (Alberto, 21 jul: "aunque lo modifique manualmente... sigue mostrando la
       // hora equivocada").
-      if (linkedNodeId) {
-        store.updateNode(linkedNodeId, { text: title, due: startISO, dueEnd: endISO })
+      if (linkedId) {
+        store.updateNode(linkedId, { text: title, due: startISO, dueEnd: endISO })
       }
       setMsg(`✓ ${t('gcal.savedToGoogle')}`)
       setTimeout(onClose, 800)
@@ -481,16 +519,35 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, l
             onClick={() => setEndTime('')} title={t('tip.removeTime')}>✕h</button>
         )}
       </div>
+      {/* Contexto — como cualquier otro elemento: puede quedarse sin contexto, pero
+          siempre debe poder asignarse uno (Alberto, 22 jul). Elegir un contexto
+          antes de crear el documento lo materializa sobre la marcha. */}
+      <div className="gcal-editor-row" style={{ alignItems: 'center' }}>
+        <span className="gcal-editor-label">{t('gcal.context', 'Contexto')}</span>
+        {currentCtx ? (
+          <ContextChip context={currentCtx} title={t('noteColumn.changeContext')}
+            onClick={openCtxPicker} onRemove={() => linkedId && setNodeContext(linkedId, null)} />
+        ) : (
+          <button ref={ctxBtnRef} className="dc-ctx-chip dc-ctx-chip--empty" onClick={openCtxPicker} title={t('rowContextChip.assign')}>
+            {t('gcal.noContext', 'Sin contexto')}
+          </button>
+        )}
+        {ctxPicker && createPortal((
+          <div ref={ctxPickerRef} style={{ position: 'fixed', top: ctxPicker.y, left: ctxPicker.x, zIndex: 3001 }} onClick={e => e.stopPropagation()}>
+            <ContextPicker currentId={currentCtx?.id ?? null} onPick={pickContext} />
+          </div>
+        ), document.body)}
+      </div>
       {msg && <div className={`gcal-editor-msg${msg.startsWith('✓') ? ' ok' : ''}`}>{msg}</div>}
-      {linkedNodeId ? (
-        <button className="gcal-editor-opennote" onClick={() => { gcalNavigate(`/node/${linkedNodeId}`); onClose() }}
+      {linkedId ? (
+        <button className="gcal-editor-opennote" onClick={() => { gcalNavigate(`/node/${linkedId}`); onClose() }}
           style={{ width: '100%', marginTop: 4, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
           ↗ {t('gcal.openNote')}
         </button>
       ) : onCreateNode ? (
         <button className="gcal-editor-opennote" onClick={() => { onCreateNode(); onClose() }}
           style={{ width: '100%', marginTop: 4, padding: '7px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'none', cursor: 'pointer', fontSize: 13, color: 'var(--text-secondary)' }}>
-          ➕ {t('gcal.createNode')}
+          ➕ {t('gcal.createDocument', 'Crear documento')}
         </button>
       ) : null}
       <div className="gcal-editor-actions">
