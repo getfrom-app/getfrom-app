@@ -194,7 +194,19 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
     })
   }
 
-  return blocks.sort((a, b) => a.start.getTime() - b.start.getTime())
+  // Dedup defensivo: un evento recurrente de Google puede llegar con un id de
+  // INSTANCIA que no coincide con el gcalEventId maestro guardado en el nodo
+  // local, así que fromGcalIds no lo detecta y el mismo evento se pinta dos
+  // veces (nodo local 'task' + crudo 'gcal'). Nos quedamos con la versión
+  // editable (nodo local) cuando coinciden título+hora de inicio.
+  const byKey = new Map<string, Block>()
+  for (const b of blocks) {
+    const key = `${b.text.trim().toLowerCase()}|${b.start.getTime()}`
+    const existing = byKey.get(key)
+    if (!existing || (existing.kind === 'gcal' && b.kind !== 'gcal')) byKey.set(key, b)
+  }
+
+  return [...byKey.values()].sort((a, b) => a.start.getTime() - b.start.getTime())
 }
 
 // ══════════════════════════════════════════════════════════════════════════
