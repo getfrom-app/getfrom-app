@@ -160,7 +160,11 @@ export default function DayColumn({
   // solamente en el bloque eventos de hoy, pero poner el checkbox junto al
   // título"). DailyCockpit las oculta de Para Hacer vía `hideToday`.
   const cockpit = isToday ? collectDailyCockpit() : null
-  const todayTasks = cockpit?.today ?? []
+  // Solo las tareas de hoy CON HORA se fusionan en Eventos — las de todo el día
+  // son tareas normales y viven en Para Hacer, no en la agenda por horas
+  // (Alberto, 22 jul: "los eventos de todo el día... en realidad son tareas del
+  // día, deberían aparecer en Para Hacer y no en Eventos de hoy").
+  const todayTasksTimed = (cockpit?.today ?? []).filter(n => !!timeLabel(n, i18n.language))
 
   // Lista única de «Eventos de hoy»: gcal crudo + eventos-nodo + tareas de hoy,
   // ordenada cronológicamente (Alberto: "deben aparecer ordenados
@@ -178,11 +182,11 @@ export default function DayColumn({
   // aparece también como fila cruda. Se deduplica primero por id de nodo y
   // luego por título+hora, quedándonos con la representación más "editable"
   // (task > eventNode > gcal crudo).
-  const todayTaskIds = new Set(todayTasks.map(n => n.id))
+  const todayTaskIds = new Set(todayTasksTimed.map(n => n.id))
   const agendaRowsRaw: AgendaRow[] = [
     ...extraEvents.map(ev => ({ kind: 'gcal' as const, sortTime: new Date(ev.start).getTime(), ev })),
     ...eventNodes.filter(n => !todayTaskIds.has(n.id)).map(n => ({ kind: 'eventNode' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
-    ...todayTasks.map(n => ({ kind: 'task' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
+    ...todayTasksTimed.map(n => ({ kind: 'task' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
   ]
   const rowTitle = (r: AgendaRow) => ((r.kind === 'gcal' ? r.ev.title : r.n.text) || '').trim().toLowerCase()
   const rowRank = (r: AgendaRow) => (r.kind === 'task' ? 2 : r.kind === 'eventNode' ? 1 : 0)

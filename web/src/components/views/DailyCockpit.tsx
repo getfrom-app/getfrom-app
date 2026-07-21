@@ -11,7 +11,7 @@ import { collectDailyCockpit, collectUpcomingTasks } from '../../utils/dailyCock
 import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
-import TaskRow from '../panels/TaskRow'
+import TaskRow, { timeLabel } from '../panels/TaskRow'
 import NewTaskModal from '../modals/NewTaskModal'
 import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, isContextFollowed, setContextFollowed, firstContextOf, clearContextParent, convertToTask } from '../../utils/cajones'
 import ContextChip from '../panels/ContextChip'
@@ -27,7 +27,7 @@ const ctxMenuItem: CSSProperties = {
 
 export default function DailyCockpit({ disablePlanner = false, bare = false, hideToday = false }: { disablePlanner?: boolean; bare?: boolean; hideToday?: boolean } = {}) {
   useStore() // suscripción: re-render con cada cambio del store
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
   // Menú contextual de las filas de CONTEXTO + animación de salida.
   const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null)
@@ -258,8 +258,13 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
               {gHeader('porhacer', 'Para hacer')}
               <button className="dc-group-add" onClick={() => setShowNewTask(true)} title={t('modal.newTask')}>+</button>
             </div>
+            {/* hideToday oculta SOLO las tareas de hoy CON HORA (ya viven con
+                checkbox en «Eventos de hoy») — las de todo el día son tareas
+                normales y se quedan aquí (Alberto, 22 jul: "los eventos de todo
+                el día... en realidad son tareas del día, deberían aparecer en
+                Para Hacer y no en Eventos de hoy"). */}
             {open && data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
-            {open && !hideToday && data.today.map(n => renderTaskRow(n, { showDue: true }))}
+            {open && data.today.filter(n => !hideToday || !timeLabel(n, i18n.language)).map(n => renderTaskRow(n, { showDue: true }))}
           </div>
         )
       })()}
