@@ -13061,6 +13061,15 @@ textarea:focus-visible,
   padding: 7px 10px; border-bottom: 1px solid var(--border);
   flex-shrink: 0; overflow: hidden;
 }
+/* Tab «Día»: mismo padding exterior que la cabecera de Agenda
+   (.v2-right-body tiene 14px) — aquí vive dentro de .v2-right-fill, que NO
+   tiene padding (el timeline necesita llenar el alto disponible), así que
+   hay que dárselo a mano. .v2-agenda-toolbar/.v2-agenda-day-title ya traen
+   sus propios márgenes (18px/20px) — mismas clases que Agenda, sin
+   overrides, para que el hueco sea IDÉNTICO. Sin borde inferior — Agenda
+   tampoco lo tiene (Alberto, 22 jul: "está todo mucho más pegado...
+   iguala los márgenes"). */
+.pp-header--day { align-items: stretch; padding: 14px 14px 0; border-bottom: none; }
 .pp-view-tabs { display: flex; gap: 2px; background: var(--bg-secondary); padding: 2px; border-radius: 6px; flex-shrink: 0; }
 .pp-tab { font-size: 11px; font-weight: 500; padding: 3px 8px; border: none; background: none; color: var(--text-secondary); border-radius: 4px; cursor: pointer; }
 .pp-tab--active { background: var(--bg-primary); color: var(--text-primary); box-shadow: 0 1px 3px rgba(0,0,0,.1); }

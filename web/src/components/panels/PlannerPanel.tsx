@@ -1046,7 +1046,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           grande del día + HOY/CAL, en vez de ‹/›+Hoy+resetZoom (que además duplicaba
           el título del día con `pp-col-head`, justo debajo — Alberto, 22 jul). CAL
           reutiliza la vista Año que el planificador ya trae (renderYear). */}
-      <div className="pp-header">
+      <div className={`pp-header${dayOnlyHeader ? ' pp-header--day' : ''}`}>
         {dayOnlyHeader ? (
           viewMode === 'year' ? (
             <>
@@ -1057,15 +1057,18 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             </>
           ) : (
             // Misma estructura de 2 filas que la cabecera de Agenda (V2AgendaView.tsx):
-            // fila 1 = botones HOY/CAL, fila 2 = título del día debajo — Alberto, 22 jul.
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}>
-              <div className="v2-agenda-toolbar" style={{ margin: 0 }}>
+            // fila 1 = botones HOY/CAL, fila 2 = título del día debajo — Alberto, 22 jul,
+            // dos veces: primero la estructura, luego "sigue sin ser igual... está todo
+            // mucho más pegado... iguala los márgenes a los de la tab Agenda" — el padding
+            // exterior y los huecos entre filas viven en .pp-header--day (index.css).
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+              <div className="v2-agenda-toolbar">
                 {!sameDay(centerDate, today) && (
                   <button className="v2-head-action" onClick={()=>{ setCenterDate(today); setViewMode('day') }}>{t('v2.agenda.today', 'HOY')}</button>
                 )}
                 <button className="v2-head-action" onClick={()=>setViewMode('year')} title={t('v2.agenda.openYear', 'Calendario anual')}>{t('v2.agenda.year', 'CAL')}</button>
               </div>
-              <h2 className="v2-agenda-day-title" style={{ margin: 0 }}>{diaryDayTitle(centerDate)}</h2>
+              <h2 className="v2-agenda-day-title">{diaryDayTitle(centerDate)}</h2>
             </div>
           )
         ) : (
@@ -1142,7 +1145,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             {/* Franja «todo el día»: tareas con fecha pero sin hora, Y eventos de todo
                 el día (locales o crudos de Google). Arrastrables. */}
             <div className="pp-allday">
-              <div className="pp-allday-axis" style={{width:AXIS_W, flexShrink:0, position:'sticky', left:0, zIndex:10}}>{t('tip.allDayLower')}</div>
+              {/* Sin el texto «todo el día» en la tab Día (Alberto, 22 jul: "no
+                  pongas nada... solo mantén los elementos") — la fila ya se
+                  distingue visualmente de la rejilla horaria de debajo; en la
+                  vista semana/mes (varias columnas) sí ayuda como leyenda. */}
+              <div className="pp-allday-axis" style={{width:AXIS_W, flexShrink:0, position:'sticky', left:0, zIndex:10}}>{!dayOnlyHeader && t('tip.allDayLower')}</div>
               {visibleDays.map(d => {
                 const items = getAllDayTasks(d)
                 const editing = !!newAllDay && sameDay(newAllDay.day, d)
