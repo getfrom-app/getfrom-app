@@ -276,14 +276,6 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       if (color) { el.style.setProperty('--cite-color', color); el.classList.add('doc-para--cited') }
       else { el.classList.remove('doc-para--cited'); el.style.removeProperty('--cite-color') }
     })
-    // DEBUG TEMPORAL (quitar tras verificar) — vuelca el estado al DOM para poder
-    // inspeccionarlo desde fuera del bundle (execute_javascript no ve variables JS
-    // de la página, solo el DOM).
-    wrap.setAttribute('data-cite-debug', JSON.stringify({
-      byPid: Array.from(byPid.entries()),
-      byText: Array.from(byText.entries()),
-      paras: Array.from(wrap.querySelectorAll<HTMLElement>('[data-pid]')).map(el => ({ pid: el.getAttribute('data-pid'), text: (el.textContent || '').trim() })),
-    }))
   }
 
   const createCitation = (pid: string, contextId: string) => {
@@ -521,7 +513,16 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       // pulsar el chip de la casilla (`from:open-task-props` en TaskItemChip). Igual en tarjeta
       // del lienzo y en el panel derecho — consistencia total.
     },
-    onTransaction: () => notifyDocEditor(),
+    // `applyCiteIndicators` también aquí (no solo en el useEffect de render):
+    // el polling remoto (cada 15s, nodeStore.ts) o el pull de operaciones en
+    // vivo pueden traer una versión externa de este documento y disparan
+    // `editor.commands.setContent(...)` (más abajo) — eso RECREA el DOM de
+    // ProseMirror y borra cualquier clase/estilo puesto a mano en el render
+    // anterior. Alberto, 22 jul: verificado en vivo — el indicador desaparecía
+    // ~1s después de aplicarse porque nada lo reaplicaba tras ese reemplazo.
+    // `onTransaction` corre en CADA transacción (incluida la de setContent),
+    // justo después de que la vista ya actualizó el DOM — cierra la ventana.
+    onTransaction: () => { notifyDocEditor(); applyCiteIndicators() },
     // Documentos ya existentes (creados antes de ParagraphId) no tienen `pid` en
     // ningún párrafo — el plugin de la extensión solo asigna ids en transacciones
     // que YA cambian el doc, así que un documento abierto sin tocar se quedaría
