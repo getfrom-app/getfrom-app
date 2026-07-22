@@ -40,6 +40,7 @@ import NodeCalendarView from './NodeCalendarView'
 import ContextPicker from '../panels/ContextPicker'
 import { ParagraphId, dedupePids } from '../../utils/tiptapParagraphId'
 import { CiteDecorations, citeDecoKey } from '../../utils/tiptapCiteDecorations'
+import { TabIndent } from '../../utils/tiptapTabIndent'
 
 // ¿El texto pegado parece MARKDOWN? (encabezados, listas, code fence, cita, enlaces,
 // negritas). Basta un marcador claro para tratarlo como markdown y renderizarlo.
@@ -585,6 +586,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       Image.configure({ inline: false, allowBase64: false }),
       ParagraphId,
       CiteDecorations,
+      TabIndent,
     ],
     content: node.body || '',
     // Por defecto: compact (tarjeta del lienzo) autoenfoca al montar; NO-compact (página en
