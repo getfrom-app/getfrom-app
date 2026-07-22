@@ -284,7 +284,7 @@ export default function DayColumn({
   // Filas reutilizadas por «Eventos de hoy» (con hora) Y «Todo el día» (sin
   // hora) — la única diferencia entre ambos contextos ya está resuelta dentro
   // de cada función (allDay ? "Todo el día" : hora).
-  const renderGcalRow = (ev: CalendarEvent) => {
+  const renderGcalRow = (ev: CalendarEvent, inAllDayGroup = false) => {
     const allDay = ev.allDay
     const timeStr = allDay ? t('tip.allDay') : hhmm(ev.start)
     return (
@@ -293,12 +293,12 @@ export default function DayColumn({
         onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setGcalCtxMenu({ x: e.clientX, y: e.clientY, ev }) }}
         title={t('tip.editGcalEvent')}>
         <span className="dc-event-dot" style={ev.backgroundColor ? { background: ev.backgroundColor } : undefined} />
-        <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
+        {!inAllDayGroup && <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>}
         <span className="dc-text">{ev.title || t('search.chipEvent')}</span>
       </div>
     )
   }
-  const renderTaskCheckboxRow = (task: Node) => {
+  const renderTaskCheckboxRow = (task: Node, inAllDayGroup = false) => {
     const done = task.status === 'done'
     const timeStr = timeLabel(task, i18n.language) || t('tip.allDay')
     return (
@@ -309,7 +309,7 @@ export default function DayColumn({
         <button className={`dc-check ${done ? 'dc-check--done' : ''}`}
           onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
           title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
-        <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
+        {!inAllDayGroup && <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>}
         <span className="dc-text" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
           {task.text ? renderInline(task.text) : t('common.noTitle')}
         </span>
@@ -318,7 +318,7 @@ export default function DayColumn({
       </div>
     )
   }
-  const renderEventNodeRow = (ev: Node) => {
+  const renderEventNodeRow = (ev: Node, inAllDayGroup = false) => {
     // Si el evento tiene contexto asignado, su color manda sobre el color
     // de Google (Alberto, 22 jul: "si el evento tiene contexto, se colorea
     // del color del contexto").
@@ -334,13 +334,15 @@ export default function DayColumn({
           onDragStart={e => { e.dataTransfer.setData('nodeId', ev.id); e.dataTransfer.effectAllowed = 'copy' }}
           onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
           <span className="dc-event-dot" style={color ? { background: color } : undefined} />
-          <button
-            className="dc-ev-badge dc-ev-badge--lead"
-            onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
-            title={t('tip.editTimeAndRepeat')}
-          >
-            {timeStr}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
-          </button>
+          {!inAllDayGroup && (
+            <button
+              className="dc-ev-badge dc-ev-badge--lead"
+              onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
+              title={t('tip.editTimeAndRepeat')}
+            >
+              {timeStr}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
+            </button>
+          )}
           <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
             {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
           </span>
@@ -396,8 +398,11 @@ export default function DayColumn({
       </div>
     )
   }
+  // El badge "Todo el día" es redundante dentro de su propio bloque (Alberto,
+  // 22 jul: "el badge de todo el dia en las tareas del bloque todo el dia no
+  // es necesario") — se omite pasando inAllDayGroup=true.
   const renderAllDayRow = (row: AllDayRow) =>
-    row.kind === 'gcal' ? renderGcalRow(row.ev) : row.kind === 'eventNode' ? renderEventNodeRow(row.n) : renderTaskCheckboxRow(row.n)
+    row.kind === 'gcal' ? renderGcalRow(row.ev, true) : row.kind === 'eventNode' ? renderEventNodeRow(row.n, true) : renderTaskCheckboxRow(row.n, true)
 
   return (
     <>

@@ -701,7 +701,12 @@ export default function V2App() {
           onNewDocument={onNewDocument}
           onNewCanvas={onNewCanvas}
           recorder={recorder}
-          showPlanner={rightMode === 'hoy'}
+          // El planificador central también se mantiene abierto en la tab Día
+          // — antes solo cubría 'hoy' (Agenda), así que ir a Día lo cerraba y
+          // dejaba ver el chat vacío detrás (Alberto, 22 jul: "al hacer clic
+          // en la pestaña Dia, se debe mantener el planner abierto, ahora se
+          // va a ventana chat").
+          showPlanner={rightMode === 'hoy' || rightMode === 'dia'}
           onOpenDrivePicker={onOpenDrivePicker}
         />
       )}
