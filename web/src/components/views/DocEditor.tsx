@@ -243,6 +243,30 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     setCitePicker(up ? { pid, x, y: window.innerHeight - r.top + 4, up: true } : { pid, x, y: r.bottom + 4, up: false })
   }
 
+  // Aplica el borde de color a los párrafos con cita — función aparte (no solo
+  // dentro del useEffect) para poder llamarla también justo tras CREAR una cita,
+  // sin depender de que el siguiente render de React llegue a tiempo.
+  const applyCiteIndicators = () => {
+    const wrap = contentWrapRef.current
+    if (!wrap) return
+    const byPid = new Map<string, string>()
+    for (const c of store.children(node.id)) {
+      if (c.deletedAt) continue
+      const e = parseExtraData(c.extraData)
+      if (e._docSelection !== '1') continue
+      const pid = e._docParagraphId as string | undefined
+      if (!pid) continue
+      const ctx = firstContextOf(c)
+      if (ctx) byPid.set(pid, contextColor(ctx.id))
+    }
+    wrap.querySelectorAll<HTMLElement>('[data-pid]').forEach(el => {
+      const pid = el.getAttribute('data-pid')
+      const color = pid ? byPid.get(pid) : null
+      if (color) { el.style.setProperty('--cite-color', color); el.classList.add('doc-para--cited') }
+      else { el.classList.remove('doc-para--cited'); el.style.removeProperty('--cite-color') }
+    })
+  }
+
   const createCitation = (pid: string, contextId: string) => {
     const ed = editorRef.current
     if (!ed) return
@@ -255,6 +279,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     store.updateNode(quote.id, { body: `<blockquote><p>${esc(trimmed)}</p></blockquote>` })
     assignContext(quote.id, contextId)
+    applyCiteIndicators()
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.citationSaved', 'Párrafo asignado al contexto'), type: 'success' } }))
   }
 
@@ -274,27 +299,10 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // vistazo qué está ya repartido en contextos, sin pasar el ratón por todo el
   // texto. Manipula el DOM directamente (fuera del modelo de TipTap): son solo
   // datos de presentación derivados de OTROS nodos (las citas), no del propio
-  // documento, así que no tiene sentido guardarlos como transacción PM.
-  useEffect(() => {
-    const wrap = contentWrapRef.current
-    if (!wrap) return
-    const byPid = new Map<string, string>()
-    for (const c of store.children(node.id)) {
-      if (c.deletedAt) continue
-      const e = parseExtraData(c.extraData)
-      if (e._docSelection !== '1') continue
-      const pid = e._docParagraphId as string | undefined
-      if (!pid) continue
-      const ctx = firstContextOf(c)
-      if (ctx) byPid.set(pid, contextColor(ctx.id))
-    }
-    wrap.querySelectorAll<HTMLElement>('[data-pid]').forEach(el => {
-      const pid = el.getAttribute('data-pid')
-      const color = pid ? byPid.get(pid) : null
-      if (color) { el.style.setProperty('--cite-color', color); el.classList.add('doc-para--cited') }
-      else { el.classList.remove('doc-para--cited'); el.style.removeProperty('--cite-color') }
-    })
-  })
+  // documento, así que no tiene sentido guardarlos como transacción PM. Corre
+  // en cada render (además de la llamada explícita en createCitation) para
+  // reflejar también citas creadas desde OTRA pestaña/instancia del editor.
+  useEffect(() => { applyCiteIndicators() })
 
   // Volver al párrafo exacto de una cita: scroll + resalte breve (disparado
   // desde V2DetailView.tsx, botón «Ir a la nota» de una cita).
