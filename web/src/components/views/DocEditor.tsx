@@ -249,11 +249,13 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   const applyCiteIndicators = () => {
     const wrap = contentWrapRef.current
     if (!wrap) return
+    // Escaneo directo por `_docSourceId` (no `store.children`): las citas son
+    // hijas de este documento, pero el filtro por extraData es más robusto
+    // frente a cualquier desfase de la caché de hijos entre instancias/pestañas.
     const byPid = new Map<string, string>()
-    for (const c of store.children(node.id)) {
-      if (c.deletedAt) continue
+    for (const c of store.allActive()) {
       const e = parseExtraData(c.extraData)
-      if (e._docSelection !== '1') continue
+      if (e._docSelection !== '1' || e._docSourceId !== node.id) continue
       const pid = e._docParagraphId as string | undefined
       if (!pid) continue
       const ctx = firstContextOf(c)
