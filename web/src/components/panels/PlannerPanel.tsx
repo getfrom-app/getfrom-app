@@ -317,10 +317,20 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   }, []) // eslint-disable-line
 
   // ── GCal sync helper ──────────────────────────────────────────────────────
+  // `gcalSyncInFlight`: sin esto, dos llamadas casi simultáneas para el MISMO
+  // nodo (p.ej. Enter+blur al crear un bloque nuevo) leen `node.gcalEventId`
+  // como null EN LAS DOS antes de que la primera termine de guardar el link,
+  // así que las dos CREAN un evento en Google y la segunda pisa el link de la
+  // primera — el evento sobrante queda huérfano, visible como tarjeta
+  // duplicada y superpuesta en el planner (Alberto, 22 jul: "no se tiene que
+  // duplicar la tarea por mucho que se haya sincronizado con Google Calendar").
+  const gcalSyncInFlight = useRef<Set<string>>(new Set())
   async function syncNodeToGcal(nodeId: string, start: Date, end: Date) {
     if (!us.googleConnected) return
+    if (gcalSyncInFlight.current.has(nodeId)) return
     const node = store.getNode(nodeId)
     if (!node) return
+    gcalSyncInFlight.current.add(nodeId)
     try {
       if (node.gcalEventId) {
         const updated = await updateCalendarEvent(node.gcalEventId, {
@@ -340,6 +350,8 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       }
     } catch (e) {
       console.error('[PlannerPanel] GCal sync error:', e)
+    } finally {
+      gcalSyncInFlight.current.delete(nodeId)
     }
   }
 
@@ -578,18 +590,28 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   }
 
   // ── Slot clic → nuevo bloque standalone ──────────────────────────────────
+  // `newBlockCommittedRef`: el input dispara commitNewBlock tanto en Enter
+  // como en blur — al pulsar Enter, el input se desmonta (newBlock pasa a
+  // null) y ese desmontaje dispara un blur nativo que vuelve a llamar a
+  // commitNewBlock ANTES de que el cierre sobre `newBlock` refleje el null,
+  // así que el segundo disparo también crea el nodo — y su propio push a
+  // Google, duplicado (Alberto, 22 jul: "se crean dos tarjetas... no se tiene
+  // que duplicar la tarea").
+  const newBlockCommittedRef = useRef(false)
   function handleSlotClick(e: React.MouseEvent, day: Date, colEl: HTMLElement) {
     if (justResized.current || justDragged.current) return
     if ((e.target as HTMLElement).closest('.pp-block') || (e.target as HTMLElement).closest('.pp-new-block')) return
     const rawY  = e.clientY - colEl.getBoundingClientRect().top
     const start = pxToTime(rawY, day)
     if (start.getHours() < HOUR_START || start.getHours() >= HOUR_END) return
+    newBlockCommittedRef.current = false
     setNewBlock({ day, start, top: snapPx(rawY), text: '' })
     setTimeout(() => newBlockRef.current?.focus(), 20)
   }
 
   function commitNewBlock() {
-    if (!newBlock) return
+    if (!newBlock || newBlockCommittedRef.current) return
+    newBlockCommittedRef.current = true
     if (newBlock.text.trim()) {
       const start = newBlock.start
       const end   = new Date(start.getTime() + 3600000)

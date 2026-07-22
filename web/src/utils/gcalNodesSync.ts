@@ -100,12 +100,25 @@ export async function pushEventTitleChanges(diaryNode: Node): Promise<void> {
  * evento al ponerle hora (Alberto: «todo lo que tenga fecha y hora se guarde
  * como evento… y se sincronice con Google Calendar»).
  */
+// Nodos con una sincronización a Google en curso (createCalendarEvent aún sin
+// resolver). Sin esto, dos llamadas casi simultáneas para el MISMO nodo (p.ej.
+// un input date/time que dispara `change` dos veces, o Enter+blur al crear un
+// bloque) leen `gcalId` como null EN LAS DOS antes de que la primera termine
+// de guardar el link — así que las dos CREAN un evento nuevo en Google, y la
+// segunda en resolver pisa el link de la primera, dejando el evento sobrante
+// huérfano (visible como tarjeta duplicada y superpuesta en el planner —
+// Alberto, 22 jul: "no se tiene que duplicar la tarea por mucho que se haya
+// sincronizado con Google Calendar").
+const pushInFlight = new Set<string>()
+
 export async function pushEventToGcal(node: Node): Promise<void> {
   if (!node.isEvent || !node.due) return
-  const gcalId = getGcalEventId(node)
-  const end = node.dueEnd || new Date(new Date(node.due).getTime() + 3600000).toISOString()
-  const title = stripTimePrefix(node.text || 'Evento')
+  if (pushInFlight.has(node.id)) return
+  pushInFlight.add(node.id)
   try {
+    const gcalId = getGcalEventId(node)
+    const end = node.dueEnd || new Date(new Date(node.due).getTime() + 3600000).toISOString()
+    const title = stripTimePrefix(node.text || 'Evento')
     if (gcalId) {
       lastSyncedTitle.set(gcalId, title) // anti-bucle del push de títulos
       await updateCalendarEvent(gcalId, {
@@ -126,6 +139,7 @@ export async function pushEventToGcal(node: Node): Promise<void> {
     }
     window.dispatchEvent(new CustomEvent('from:gcal-events-changed'))
   } catch { /* sin conexión GCal — silencioso */ }
+  finally { pushInFlight.delete(node.id) }
 }
 
 /**
