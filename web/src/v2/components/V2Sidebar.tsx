@@ -120,7 +120,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
   const [newSubCtxParent, setNewSubCtxParent] = useState<{ id: string | null } | null>(null)
   const openAddMenu = (e: React.MouseEvent, id: string | null, isGlobal?: boolean) => {
     e.preventDefault(); e.stopPropagation()
-    setAddMenu({ id, x: e.clientX, y: e.clientY })
+    setAddMenu({ id, x: e.clientX, y: e.clientY, isGlobal })
   }
 
   // Menú de clic derecho de un contexto: renombrar / color / mover / eliminar.
