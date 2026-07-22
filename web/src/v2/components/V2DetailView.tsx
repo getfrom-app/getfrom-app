@@ -8,6 +8,8 @@ import { useMemo, useState } from 'react'
 import { store, useStore } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { isDocNode } from '../../utils/docNode'
+import { useActiveDocEditor } from '../../utils/docEditorStore'
+import { ensureDayCanvas, DAY_CANVAS_FLAG } from '../../utils/agendaHelper'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { isPdfResource } from '../elementKind'
 import ResourcePanel from '../../components/panels/ResourcePanel'
@@ -129,6 +131,28 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
   // se edita directamente como documento.
   const hasKids = store.children(node.id).some(n => !n.deletedAt && (n.text || '').trim())
   const asDoc = doc || !hasKids
+  // Clic en el hueco vacío bajo el texto → foco al final del documento, como
+  // cualquier editor normal (Notion, Docs…). Antes esa zona no pertenecía al
+  // ProseMirror (que solo ocupa el alto de su propio contenido) y el clic
+  // simplemente perdía el foco sin mover el cursor (Alberto, 22 jul: "dando
+  // clic en cualquier parte de la nota, inferior a la posición del cursor, el
+  // cursor debería mostrarse para empezar a escribir... en todos los
+  // documentos de Fromly"). `e.target === e.currentTarget` → solo el fondo
+  // vacío de este contenedor, nunca un clic que ya cayó dentro del editor.
+  const activeDocEditor = useActiveDocEditor()
+  const focusDocEnd = (e: React.MouseEvent) => {
+    if (e.target !== e.currentTarget) return
+    activeDocEditor?.chain().focus('end').run()
+  }
+  // Switch Nota/Lienzo — SOLO para el par nota-diaria+lienzo-diario (Alberto, 22
+  // jul: "cada dia tendrá su nota y su lienzo... en el espacio de la nota habrá
+  // un swich para cambiar de nota a lienzo"). Las notas normales siguen sin
+  // toggle: `_v2canvas` se fija al crear y no cambia (ver más abajo).
+  const isDayCanvas = parseExtraData(node.extraData)[DAY_CANVAS_FLAG] === '1'
+  const isDayNote = node.isDiaryEntry
+  const showDaySwitch = isDayNote || isDayCanvas
+  const openDayNote = () => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: node.parentId } }))
+  const openDayCanvas = () => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: ensureDayCanvas(node).id } }))
   // `force`: es una acción EXPLÍCITA sobre ESTA nota (no una migración masiva) — se
   // convierte aunque cuelgue de un contenedor plano no-contexto. Antes fallaba en
   // SILENCIO (el botón no hacía nada) cuando `isTopConvertible` decidía que el padre
@@ -149,14 +173,22 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
 
   return (
     <div style={inlinePage ? undefined : { height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      {/* Fila única de acciones (favorito, exportar, publicar, eliminar) — ya no hay
-          toggle Nota/Lienzo: son tipos separados desde su creación (ver arriba).
-          `hideToolbar`: para usos "incrustados" donde el editor es solo un bloque de
-          texto dentro de otra vista (p.ej. "Lo que Fromly sabe" en V2ContextView) —
-          ni cabecera, ni chip de contexto, ni acciones propias. */}
+      {/* Fila única de acciones (favorito, exportar, publicar, eliminar). Para notas
+          normales no hay toggle Nota/Lienzo: son tipos separados desde su creación
+          (ver arriba) — la única excepción es el par nota-diaria+lienzo-diario, que
+          SÍ tiene su propio switch (showDaySwitch). `hideToolbar`: para usos
+          "incrustados" donde el editor es solo un bloque de texto dentro de otra
+          vista (p.ej. "Lo que Fromly sabe" en V2ContextView) — ni cabecera, ni chip
+          de contexto, ni acciones propias. */}
       {!hideToolbar && (
         <div className="v2-note-toolbar">
           {headerLabel && <div className="v2-section-label" style={{ padding: 0 }}>{headerLabel}</div>}
+          {showDaySwitch && (
+            <div className="v2-day-switch">
+              <button className={isDayNote ? 'active' : ''} onClick={openDayNote}>{t('v2.dayNote', 'Nota')}</button>
+              <button className={isDayCanvas ? 'active' : ''} onClick={openDayCanvas}>{t('v2.dayCanvas', 'Lienzo')}</button>
+            </div>
+          )}
           {!canvas && !hideContext && <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
             <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite} style={{ ...actBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
@@ -188,9 +220,11 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
         </div>
       )}
 
-      <div style={inlinePage
-        ? { position: 'relative', overflow: canvas ? 'hidden' : 'visible', height: canvas ? 480 : undefined, minHeight: canvas ? 480 : undefined }
-        : { flex: 1, minHeight: 0, position: 'relative', overflow: canvas ? 'hidden' : 'auto' }}>
+      <div
+        onClick={!inlinePage && asDoc && !canvas ? focusDocEnd : undefined}
+        style={inlinePage
+          ? { position: 'relative', overflow: canvas ? 'hidden' : 'visible', height: canvas ? 480 : undefined, minHeight: canvas ? 480 : undefined }
+          : { flex: 1, minHeight: 0, position: 'relative', overflow: canvas ? 'hidden' : 'auto' }}>
         {canvas
           ? <PizarraView parentId={node.id} flowUnpositioned globalCanvas={false} embedded />
           : asDoc

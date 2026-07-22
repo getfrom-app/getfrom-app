@@ -111,6 +111,16 @@
   display: flex; align-items: center; gap: 6px; padding: 8px 12px;
   border-bottom: 1px solid var(--border); flex: 0 0 auto;
 }
+/* Switch Nota/Lienzo del par nota-diaria+lienzo-diario, en la cabecera de la nota. */
+.v2-day-switch {
+  display: flex; gap: 2px; padding: 2px; border-radius: 8px;
+  background: var(--bg-subtle, #f1f3f5); flex-shrink: 0;
+}
+.v2-day-switch button {
+  border: none; background: transparent; cursor: pointer; padding: 4px 10px;
+  font-size: 12px; font-weight: 600; color: var(--text-secondary, #666); border-radius: 6px;
+}
+.v2-day-switch button.active { background: var(--bg-elevated, #fff); color: var(--text-primary); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
 /* Desplegable «Vistas» (Tabla / Kanban / Calendario). */
 .v2-view-more {
   position: absolute; top: calc(100% + 4px); left: 0; z-index: 60; min-width: 150px;

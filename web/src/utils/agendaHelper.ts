@@ -5,7 +5,7 @@
  */
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
-import { structuralId, diaryId } from './deterministicId'
+import { structuralId, diaryId, dayCanvasId } from './deterministicId'
 import { findRootByKey, findContextRoot } from './rootLookup'
 import { getDailyTemplate, applyTemplate, applyRecurringTemplatesToDay } from './tagsHelper'
 import { DOC, isDocNode } from './docNode'
@@ -129,6 +129,30 @@ export function ensureDayPath(date: Date): Node {
   const yearN  = getOrCreateYear(date.getFullYear(), agenda.id)
   const monthN = getOrCreateMonth(date.getMonth(), yearN.id)
   return getOrCreateDay(date, monthN.id)
+}
+
+/** Marcador del lienzo propio de un día (hijo de su nota) — lo distingue de
+ *  cualquier otro lienzo que el usuario cree suelto bajo la misma nota. */
+export const DAY_CANVAS_FLAG = '_dayCanvas'
+
+/**
+ * Crea (si no existe) y devuelve el LIENZO del día dado: un nodo `_doc`+`_v2canvas`
+ * hijo de su nota diaria — cada día tiene nota Y lienzo (Alberto, 22 jul: "cada dia
+ * tendrá su nota y su lienzo"). Id determinista → nunca duplica al re-visitar el día.
+ */
+export function ensureDayCanvas(dayNode: Node): Node {
+  const existing = store.children(dayNode.id).find(c => {
+    if (c.deletedAt) return false
+    try { return JSON.parse(c.extraData || '{}')[DAY_CANVAS_FLAG] === '1' } catch { return false }
+  })
+  if (existing) return existing
+  const date = dayNode.diaryDate ? new Date(dayNode.diaryDate) : new Date()
+  return store.createNode({
+    text: dayNode.text,
+    parentId: dayNode.id,
+    predefinedId: dayCanvasId(date) ?? undefined,
+    extraData: { [DOC]: '1', _v2canvas: '1', [DAY_CANVAS_FLAG]: '1' },
+  })
 }
 
 /**

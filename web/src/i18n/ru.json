@@ -2221,6 +2221,8 @@
   "v2.rightColumn.preparingToday": "Подготовка сегодняшнего столбца…",
   "v2.rightColumn.tabAgenda": "Календарь",
   "v2.rightColumn.tabDia": "День",
+  "v2.dayNote": "Заметка",
+  "v2.dayCanvas": "Холст",
   "v2.rightColumn.tabDetails": "Подробности",
   "v2.rightColumn.noDetailEmpty": "Пока ничего не открыто. Откройте заметку, файл или начните разговор.",
   "v2.rightColumn.tabContext": "Контекст",

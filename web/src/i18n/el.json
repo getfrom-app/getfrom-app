@@ -2221,6 +2221,8 @@
   "v2.rightColumn.preparingToday": "Προετοιμασία της σημερινής στήλης…",
   "v2.rightColumn.tabAgenda": "Ατζέντα",
   "v2.rightColumn.tabDia": "Ημέρα",
+  "v2.dayNote": "Σημείωση",
+  "v2.dayCanvas": "Καμβάς",
   "v2.rightColumn.tabDetails": "Λεπτομέρειες",
   "v2.rightColumn.noDetailEmpty": "Δεν υπάρχει τίποτα ανοιχτό ακόμα. Άνοιξε μια σημείωση, ένα αρχείο, ή ξεκίνα μια συνομιλία.",
   "v2.rightColumn.tabContext": "Πλαίσιο",

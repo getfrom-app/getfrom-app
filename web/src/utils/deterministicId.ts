@@ -139,5 +139,16 @@ export function diaryId(date: Date): string | null {
   return uuidFromString(`from.diary.${uid}.${epoch}`)
 }
 
+/** ID determinista del LIENZO de un día (el segundo elemento de cada día, junto
+ *  a su nota — ver ensureDayCanvas en agendaHelper.ts). Mismo criterio que
+ *  diaryId, namespace propio para no colisionar con él. */
+export function dayCanvasId(date: Date): string | null {
+  const uid = serverUserId()
+  if (!uid) return null
+  const local = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const epoch = Math.floor(local.getTime() / 1000)
+  return uuidFromString(`from.daycanvas.${uid}.${epoch}`)
+}
+
 // Para tests/uso desde scripts.
 export const _internal = { uuidFromString, sha256Bytes }
