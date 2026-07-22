@@ -18,7 +18,7 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { createPortal } from 'react-dom'
 import { store, useStore } from '../../store/nodeStore'
-import { assignContext, firstContextOf, contextColor, setNodeContext } from '../../utils/cajones'
+import { assignContext, firstContextOf, contextColor, setNodeContext, maybeUpdateContextKnowledge } from '../../utils/cajones'
 import { isContextKnowledge, isProfileKnowledge } from '../../utils/knowledgeNodes'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { firstLineTitle, DOC } from '../../utils/docNode'
@@ -89,6 +89,10 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   const navigate = useNavigate()
   const { t } = useTranslation()
   const saveTimer = useRef<number | null>(null)
+  // Guardado local pendiente (500ms tras teclear) — ver efecto de resync externo
+  // más abajo: `saveTimer.current` es un id de setTimeout que NO se limpia al
+  // disparar, así que no sirve por sí solo para saber si hay cambios sin guardar.
+  const pendingSaveRef = useRef(false)
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
   const [showColors, setShowColors] = useState(false)
   // Fechas pendientes de aplicar a la próxima tarea creada por el magic (clave = texto limpio
@@ -441,6 +445,12 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     return `<blockquote>${fullText.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}</blockquote>`
   }
 
+  // Título de una cita = su PRIMER párrafo (el ancla), no `firstLineTitle` sobre
+  // el HTML ya envuelto: todo el cuerpo vive en un único <blockquote> con varios
+  // <p> hijos, y `textContent` de ese bloque concatena TODOS los párrafos sin
+  // separación — el título saldría con el texto de la cita entera pegado.
+  const citationTitle = (fullText: string): string => fullText.split('\n\n')[0].trim().slice(0, 120)
+
   const createCitation = (pid: string, contextId: string) => {
     const ed = editorRef.current
     if (!ed) return
@@ -450,10 +460,19 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     const fullText = collectDescendantText(pid).trim()
     if (!fullText) return
     const extra: Record<string, string> = { [DOC]: '1', _docSelection: '1', _docSourceId: node.id, _docParagraphId: pid, _docText: fullText }
-    const quote = store.createNode({ text: '', parentId: node.id, extraData: extra })
-    store.updateNode(quote.id, { body: citationBodyHtml(fullText) })
+    const bodyHtml = citationBodyHtml(fullText)
+    // Título = 1ª línea DESDE LA CREACIÓN (antes se dejaba en blanco y solo se
+    // rellenaba al ABRIR la propia cita — hasta entonces aparecía como «Sin
+    // título» en Elementos/el contexto, Alberto 22 jul: "las citas deben tomar
+    // la primera línea como título, directamente. que no ponga nunca sin título").
+    const quote = store.createNode({ text: citationTitle(fullText), parentId: node.id, extraData: extra })
+    store.updateNode(quote.id, { body: bodyHtml })
     assignContext(quote.id, contextId)
     applyCiteIndicators()
+    // La cita alimenta la memoria del contexto igual que cualquier otro elemento
+    // (Alberto, 22 jul: "en la memoria de los contextos... se debe añadir las
+    // citas como nuevo elemento a tener en cuenta").
+    maybeUpdateContextKnowledge(store.getNode(quote.id))
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.citationSaved', 'Párrafo asignado al contexto'), type: 'success' } }))
   }
 
@@ -473,7 +492,8 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       if (!fullText) continue
       const prevText = (e._docText as string | undefined)?.trim()
       if (fullText === prevText) continue
-      store.updateNode(c.id, { body: citationBodyHtml(fullText), extraData: JSON.stringify({ ...e, _docText: fullText }) })
+      store.updateNode(c.id, { text: citationTitle(fullText), body: citationBodyHtml(fullText), extraData: JSON.stringify({ ...e, _docText: fullText }) })
+      maybeUpdateContextKnowledge(store.getNode(c.id))
     }
   }
 
@@ -487,6 +507,8 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     if (existing) {
       setNodeContext(existing.node.id, contextId)
       applyCiteIndicators()
+      // Reasignar contexto también alimenta la memoria del NUEVO contexto.
+      if (contextId) maybeUpdateContextKnowledge(store.getNode(existing.node.id))
       window.dispatchEvent(new CustomEvent('from:toast', {
         detail: { message: contextId ? t('v2.citationSaved', 'Párrafo asignado al contexto') : t('v2.citationUnassigned', 'Cita sin contexto'), type: 'success' },
       }))
@@ -707,12 +729,14 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     autofocus: autofocus === false ? false : (typeof autofocus === 'string' ? autofocus : (compact ? 'end' : false)),
     onUpdate: ({ editor }) => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
+      pendingSaveRef.current = true
       const html = editor.getHTML()
       saveTimer.current = window.setTimeout(() => {
         autoMagicTasks() // Magic: párrafos-tarea (fuera del cursor) → casilla
         store.updateNode(node.id, bodySave(editor.getHTML()))
         syncTasksToNodes()
         syncCitationDescendants()
+        pendingSaveRef.current = false
       }, 500)
       detectSlash()
     },
@@ -804,6 +828,17 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   useEffect(() => {
     if (!editor) return
     if (editor.isFocused) return
+    // ⚠️ CAUSA REAL de citas que "no aparecían" (Alberto, 22 jul): el picker de
+    // contexto hace foco en un <input> real nada más abrirse (ContextPicker.tsx),
+    // así que `editor.isFocused` pasa a false EN EL MOMENTO de pulsar el "?" —
+    // antes de eso, no había forma de distinguir "sin foco porque no hay nada
+    // pendiente" de "sin foco pero con una edición reciente aún sin guardar (los
+    // 500ms de debounce)". Sin este guard, un poll remoto que llegara justo en
+    // esa ventana podía `setContent()` con el body VIEJO del servidor, borrando
+    // de la vista el heading/párrafo recién escrito (y su `pid`) antes de que el
+    // guardado pendiente llegara a persistirlo — la cita fallaba en silencio
+    // porque el párrafo que se intentaba citar ya no existía en el doc.
+    if (pendingSaveRef.current) return
     if (editor.getHTML() === (node.body || '')) return
     editor.commands.setContent(node.body || '', false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
