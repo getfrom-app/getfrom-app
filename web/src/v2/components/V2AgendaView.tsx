@@ -49,13 +49,18 @@ export default function V2AgendaView({ todayNode }: Props) {
 
   return (
     <div>
-      <div className="v2-agenda-toolbar">
-        {subView === 'year' ? (
+      {subView === 'year' ? (
+        <div className="v2-agenda-toolbar">
           <button className="v2-head-action" onClick={() => setSubView('day')} title={t('v2.rightColumn.back', 'Volver')}>
             ‹ {t('v2.rightColumn.back', 'Volver')}
           </button>
-        ) : (
-          <>
+        </div>
+      ) : (
+        // Título + HOY/CAL en una sola fila, botones al extremo derecho (Alberto,
+        // 22 jul: "gana espacio, sube el día un poquito más arriba").
+        <div className="v2-agenda-day-header">
+          <h2 className="v2-agenda-day-title">{shownDay?.text || t('v2.agenda.day', 'Día')}</h2>
+          <div className="v2-agenda-toolbar">
             {/* HOY: vuelve al día de hoy — visible si estamos viendo otro día. */}
             {!isToday && (
               <button
@@ -73,15 +78,14 @@ export default function V2AgendaView({ todayNode }: Props) {
             >
               {t('v2.agenda.year', 'CAL')}
             </button>
-          </>
-        )}
-      </div>
+          </div>
+        </div>
+      )}
 
       {subView === 'year' ? (
         <YearCalendarPanel activeDate={null} />
       ) : shownDay ? (
         <div>
-          <h2 className="v2-agenda-day-title">{shownDay.text || t('v2.agenda.day', 'Día')}</h2>
           {/* Eventos + tareas del día — MISMO componente para hoy y para un día elegido. */}
           <DayColumn node={shownDay} includeNodes={false} />
           {!isToday && (

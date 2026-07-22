@@ -1056,19 +1056,20 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
               <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
             </>
           ) : (
-            // Misma estructura de 2 filas que la cabecera de Agenda (V2AgendaView.tsx):
-            // fila 1 = botones HOY/CAL, fila 2 = título del día debajo — Alberto, 22 jul,
-            // dos veces: primero la estructura, luego "sigue sin ser igual... está todo
-            // mucho más pegado... iguala los márgenes a los de la tab Agenda" — el padding
-            // exterior y los huecos entre filas viven en .pp-header--day (index.css).
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+            // Misma estructura que la cabecera de Agenda (V2AgendaView.tsx): título +
+            // HOY/CAL en UNA sola fila, botones al extremo derecho — antes CAL vivía
+            // en su propia fila encima del título (Alberto, 22 jul, tres veces: primero
+            // la estructura, luego "iguala los márgenes a los de la tab Agenda", luego
+            // "pon el botón de cal en la misma línea que el título del día... así
+            // ganamos un poco de espacio y puede subir el día un poquito más arriba").
+            <div className="v2-agenda-day-header" style={{ width: '100%' }}>
+              <h2 className="v2-agenda-day-title">{diaryDayTitle(centerDate)}</h2>
               <div className="v2-agenda-toolbar">
                 {!sameDay(centerDate, today) && (
                   <button className="v2-head-action" onClick={()=>{ setCenterDate(today); setViewMode('day') }}>{t('v2.agenda.today', 'HOY')}</button>
                 )}
                 <button className="v2-head-action" onClick={()=>setViewMode('year')} title={t('v2.agenda.openYear', 'Calendario anual')}>{t('v2.agenda.year', 'CAL')}</button>
               </div>
-              <h2 className="v2-agenda-day-title">{diaryDayTitle(centerDate)}</h2>
             </div>
           )
         ) : (
