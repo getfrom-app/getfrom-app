@@ -12991,16 +12991,10 @@ textarea:focus-visible,
 /* Planner como vista CENTRAL (modo Planificar). */
 .plan-center { height: 100%; display: flex; min-height: 0; }
 .plan-center .pp-root { border-left: none; flex: 1; width: 100%; }
-/* Planner embebido como TIMELINE del tab Agenda (columna derecha v2, Alberto 22
-   jul) — vive dentro de .v2-right-body (con padding:14px y overflow-y:auto,
-   pensado para texto), así que se «rompe» del padding con márgenes negativos
-   para poder llenar todo el alto disponible como hace .v2-right-fill en el
-   resto de tabs (si no, el PlannerPanel mide su 100% contra una caja más baja
-   de lo que parece y deja un hueco en blanco arriba del todo). */
-.v2-agenda-timeline {
-  margin: -14px; height: calc(100% + 28px);
-  display: flex; flex-direction: column; min-height: 0;
-}
+/* Planner embebido como tab «Día» de la columna derecha v2 (Alberto 22 jul) —
+   vive dentro de .v2-right-fill (sin padding, flex:1), así que solo necesita
+   quitar el borde izquierdo del planner que tiene sentido a pantalla completa
+   pero no pegado al borde de la columna. */
 .v2-agenda-timeline .pp-root { border-left: none; }
 
 /* Cola «Por planificar» (columna derecha del modo Planificar). */
@@ -13723,6 +13717,12 @@ textarea:focus-visible,
 .dc-ev-badge--lead { min-width: 44px; }
 .dc-ev-badge:hover { border-color: var(--accent, #6c5ce7); color: var(--text, #222); }
 .dc-ev-rec { color: var(--accent, #6c5ce7); }
+/* Columna derecha muy estrecha (redimensionada al mínimo): el badge de hora deja
+   de caber junto a un título largo y se ve apretado/ilegible — se oculta y queda
+   solo el título (Alberto, 22 jul: "quitamos la hora y dejamos solo el título"). */
+@container (max-width: 360px) {
+  .dc-ev-badge--lead { display: none; }
+}
 .dc-ev-edit {
   display: flex;
   flex-wrap: wrap;

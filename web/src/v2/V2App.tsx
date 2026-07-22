@@ -23,6 +23,7 @@ import { useV2Recorder } from './useV2Recorder'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2ProfileView from './components/V2ProfileView'
+import V2ElementView from './components/V2ElementView'
 import V2RightColumn, { RightMode } from './components/V2RightColumn'
 import V2SettingsNav from './components/V2SettingsNav'
 import { SettingsPaneContent } from '../components/views/SettingsView'
@@ -118,7 +119,15 @@ export default function V2App() {
     if (rightMode !== 'detalles') lastNonDetailModeRef.current = rightMode
   }, [rightMode])
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
-  const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // elemento abierto en la columna derecha
+  const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // artifact de la conversación activa, en la columna derecha
+  // Elemento abierto en el ESPACIO CENTRAL (sustituye al chat, mismo patrón que
+  // showProfile) — Alberto, 22 jul: "los elementos deberían poder abrirse igual
+  // que el chat en el espacio principal... es más cómodo trabajar con un
+  // documento o un lienzo en el espacio grande". Distinto de `detailNodeId`:
+  // ese sigue siendo solo para el artifact que la conversación activa está
+  // creando/usando (la excepción explícita que pidió mantener en la columna
+  // derecha).
+  const [centerElementId, setCenterElementId] = useState<string | null>(null)
   // Ajustes a pantalla completa: null = modo normal; si no, la pestaña activa.
   // Sustituye al modal — nav a la izquierda (donde van los contextos), contenido
   // al centro, columna derecha vacía.
@@ -209,6 +218,7 @@ export default function V2App() {
   // sigue disponible al volver a ella (Alberto, 15 jul).
   const onSelectCtx = (id: string | null) => {
     setShowProfile(false)
+    setCenterElementId(null)
     setSelectedCtxId(id)
     setFocusNodeId(null)
     setDetailNodeId(null)
@@ -225,6 +235,7 @@ export default function V2App() {
   // Botón «Nueva conversación» (barra izquierda) → SIEMPRE sin contexto (General).
   const onNewChat = () => {
     setShowProfile(false)
+    setCenterElementId(null)
     setSelectedCtxId(null)
     setFocusNodeId(null)
     setDetailNodeId(null)
@@ -235,8 +246,9 @@ export default function V2App() {
   // «＋» al pasar el ratón sobre un contexto → nueva conversación DENTRO de ese contexto.
   // Al escribir el 1er mensaje, send() la vincula al contexto (assignContext) → sale en
   // su Historial y su ficha.
-  const onNewChatInCtx = (id: string) => {
+  const onNewChatInCtx = (id: string | null) => {
     setShowProfile(false)
+    setCenterElementId(null)
     setSelectedCtxId(id)
     setFocusNodeId(null)
     setDetailNodeId(null)
@@ -249,20 +261,18 @@ export default function V2App() {
   // lógica de onNewDocument/onNewCanvas pero con el parentId explícito en vez de
   // captureParentId() (Alberto, 22 jul: "botones de creación de elementos en el
   // sidebar").
-  const onNewNoteInCtx = (ctxId: string) => {
+  const onNewNoteInCtx = (ctxId: string | null) => {
     setShowProfile(false)
     setSelectedCtxId(ctxId)
     const n = store.createNode({ text: '', parentId: ctxId, extraData: { _doc: '1' } })
     store.updateNode(n.id, { body: '<p></p>' })
-    setRightMode('detalles')
-    setDetailNodeId(n.id)
+    setCenterElementId(n.id)
   }
-  const onNewCanvasInCtx = (ctxId: string) => {
+  const onNewCanvasInCtx = (ctxId: string | null) => {
     setShowProfile(false)
     setSelectedCtxId(ctxId)
     const n = store.createNode({ text: '', parentId: ctxId, extraData: { _doc: '1', _v2canvas: '1' } })
-    setRightMode('detalles')
-    setDetailNodeId(n.id)
+    setCenterElementId(n.id)
   }
 
   // Abrir una conversación: chat al CENTRO + su(s) elemento(s) en la tab DETALLES a
@@ -270,6 +280,7 @@ export default function V2App() {
   // conversación. La tab Contexto se mantiene intacta (ficha del contexto, si lo hay).
   const onOpenConversation = (id: string) => {
     setShowProfile(false)
+    setCenterElementId(null)
     aiChatStore.loadSession(id)
     // Mantener el contexto de la conversación en la barra lateral y el breadcrumb
     // (antes se limpiaba SIEMPRE — Alberto, 15 jul: "cuando se abre una conversación
@@ -303,6 +314,7 @@ export default function V2App() {
   // 'agent'|'prompt').
   const onOpenElementsFiltered = (kind: ElemKind) => {
     setDetailNodeId(null)
+    setCenterElementId(null)
     setElementsFilter(kind)
     setRightMode('elementos')
   }
@@ -356,12 +368,17 @@ export default function V2App() {
     const textFiles = files.filter(isTextFile)
     const otherFiles = files.filter(f => !isTextFile(f))
 
-    // Notas de texto: siempre se importan como documento.
+    // Notas de texto: siempre se importan como documento. Si hay conversación
+    // activa, se abre en la columna derecha (no tapa el chat en el centro); si
+    // no, en el espacio central como cualquier elemento nuevo.
     let lastNote: string | null = null
     for (const f of textFiles) {
       try { const note = createMarkdownNode(captureParentId(), await f.text(), f.name, false); if (note) lastNote = note.id } catch { /* */ }
     }
-    if (lastNote) { setDetailNodeId(lastNote); setRightMode('detalles') }
+    if (lastNote) {
+      if (aiChatStore.sessionId) { setDetailNodeId(lastNote); setRightMode('detalles') }
+      else setCenterElementId(lastNote)
+    }
 
     if (!otherFiles.length) return
 
@@ -378,7 +395,7 @@ export default function V2App() {
     } else {
       // Sin conversación → importar a Fromly (RAG), sin iniciar chat.
       const id = await importFilesToFromly(otherFiles, captureParentId())
-      if (id) { setDetailNodeId(id); setRightMode('detalles') }
+      if (id) setCenterElementId(id)
     }
   }
 
@@ -416,7 +433,7 @@ export default function V2App() {
       aiChatStore.addNotice(t('v2.filesIncorporatedNotice', 'He incorporado {{label}} a esta conversación. Ya puedes preguntarme sobre su contenido.', { label: `**${result.name}**` }))
     } else {
       const id = createDriveResourceNode(result, captureParentId())
-      setDetailNodeId(id); setRightMode('detalles')
+      setCenterElementId(id)
       toast(t('v2.importedToFromly', '📥 {{name}} importado a Fromly', { name: result.name }))
     }
   }
@@ -435,7 +452,7 @@ export default function V2App() {
     const n = store.createNode({ text: '', parentId, extraData: { _doc: '1' } })
     store.updateNode(n.id, { body: '<p></p>' })
     if (templateId) { try { applyTemplate(templateId, n.id) } catch { /* noop */ } }
-    setDetailNodeId(n.id)
+    setCenterElementId(n.id)
   }
 
   // Crear un LIENZO desde el centro → mismo nodo _doc que un documento, pero abierto
@@ -444,7 +461,7 @@ export default function V2App() {
     const parentId = captureParentId()
     if (!parentId) return
     const n = store.createNode({ text: '', parentId, extraData: { _doc: '1', _v2canvas: '1' } })
-    setDetailNodeId(n.id)
+    setCenterElementId(n.id)
   }
 
   // Guardar una nota de voz grabada en el centro → se abre en el reproductor a la derecha.
@@ -456,7 +473,7 @@ export default function V2App() {
     store.updateNode(n.id, {
       extraData: JSON.stringify({ _audios: [{ audioKey: r.audioKey, durationSec: r.durationSec, transcript: r.transcript }] }),
     })
-    setDetailNodeId(n.id)
+    setCenterElementId(n.id)
   }
   const recorder = useV2Recorder(onAudioSaved)
 
@@ -491,9 +508,11 @@ export default function V2App() {
     const ctx = node ? firstContextOf(node) : null
     if (ctx) setSelectedCtxId(ctx.id)
 
-    // Elemento normal: se abre en la tab Detalles (visor/editor según su tipo).
-    setRightMode('detalles')
-    setDetailNodeId(id)
+    // Elemento normal: se abre en el ESPACIO CENTRAL (visor/editor según su
+    // tipo), sustituyendo al chat — mismo patrón que el Perfil (Alberto, 22
+    // jul). `detailNodeId`/columna derecha quedan reservados para el artifact
+    // de la conversación ACTIVA, no para esto.
+    setCenterElementId(id)
   }
 
   // Artifacts: cuando la IA crea un documento/nota/recurso en una conversación,
@@ -544,9 +563,10 @@ export default function V2App() {
     return () => window.removeEventListener('from:open-detail', h as EventListener)
   }, [])
 
-  // Cerrar el detalle cuando un panel lo pide (p.ej. al ELIMINAR el elemento abierto).
+  // Cerrar el detalle cuando un panel lo pide (p.ej. al ELIMINAR el elemento abierto) —
+  // puede estar en la columna derecha (artifact) o en el espacio central.
   useEffect(() => {
-    const h = () => setDetailNodeId(null)
+    const h = () => { setDetailNodeId(null); setCenterElementId(null) }
     window.addEventListener('from:close-detail', h)
     return () => window.removeEventListener('from:close-detail', h)
   }, [])
@@ -668,8 +688,10 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenProfile={() => setShowProfile(true)} />
-      {showProfile ? (
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
+      {centerElementId ? (
+        <V2ElementView nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
+      ) : showProfile ? (
         <V2ProfileView onClose={() => setShowProfile(false)} />
       ) : (
         <V2Chat

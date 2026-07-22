@@ -34,12 +34,14 @@ interface Props {
   selectedCtxId: string | null
   onSelectCtx: (id: string | null) => void
   onNewChat: () => void
-  onNewChatInCtx: (id: string) => void
+  // id=null desde el menú GLOBAL (bajo "Nueva conversación") crea sin contexto
+  // (General) — Alberto, 22 jul: "todos ellos se deben poder crear desde aquí".
+  onNewChatInCtx: (id: string | null) => void
   // Botones de creación por contexto — nota/lienzo (Alberto, 22 jul: "botones de
   // creación de elementos en el sidebar"). Tarea/evento se crean aquí mismo con
   // NewTaskModal/NewEventModal (ya aceptan parentId), sin necesidad de subir a V2App.
-  onNewNoteInCtx: (id: string) => void
-  onNewCanvasInCtx: (id: string) => void
+  onNewNoteInCtx: (id: string | null) => void
+  onNewCanvasInCtx: (id: string | null) => void
   // Mismo handler que el chat (V2App.onFilesDropped): con conversación activa se
   // adjunta ahí, si no se importa al contexto/día activo. Soltar en la sidebar ya
   // NO tiene una ruta propia por-contexto (daba error al subir; una sola ruta).
@@ -94,10 +96,10 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
   // Menú «＋» por contexto: nota / tarea / evento / lienzo / conversación (antes
   // el «＋» solo creaba una conversación — Alberto, 22 jul: "botones de creación
   // de elementos en el sidebar").
-  const [addMenu, setAddMenu] = useState<{ id: string; x: number; y: number } | null>(null)
-  const [newTaskCtx, setNewTaskCtx] = useState<string | null>(null)
-  const [newEventCtx, setNewEventCtx] = useState<string | null>(null)
-  const openAddMenu = (e: React.MouseEvent, id: string) => {
+  const [addMenu, setAddMenu] = useState<{ id: string | null; x: number; y: number } | null>(null)
+  const [newTaskCtx, setNewTaskCtx] = useState<{ id: string | null } | null>(null)
+  const [newEventCtx, setNewEventCtx] = useState<{ id: string | null } | null>(null)
+  const openAddMenu = (e: React.MouseEvent, id: string | null) => {
     e.preventDefault(); e.stopPropagation()
     setAddMenu({ id, x: e.clientX, y: e.clientY })
   }
@@ -209,6 +211,12 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         <span className="v2-brand">Fromly <span className="v2-brand-badge">2.0</span></span>
       </div>
       <button className="v2-newchat" onClick={onNewChat}>＋ {t('v2.newConversation', 'Nueva conversación')}</button>
+      {/* Botón global de creación — antes solo existía por-contexto (Alberto, 22
+          jul: "los botones de nuevo... estuvieran junto a nueva conversación en
+          el sidebar... debajo se puede poner nuevo elemento y que despliegue
+          para seleccionar"). Usa el contexto actualmente seleccionado como
+          destino (null = General, sin contexto). */}
+      <button className="v2-newchat v2-newchat--secondary" onClick={(e) => openAddMenu(e, selectedCtxId)}>＋ {t('v2.newElement', 'Nuevo elemento')}</button>
 
       {/* Aviso de conversaciones abiertas por un agente proactivo (Alberto, 15 jul:
           "quiero un agente que cada día me pregunte..."). Fase 0 sin push real: sin
@@ -331,16 +339,16 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
           <div onPointerDown={() => setAddMenu(null)} onContextMenu={(e) => { e.preventDefault(); setAddMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
           <div className="v2-ctx-menu" style={{ position: 'fixed', top: addMenu.y, left: addMenu.x, zIndex: 2000 }}>
             <button className="v2-ctx-menu-item" onClick={() => { onNewNoteInCtx(addMenu.id); setAddMenu(null) }}>📝 {t('v2.chat.newNote', 'Nota')}</button>
-            <button className="v2-ctx-menu-item" onClick={() => { setNewTaskCtx(addMenu.id); setAddMenu(null) }}>☑️ {t('v2.chat.newTaskShort', 'Tarea')}</button>
-            <button className="v2-ctx-menu-item" onClick={() => { setNewEventCtx(addMenu.id); setAddMenu(null) }}>📅 {t('v2.chat.newEventShort', 'Evento')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { setNewTaskCtx({ id: addMenu.id }); setAddMenu(null) }}>☑️ {t('v2.chat.newTaskShort', 'Tarea')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { setNewEventCtx({ id: addMenu.id }); setAddMenu(null) }}>📅 {t('v2.chat.newEventShort', 'Evento')}</button>
             <button className="v2-ctx-menu-item" onClick={() => { onNewCanvasInCtx(addMenu.id); setAddMenu(null) }}>🎨 {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
             <div className="v2-ctx-menu-sep" />
             <button className="v2-ctx-menu-item" onClick={() => { onNewChatInCtx(addMenu.id); setAddMenu(null) }}>💬 {t('v2.newConversationInThisContext', 'Nueva conversación')}</button>
           </div>
         </>
       )}
-      {newTaskCtx && <NewTaskModal parentId={newTaskCtx} onClose={() => setNewTaskCtx(null)} />}
-      {newEventCtx && <NewEventModal parentId={newEventCtx} onClose={() => setNewEventCtx(null)} />}
+      {newTaskCtx && <NewTaskModal parentId={newTaskCtx.id} onClose={() => setNewTaskCtx(null)} />}
+      {newEventCtx && <NewEventModal parentId={newEventCtx.id} onClose={() => setNewEventCtx(null)} />}
 
       {/* Menú de clic derecho de un contexto: renombrar / color / mover / eliminar. */}
       {ctxMenu && store.getNode(ctxMenu.id) && (

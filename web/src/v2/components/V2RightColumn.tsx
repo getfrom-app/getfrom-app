@@ -1,41 +1,41 @@
-// Columna derecha contextual de Fromly 2.0 — 4 modos.
+// Columna derecha contextual de Fromly 2.0 — 5 modos.
 // Contexto:  qué sabe Fromly del contexto activo + sus miembros. SIEMPRE la
 //            ficha del contexto — nunca cambia a otra cosa (antes competía con
 //            el panel de conversación/detalle y se perdía sin forma de volver,
 //            Alberto 15 jul: "debe haber una forma de volver a la columna de
 //            contexto y no la hay"). Separado del contenido específico:
-// Detalles:  lo que esté abierto en concreto — el panel de la conversación
-//            activa (tareas/elementos/notas propias) o el detalle de una nota/
-//            tarea/PDF/lienzo. Contexto y Detalles son independientes: cambiar
-//            de tab entre ellos NUNCA pierde lo que había en el otro.
+// Detalles:  el panel de la conversación activa, o el ARTIFACT que esa
+//            conversación está creando/usando en este momento (Alberto, 22 jul:
+//            "la excepción es cuando el chat trabaja con un elemento y ese
+//            elemento está en la columna derecha" — el resto de elementos se
+//            abren en el espacio CENTRAL, ver V2App.tsx `centerElementId`).
+//            Contexto y Detalles son independientes: cambiar de tab entre
+//            ellos NUNCA pierde lo que había en el otro.
 // Elementos: buscador global de todo lo guardado (notas, tareas, archivos,
 //            conversaciones…) — Historial se retiró (10 jul 26): era el mismo
 //            buscador con el filtro "conversación" implícito y sus elementos
 //            anidados, y esos elementos ya se ven al abrir la conversación.
 // Agenda:    columna del día real (DayColumn: eventos, atrasadas, para hoy) +
-//            calendario anual (botón CAL) + timeline horario del Planificador
-//            en modo día (botón TIMELINE) — antes «Hoy»/«Agenda» eran dos tabs,
-//            y «Día» (el timeline) una tercera; las tres viven ahora juntas en
-//            `V2AgendaView` (Alberto, 21-22 jul: "eliminar el tab de Agenda
-//            actual, y simplificar" / "integrar este timeline dentro de la
-//            pestaña de agenda, y podemos eliminar así la pestaña de día").
+//            calendario anual (botón CAL) — antes «Hoy»/«Agenda» eran dos tabs
+//            (Alberto, 21 jul: "eliminar el tab de Agenda actual, y
+//            simplificar").
+// Día:       timeline horario del Planificador — tab propia (antes botón
+//            TIMELINE embebido en Agenda, Alberto 22 jul: "así se puede ver
+//            rápidamente el día de un vistazo en modo timeline").
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import { useAIChat } from '../../store/aiChatStore'
-import { parseExtraData } from '../../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
-import PublishButton from '../../components/PublishButton'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
 import V2ContextView from './V2ContextView'
 import V2ConversationView from './V2ConversationView'
-import V2DetailView from './V2DetailView'
+import V2ElementView from './V2ElementView'
 import V2AgendaView from './V2AgendaView'
-import { elementDisplayTitle } from '../../utils/docNode'
-import { fmtDate, fmtDateFull } from '../../utils/formatDate'
+import PlannerPanel from '../../components/panels/PlannerPanel'
 import type { Node } from '../../types'
 
-export type RightMode = 'contexto' | 'detalles' | 'elementos' | 'hoy'
+export type RightMode = 'contexto' | 'detalles' | 'elementos' | 'hoy' | 'dia'
 
 interface Props {
   mode: RightMode
@@ -80,40 +80,6 @@ function classify(n: Node): { icon: string; label: string } {
   return { icon: '📝', label: 'Nota' }
 }
 
-// Título de la cabecera de detalle — clic para renombrar el nodo (fila 1).
-function EditableDetailTitle({ nodeId }: { nodeId: string }) {
-  useStore()
-  const { t } = useTranslation()
-  const [editing, setEditing] = useState(false)
-  const node = store.getNode(nodeId)
-  // Deriva el título: texto del nodo (sin ✦), o la 1ª línea del cuerpo si el texto está
-  // vacío/solo-espacios (documentos con el título dentro del body) — SALVO un lienzo
-  // recién creado, cuyo body es código de dibujo, no prosa (elementDisplayTitle lo
-  // excluye) — o «Elemento».
-  const title = elementDisplayTitle(node).replace(/^✦\s*/, '').trim().slice(0, 80) || t('v2.rightColumn.element', 'Elemento')
-  if (editing) {
-    return (
-      <input
-        autoFocus
-        className="v2-detail-title-input"
-        defaultValue={title}
-        onClick={e => e.stopPropagation()}
-        onKeyDown={e => {
-          if (e.key === 'Enter') { const v = (e.target as HTMLInputElement).value.trim(); if (v) store.updateNode(nodeId, { text: v }); setEditing(false) }
-          if (e.key === 'Escape') setEditing(false)
-        }}
-        onBlur={e => { const v = e.target.value.trim(); if (v && v !== title) store.updateNode(nodeId, { text: v }); setEditing(false) }}
-      />
-    )
-  }
-  return (
-    <span className="v2-center-title v2-detail-title" title={t('v2.rightColumn.clickToRename', 'Clic para renombrar')} onClick={() => setEditing(true)}
-      style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', cursor: 'text' }}>
-      {title}
-    </span>
-  )
-}
-
 export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, elementsFilter, onOpenElementsFiltered, recorder }: Props) {
   useStore()
   const { t, i18n } = useTranslation()
@@ -135,6 +101,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
     { id: 'detalles', label: t('v2.rightColumn.tabDetails', 'Detalles') },
     { id: 'elementos', label: t('v2.rightColumn.tabElements', 'Elementos') },
     { id: 'hoy', label: t('v2.rightColumn.tabAgenda', 'Agenda') },
+    { id: 'dia', label: t('v2.rightColumn.tabDay', 'Día') },
   ]
 
   // Arrastrar el borde izquierdo para ensanchar/estrechar la columna derecha.
@@ -203,49 +170,15 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
         </div>
       )}
 
-      {/* Detalle de un elemento (documento/PDF/imagen/audio/nota) — SOLO en la tab
-          Detalles (antes se mostraba sin importar la tab activa, tapando Contexto/
-          Elementos/Hoy en cuanto había algo abierto). */}
-      {!isRecordingActive && mode === 'detalles' && detailNodeId && (() => {
-        const detailNode = store.getNode(detailNodeId)
-        // Recursos (PDF/imagen/audio/enlace/podcast…) llevan publicar+eliminar AQUÍ, en la
-        // cabecera, junto al título — antes cada visor de recurso repetía el título en su
-        // propia fila solo para poder colgar estos 2 botones (redundante: el título ya
-        // está arriba). Nota/tarea NO: ya tienen su propia barra con más acciones propias.
-        const ed = detailNode ? parseExtraData(detailNode.extraData) : {}
-        const isResourceLike = !!detailNode && (detailNode.isResource || !!detailNode.resourceType || Array.isArray(ed._audios))
-        return (
-          <div className="v2-right-fill">
-            <div className="v2-detail-head">
-              <div className="v2-detail-head-top">
-                <button className="v2-iconbtn" onClick={onCloseDetail} title={t('v2.rightColumn.back', 'Volver')}>‹</button>
-                <EditableDetailTitle nodeId={detailNodeId} />
-                {isResourceLike && detailNode && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <PublishButton node={detailNode} />
-                    <button
-                      title={t('tip.delete', 'Eliminar')}
-                      onClick={() => { store.deleteNode(detailNode.id); onCloseDetail() }}
-                      className="v2-iconbtn"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-              {detailNode && (
-                <div className="v2-detail-dates" title={`${t('v2.rightColumn.created', 'Creado')}: ${fmtDateFull(detailNode.createdAt, i18n.language)}\n${t('v2.rightColumn.updated', 'Modificado')}: ${fmtDateFull(detailNode.updatedAt, i18n.language)}`}>
-                  {t('v2.rightColumn.created', 'Creado')} {fmtDate(detailNode.createdAt, i18n.language)}
-                  {detailNode.updatedAt && detailNode.updatedAt !== detailNode.createdAt && (
-                    <> · {t('v2.rightColumn.updated', 'Modificado')} {fmtDate(detailNode.updatedAt, i18n.language)}</>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="v2-detail-body"><V2DetailView nodeId={detailNodeId} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} /></div>
-          </div>
-        )
-      })()}
+      {/* Detalle de un elemento — SOLO en la tab Detalles, y SOLO para el artifact
+          que la conversación activa está creando/usando en este momento (el
+          resto de elementos se abren en el espacio central — Alberto, 22 jul:
+          "la excepción es cuando el chat trabaja con un elemento y ese elemento
+          está en la columna derecha... la columna derecha mantendría todo
+          igual"). Componente compartido con el visor central (V2ElementView). */}
+      {!isRecordingActive && mode === 'detalles' && detailNodeId && (
+        <V2ElementView nodeId={detailNodeId} onClose={onCloseDetail} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
+      )}
 
       {/* Tab Detalles sin nodo abierto: el panel de la conversación activa, o vacío. */}
       {!isRecordingActive && mode === 'detalles' && !detailNodeId && (
@@ -263,7 +196,17 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
         </div>
       )}
 
-      {!isRecordingActive && mode !== 'elementos' && mode !== 'detalles' && (
+      {/* Día: timeline horario del Planificador — tab propia (antes botón TIMELINE
+          dentro de Agenda, Alberto 22 jul: "así se puede ver rápidamente el día
+          de un vistazo en modo timeline"). Mismo patrón de fuga de padding que
+          Elementos, para que la rejilla llene todo el alto disponible. */}
+      {!isRecordingActive && mode === 'dia' && (
+        <div className="v2-right-fill v2-agenda-timeline">
+          <PlannerPanel initialView="day" initialDays={1} viewTabs={['day']} onClose={() => {}} />
+        </div>
+      )}
+
+      {!isRecordingActive && mode !== 'elementos' && mode !== 'detalles' && mode !== 'dia' && (
       <div className="v2-right-body">
         {mode === 'contexto' && (
           // SIEMPRE la ficha del contexto — nunca el panel de conversación (eso vive
