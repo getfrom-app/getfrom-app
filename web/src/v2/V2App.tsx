@@ -14,7 +14,6 @@ import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent, mostRecentConversationOf } from '../utils/cajones'
 import { darkenHex, lightenHex, hexToRgba } from '../utils/color'
 import { htmlToMarkdown } from '../utils/htmlMarkdown'
-import { applyTemplate } from '../utils/tagsHelper'
 import { createMarkdownNode } from '../utils/importMarkdown'
 import { uploadFile } from '../api/client'
 import { pickAndImportDriveFile } from '../utils/googleDrivePicker'
@@ -265,10 +264,9 @@ export default function V2App() {
   }
 
   // Crear nota/lienzo directamente en UN CONTEXTO CONCRETO del sidebar (no
-  // necesariamente el activo) — mismo patrón que onNewChatInCtx, reutilizando la
-  // lógica de onNewDocument/onNewCanvas pero con el parentId explícito en vez de
-  // captureParentId() (Alberto, 22 jul: "botones de creación de elementos en el
-  // sidebar").
+  // necesariamente el activo) — mismo patrón que onNewChatInCtx, con el
+  // parentId explícito en vez de captureParentId() (Alberto, 22 jul: "botones
+  // de creación de elementos en el sidebar").
   const onNewNoteInCtx = (ctxId: string | null) => {
     setShowProfile(false)
     setSelectedCtxId(ctxId)
@@ -452,26 +450,6 @@ export default function V2App() {
     try { return getTodayDiaryUnderAgenda().id } catch { return null }
   }
 
-  // Crear un DOCUMENTO (nota de texto _doc) desde el centro → se abre editable a la
-  // derecha. Si se pasa una plantilla, se aplica su contenido al nuevo documento.
-  const onNewDocument = (templateId?: string) => {
-    const parentId = captureParentId()
-    if (!parentId) return
-    const n = store.createNode({ text: '', parentId, extraData: { _doc: '1' } })
-    store.updateNode(n.id, { body: '<p></p>' })
-    if (templateId) { try { applyTemplate(templateId, n.id) } catch { /* noop */ } }
-    setCenterElementId(n.id)
-  }
-
-  // Crear un LIENZO desde el centro → mismo nodo _doc que un documento, pero abierto
-  // directamente en modo Lienzo (`_v2canvas`) en vez de en modo Nota.
-  const onNewCanvas = () => {
-    const parentId = captureParentId()
-    if (!parentId) return
-    const n = store.createNode({ text: '', parentId, extraData: { _doc: '1', _v2canvas: '1' } })
-    setCenterElementId(n.id)
-  }
-
   // Guardar una nota de voz grabada en el centro → se abre en el reproductor a la derecha.
   const onAudioSaved = (r: { audioKey: string; durationSec: number; transcript: string }) => {
     const parentId = captureParentId()
@@ -484,6 +462,26 @@ export default function V2App() {
     setCenterElementId(n.id)
   }
   const recorder = useV2Recorder(onAudioSaved)
+
+  // Adjuntar desde Drive / grabar audio EN UN CONTEXTO CONCRETO del sidebar (no
+  // necesariamente el activo) — mismo patrón que onNewNoteInCtx/onNewChatInCtx.
+  // onDriveInCtx cierra cualquier conversación activa ANTES de abrir el picker:
+  // si no, onOpenDrivePicker() vería `aiChatStore.sessionId` todavía puesto y
+  // adjuntaría el archivo a esa conversación ajena en vez de importarlo al
+  // contexto elegido en el menú (Alberto, 22 jul: "todos los botones
+  // superiores ahora se pueden quitar porque ya están incorporados en el
+  // sidebar. si alguno falta, añádelo también").
+  const onDriveInCtx = (ctxId: string | null) => {
+    setShowProfile(false)
+    setSelectedCtxId(ctxId)
+    aiChatStore.startNewSession()
+    onOpenDrivePicker()
+  }
+  const onRecordInCtx = (ctxId: string | null) => {
+    setShowProfile(false)
+    setSelectedCtxId(ctxId)
+    recorder.start()
+  }
 
   const onOpenNode = (id: string) => {
     setShowProfile(false)
@@ -696,7 +694,7 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onDriveInCtx={onDriveInCtx} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
       {centerElementId ? (
         <V2ElementView nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideBack />
       ) : showProfile ? (
@@ -706,9 +704,6 @@ export default function V2App() {
           currentNodeId={currentNodeId}
           contextLabel={contextLabel}
           onFilesDropped={onFilesDropped}
-          onNewDocument={onNewDocument}
-          onNewCanvas={onNewCanvas}
-          recorder={recorder}
           // La tab Día ya NO usa este overlay: abre la nota diaria del día en el
           // centro (ver el useEffect de viewMode==='day' en PlannerPanel.tsx),
           // que sustituye por completo al chat — más específico que mantener
@@ -716,7 +711,6 @@ export default function V2App() {
           // centro una nota diaria... cada vez que se abre un día, se abre su
           // nota diaria").
           showPlanner={rightMode === 'hoy'}
-          onOpenDrivePicker={onOpenDrivePicker}
         />
       )}
       <V2RightColumn

@@ -6,11 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { useAIChat, aiChatStore } from '../../store/aiChatStore'
 import type { ChatMessage } from '../../store/aiChatStore'
 import { store, useStore } from '../../store/nodeStore'
-import NewTaskModal from '../../components/modals/NewTaskModal'
-import NewEventModal from '../../components/modals/NewEventModal'
 import PlannerPanel from '../../components/panels/PlannerPanel'
-import V2TemplatesModal from './V2TemplatesModal'
-import { listTemplates } from '../../utils/tagsHelper'
 import { renderChatContent } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
@@ -22,17 +18,12 @@ interface Props {
   currentNodeId: string | null
   contextLabel: string
   onFilesDropped: (files: File[]) => void
-  onNewDocument: (templateId?: string) => void
-  onNewCanvas: () => void
-  recorder: { recording: boolean; busy: boolean; start: () => void; stop: () => void }
   /** El Planificador ya no tiene botón propio ni X para cerrarlo (Alberto, 21 jul:
    *  "yo quitaría el botón... cuando se abre cualquier otra cosa en su lugar el
    *  planificador se quita") — se muestra solo/siempre que la columna derecha está
    *  en la tab Agenda (`rightMode === 'hoy'`, ver V2App.tsx) y desaparece solo al
    *  cambiar a cualquier otra tab o abrir otra cosa. */
   showPlanner: boolean
-  /** Abre el selector de Google Drive (Picker) y adjunta/importa el archivo elegido. */
-  onOpenDrivePicker: () => void
 }
 
 // Oculta los bloques ```from-action``` (completos o el parcial que aún se está
@@ -47,7 +38,7 @@ function stripActions(s: string): string {
     .trim()
 }
 
-export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, onNewDocument, onNewCanvas, recorder, showPlanner, onOpenDrivePicker }: Props) {
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, showPlanner }: Props) {
   const { t } = useTranslation()
   const SUGGESTIONS = [
     { t: t('v2.chat.suggestSummarizeDayTitle', 'Resume mi día'), d: t('v2.chat.suggestSummarizeDayDesc', 'Tareas y eventos de hoy'), p: t('v2.chat.suggestSummarizeDayPrompt', '¿Qué tengo para hoy? Resume mis tareas y eventos.') },
@@ -59,24 +50,12 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
   useStore()
   const [input, setInput] = useState('')
   const [dragOver, setDragOver] = useState(false)
-  const [showTask, setShowTask] = useState(false)
-  const [showEvent, setShowEvent] = useState(false)
-  const [docMenu, setDocMenu] = useState(false)
   const [promptMenu, setPromptMenu] = useState(false)
   const [agentMenu, setAgentMenu] = useState(false)
-  const [showTemplatesModal, setShowTemplatesModal] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const recognitionRef = useRef<unknown>(null)
-  const docMenuRef = useRef<HTMLDivElement>(null)
   const promptMenuRef = useRef<HTMLDivElement>(null)
   const agentMenuRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!docMenu) return
-    const onDoc = (e: MouseEvent) => { if (docMenuRef.current && !docMenuRef.current.contains(e.target as HTMLElement)) setDocMenu(false) }
-    document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
-  }, [docMenu])
 
   useEffect(() => {
     if (!promptMenu) return
@@ -262,51 +241,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           {hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}
           {chat.sessionId ? (convTitle || t('v2.chat.conversation', 'Conversación')) : t('v2.chat.newConversation', 'Nueva conversación')}
         </span>
-        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-          {/* Crear contenido sin pasar por el chat: nota (con plantillas), lienzo, tarea, evento o voz.
-              Botón partido: clic principal crea una nota en blanco AL VUELO (antes abría siempre
-              un menú, y con una nota ya abierta parecía que "no pasaba nada" — el usuario tenía que
-              reparar en el ítem "En blanco" del desplegable). La flechita aparte da acceso a
-              plantillas/gestión sin robarle la creación rápida al clic principal. */}
-          <div style={{ position: 'relative', display: 'flex' }} ref={docMenuRef}>
-            <button className="v2-head-action" title={t('v2.chat.newNote', 'Nueva nota')}
-              style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0, borderRight: 'none' }}
-              onClick={() => onNewDocument()}>＋ {t('v2.chat.newNoteShort', 'Nota')}</button>
-            <button className="v2-head-action" title={t('v2.chat.newNoteOptions', 'Plantillas y más')}
-              style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, padding: '6px 7px' }}
-              onClick={() => setDocMenu(o => !o)}>▾</button>
-            {docMenu && (
-              <div className="v2-doc-menu">
-                <button onClick={() => { onNewDocument(); setDocMenu(false) }}>📄 {t('v2.chat.blankDocument', 'En blanco')}</button>
-                {listTemplates().length > 0 && (
-                  <>
-                    <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.templates', 'Plantillas')}</div>
-                    {listTemplates().map(tpl => (
-                      <button key={tpl.id} onClick={() => { onNewDocument(tpl.id); setDocMenu(false) }}>{(tpl.text || t('v2.chat.template', 'Plantilla')).replace(/^[^\p{L}\p{N}]+/u, '')}</button>
-                    ))}
-                  </>
-                )}
-                <div className="v2-doc-menu-sep" />
-                <button onClick={() => { setShowTemplatesModal(true); setDocMenu(false) }}>⚙️ {t('v2.templates.manageTitle', 'Gestionar plantillas')}</button>
-              </div>
-            )}
-          </div>
-          <button className="v2-head-action" title={t('v2.chat.newCanvas', 'Nuevo lienzo')} onClick={onNewCanvas}>＋ {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
-          <button className="v2-head-action" title={t('v2.chat.newTask', 'Nueva tarea')} onClick={() => setShowTask(true)}>＋ {t('v2.chat.newTaskShort', 'Tarea')}</button>
-          <button className="v2-head-action" title={t('v2.chat.newEvent', 'Nuevo evento')} onClick={() => setShowEvent(true)}>＋ {t('v2.chat.newEventShort', 'Evento')}</button>
-          <button className="v2-head-action" title={t('v2.chat.attachFromDrive', 'Adjuntar desde Google Drive')} onClick={onOpenDrivePicker}>📎 {t('v2.chat.driveShort', 'Drive')}</button>
-          <button
-            className={`v2-head-action ${recorder.recording ? 'recording' : ''}`}
-            title={recorder.recording ? t('v2.chat.stopAndSave', 'Detener y guardar') : t('v2.chat.recordAudio', 'Grabar audio (reunión o nota de voz)')}
-            disabled={recorder.busy}
-            onClick={() => (recorder.recording ? recorder.stop() : recorder.start())}
-          >
-            {recorder.busy ? `⏳ ${t('v2.chat.saving', 'Guardando…')}` : recorder.recording ? `⏹ ${t('v2.chat.stop', 'Detener')}` : `🎙 ${t('v2.chat.record', 'Grabar')}`}
-          </button>
-          {!isEmpty && (
-            <button className="v2-iconbtn" title={t('v2.chat.newConversation', 'Nueva conversación')} onClick={() => { aiChatStore.startNewSession() }}>＋</button>
-          )}
-        </div>
       </div>
 
       <div className="v2-chat-scroll" ref={scrollRef}>
@@ -489,16 +423,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
 
       {dragOver && <div className="v2-drop-overlay">{chat.sessionId ? `📎 ${t('v2.chat.importToConversation', 'Importar a la conversación')}` : `📥 ${t('v2.chat.importToFromly', 'Importar a Fromly')}`}</div>}
 
-      {/* Modales de creación rápida (mismos que la v1). Las tareas nacen en el
-          contexto activo (o el diario de hoy si no hay); los eventos, en el diario. */}
-      {showTask && <NewTaskModal parentId={currentNodeId ?? undefined} onClose={() => setShowTask(false)} />}
-      {showEvent && (
-        <NewEventModal
-          onClose={() => setShowEvent(false)}
-          onCreated={id => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: id } }))}
-        />
-      )}
-
       {/* Planificador — reutiliza el PlannerPanel completo de la v1 (semana/mes/año —
           Día vive ahora en su propio tab de la columna derecha, ver V2RightColumn),
           a pantalla completa, sin recortar funcionalidad. Sin botón propio ni X: se
@@ -512,9 +436,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, on
           <PlannerPanel initialView="week" initialDays={7} viewTabs={['week', 'month', 'year']} onClose={() => {}} />
         </div>
       )}
-
-      {/* Gestión de plantillas (crear/editar/eliminar) — reutiliza NodeConfigModal de v1. */}
-      {showTemplatesModal && <V2TemplatesModal onClose={() => setShowTemplatesModal(false)} />}
     </main>
   )
 }

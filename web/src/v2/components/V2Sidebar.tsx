@@ -42,6 +42,13 @@ interface Props {
   // NewTaskModal/NewEventModal (ya aceptan parentId), sin necesidad de subir a V2App.
   onNewNoteInCtx: (id: string | null) => void
   onNewCanvasInCtx: (id: string | null) => void
+  // Adjuntar desde Drive / grabar audio EN UN CONTEXTO CONCRETO — antes solo
+  // existían como botones en la cabecera del chat, ahora redundantes con este
+  // menú (Alberto, 22 jul: "todos los botones superiores ahora se pueden
+  // quitar porque ya están incorporados en el sidebar. si alguno falta,
+  // añádelo también").
+  onDriveInCtx: (id: string | null) => void
+  onRecordInCtx: (id: string | null) => void
   // Mismo handler que el chat (V2App.onFilesDropped): con conversación activa se
   // adjunta ahí, si no se importa al contexto/día activo. Soltar en la sidebar ya
   // NO tiene una ruta propia por-contexto (daba error al subir; una sola ruta).
@@ -70,7 +77,7 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenProfile }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onDriveInCtx, onRecordInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenProfile }: Props) {
   useStore()
   const { t } = useTranslation()
   const user = useUserStore()
@@ -96,17 +103,22 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
   // Menú «＋» por contexto: nota / tarea / evento / lienzo / conversación (antes
   // el «＋» solo creaba una conversación — Alberto, 22 jul: "botones de creación
   // de elementos en el sidebar").
-  const [addMenu, setAddMenu] = useState<{ id: string | null; x: number; y: number } | null>(null)
+  // `isGlobal` = se abrió desde el botón «＋ Nuevo elemento» (barra izquierda),
+  // no desde el «＋» de una fila concreta — distingue cuándo ofrecer «Contexto»
+  // (raíz, Alberto 22 jul: "en el botón de nuevo elemento añade nuevo
+  // contexto, que se añadirá a la raíz de contextos") además de «Subcontexto».
+  const [addMenu, setAddMenu] = useState<{ id: string | null; x: number; y: number; isGlobal?: boolean } | null>(null)
   const [newTaskCtx, setNewTaskCtx] = useState<{ id: string | null } | null>(null)
   const [newEventCtx, setNewEventCtx] = useState<{ id: string | null } | null>(null)
-  // «＋ Subcontexto» desde el menú de un contexto (Alberto, 22 jul: "el + de los
-  // chips de contexto debe añadir además nuevo subcontexto... crea un
+  // «＋ Subcontexto»/«＋ Contexto» desde el menú «＋» (Alberto, 22 jul: "el + de
+  // los chips de contexto debe añadir además nuevo subcontexto... crea un
   // subcontexto bajo el contexto seleccionado, y se abre"). Distinto del botón
   // de cabecera («Nuevo contexto», que usa `currentParent`, el nivel en el que
-  // se ha entrado): aquí el padre es SIEMPRE el contexto concreto del que salió
-  // el menú «＋», sea cual sea el nivel de drill-down actual.
+  // se ha entrado): «Subcontexto» usa SIEMPRE el contexto concreto del que
+  // salió el menú «＋» como padre; «Contexto» (solo en el menú global) fuerza
+  // `id: null` = raíz, sea cual sea el contexto activo.
   const [newSubCtxParent, setNewSubCtxParent] = useState<{ id: string | null } | null>(null)
-  const openAddMenu = (e: React.MouseEvent, id: string | null) => {
+  const openAddMenu = (e: React.MouseEvent, id: string | null, isGlobal?: boolean) => {
     e.preventDefault(); e.stopPropagation()
     setAddMenu({ id, x: e.clientX, y: e.clientY })
   }
@@ -223,7 +235,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
           el sidebar... debajo se puede poner nuevo elemento y que despliegue
           para seleccionar"). Usa el contexto actualmente seleccionado como
           destino (null = General, sin contexto). */}
-      <button className="v2-newchat v2-newchat--secondary" onClick={(e) => openAddMenu(e, selectedCtxId)}>＋ {t('v2.newElement', 'Nuevo elemento')}</button>
+      <button className="v2-newchat v2-newchat--secondary" onClick={(e) => openAddMenu(e, selectedCtxId, true)}>＋ {t('v2.newElement', 'Nuevo elemento')}</button>
 
       {/* Aviso de conversaciones abiertas por un agente proactivo (Alberto, 15 jul:
           "quiero un agente que cada día me pregunte..."). Fase 0 sin push real: sin
@@ -349,9 +361,16 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
             <button className="v2-ctx-menu-item" onClick={() => { setNewTaskCtx({ id: addMenu.id }); setAddMenu(null) }}>☑️ {t('v2.chat.newTaskShort', 'Tarea')}</button>
             <button className="v2-ctx-menu-item" onClick={() => { setNewEventCtx({ id: addMenu.id }); setAddMenu(null) }}>📅 {t('v2.chat.newEventShort', 'Evento')}</button>
             <button className="v2-ctx-menu-item" onClick={() => { onNewCanvasInCtx(addMenu.id); setAddMenu(null) }}>🎨 {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { onDriveInCtx(addMenu.id); setAddMenu(null) }}>📎 {t('v2.chat.driveShort', 'Drive')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { onRecordInCtx(addMenu.id); setAddMenu(null) }}>🎙 {t('v2.chat.record', 'Grabar')}</button>
             <div className="v2-ctx-menu-sep" />
             <button className="v2-ctx-menu-item" onClick={() => { onNewChatInCtx(addMenu.id); setAddMenu(null) }}>💬 {t('v2.newConversationInThisContext', 'Nueva conversación')}</button>
             <button className="v2-ctx-menu-item" onClick={() => { setNewSubCtxParent({ id: addMenu.id }); setAddMenu(null) }}>🗂️ {t('v2.newSubcontext', 'Subcontexto')}</button>
+            {/* Solo en el menú GLOBAL: raíz sin importar el contexto activo — el
+                «Subcontexto» de arriba ya cubre crear bajo el contexto seleccionado. */}
+            {addMenu.isGlobal && (
+              <button className="v2-ctx-menu-item" onClick={() => { setNewSubCtxParent({ id: null }); setAddMenu(null) }}>📁 {t('v2.newContext', 'Nuevo contexto')}</button>
+            )}
           </div>
         </>
       )}

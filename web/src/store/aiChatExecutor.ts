@@ -10,7 +10,8 @@ import { pushEventToGcal } from '../utils/gcalNodesSync'
 import { createAgentUnder, getAgentData, setAgentEnabled, isAgentNode } from '../utils/agentesHelper'
 import { createPromptUnder } from '../utils/promptsHelper'
 import { markdownToHtml } from '../utils/importMarkdown'
-import { createContext, appendContextFacts, maybeUpdateContextKnowledge } from '../utils/cajones'
+import { createContext, appendContextFacts, maybeUpdateContextKnowledge, assignContext, isRootContext, isMarkedContext, firstContextOf } from '../utils/cajones'
+import { extractDateFromEnd, recurrenceToString } from '../utils/naturalDate'
 import { userStore } from './userStore'
 
 /** Quita prefijos de lista de un título de nodo: "1. ", "12) ", "- ", "* ", "• ".
@@ -29,6 +30,17 @@ function resolveParent(due: string | null | undefined, sessionId: string | null)
     return ensureDayPath(dueDate).id
   }
   return sessionId
+}
+
+/** Contexto activo a partir de `currentNodeId` (mismo criterio que
+ *  aiChatStore.learnFromUserMessage): si el nodo YA es un contexto (área raíz
+ *  o marcado), es él mismo; si no, el contexto más cercano hacia arriba. */
+function resolveActiveContextId(currentNodeId?: string): string | null {
+  if (!currentNodeId) return null
+  const n = store.nodes.get(currentNodeId)
+  if (!n) return null
+  if (isRootContext(currentNodeId) || isMarkedContext(n)) return currentNodeId
+  return firstContextOf(n)?.id ?? null
 }
 
 export async function executeChatAction(
@@ -167,17 +179,26 @@ function createDocument(a: Record<string, unknown>, sessionId?: string, currentN
 }
 
 function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
-  const text = cleanNodeTitle((a.text as string) || 'Tarea')
+  const rawTitle = (a.text as string) || 'Tarea'
+  // El esquema de create_task que maneja el modelo no tiene un campo de
+  // recurrencia propio — sin este parseo (idéntico al de captureHelper.
+  // createNodeFromText, usado por la captura rápida manual), una recurrencia
+  // en lenguaje natural al final del título ("cada quince días") se perdía
+  // siempre: el modelo la deja tal cual en el texto y aquí nunca se leía
+  // (Alberto, 22 jul: "no se le ha añadido ni la recurrencia ni el contexto").
+  const dp = extractDateFromEnd(rawTitle)
+  const text = cleanNodeTitle(dp ? dp.cleanText : rawTitle)
   const tags = (a.tags as string[]) || []
-  const due = parseDate(a.due)
+  const due = parseDate(a.due) ?? (dp?.parsed.date ? dp.parsed.date.toISOString() : undefined)
   const priority = a.priority as string | undefined
   // Validar parent_id: solo usarlo si es un UUID real que existe en el store
   const rawParent = (a.parent_id as string | undefined) || null
   const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
 
   // Prioridad: explicitParent > due futuro (día distinto) > sessionId (diario hoy)
-  // currentNodeId NO se usa como fallback — los recordatorios genéricos van al diario.
-  // Solo se usa si el AI lo pasa explícitamente como parent_id.
+  // currentNodeId NO se usa como PADRE — los recordatorios genéricos van al diario.
+  // Solo se usa si el AI lo pasa explícitamente como parent_id. El CONTEXTO (más
+  // abajo, assignContext) es independiente de dónde cuelgue el nodo.
   const dueFutureNode = resolveParent(due, null)
   const parentId = explicitParent ?? dueFutureNode ?? sessionId ?? null
 
@@ -191,7 +212,14 @@ function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeI
   const updates: Record<string, unknown> = { status: 'pending' }
   if (due) updates.due = due
   if (priority) updates.priority = priority
+  if (dp?.parsed.recurrence) updates.recurrence = recurrenceToString(dp.parsed.recurrence)
   store.updateNode(created.id, updates)
+  // Contexto explícito: una tarea con `due` futuro cuelga del diario de ese día
+  // (árbol completamente separado del de contextos), así que heredar por
+  // ancestro nunca la habría enlazado a "La Isla del Trading" — necesita su
+  // propio `_ctxRefs`, igual que ya hacía la captura rápida manual.
+  const ctxId = resolveActiveContextId(currentNodeId)
+  if (ctxId) assignContext(created.id, ctxId)
   const datePart = due ? ` para ${new Date(due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}` : ''
   return result('create_task', true, `Tarea «${text}»${datePart} creada.`, [created.id])
 }
