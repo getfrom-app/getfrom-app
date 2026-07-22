@@ -2343,5 +2343,9 @@
   "elements.citas": "Цитаты",
   "v2.citationUnassigned": "Цитата без контекста",
   "v2.inheritedContext": "Унаследовано от строки выше — нажмите, чтобы назначить свой",
-  "v2.newSubcontext": "Подконтекст"
+  "v2.newSubcontext": "Подконтекст",
+  "tip.recDailyEveryN": "каждые {{n}} дней",
+  "tip.recWeeklyEveryN": "каждые {{n}} недель",
+  "tip.recMonthlyEveryN": "каждые {{n}} месяцев",
+  "tip.recYearlyEveryN": "каждые {{n}} лет"
 }

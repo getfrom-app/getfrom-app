@@ -2343,5 +2343,9 @@
   "elements.citas": "Citat",
   "v2.citationUnassigned": "Citat utan kontext",
   "v2.inheritedContext": "Ärvt från raden ovanför — klicka för att tilldela en egen",
-  "v2.newSubcontext": "Underkontext"
+  "v2.newSubcontext": "Underkontext",
+  "tip.recDailyEveryN": "var {{n}}:e dag",
+  "tip.recWeeklyEveryN": "var {{n}}:e vecka",
+  "tip.recMonthlyEveryN": "var {{n}}:e månad",
+  "tip.recYearlyEveryN": "var {{n}}:e år"
 }

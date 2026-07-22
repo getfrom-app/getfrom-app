@@ -2343,5 +2343,9 @@
   "elements.citas": "Citações",
   "v2.citationUnassigned": "Citação sem contexto",
   "v2.inheritedContext": "Herdado da linha acima — clique para atribuir um próprio",
-  "v2.newSubcontext": "Subcontexto"
+  "v2.newSubcontext": "Subcontexto",
+  "tip.recDailyEveryN": "a cada {{n}} dias",
+  "tip.recWeeklyEveryN": "a cada {{n}} semanas",
+  "tip.recMonthlyEveryN": "a cada {{n}} meses",
+  "tip.recYearlyEveryN": "a cada {{n}} anos"
 }

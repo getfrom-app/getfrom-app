@@ -2343,5 +2343,9 @@
   "elements.citas": "Citaten",
   "v2.citationUnassigned": "Citaat zonder context",
   "v2.inheritedContext": "Overgenomen van de regel erboven — klik om een eigen context toe te wijzen",
-  "v2.newSubcontext": "Subcontext"
+  "v2.newSubcontext": "Subcontext",
+  "tip.recDailyEveryN": "elke {{n}} dagen",
+  "tip.recWeeklyEveryN": "elke {{n}} weken",
+  "tip.recMonthlyEveryN": "elke {{n}} maanden",
+  "tip.recYearlyEveryN": "elke {{n}} jaar"
 }

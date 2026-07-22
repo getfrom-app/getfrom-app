@@ -2343,5 +2343,9 @@
   "elements.citas": "Alıntılar",
   "v2.citationUnassigned": "Bağlamsız alıntı",
   "v2.inheritedContext": "Yukarıdaki satırdan devralındı — kendi bağlamınızı atamak için tıklayın",
-  "v2.newSubcontext": "Alt bağlam"
+  "v2.newSubcontext": "Alt bağlam",
+  "tip.recDailyEveryN": "her {{n}} günde bir",
+  "tip.recWeeklyEveryN": "her {{n}} haftada bir",
+  "tip.recMonthlyEveryN": "her {{n}} ayda bir",
+  "tip.recYearlyEveryN": "her {{n}} yılda bir"
 }

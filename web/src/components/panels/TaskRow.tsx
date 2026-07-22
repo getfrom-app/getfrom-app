@@ -46,10 +46,22 @@ export function dueColor(n: Node): string {
   if (dd === t0) return '#f59e0b'
   return '#3b82f6'
 }
-export function recLabel(n: Node, t: (k: string) => string): string | null {
+export function recLabel(n: Node, t: (k: string, opts?: Record<string, unknown>) => string): string | null {
   if (!n.recurrence) return null
-  const u = n.recurrence.split(':')[0]
-  return ({ daily: t('tip.recDailyShort'), weekly: t('tip.recWeeklyShort'), monthly: t('tip.recMonthlyShort'), yearly: t('tip.recYearlyShort') } as Record<string, string>)[u] || t('tip.recShortGeneric')
+  // Formato `unit` o `unit:N` (N = intervalo, ver recurrenceToString en naturalDate.ts).
+  // Antes esto solo miraba la unidad e ignoraba el intervalo — una tarea "cada
+  // quince días" (daily:15) mostraba el chip «cada día», idéntico a una diaria
+  // de verdad (Alberto, 22 jul: "esta tarea es cada 15 días, y en el chip pone
+  // cada día").
+  const m = n.recurrence.match(/^(daily|weekly|monthly|yearly)(?::i?(\d+))?$/)
+  if (!m) return t('tip.recShortGeneric')
+  const unit = m[1]
+  const interval = m[2] ? parseInt(m[2], 10) || 1 : 1
+  if (interval <= 1) {
+    return ({ daily: t('tip.recDailyShort'), weekly: t('tip.recWeeklyShort'), monthly: t('tip.recMonthlyShort'), yearly: t('tip.recYearlyShort') } as Record<string, string>)[unit] || t('tip.recShortGeneric')
+  }
+  const everyNKey = ({ daily: 'tip.recDailyEveryN', weekly: 'tip.recWeeklyEveryN', monthly: 'tip.recMonthlyEveryN', yearly: 'tip.recYearlyEveryN' } as Record<string, string>)[unit]
+  return everyNKey ? t(everyNKey, { n: interval }) : t('tip.recShortGeneric')
 }
 
 interface Props {

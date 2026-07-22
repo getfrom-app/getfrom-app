@@ -2343,5 +2343,9 @@
   "elements.citas": "Παραθέσεις",
   "v2.citationUnassigned": "Παράθεση χωρίς πλαίσιο",
   "v2.inheritedContext": "Κληρονομήθηκε από την παραπάνω γραμμή — κάντε κλικ για να ορίσετε το δικό σας",
-  "v2.newSubcontext": "Υποπλαίσιο"
+  "v2.newSubcontext": "Υποπλαίσιο",
+  "tip.recDailyEveryN": "κάθε {{n}} ημέρες",
+  "tip.recWeeklyEveryN": "κάθε {{n}} εβδομάδες",
+  "tip.recMonthlyEveryN": "κάθε {{n}} μήνες",
+  "tip.recYearlyEveryN": "κάθε {{n}} χρόνια"
 }
