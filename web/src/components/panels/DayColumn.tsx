@@ -162,7 +162,14 @@ export default function DayColumn({
   const linkedGcalIds = new Set(eventNodes.map(n => getGcalEventId(n)).filter(Boolean))
   const extraEvents = gcalEvents.filter(e => !linkedGcalIds.has(e.id))
   const captureNodes = raw.captureNodes
-  const dayTasks = raw.dayTasks
+  // Dedup: un nodo puede tener gcalEventId (→ cuenta como eventNode, sale en
+  // «Eventos del día») Y status de tarea (→ cuenta también en dayTasks, sale
+  // en «Tareas del día») — mismo id en las dos listas, sin deduplicar entre sí
+  // (a diferencia de HOY, que ya fusiona vía agendaRows). Alberto, 22 jul: "un
+  // evento de Google de todo el día es de todo el día, pero una tarea de todo
+  // el día es tarea para hoy... nunca debe duplicarse".
+  const eventNodeIds = new Set(raw.eventNodes.map(n => n.id))
+  const dayTasks = raw.dayTasks.filter(n => !eventNodeIds.has(n.id))
   const areaNodes = raw.areaNodes
   // Áreas: pulsar = la cámara del lienzo vuela a esa vista guardada.
   const flyToArea = (id: string) => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
