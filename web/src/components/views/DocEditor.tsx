@@ -38,7 +38,7 @@ import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
 import ContextPicker from '../panels/ContextPicker'
-import { ParagraphId, genPid } from '../../utils/tiptapParagraphId'
+import { ParagraphId, dedupePids } from '../../utils/tiptapParagraphId'
 import { CiteDecorations, citeDecoKey } from '../../utils/tiptapCiteDecorations'
 
 // ¿El texto pegado parece MARKDOWN? (encabezados, listas, code fence, cita, enlaces,
@@ -592,17 +592,11 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     // Documentos ya existentes (creados antes de ParagraphId) no tienen `pid` en
     // ningún párrafo — el plugin de la extensión solo asigna ids en transacciones
     // que YA cambian el doc, así que un documento abierto sin tocar se quedaría
-    // sin anclas para siempre. Backfill único al crear el editor.
+    // sin anclas para siempre. Backfill único al crear el editor — misma lógica
+    // (con deduplicación) que el plugin, para autocurar documentos que ya
+    // tuvieran pids duplicados guardados (ver dedupePids).
     onCreate: ({ editor: ed }) => {
-      const types = ['paragraph', 'heading', 'blockquote']
-      let tr = ed.state.tr
-      let changed = false
-      ed.state.doc.descendants((n, pos) => {
-        if (types.includes(n.type.name) && !n.attrs.pid) {
-          tr = tr.setNodeMarkup(pos, undefined, { ...n.attrs, pid: genPid() })
-          changed = true
-        }
-      })
+      const { tr, changed } = dedupePids(ed.state.doc, ed.state.tr)
       if (changed) { tr.setMeta('addToHistory', false); ed.view.dispatch(tr) }
     },
     editorProps: {
