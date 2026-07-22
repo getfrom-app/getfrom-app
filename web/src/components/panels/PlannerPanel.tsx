@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { ensureDayPath, diaryDayTitle } from '../../utils/agendaHelper'
-import { bumpReschedule } from '../../utils/dailyCockpit'
+import { bumpReschedule, toggleTaskDone } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { gcalEventNodeId } from '../../utils/deterministicId'
 import { firstContextOf, contextColor } from '../../utils/cajones'
@@ -734,9 +734,16 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const gridH = TOTAL_HOURS * hourH
     const blockTop = Math.max(0, Math.min(topPx(b.start), gridH - slotH / 2))
     const blockH = Math.max(slotH / 2, Math.min(heightPx(b.start.getTime(), b.end.getTime()), gridH - blockTop))
+    // Checkbox SOLO en tareas (nodo con status), nunca en eventos — así se
+    // distinguen a golpe de vista en el planificador y en la tab Día (Alberto,
+    // 22 jul: "las tareas deberán llevar checkbox, los eventos no"). Reutiliza
+    // toggleTaskDone (mismo que DayColumn) para no romper el paso a "Atrasadas"
+    // al día siguiente si la tarea no se completa.
+    const checkable = !isGcal && !!blockNode && blockNode.status != null
+    const done = checkable && blockNode!.status === 'done'
     return (
       <div key={b.id} data-pp-block={b.id}
-        className={`pp-block pp-block--${b.kind}`}
+        className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}`}
         style={{ top: blockTop, height: blockH,
           background: bg, left: 2, right: 2,
           ...(isGcal ? {} : { border: '1px solid var(--border)', borderLeft: `3px solid ${accentColor}` }) }}
@@ -771,6 +778,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
         }}
         title={`${b.text}\n${fmtHH(b.start)} – ${fmtHH(b.end)}`}
       >
+        {checkable && (
+          <button className={`pp-block-check ${done ? 'pp-block-check--done' : ''}`}
+            onClick={e => { e.stopPropagation(); toggleTaskDone(blockNode!) }}
+            title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
+        )}
         {/* Bloques muy cortos (reuniones de 15-30min entre otras) no tienen alto para
             mostrar hora + título sin cortarse — se prioriza el título (Alberto, 21 jul). */}
         {blockH >= MIN_BLOCK_H_FOR_TIME && <div className="pp-block-time">{fmtHH(b.start)}</div>}
@@ -1146,14 +1158,24 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                       const n = it.node
                       const chipCtx = firstContextOf(n)
                       const chipAccent = chipCtx ? contextColor(chipCtx.id) : plannerBase
+                      // Checkbox SOLO en tareas (n.status != null) — un evento sin hora
+                      // también puede llegar aquí (isEvent) y no debe llevarlo (Alberto,
+                      // 22 jul: "las tareas deberán llevar checkbox, los eventos no").
+                      const chipCheckable = n.status != null
+                      const chipDone = chipCheckable && n.status === 'done'
                       return (
-                      <div key={n.id} className={`pp-allday-chip ${n.status==='done'?'pp-allday-chip--done':''}`}
+                      <div key={n.id} className={`pp-allday-chip ${chipDone?'pp-allday-chip--done':''}`}
                         style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)', borderLeft: `3px solid ${chipAccent}` }}
                         draggable
                         onDragStart={e=>{ e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed='move' }}
                         onClick={e=>{ e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: n.id } })) }}
                         onContextMenu={e=>{ e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
                         title={n.text}>
+                        {chipCheckable && (
+                          <button className={`pp-allday-check ${chipDone ? 'pp-allday-check--done' : ''}`}
+                            onClick={e=>{ e.stopPropagation(); toggleTaskDone(n) }}
+                            title={t('daily.markDone')} aria-label={t('daily.markDone')}>{chipDone ? '✓' : ''}</button>
+                        )}
                         {n.text || t('common.noTitle')}
                       </div>
                       )

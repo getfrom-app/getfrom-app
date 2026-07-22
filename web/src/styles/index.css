@@ -13061,9 +13061,18 @@ textarea:focus-visible,
 .pp-allday-add { font-size: 11px; line-height: 1; color: var(--text-tertiary); opacity: 0; text-align: center; padding: 1px 0; transition: opacity .1s; }
 .pp-allday-col:hover .pp-allday-add { opacity: .5; }
 .pp-allday-new { font-size: 11px; border: 1px solid var(--accent, #6c5ce7); border-radius: 4px; padding: 1px 5px; outline: none; background: var(--bg-primary); color: var(--text-primary); width: 100%; box-sizing: border-box; }
-.pp-allday-chip { font-size: 11px; background: var(--accent, #6c5ce7); color: #fff; border-radius: 5px; padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; }
+.pp-allday-chip { font-size: 11px; background: var(--accent, #6c5ce7); color: #fff; border-radius: 5px; padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; display: flex; align-items: center; gap: 5px; }
 .pp-allday-chip:active { cursor: grabbing; }
 .pp-allday-chip--done { opacity: 0.5; text-decoration: line-through; }
+/* Checkbox SOLO en tareas (nunca en eventos) — distingue a golpe de vista en
+   el planificador y la tab Día (Alberto, 22 jul). */
+.pp-allday-check {
+  flex-shrink: 0; width: 12px; height: 12px; border: 1.4px solid var(--text-tertiary);
+  border-radius: 3px; background: transparent; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 8px; line-height: 1; color: #fff;
+}
+.pp-allday-check:hover { border-color: var(--accent); }
+.pp-allday-check--done { background: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
 
 .pp-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--danger, #e03131); z-index: 6; pointer-events: none; }
 .pp-now::before { content:''; position:absolute; left:-4px; top:-4px; width:10px; height:10px; background:var(--danger, #e03131); border-radius:50%; }
@@ -13083,6 +13092,18 @@ textarea:focus-visible,
 .pp-block-text { font-size: 10px; font-weight: 600; color: var(--text-primary); overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; line-height:1.3; }
 .pp-block--gcal .pp-block-time { color: rgba(45,38,70,.62); }
 .pp-block--gcal .pp-block-text { color: rgba(45,38,70,.92); }
+/* Checkbox SOLO en tareas — nunca en eventos, para distinguirlos a golpe de
+   vista (Alberto, 22 jul). Flotante en la esquina para no robar alto a
+   bloques cortos (que ya van justos de espacio para hora+título). */
+.pp-block-check {
+  position: absolute; top: 2px; right: 2px; width: 11px; height: 11px; z-index: 2;
+  border: 1.3px solid var(--text-tertiary); border-radius: 3px; background: var(--bg-primary);
+  cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 8px; line-height: 1; color: #fff;
+}
+.pp-block-check:hover { border-color: var(--accent); }
+.pp-block-check--done { background: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
+.pp-block--done .pp-block-text { text-decoration: line-through; opacity: .55; }
 /* Resize handle más grande y visible — 10px en lugar de 5px */
 .pp-block-resize { position:absolute; bottom:0; left:0; right:0; height:10px; cursor:ns-resize; background:rgba(128,128,128,.08); border-radius:0 0 4px 4px; display:flex; align-items:center; justify-content:center; }
 .pp-block-resize::after { content:''; display:block; width:24px; height:2px; background:var(--text-tertiary); opacity:.5; border-radius:1px; }
