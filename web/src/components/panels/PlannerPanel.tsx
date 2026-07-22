@@ -293,6 +293,18 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     return () => window.removeEventListener('from:gcal-events-changed', fetchGcalEvents)
   }) // eslint-disable-line
 
+  // Vista Día (tab «Día» de la columna derecha, viewTabs=['day']): cada día tiene
+  // su propia nota diaria — al entrar en la vista o navegar a otro día (‹/›/Hoy),
+  // se abre esa nota en el espacio central, igual que ya hacían los clics en la
+  // rejilla de mes/año (Alberto, 22 jul: "cada vez que se abre un día, se abre su
+  // nota diaria"). El overlay central de Semana/Mes/Año (showPlanner en V2Chat)
+  // nunca pasa por aquí — no incluye 'day' en sus viewTabs.
+  useEffect(() => {
+    if (viewMode !== 'day') return
+    const dayNode = ensureDayPath(centerDate)
+    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: dayNode.id } }))
+  }, [viewMode, centerDate.toDateString()]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     us.refreshGoogleStatus?.()
   }, []) // eslint-disable-line

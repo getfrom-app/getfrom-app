@@ -701,12 +701,13 @@ export default function V2App() {
           onNewDocument={onNewDocument}
           onNewCanvas={onNewCanvas}
           recorder={recorder}
-          // El planificador central también se mantiene abierto en la tab Día
-          // — antes solo cubría 'hoy' (Agenda), así que ir a Día lo cerraba y
-          // dejaba ver el chat vacío detrás (Alberto, 22 jul: "al hacer clic
-          // en la pestaña Dia, se debe mantener el planner abierto, ahora se
-          // va a ventana chat").
-          showPlanner={rightMode === 'hoy' || rightMode === 'dia'}
+          // La tab Día ya NO usa este overlay: abre la nota diaria del día en el
+          // centro (ver el useEffect de viewMode==='day' en PlannerPanel.tsx),
+          // que sustituye por completo al chat — más específico que mantener
+          // aquí el planificador de semana/mes/año (Alberto, 22 jul: "en el
+          // centro una nota diaria... cada vez que se abre un día, se abre su
+          // nota diaria").
+          showPlanner={rightMode === 'hoy'}
           onOpenDrivePicker={onOpenDrivePicker}
         />
       )}

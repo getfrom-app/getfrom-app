@@ -29,7 +29,7 @@ import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../view
 import type { FilterView } from '../views/FilterResultsView'
 import PizarraThumbnail from '../views/PizarraThumbnail'
 
-export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt'
+export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'dia'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; ctxId: string | null; due?: string | null; status?: string | null }
@@ -44,6 +44,10 @@ function classify(n: Node): ElemKind | null {
   // Mensajes/transcripciones DENTRO de una conversación no son elementos sueltos (solo
   // la sesión en sí lo es, como tipo 'conversation' — ver más abajo).
   if (e._aiTranscript != null || e._aiMsgRole != null) return null
+  // Nota diaria (📅 Agenda → Año → Mes → Día) — antes quedaba fuera de `isNote`/
+  // `isDocNode` (estructural) y por tanto invisible en el buscador. Ahora es su
+  // propio tipo buscable (Alberto, 22 jul: "serían un elemento nuevo llamado Día").
+  if (n.isDiaryEntry) return 'dia'
   // La conversación (sesión ✦) SÍ es un elemento — Alberto: "la conversación en sí también
   // debería ser un elemento". Antes se ocultaban aquí las sesiones de comando rápido (1
   // turno, sin continuidad); ahora TODOS los chats se guardan y se listan (15 jul: "quiero
@@ -87,7 +91,7 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
   return true
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', canvas: '🎨', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡' }
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', canvas: '🎨', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡', dia: '🗓️' }
 const ROW_H = 46
 const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
 const ELEMENTS_SORT_KEY = 'from_v2_elements_sort'
@@ -270,6 +274,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     { key: 'highlight', label: '🖍️ ' + t('elements.highlights', 'Subrayados') },
     { key: 'image',   label: t('elements.images') },
     { key: 'context', label: t('elements.contexts') },
+    { key: 'dia',     label: '🗓️ ' + t('elements.days', 'Días') },
     { key: 'agent',   label: '🤖 ' + t('elements.agents', 'Agentes') },
     { key: 'prompt',  label: '⚡ ' + t('elements.prompts', 'Prompts') },
     { key: 'conversation', label: '💬 ' + t('elements.conversations', 'Conversaciones') },
