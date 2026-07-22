@@ -12,6 +12,8 @@ import { useTheme } from '../../hooks/useTheme'
 import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
 import NewContextModal from '../../components/modals/NewContextModal'
+import NewTaskModal from '../../components/modals/NewTaskModal'
+import NewEventModal from '../../components/modals/NewEventModal'
 import type { Node } from '../../types'
 
 // Misma paleta que el menú de clic derecho de un contexto en la Pizarra (v1) —
@@ -33,6 +35,11 @@ interface Props {
   onSelectCtx: (id: string | null) => void
   onNewChat: () => void
   onNewChatInCtx: (id: string) => void
+  // Botones de creación por contexto — nota/lienzo (Alberto, 22 jul: "botones de
+  // creación de elementos en el sidebar"). Tarea/evento se crean aquí mismo con
+  // NewTaskModal/NewEventModal (ya aceptan parentId), sin necesidad de subir a V2App.
+  onNewNoteInCtx: (id: string) => void
+  onNewCanvasInCtx: (id: string) => void
   // Mismo handler que el chat (V2App.onFilesDropped): con conversación activa se
   // adjunta ahí, si no se importa al contexto/día activo. Soltar en la sidebar ya
   // NO tiene una ruta propia por-contexto (daba error al subir; una sola ruta).
@@ -61,7 +68,7 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenProfile }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenProfile }: Props) {
   useStore()
   const { t } = useTranslation()
   const user = useUserStore()
@@ -83,6 +90,17 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
   // nombre + padre en un modal (Alberto, 21 jul).
   const [showNewContext, setShowNewContext] = useState(false)
   const userWrap = useRef<HTMLDivElement>(null)
+
+  // Menú «＋» por contexto: nota / tarea / evento / lienzo / conversación (antes
+  // el «＋» solo creaba una conversación — Alberto, 22 jul: "botones de creación
+  // de elementos en el sidebar").
+  const [addMenu, setAddMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+  const [newTaskCtx, setNewTaskCtx] = useState<string | null>(null)
+  const [newEventCtx, setNewEventCtx] = useState<string | null>(null)
+  const openAddMenu = (e: React.MouseEvent, id: string) => {
+    e.preventDefault(); e.stopPropagation()
+    setAddMenu({ id, x: e.clientX, y: e.clientY })
+  }
 
   // Menú de clic derecho de un contexto: renombrar / color / mover / eliminar.
   const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null)
@@ -251,8 +269,8 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
             )}
             <button
               className="v2-ctx-add"
-              title={t('v2.newConversationInThisContext', 'Nueva conversación en este contexto')}
-              onClick={(e) => { e.stopPropagation(); onNewChatInCtx(currentParent.id) }}
+              title={t('v2.newElementInThisContext', 'Crear elemento en este contexto')}
+              onClick={(e) => openAddMenu(e, currentParent.id)}
             >＋</button>
           </div>
         ) : (
@@ -292,8 +310,8 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
               )}
               <button
                 className="v2-ctx-add"
-                title={t('v2.newConversationInThisContext', 'Nueva conversación en este contexto')}
-                onClick={(e) => { e.stopPropagation(); onNewChatInCtx(c.id) }}
+                title={t('v2.newElementInThisContext', 'Crear elemento en este contexto')}
+                onClick={(e) => openAddMenu(e, c.id)}
               >＋</button>
               {hasSubs && <span className="v2-ctx-count">›</span>}
             </div>
@@ -306,6 +324,23 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
           </div>
         )}
       </div>
+
+      {/* Menú «＋» de un contexto: nota / tarea / evento / lienzo / conversación. */}
+      {addMenu && (
+        <>
+          <div onPointerDown={() => setAddMenu(null)} onContextMenu={(e) => { e.preventDefault(); setAddMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
+          <div className="v2-ctx-menu" style={{ position: 'fixed', top: addMenu.y, left: addMenu.x, zIndex: 2000 }}>
+            <button className="v2-ctx-menu-item" onClick={() => { onNewNoteInCtx(addMenu.id); setAddMenu(null) }}>📝 {t('v2.chat.newNote', 'Nota')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { setNewTaskCtx(addMenu.id); setAddMenu(null) }}>☑️ {t('v2.chat.newTaskShort', 'Tarea')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { setNewEventCtx(addMenu.id); setAddMenu(null) }}>📅 {t('v2.chat.newEventShort', 'Evento')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { onNewCanvasInCtx(addMenu.id); setAddMenu(null) }}>🎨 {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
+            <div className="v2-ctx-menu-sep" />
+            <button className="v2-ctx-menu-item" onClick={() => { onNewChatInCtx(addMenu.id); setAddMenu(null) }}>💬 {t('v2.newConversationInThisContext', 'Nueva conversación')}</button>
+          </div>
+        </>
+      )}
+      {newTaskCtx && <NewTaskModal parentId={newTaskCtx} onClose={() => setNewTaskCtx(null)} />}
+      {newEventCtx && <NewEventModal parentId={newEventCtx} onClose={() => setNewEventCtx(null)} />}
 
       {/* Menú de clic derecho de un contexto: renombrar / color / mover / eliminar. */}
       {ctxMenu && store.getNode(ctxMenu.id) && (

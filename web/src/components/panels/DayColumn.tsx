@@ -258,7 +258,7 @@ export default function DayColumn({
           if (row.kind === 'gcal') {
             const ev = row.ev
             const allDay = ev.allDay
-            const timeStr = allDay ? t('tip.allDay') : `${hhmm(ev.start)}–${hhmm(ev.end)}`
+            const timeStr = allDay ? t('tip.allDay') : hhmm(ev.start)
             return (
               <div key={`gcal:${ev.id}`} className="dc-row dc-row--event"
                 onClick={() => setEditingGcal(ev)} style={{ cursor: 'pointer' }}
@@ -299,7 +299,7 @@ export default function DayColumn({
           const color = evCtx ? contextColor(evCtx.id) : getGcalColor(ev)
           const allDay = isAllDay(ev)
           const rec = recShort(ev.recurrence, t)
-          const timeStr = allDay ? t('tip.allDay') : (ev.due ? `${hhmm(ev.due)}–${hhmm(ev.dueEnd)}` : '')
+          const timeStr = allDay ? t('tip.allDay') : (ev.due ? hhmm(ev.due) : '')
           return (
             <div key={`node:${ev.id}`}>
               <div className="dc-row dc-row--event" data-node-id={ev.id}

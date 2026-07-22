@@ -106,6 +106,17 @@ export default function V2App() {
   }, [ownAccent])
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
   const [rightMode, setRightMode] = useState<RightMode>('hoy')
+  // Recuerda la última tab que NO era «detalles», para poder volver a ella al
+  // cerrar el detalle con «‹» — antes onCloseDetail solo vaciaba detailNodeId y
+  // rightMode se quedaba en 'detalles' (o saltaba a 'contexto' si el elemento
+  // tenía contexto, vía setSelectedCtxId en onOpenNode), así que «atrás» nunca
+  // devolvía a Elementos/Agenda, la tab desde la que se abrió el elemento
+  // (Alberto, 22 jul: "al darle atrás debería volver a la tab anterior... pero
+  // vuelve al detalle del contexto").
+  const lastNonDetailModeRef = useRef<RightMode>('hoy')
+  useEffect(() => {
+    if (rightMode !== 'detalles') lastNonDetailModeRef.current = rightMode
+  }, [rightMode])
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // elemento abierto en la columna derecha
   // Ajustes a pantalla completa: null = modo normal; si no, la pestaña activa.
@@ -231,6 +242,27 @@ export default function V2App() {
     setDetailNodeId(null)
     setRightMode('detalles')  // se está iniciando una conversación, no viendo la ficha
     aiChatStore.startNewSession()
+  }
+
+  // Crear nota/lienzo directamente en UN CONTEXTO CONCRETO del sidebar (no
+  // necesariamente el activo) — mismo patrón que onNewChatInCtx, reutilizando la
+  // lógica de onNewDocument/onNewCanvas pero con el parentId explícito en vez de
+  // captureParentId() (Alberto, 22 jul: "botones de creación de elementos en el
+  // sidebar").
+  const onNewNoteInCtx = (ctxId: string) => {
+    setShowProfile(false)
+    setSelectedCtxId(ctxId)
+    const n = store.createNode({ text: '', parentId: ctxId, extraData: { _doc: '1' } })
+    store.updateNode(n.id, { body: '<p></p>' })
+    setRightMode('detalles')
+    setDetailNodeId(n.id)
+  }
+  const onNewCanvasInCtx = (ctxId: string) => {
+    setShowProfile(false)
+    setSelectedCtxId(ctxId)
+    const n = store.createNode({ text: '', parentId: ctxId, extraData: { _doc: '1', _v2canvas: '1' } })
+    setRightMode('detalles')
+    setDetailNodeId(n.id)
   }
 
   // Abrir una conversación: chat al CENTRO + su(s) elemento(s) en la tab DETALLES a
@@ -636,7 +668,7 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenProfile={() => setShowProfile(true)} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenProfile={() => setShowProfile(true)} />
       {showProfile ? (
         <V2ProfileView onClose={() => setShowProfile(false)} />
       ) : (
@@ -659,7 +691,7 @@ export default function V2App() {
         onStartAbout={onStartAbout}
         onSelectCtx={onSelectCtx}
         detailNodeId={detailNodeId}
-        onCloseDetail={() => setDetailNodeId(null)}
+        onCloseDetail={() => { setDetailNodeId(null); setRightMode(lastNonDetailModeRef.current) }}
         onResize={setRightWidth}
         activeSessionId={chat.sessionId}
         onOpenConversation={onOpenConversation}

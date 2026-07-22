@@ -276,24 +276,23 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
           {!collapsedG.has('seguimiento') && seguimientoCtxs.map(renderCtxRow)}
         </div>
       )}
-      {/* POR PLANIFICAR — colapsado por defecto. Tareas SIN FECHA que hay que agendar
-          (filosofía Fromly: nada se queda sin un cuándo). Los contextos en estado
-          «Algún día» NO viven aquí: están en su árbol de contextos. */}
-      {data.seguimiento.length > 0 && (
-        <div className="dc-group">
-          {gHeader('algundia', `Por planificar · ${data.seguimiento.length}`)}
-          {!collapsedG.has('algundia') && data.seguimiento.map(n => renderTaskRow(n, {}))}
-        </div>
-      )}
       {/* FUTURO — tareas aparcadas explícitamente (status='future') PRIMERO, y debajo
           las tareas con fecha en próximos días en orden cronológico (Alberto, 22 jul:
-          "así, realmente, el bloque futuro se completa"). Colapsado por defecto, igual
-          que «Por planificar»: no debe competir por atención hoy. */}
+          "así, realmente, el bloque futuro se completa"). Colapsado por defecto. */}
       {(data.future.length > 0 || upcoming.length > 0) && (
         <div className="dc-group">
           {gHeader('futuro', `Futuro · ${data.future.length + upcoming.length}`)}
           {!collapsedG.has('futuro') && data.future.map(n => renderTaskRow(n, { showDue: true }))}
           {!collapsedG.has('futuro') && upcoming.map(n => renderTaskRow(n, { showDue: true }))}
+        </div>
+      )}
+      {/* SIN FECHA — SIEMPRE el último bloque de la columna, colapsado por defecto.
+          Tareas abiertas sin fecha (excluye status='future', que ya vive en Futuro —
+          Alberto, 22 jul: "excluye aquí las tareas con estado futuro"). */}
+      {data.seguimiento.length > 0 && (
+        <div className="dc-group">
+          {gHeader('algundia', `${t('daily.noDate', 'Sin fecha')} · ${data.seguimiento.length}`)}
+          {!collapsedG.has('algundia') && data.seguimiento.map(n => renderTaskRow(n, {}))}
         </div>
       )}
 
