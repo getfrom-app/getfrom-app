@@ -276,6 +276,14 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       if (color) { el.style.setProperty('--cite-color', color); el.classList.add('doc-para--cited') }
       else { el.classList.remove('doc-para--cited'); el.style.removeProperty('--cite-color') }
     })
+    // DEBUG TEMPORAL (quitar tras verificar) — log acumulado en el DOM de cada
+    // invocación, para ver si el estado oscila entre llamadas.
+    try {
+      const w = window as unknown as { __citeLog?: unknown[] }
+      w.__citeLog = w.__citeLog || []
+      w.__citeLog.push({ t: Date.now(), byPidSize: byPid.size, byTextSize: byText.size, applied: Array.from(wrap.querySelectorAll<HTMLElement>('[data-pid]')).map(el => el.classList.contains('doc-para--cited')) })
+      wrap.setAttribute('data-cite-log', JSON.stringify(w.__citeLog.slice(-10)))
+    } catch { /* debug only */ }
   }
 
   const createCitation = (pid: string, contextId: string) => {
