@@ -18,7 +18,7 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import { createPortal } from 'react-dom'
 import { store, useStore } from '../../store/nodeStore'
-import { assignContext, firstContextOf, contextColor } from '../../utils/cajones'
+import { assignContext, firstContextOf, contextColor, setNodeContext } from '../../utils/cajones'
 import { isContextKnowledge, isProfileKnowledge } from '../../utils/knowledgeNodes'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { firstLineTitle, DOC } from '../../utils/docNode'
@@ -226,6 +226,27 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   const [citePicker, setCitePicker] = useState<{ pid: string; x: number; y: number; up: boolean } | null>(null)
   const citePickerRef = useRef<HTMLDivElement>(null)
 
+  // Cita YA existente para un párrafo (si la hay) — por pid exacto o, si el pid
+  // se regeneró (ver applyCiteIndicators), por el texto citado. La necesita el
+  // hover para MOSTRAR el contexto ya asignado (no solo el botón de crear una
+  // cita nueva) y para poder REASIGNARLO en vez de crear un duplicado (Alberto,
+  // 22 jul: "no veo el contexto junto a la cita ni puedo ponerlo").
+  const findCitationForPid = (pid: string): { node: import('../../types').Node; text: string } | null => {
+    const target = (() => {
+      let t = ''
+      editorRef.current?.state.doc.descendants(n => { if (n.attrs?.pid === pid) t = n.textContent.trim() })
+      return t
+    })()
+    for (const c of store.allActive()) {
+      const e = parseExtraData(c.extraData)
+      if (e._docSelection !== '1' || e._docSourceId !== node.id) continue
+      const cPid = e._docParagraphId as string | undefined
+      const cText = (e._docText as string | undefined)?.trim()
+      if (cPid === pid || (target && cText === target)) return { node: c, text: cText || target }
+    }
+    return null
+  }
+
   const onContentMouseMove = (e: React.MouseEvent) => {
     if (citePicker) return
     const wrap = contentWrapRef.current
@@ -314,6 +335,24 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     assignContext(quote.id, contextId)
     applyCiteIndicators()
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.citationSaved', 'Párrafo asignado al contexto'), type: 'success' } }))
+  }
+
+  // Elegido un contexto desde el picker del hover: si el párrafo YA tiene cita,
+  // REASIGNA la existente (setNodeContext reemplaza, no acumula) en vez de crear
+  // un duplicado; si no la tiene, crea una nueva. `contextId=null` = quitar
+  // (ContextPicker lo manda al pulsar el contexto ya seleccionado) — Alberto,
+  // 22 jul: "no veo el contexto junto a la cita ni puedo ponerlo".
+  const setCitationContext = (pid: string, contextId: string | null) => {
+    const existing = findCitationForPid(pid)
+    if (existing) {
+      setNodeContext(existing.node.id, contextId)
+      applyCiteIndicators()
+      window.dispatchEvent(new CustomEvent('from:toast', {
+        detail: { message: contextId ? t('v2.citationSaved', 'Párrafo asignado al contexto') : t('v2.citationUnassigned', 'Cita sin contexto'), type: 'success' },
+      }))
+    } else if (contextId) {
+      createCitation(pid, contextId)
+    }
   }
 
   useEffect(() => {
@@ -718,19 +757,35 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       <div ref={contentWrapRef} style={{ position: 'relative' }} onClick={onContentClick}
         onMouseMove={onContentMouseMove} onMouseLeave={() => setCiteHover(null)}>
         <EditorContent editor={editor} />
-        {/* «?» flotante al pasar el ratón por un párrafo — asigna ESE párrafo a
-            un contexto (mismo patrón que RowContextChip). */}
-        {citeHover && !citePicker && (
-          <button className="doc-cite-btn" style={{ top: citeHover.top }}
-            onMouseDown={e => e.preventDefault()}
-            onClick={e => openCitePicker(e, citeHover.pid)}
-            title={t('v2.assignParagraphToContext', 'Asignar este párrafo a un contexto')}>?</button>
-        )}
+        {/* Botón flotante al pasar el ratón por un párrafo — asigna ESE párrafo a
+            un contexto (mismo patrón que RowContextChip). Si el párrafo YA tiene
+            cita, en vez de un «?» ciego muestra el CONTEXTO actual (chip de
+            color + nombre) — al pulsarlo se puede cambiar o quitar, no solo
+            crear otra cita (Alberto, 22 jul: "no veo el contexto junto a la
+            cita ni puedo ponerlo"). */}
+        {citeHover && !citePicker && (() => {
+          const existing = findCitationForPid(citeHover.pid)
+          const existingCtx = existing ? firstContextOf(existing.node) : null
+          return existingCtx ? (
+            <button className="doc-cite-btn doc-cite-btn--assigned" style={{ top: citeHover.top, ['--chip' as string]: contextColor(existingCtx.id) }}
+              onMouseDown={e => e.preventDefault()}
+              onClick={e => openCitePicker(e, citeHover.pid)}
+              title={t('v2.changeContext', 'Cambiar contexto')}>{existingCtx.text}</button>
+          ) : (
+            <button className="doc-cite-btn" style={{ top: citeHover.top }}
+              onMouseDown={e => e.preventDefault()}
+              onClick={e => openCitePicker(e, citeHover.pid)}
+              title={t('v2.assignParagraphToContext', 'Asignar este párrafo a un contexto')}>?</button>
+          )
+        })()}
         {citePicker && createPortal((
           <div ref={citePickerRef} className="ctx-pick"
             style={{ position: 'fixed', ...(citePicker.up ? { bottom: citePicker.y } : { top: citePicker.y }), left: citePicker.x, zIndex: 3000 }}
             onClick={e => e.stopPropagation()}>
-            <ContextPicker currentId={null} onPick={id => { if (id) createCitation(citePicker.pid, id); setCitePicker(null) }} />
+            <ContextPicker
+              currentId={findCitationForPid(citePicker.pid) ? firstContextOf(findCitationForPid(citePicker.pid)!.node)?.id ?? null : null}
+              onPick={id => { setCitationContext(citePicker.pid, id); setCitePicker(null) }}
+            />
           </div>
         ), document.body)}
       </div>

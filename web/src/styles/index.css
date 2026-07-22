@@ -7568,6 +7568,19 @@ textarea:focus-visible,
   display: flex; align-items: center; justify-content: center; opacity: 0.7; z-index: 2;
 }
 .doc-cite-btn:hover { opacity: 1; color: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
+/* Párrafo YA citado: en vez del «?» ciego, un chip con el contexto actual —
+   pulsarlo abre el mismo picker para cambiarlo o quitarlo (Alberto, 22 jul). */
+.doc-cite-btn--assigned {
+  width: auto; height: auto; border-radius: 3px; border: 1px solid var(--border, #ddd);
+  padding: 2px 8px 2px 6px; font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; white-space: nowrap; opacity: 1; display: inline-flex; align-items: center; gap: 5px;
+  color: var(--text-secondary, #666);
+}
+.doc-cite-btn--assigned::before {
+  content: ''; width: 6px; height: 6px; border-radius: 1.5px; flex: 0 0 auto;
+  background: var(--chip, var(--accent, #6c5ce7));
+}
+.doc-cite-btn--assigned:hover { border-color: var(--accent, #6c5ce7); color: var(--text-accent, var(--accent, #6c5ce7)); }
 .doc-editor .ProseMirror [data-pid].doc-para--cited { box-shadow: -3px 0 0 var(--cite-color, var(--accent, #6c5ce7)); }
 .doc-editor .ProseMirror [data-pid].doc-para--flash { animation: doc-para-flash 1.6s ease; }
 @keyframes doc-para-flash {

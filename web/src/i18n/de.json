@@ -2340,5 +2340,6 @@
   "v2.citationSaved": "Absatz dem Kontext zugewiesen",
   "v2.citation": "Zitat",
   "v2.citation.goToSource": "Zur Notiz",
-  "elements.citas": "Zitate"
+  "elements.citas": "Zitate",
+  "v2.citationUnassigned": "Zitat ohne Kontext"
 }

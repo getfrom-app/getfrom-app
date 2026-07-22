@@ -2340,5 +2340,6 @@
   "v2.citationSaved": "Stycket tilldelat sammanhanget",
   "v2.citation": "Citat",
   "v2.citation.goToSource": "Gå till anteckningen",
-  "elements.citas": "Citat"
+  "elements.citas": "Citat",
+  "v2.citationUnassigned": "Citat utan kontext"
 }

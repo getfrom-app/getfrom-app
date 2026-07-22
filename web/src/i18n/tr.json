@@ -2340,5 +2340,6 @@
   "v2.citationSaved": "Paragraf bağlama atandı",
   "v2.citation": "Alıntı",
   "v2.citation.goToSource": "Notaya git",
-  "elements.citas": "Alıntılar"
+  "elements.citas": "Alıntılar",
+  "v2.citationUnassigned": "Bağlamsız alıntı"
 }

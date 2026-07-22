@@ -2340,5 +2340,6 @@
   "v2.citationSaved": "Абзац назначен контексту",
   "v2.citation": "Цитата",
   "v2.citation.goToSource": "Перейти к заметке",
-  "elements.citas": "Цитаты"
+  "elements.citas": "Цитаты",
+  "v2.citationUnassigned": "Цитата без контекста"
 }

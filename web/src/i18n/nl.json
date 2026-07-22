@@ -2340,5 +2340,6 @@
   "v2.citationSaved": "Alinea toegewezen aan context",
   "v2.citation": "Citaat",
   "v2.citation.goToSource": "Naar de notitie",
-  "elements.citas": "Citaten"
+  "elements.citas": "Citaten",
+  "v2.citationUnassigned": "Citaat zonder context"
 }

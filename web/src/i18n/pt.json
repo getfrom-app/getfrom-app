@@ -2340,5 +2340,6 @@
   "v2.citationSaved": "Parágrafo atribuído ao contexto",
   "v2.citation": "Citação",
   "v2.citation.goToSource": "Ir para a nota",
-  "elements.citas": "Citações"
+  "elements.citas": "Citações",
+  "v2.citationUnassigned": "Citação sem contexto"
 }

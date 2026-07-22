@@ -2340,5 +2340,6 @@
   "v2.citationSaved": "Paragraph assigned to context",
   "v2.citation": "Citation",
   "v2.citation.goToSource": "Go to note",
-  "elements.citas": "Citations"
+  "elements.citas": "Citations",
+  "v2.citationUnassigned": "Citation unassigned"
 }

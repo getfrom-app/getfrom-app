@@ -2340,5 +2340,6 @@
   "v2.citationSaved": "Η παράγραφος ανατέθηκε στο πλαίσιο",
   "v2.citation": "Παράθεση",
   "v2.citation.goToSource": "Μετάβαση στη σημείωση",
-  "elements.citas": "Παραθέσεις"
+  "elements.citas": "Παραθέσεις",
+  "v2.citationUnassigned": "Παράθεση χωρίς πλαίσιο"
 }

@@ -2340,5 +2340,6 @@
   "v2.citationSaved": "Akapit przypisany do kontekstu",
   "v2.citation": "Cytat",
   "v2.citation.goToSource": "Przejdź do notatki",
-  "elements.citas": "Cytaty"
+  "elements.citas": "Cytaty",
+  "v2.citationUnassigned": "Cytat bez kontekstu"
 }
