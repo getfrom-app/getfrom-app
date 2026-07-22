@@ -39,6 +39,7 @@ import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
 import ContextPicker from '../panels/ContextPicker'
 import { ParagraphId, genPid } from '../../utils/tiptapParagraphId'
+import { CiteDecorations, citeDecoKey } from '../../utils/tiptapCiteDecorations'
 
 // ¿El texto pegado parece MARKDOWN? (encabezados, listas, code fence, cita, enlaces,
 // negritas). Basta un marcador claro para tratarlo como markdown y renderizarlo.
@@ -243,12 +244,18 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     setCitePicker(up ? { pid, x, y: window.innerHeight - r.top + 4, up: true } : { pid, x, y: r.bottom + 4, up: false })
   }
 
-  // Aplica el borde de color a los párrafos con cita — función aparte (no solo
-  // dentro del useEffect) para poder llamarla también justo tras CREAR una cita,
-  // sin depender de que el siguiente render de React llegue a tiempo.
-  const applyCiteIndicators = () => {
-    const wrap = contentWrapRef.current
-    if (!wrap) return
+  // Indicador persistente de párrafos citados — implementado como DECORACIÓN de
+  // ProseMirror (ver utils/tiptapCiteDecorations.ts), NO como manipulación directa
+  // del DOM: un `classList.add()` a mano se pierde en cuanto la vista redibuja ese
+  // nodo (p.ej. `setContent()` disparado por el polling remoto cada 15s,
+  // nodeStore.ts) porque PM no sabe nada de esa clase y la descarta. Las
+  // decoraciones se recalculan dentro del propio `apply()` del plugin en CADA
+  // transacción, así que sobreviven a esos redibujados solas. `lastSigRef` evita
+  // dispatch redundantes (no hay cambios reales) en cada render.
+  const lastCiteSigRef = useRef<string | null>(null)
+  const applyCiteIndicators = (flashPid?: string | null) => {
+    const ed = editorRef.current
+    if (!ed) return
     // Escaneo directo por `_docSourceId` (no `store.children`): las citas son
     // hijas de este documento, pero el filtro por extraData es más robusto
     // frente a cualquier desfase de la caché de hijos entre instancias/pestañas.
@@ -257,7 +264,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     // citado (el plugin de ParagraphId solo rellena huecos, pero un reemplazo
     // completo del doc borra el atributo y le asigna uno nuevo). Sin el
     // fallback por texto, la cita queda huérfana para siempre en ese caso.
-    const byPid = new Map<string, string>()
+    const byStoredPid = new Map<string, string>()
     const byText = new Map<string, string>()
     for (const c of store.allActive()) {
       const e = parseExtraData(c.extraData)
@@ -267,23 +274,24 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       const ctx = firstContextOf(c)
       if (!ctx) continue
       const color = contextColor(ctx.id)
-      if (pid) byPid.set(pid, color)
+      if (pid) byStoredPid.set(pid, color)
       if (text) byText.set(text, color)
     }
-    wrap.querySelectorAll<HTMLElement>('[data-pid]').forEach(el => {
-      const pid = el.getAttribute('data-pid')
-      const color = (pid ? byPid.get(pid) : null) ?? byText.get((el.textContent || '').trim())
-      if (color) { el.style.setProperty('--cite-color', color); el.classList.add('doc-para--cited') }
-      else { el.classList.remove('doc-para--cited'); el.style.removeProperty('--cite-color') }
+    // Mapa final CLAVE = pid VIGENTE del párrafo (no el guardado en la cita).
+    const map = new Map<string, string>()
+    ed.state.doc.descendants(n => {
+      const pid = n.attrs?.pid as string | undefined
+      if (!pid) return
+      const color = byStoredPid.get(pid) ?? byText.get(n.textContent.trim())
+      if (color) map.set(pid, color)
     })
-    // DEBUG TEMPORAL (quitar tras verificar) — log acumulado en el DOM de cada
-    // invocación, para ver si el estado oscila entre llamadas.
-    try {
-      const w = window as unknown as { __citeLog?: unknown[] }
-      w.__citeLog = w.__citeLog || []
-      w.__citeLog.push({ t: Date.now(), byPidSize: byPid.size, byTextSize: byText.size, applied: Array.from(wrap.querySelectorAll<HTMLElement>('[data-pid]')).map(el => el.classList.contains('doc-para--cited')) })
-      wrap.setAttribute('data-cite-log', JSON.stringify(w.__citeLog.slice(-10)))
-    } catch { /* debug only */ }
+    const fPid = flashPid !== undefined ? flashPid : null
+    const sig = JSON.stringify(Array.from(map.entries())) + '|' + fPid
+    if (sig === lastCiteSigRef.current) return
+    lastCiteSigRef.current = sig
+    const tr = ed.state.tr.setMeta(citeDecoKey, { map, flashPid: fPid })
+    tr.setMeta('addToHistory', false)
+    ed.view.dispatch(tr)
   }
 
   const createCitation = (pid: string, contextId: string) => {
@@ -313,35 +321,38 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     return () => window.removeEventListener('pointerdown', h, true)
   }, [citePicker])
 
-  // Indicador persistente: los párrafos que YA tienen alguna cita llevan un
-  // borde de color (el del contexto asignado) a la izquierda — para ver de un
-  // vistazo qué está ya repartido en contextos, sin pasar el ratón por todo el
-  // texto. Manipula el DOM directamente (fuera del modelo de TipTap): son solo
-  // datos de presentación derivados de OTROS nodos (las citas), no del propio
-  // documento, así que no tiene sentido guardarlos como transacción PM. Corre
-  // en cada render (además de la llamada explícita en createCitation) para
-  // reflejar también citas creadas desde OTRA pestaña/instancia del editor.
+  // Recalcula el mapa de citas en cada render (p.ej. cuando `useStore()` refleja
+  // una cita creada desde OTRA pestaña/instancia) — `lastCiteSigRef` evita
+  // transacciones redundantes cuando no hay cambios reales.
   useEffect(() => { applyCiteIndicators() })
 
   // Volver al párrafo exacto de una cita: scroll + resalte breve (disparado
-  // desde V2DetailView.tsx, botón «Ir a la nota» de una cita).
+  // desde V2DetailView.tsx, botón «Ir a la nota» de una cita). El resalte va
+  // por decoración (applyCiteIndicators con flashPid), no por classList directo,
+  // por la misma razón que el indicador persistente.
   useEffect(() => {
     const h = (e: Event) => {
       const d = (e as CustomEvent<{ nodeId?: string; pid?: string; text?: string }>).detail
       if (!d?.nodeId || d.nodeId !== node.id) return
+      const ed = editorRef.current
       const wrap = contentWrapRef.current
-      if (!wrap) return
+      if (!ed || !wrap) return
       // El `pid` puede haberse regenerado (ver applyCiteIndicators) — si no hay
       // coincidencia exacta, cae al párrafo cuyo texto coincide con el citado.
-      let el = d.pid ? wrap.querySelector<HTMLElement>(`[data-pid="${d.pid}"]`) : null
+      let targetPid: string | null = d.pid && wrap.querySelector(`[data-pid="${d.pid}"]`) ? d.pid : null
+      let el = targetPid ? wrap.querySelector<HTMLElement>(`[data-pid="${targetPid}"]`) : null
       if (!el && d.text) {
         const target = d.text.trim()
-        el = Array.from(wrap.querySelectorAll<HTMLElement>('[data-pid]')).find(p => (p.textContent || '').trim() === target) || null
+        ed.state.doc.descendants(n => {
+          if (el) return
+          const pid = n.attrs?.pid as string | undefined
+          if (pid && n.textContent.trim() === target) { targetPid = pid; el = wrap.querySelector<HTMLElement>(`[data-pid="${pid}"]`) }
+        })
       }
-      if (!el) return
+      if (!el || !targetPid) return
       el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      el.classList.add('doc-para--flash')
-      setTimeout(() => el.classList.remove('doc-para--flash'), 1600)
+      lastCiteSigRef.current = null // fuerza el dispatch aunque el mapa de citas no cambie
+      applyCiteIndicators(targetPid)
     }
     window.addEventListener('from:scroll-to-paragraph', h as EventListener)
     return () => window.removeEventListener('from:scroll-to-paragraph', h as EventListener)
@@ -493,6 +504,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       Placeholder.configure({ placeholder: compact ? '' : 'Escribe tu documento…' }),
       Image.configure({ inline: false, allowBase64: false }),
       ParagraphId,
+      CiteDecorations,
     ],
     content: node.body || '',
     // Por defecto: compact (tarjeta del lienzo) autoenfoca al montar; NO-compact (página en
@@ -522,14 +534,9 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       // del lienzo y en el panel derecho — consistencia total.
     },
     // `applyCiteIndicators` también aquí (no solo en el useEffect de render):
-    // el polling remoto (cada 15s, nodeStore.ts) o el pull de operaciones en
-    // vivo pueden traer una versión externa de este documento y disparan
-    // `editor.commands.setContent(...)` (más abajo) — eso RECREA el DOM de
-    // ProseMirror y borra cualquier clase/estilo puesto a mano en el render
-    // anterior. Alberto, 22 jul: verificado en vivo — el indicador desaparecía
-    // ~1s después de aplicarse porque nada lo reaplicaba tras ese reemplazo.
-    // `onTransaction` corre en CADA transacción (incluida la de setContent),
-    // justo después de que la vista ya actualizó el DOM — cierra la ventana.
+    // tras el backfill de `pid` (más abajo, `onCreate`) o cualquier transacción
+    // que cambie pids, recalcula el mapa contra los pids VIGENTES sin esperar
+    // al siguiente render de React. `lastCiteSigRef` evita dispatch redundantes.
     onTransaction: () => { notifyDocEditor(); applyCiteIndicators() },
     // Documentos ya existentes (creados antes de ParagraphId) no tienen `pid` en
     // ningún párrafo — el plugin de la extensión solo asigna ids en transacciones
