@@ -32,6 +32,7 @@ import {
 } from '../../api/googleCalendar'
 import { GCalEventEditor } from './DiaryRightPanel'
 import { useUserStore } from '../../store/userStore'
+import { useToast } from '../Toast'
 
 // ── Geometría fija ────────────────────────────────────────────────────────
 const HOUR_START      = 6
@@ -239,6 +240,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const us       = useUserStore()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+  const { showToast } = useToast()
 
   const today = startOfDay(new Date())
   const [viewMode,      setViewMode]      = useState<ViewMode>(initialView ?? viewTabs[0] ?? 'day')
@@ -624,6 +626,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       })
       store.updateNode(newNode.id, { dueEnd: end.toISOString() })
       syncNodeToGcal(newNode.id, start, end)
+      showToast('✓ ' + t('ai.actionTaskCreated', 'Tarea creada'))
     }
     setNewBlock(null)
   }
@@ -639,6 +642,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
         due:      toMidnight(day),   // medianoche = todo el día (sin hora)
         isTask:   true,
       })
+      showToast('✓ ' + t('ai.actionTaskCreated', 'Tarea creada'))
     }
     // keepOpen: encadenar varias tareas el mismo día sin reabrir
     if (keepOpen) setNewAllDay({ day, text: '' })
@@ -1052,13 +1056,17 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
               <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
             </>
           ) : (
-            <>
-              <h2 className="v2-agenda-day-title" style={{ flex: 1, margin: 0 }}>{diaryDayTitle(centerDate)}</h2>
-              {!sameDay(centerDate, today) && (
-                <button className="v2-head-action" onClick={()=>{ setCenterDate(today); setViewMode('day') }}>{t('v2.agenda.today', 'HOY')}</button>
-              )}
-              <button className="v2-head-action" onClick={()=>setViewMode('year')} title={t('v2.agenda.openYear', 'Calendario anual')}>{t('v2.agenda.year', 'CAL')}</button>
-            </>
+            // Misma estructura de 2 filas que la cabecera de Agenda (V2AgendaView.tsx):
+            // fila 1 = botones HOY/CAL, fila 2 = título del día debajo — Alberto, 22 jul.
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: 2 }}>
+              <div className="v2-agenda-toolbar" style={{ margin: 0 }}>
+                {!sameDay(centerDate, today) && (
+                  <button className="v2-head-action" onClick={()=>{ setCenterDate(today); setViewMode('day') }}>{t('v2.agenda.today', 'HOY')}</button>
+                )}
+                <button className="v2-head-action" onClick={()=>setViewMode('year')} title={t('v2.agenda.openYear', 'Calendario anual')}>{t('v2.agenda.year', 'CAL')}</button>
+              </div>
+              <h2 className="v2-agenda-day-title" style={{ margin: 0 }}>{diaryDayTitle(centerDate)}</h2>
+            </div>
           )
         ) : (
           <>

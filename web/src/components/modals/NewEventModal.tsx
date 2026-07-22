@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
+import { useToast } from '../Toast'
 
 interface Props {
   onClose: () => void
@@ -49,6 +50,7 @@ function nowTimeStr() {
 
 export default function NewEventModal({ onClose, parentId, defaultDateStr, onCreated }: Props) {
   const { t } = useTranslation()
+  const { showToast } = useToast()
   const [title, setTitle] = useState('')
   const [startDate, setStartDate] = useState(defaultDateStr || todayDateStr())  // siempre YYYY-MM-DD
   const [startTime, setStartTime] = useState(nowTimeStr())    // HH:MM, solo si hasTime
@@ -113,6 +115,7 @@ export default function NewEventModal({ onClose, parentId, defaultDateStr, onCre
     if (body) store.updateNode(node.id, { body })
     if (onCreated) onCreated(node.id)
     else navigate(`/node/${node.id}`)
+    showToast('✓ ' + t('ai.actionEventCreated', 'Evento creado'))
     onClose()
   }
 

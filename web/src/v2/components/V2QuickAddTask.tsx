@@ -2,15 +2,18 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
+import { useToast } from '../../components/Toast'
 
 export default function V2QuickAddTask({ parentId }: { parentId: string }) {
   const { t } = useTranslation()
+  const { showToast } = useToast()
   const [text, setText] = useState('')
   const add = () => {
     const trimmed = text.trim()
     if (!trimmed) return
     const n = store.createNode({ text: trimmed, parentId, isTask: true })
     store.updateNode(n.id, { status: 'pending' })
+    showToast('✓ ' + t('ai.actionTaskCreated', 'Tarea creada'))
     setText('')
   }
   return (
