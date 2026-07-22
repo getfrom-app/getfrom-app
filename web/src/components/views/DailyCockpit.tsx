@@ -11,7 +11,7 @@ import { collectDailyCockpit, collectUpcomingTasks } from '../../utils/dailyCock
 import { trashNode } from '../../utils/papeleraHelper'
 import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
-import TaskRow, { timeLabel } from '../panels/TaskRow'
+import TaskRow from '../panels/TaskRow'
 import NewTaskModal from '../modals/NewTaskModal'
 import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, isContextFollowed, setContextFollowed, firstContextOf, clearContextParent, convertToTask } from '../../utils/cajones'
 import ContextChip from '../panels/ContextChip'
@@ -252,19 +252,19 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
         // Lista PLANA: todas las tareas (atrasadas + hoy) en filas de una línea, cada una
         // con su contexto como chip al lado. Sin agrupar por contexto (más concentrado).
         const open = !collapsedG.has('porhacer')
+        // hideToday: TODAS las tareas de hoy (con hora o sin ella) ya viven en
+        // DayColumn — con hora en «Eventos de hoy», sin hora en el bloque
+        // unificado «Todo el día» (Alberto, 22 jul: "agrupar ambas cosas... que
+        // se llame Todo el día"). Aquí solo quedan las atrasadas, así que el
+        // título cambia de "Tareas para hoy" a "Atrasadas" para que no mienta.
         return (
           <div className="dc-group">
             <div className="dc-group-headrow">
-              {gHeader('porhacer', t('daily.tasksToday', 'Tareas para hoy'))}
+              {gHeader('porhacer', hideToday ? t('daily.overdue', 'Atrasadas') : t('daily.tasksToday', 'Tareas para hoy'))}
               <button className="dc-group-add" onClick={() => setShowNewTask(true)} title={t('modal.newTask')}>+</button>
             </div>
-            {/* hideToday oculta SOLO las tareas de hoy CON HORA (ya viven con
-                checkbox en «Eventos de hoy») — las de todo el día son tareas
-                normales y se quedan aquí (Alberto, 22 jul: "los eventos de todo
-                el día... en realidad son tareas del día, deberían aparecer en
-                Para Hacer y no en Eventos de hoy"). */}
             {open && data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
-            {open && data.today.filter(n => !hideToday || !timeLabel(n, i18n.language)).map(n => renderTaskRow(n, { showDue: true }))}
+            {open && !hideToday && data.today.map(n => renderTaskRow(n, { showDue: true }))}
           </div>
         )
       })()}

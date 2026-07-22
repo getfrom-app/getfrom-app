@@ -859,17 +859,15 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
 
   // ── Franja «todo el día»: tareas con fecha ese día pero SIN hora ────────────
   function getAllDayTasks(day: Date) {
-    // SOLO eventos de todo el día (due a medianoche local, sin hora) — nunca
-    // tareas. Una tarea de todo el día es una tarea para hoy y vive en su
-    // lista (Tareas para hoy/Sin fecha), no en el Planificador — mostrarla
-    // aquí TAMBIÉN la duplicaba visualmente (Alberto, 22 jul: "una tarea de
-    // todo el día es tarea para hoy... si es tarea de todo el día no debe
-    // aparecer en el planner"). Los EVENTOS sí siguen apareciendo aquí (antes
-    // `!n.isEvent` los excluía siempre, así que arrastrar uno a esta fila lo
-    // hacía desaparecer del Planificador en vez de convertirlo — Alberto, 21
-    // jul: "arrastrar eventos a todo el día debería convertirlos").
+    // Eventos de todo el día Y tareas sin hora, unificados aquí — mismo
+    // criterio que el bloque «Todo el día» de DayColumn (Alberto, 22 jul:
+    // "agrupar ambas cosas... y que aparezcan siempre en el planner en el
+    // espacio de todo el día"). Antes `!n.isEvent` excluía siempre los
+    // eventos de esta fila, así que arrastrar uno aquí lo hacía desaparecer
+    // del Planificador en vez de convertirlo — Alberto, 21 jul: "arrastrar
+    // eventos a todo el día debería convertirlos".
     return store.allActive().filter(n =>
-      n.due && !n.deletedAt && !isInPapelera(n.id) && (n.isEvent || !!n.gcalEventId) &&
+      n.due && !n.deletedAt && !isInPapelera(n.id) && (n.isEvent || !!n.gcalEventId || n.status != null) &&
       sameDay(new Date(n.due), day) && !hasTime(n.due))
   }
   function handleAllDayDrop(e: React.DragEvent, day: Date) {

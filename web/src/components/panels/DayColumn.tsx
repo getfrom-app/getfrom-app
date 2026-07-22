@@ -29,6 +29,7 @@ import TaskRow, { timeLabel } from './TaskRow'
 import { firstContextOf, contextColor } from '../../utils/cajones'
 import { TaskPropsPopover, GCalEventEditor } from './DiaryPanelComponents'
 import NewEventModal from '../modals/NewEventModal'
+import NewTaskModal from '../modals/NewTaskModal'
 
 // Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
 const TrashIcon = (
@@ -174,21 +175,22 @@ export default function DayColumn({
   // Áreas: pulsar = la cámara del lienzo vuela a esa vista guardada.
   const flyToArea = (id: string) => window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
 
-  // Tareas de HOY (todo el día + con hora) — se fusionan en «Eventos de hoy» en
-  // vez de duplicarse también en «Para hacer» (Alberto, 22 jul: "poner la tarea
-  // solamente en el bloque eventos de hoy, pero poner el checkbox junto al
-  // título"). DailyCockpit las oculta de Para Hacer vía `hideToday`.
+  // Tareas de HOY (todo el día + con hora) — se fusionan en «Eventos de hoy»
+  // (con hora) o en «Todo el día» (sin hora), en vez de duplicarse también en
+  // el bloque de atrasadas/tareas del cockpit (Alberto, 22 jul: "poner la
+  // tarea solamente en el bloque eventos de hoy, pero poner el checkbox junto
+  // al título"; DailyCockpit las oculta vía `hideToday`).
   const cockpit = isToday ? collectDailyCockpit() : null
-  // Solo las tareas de hoy CON HORA se fusionan en Eventos — las de todo el día
-  // son tareas normales y viven en Para Hacer, no en la agenda por horas
-  // (Alberto, 22 jul: "los eventos de todo el día... en realidad son tareas del
-  // día, deberían aparecer en Para Hacer y no en Eventos de hoy").
   const todayTasksTimed = (cockpit?.today ?? []).filter(n => !!timeLabel(n, i18n.language))
+  // Tareas de hoy SIN hora — van al bloque unificado «Todo el día» (Alberto, 22
+  // jul: "agrupar ambas cosas [eventos de todo el día + tareas] en el bloque...
+  // que se llame Todo el día").
+  const todayTasksAllDay = (cockpit?.today ?? []).filter(n => !timeLabel(n, i18n.language))
 
-  // Lista única de «Eventos de hoy»: gcal crudo + eventos-nodo + tareas de hoy,
-  // ordenada cronológicamente (Alberto: "deben aparecer ordenados
-  // cronológicamente" — antes gcal crudo y eventos-nodo se renderizaban en dos
-  // pasadas separadas, sin mezclar ni ordenar entre sí).
+  // «Eventos de hoy»: SOLO eventos/tareas CON HORA, ordenados cronológicamente
+  // (los de todo el día viven en su propio bloque «Todo el día», más abajo —
+  // Alberto, 22 jul: "un evento de Google de todo el día es de todo el día,
+  // pero una tarea de todo el día es tarea para hoy... nunca debe duplicarse").
   type AgendaRow =
     | { kind: 'gcal'; sortTime: number; ev: CalendarEvent }
     | { kind: 'eventNode'; sortTime: number; n: Node }
@@ -203,8 +205,8 @@ export default function DayColumn({
   // (task > eventNode > gcal crudo).
   const todayTaskIds = new Set(todayTasksTimed.map(n => n.id))
   const agendaRowsRaw: AgendaRow[] = [
-    ...extraEvents.map(ev => ({ kind: 'gcal' as const, sortTime: new Date(ev.start).getTime(), ev })),
-    ...eventNodes.filter(n => !todayTaskIds.has(n.id)).map(n => ({ kind: 'eventNode' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
+    ...extraEvents.filter(ev => !ev.allDay).map(ev => ({ kind: 'gcal' as const, sortTime: new Date(ev.start).getTime(), ev })),
+    ...eventNodes.filter(n => !isAllDay(n) && !todayTaskIds.has(n.id)).map(n => ({ kind: 'eventNode' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
     ...todayTasksTimed.map(n => ({ kind: 'task' as const, sortTime: n.due ? new Date(n.due).getTime() : 0, n })),
   ]
   const rowTitle = (r: AgendaRow) => ((r.kind === 'gcal' ? r.ev.title : r.n.text) || '').trim().toLowerCase()
@@ -216,6 +218,30 @@ export default function DayColumn({
     if (!existing || rowRank(r) > rowRank(existing)) byKey.set(key, r)
   }
   const agendaRows = [...byKey.values()].sort((a, b) => a.sortTime - b.sortTime)
+
+  // «Todo el día»: eventos SIN hora (Google o nodo-evento) + tareas de hoy SIN
+  // hora, en una única lista alfabética (no hay una hora que las ordene).
+  // Mismo dedup título-based que arriba, para el mismo caso de eventos
+  // recurrentes con id de instancia distinto al gcalEventId del nodo.
+  type AllDayRow =
+    | { kind: 'gcal'; ev: CalendarEvent }
+    | { kind: 'eventNode'; n: Node }
+    | { kind: 'task'; n: Node }
+  const allDayRowsRaw: AllDayRow[] = [
+    ...extraEvents.filter(ev => ev.allDay).map(ev => ({ kind: 'gcal' as const, ev })),
+    ...eventNodes.filter(n => isAllDay(n)).map(n => ({ kind: 'eventNode' as const, n })),
+    ...todayTasksAllDay.map(n => ({ kind: 'task' as const, n })),
+  ]
+  const allDayTitle = (r: AllDayRow) => ((r.kind === 'gcal' ? r.ev.title : r.n.text) || '').trim().toLowerCase()
+  const allDayRank = (r: AllDayRow) => (r.kind === 'task' ? 2 : r.kind === 'eventNode' ? 1 : 0)
+  const allDayByKey = new Map<string, AllDayRow>()
+  for (const r of allDayRowsRaw) {
+    const key = allDayTitle(r)
+    const existing = allDayByKey.get(key)
+    if (!existing || allDayRank(r) > allDayRank(existing)) allDayByKey.set(key, r)
+  }
+  const allDayRows = [...allDayByKey.values()].sort((a, b) => allDayTitle(a).localeCompare(allDayTitle(b)))
+  const [showNewAllDayTask, setShowNewAllDayTask] = useState(false)
 
   // Reparación: una tarea de hoy con hora que no se completó a tiempo pasa a
   // «atrasada» al día siguiente — le quitamos la hora para que vuelva como
@@ -255,136 +281,159 @@ export default function DayColumn({
     return () => { if (titleTimer.current) clearTimeout(titleTimer.current) }
   }, [evSig, node.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Filas reutilizadas por «Eventos de hoy» (con hora) Y «Todo el día» (sin
+  // hora) — la única diferencia entre ambos contextos ya está resuelta dentro
+  // de cada función (allDay ? "Todo el día" : hora).
+  const renderGcalRow = (ev: CalendarEvent) => {
+    const allDay = ev.allDay
+    const timeStr = allDay ? t('tip.allDay') : hhmm(ev.start)
+    return (
+      <div key={`gcal:${ev.id}`} className="dc-row dc-row--event"
+        onClick={() => setEditingGcal(ev)} style={{ cursor: 'pointer' }}
+        onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setGcalCtxMenu({ x: e.clientX, y: e.clientY, ev }) }}
+        title={t('tip.editGcalEvent')}>
+        <span className="dc-event-dot" style={ev.backgroundColor ? { background: ev.backgroundColor } : undefined} />
+        <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
+        <span className="dc-text">{ev.title || t('search.chipEvent')}</span>
+      </div>
+    )
+  }
+  const renderTaskCheckboxRow = (task: Node) => {
+    const done = task.status === 'done'
+    const timeStr = timeLabel(task, i18n.language) || t('tip.allDay')
+    return (
+      <div key={`task:${task.id}`} className={`dc-row dc-row--event ${done ? 'dc-row--done' : ''}`} data-node-id={task.id}
+        draggable
+        onDragStart={e => { e.dataTransfer.setData('nodeId', task.id); e.dataTransfer.effectAllowed = 'move' }}
+        onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: task.id, x: e.clientX, y: e.clientY } })) }}>
+        <button className={`dc-check ${done ? 'dc-check--done' : ''}`}
+          onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
+          title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
+        <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
+        <span className="dc-text" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
+          {task.text ? renderInline(task.text) : t('common.noTitle')}
+        </span>
+        <span style={{ flex: 1 }} />
+        <TaskHoverActions node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
+      </div>
+    )
+  }
+  const renderEventNodeRow = (ev: Node) => {
+    // Si el evento tiene contexto asignado, su color manda sobre el color
+    // de Google (Alberto, 22 jul: "si el evento tiene contexto, se colorea
+    // del color del contexto").
+    const evCtx = firstContextOf(ev)
+    const color = evCtx ? contextColor(evCtx.id) : getGcalColor(ev)
+    const allDay = isAllDay(ev)
+    const rec = recShort(ev.recurrence, t)
+    const timeStr = allDay ? t('tip.allDay') : (ev.due ? hhmm(ev.due) : '')
+    return (
+      <div key={`node:${ev.id}`}>
+        <div className="dc-row dc-row--event" data-node-id={ev.id}
+          draggable
+          onDragStart={e => { e.dataTransfer.setData('nodeId', ev.id); e.dataTransfer.effectAllowed = 'copy' }}
+          onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
+          <span className="dc-event-dot" style={color ? { background: color } : undefined} />
+          <button
+            className="dc-ev-badge dc-ev-badge--lead"
+            onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
+            title={t('tip.editTimeAndRepeat')}
+          >
+            {timeStr}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
+          </button>
+          <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
+            {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
+          </span>
+          <span style={{ flex: 1 }} />
+          {/* Mismos hover actions que una tarea normal (Alberto, 22 jul: "las
+              tareas que son eventos necesitan igual que las que no lo son los
+              botones para reprogramar, eliminar o enviar a futuro"). Reprogramar
+              reutiliza el mismo popover de fecha (TaskPropsPopover) que las
+              tareas — la hora se sigue editando aparte con el badge de arriba.
+              Eliminar usa deleteRow (borra también en Google), no el trashNode
+              genérico de TaskHoverActions. Mover a Futuro sigue el mismo patrón
+              que «Convertir en tarea»: pierde isEvent/hora y pasa a tarea
+              aparcada sin fecha. */}
+          <span className="dc-actions">
+            <button className="dc-action" title={t('dailyCockpit.editDateRecurrence', 'Cambiar fecha')}
+              onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === ev.id ? null : ev.id) }}>
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4.5" width="14" height="13" rx="2" /><path d="M3 8.5h14M7 3v3M13 3v3" />
+              </svg>
+            </button>
+            <button className="dc-action" title={t('taskHover.moveToFuture', 'Mover a Futuro')}
+              onClick={e => { e.stopPropagation(); store.updateNode(ev.id, { isEvent: false, status: 'future', due: null, dueEnd: null }) }}>
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 10h11M11 5.5l4.5 4.5-4.5 4.5" />
+              </svg>
+            </button>
+            <button className="dc-action dc-action--del" title={t('common.delete')}
+              onClick={e => { e.stopPropagation(); deleteRow(ev) }}>
+              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" />
+              </svg>
+            </button>
+          </span>
+        </div>
+        {editEv === ev.id && !allDay && ev.due && (
+          <div className="dc-ev-edit" onClick={e => e.stopPropagation()}>
+            <label>{t('tip.start')}
+              <input type="time" defaultValue={hhmm(ev.due)}
+                onChange={e => e.target.value && patchEvent(ev.id, { due: withTime(ev.due!, e.target.value) })} />
+            </label>
+            <label>{t('tip.end')}
+              <input type="time" defaultValue={hhmm(ev.dueEnd || ev.due)}
+                onChange={e => e.target.value && patchEvent(ev.id, { dueEnd: withTime(ev.dueEnd || ev.due!, e.target.value) })} />
+            </label>
+            <label>{t('tip.repeat')}
+              <select defaultValue={ev.recurrence || ''}
+                onChange={e => patchEvent(ev.id, { recurrence: e.target.value || null })}>
+                {recOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+            </label>
+          </div>
+        )}
+      </div>
+    )
+  }
+  const renderAllDayRow = (row: AllDayRow) =>
+    row.kind === 'gcal' ? renderGcalRow(row.ev) : row.kind === 'eventNode' ? renderEventNodeRow(row.n) : renderTaskCheckboxRow(row.n)
+
   return (
     <>
-      {/* 1. Eventos del día — gcal crudo + eventos-nodo + (HOY) tareas con fecha hoy,
-          fusionados en una única lista cronológica (Alberto: "deben aparecer
-          ordenados cronológicamente"; las tareas de hoy se muestran aquí con
-          checkbox en vez de duplicarse en «Para hacer»). Cabecera SIEMPRE visible
-          (aunque no haya eventos aún) para poder crear el primero con el «+». */}
+      {/* 1. Eventos del día CON HORA — gcal crudo + eventos-nodo + tareas de
+          hoy con hora, fusionados en una única lista cronológica (Alberto:
+          "deben aparecer ordenados cronológicamente"). Cabecera SIEMPRE
+          visible (aunque no haya eventos aún) para poder crear el primero
+          con el «+». Los de TODO EL DÍA viven en su propio bloque, abajo. */}
       <div className="dc-group">
         <div className="dc-group-headrow">
           {header('eventos', isToday ? t('tip.eventsToday') : t('tip.eventsDay'), 'dc-group-label--event')}
           <button className="dc-group-add" onClick={() => setShowNewEvent(true)} title={t('modal.newEvent')}>+</button>
         </div>
-        {!collapsed.has('eventos') && agendaRows.map(row => {
-          if (row.kind === 'gcal') {
-            const ev = row.ev
-            const allDay = ev.allDay
-            const timeStr = allDay ? t('tip.allDay') : hhmm(ev.start)
-            return (
-              <div key={`gcal:${ev.id}`} className="dc-row dc-row--event"
-                onClick={() => setEditingGcal(ev)} style={{ cursor: 'pointer' }}
-                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setGcalCtxMenu({ x: e.clientX, y: e.clientY, ev }) }}
-                title={t('tip.editGcalEvent')}>
-                <span className="dc-event-dot" style={ev.backgroundColor ? { background: ev.backgroundColor } : undefined} />
-                <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
-                <span className="dc-text">{ev.title || t('search.chipEvent')}</span>
-              </div>
-            )
-          }
-          if (row.kind === 'task') {
-            const task = row.n
-            const done = task.status === 'done'
-            const timeStr = timeLabel(task, i18n.language) || t('tip.allDay')
-            return (
-              <div key={`task:${task.id}`} className={`dc-row dc-row--event ${done ? 'dc-row--done' : ''}`} data-node-id={task.id}
-                draggable
-                onDragStart={e => { e.dataTransfer.setData('nodeId', task.id); e.dataTransfer.effectAllowed = 'move' }}
-                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: task.id, x: e.clientX, y: e.clientY } })) }}>
-                <button className={`dc-check ${done ? 'dc-check--done' : ''}`}
-                  onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
-                  title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
-                <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
-                <span className="dc-text" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
-                  {task.text ? renderInline(task.text) : t('common.noTitle')}
-                </span>
-                <span style={{ flex: 1 }} />
-                <TaskHoverActions node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
-              </div>
-            )
-          }
-          const ev = row.n
-          // Si el evento tiene contexto asignado, su color manda sobre el color
-          // de Google (Alberto, 22 jul: "si el evento tiene contexto, se colorea
-          // del color del contexto").
-          const evCtx = firstContextOf(ev)
-          const color = evCtx ? contextColor(evCtx.id) : getGcalColor(ev)
-          const allDay = isAllDay(ev)
-          const rec = recShort(ev.recurrence, t)
-          const timeStr = allDay ? t('tip.allDay') : (ev.due ? hhmm(ev.due) : '')
-          return (
-            <div key={`node:${ev.id}`}>
-              <div className="dc-row dc-row--event" data-node-id={ev.id}
-                draggable
-                onDragStart={e => { e.dataTransfer.setData('nodeId', ev.id); e.dataTransfer.effectAllowed = 'copy' }}
-                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
-                <span className="dc-event-dot" style={color ? { background: color } : undefined} />
-                <button
-                  className="dc-ev-badge dc-ev-badge--lead"
-                  onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
-                  title={t('tip.editTimeAndRepeat')}
-                >
-                  {timeStr}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
-                </button>
-                <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
-                  {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
-                </span>
-                <span style={{ flex: 1 }} />
-                {/* Mismos hover actions que una tarea normal (Alberto, 22 jul: "las
-                    tareas que son eventos necesitan igual que las que no lo son los
-                    botones para reprogramar, eliminar o enviar a futuro"). Reprogramar
-                    reutiliza el mismo popover de fecha (TaskPropsPopover) que las
-                    tareas — la hora se sigue editando aparte con el badge de arriba.
-                    Eliminar usa deleteRow (borra también en Google), no el trashNode
-                    genérico de TaskHoverActions. Mover a Futuro sigue el mismo patrón
-                    que «Convertir en tarea»: pierde isEvent/hora y pasa a tarea
-                    aparcada sin fecha. */}
-                <span className="dc-actions">
-                  <button className="dc-action" title={t('dailyCockpit.editDateRecurrence', 'Cambiar fecha')}
-                    onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === ev.id ? null : ev.id) }}>
-                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="4.5" width="14" height="13" rx="2" /><path d="M3 8.5h14M7 3v3M13 3v3" />
-                    </svg>
-                  </button>
-                  <button className="dc-action" title={t('taskHover.moveToFuture', 'Mover a Futuro')}
-                    onClick={e => { e.stopPropagation(); store.updateNode(ev.id, { isEvent: false, status: 'future', due: null, dueEnd: null }) }}>
-                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 10h11M11 5.5l4.5 4.5-4.5 4.5" />
-                    </svg>
-                  </button>
-                  <button className="dc-action dc-action--del" title={t('common.delete')}
-                    onClick={e => { e.stopPropagation(); deleteRow(ev) }}>
-                    <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" />
-                    </svg>
-                  </button>
-                </span>
-              </div>
-              {editEv === ev.id && !allDay && ev.due && (
-                <div className="dc-ev-edit" onClick={e => e.stopPropagation()}>
-                  <label>{t('tip.start')}
-                    <input type="time" defaultValue={hhmm(ev.due)}
-                      onChange={e => e.target.value && patchEvent(ev.id, { due: withTime(ev.due!, e.target.value) })} />
-                  </label>
-                  <label>{t('tip.end')}
-                    <input type="time" defaultValue={hhmm(ev.dueEnd || ev.due)}
-                      onChange={e => e.target.value && patchEvent(ev.id, { dueEnd: withTime(ev.dueEnd || ev.due!, e.target.value) })} />
-                  </label>
-                  <label>{t('tip.repeat')}
-                    <select defaultValue={ev.recurrence || ''}
-                      onChange={e => patchEvent(ev.id, { recurrence: e.target.value || null })}>
-                      {recOptions(t).map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-                    </select>
-                  </label>
-                </div>
-              )}
-            </div>
-          )
-        })}
+        {!collapsed.has('eventos') && agendaRows.map(row =>
+          row.kind === 'gcal' ? renderGcalRow(row.ev) : row.kind === 'eventNode' ? renderEventNodeRow(row.n) : renderTaskCheckboxRow(row.n)
+        )}
       </div>
 
-      {/* 2-3. HOY → cockpit (Atrasadas · Para hoy — hideToday: hoy ya vive en Eventos). */}
+      {/* 1b. Todo el día — eventos de Google/nodo-evento SIN hora + tareas de
+          hoy SIN hora, unificados en un solo bloque (antes vivían separados:
+          los eventos como chips "Todo el día" dentro de Eventos de hoy, las
+          tareas en Para hacer — Alberto, 22 jul: "la diferencia... sigue
+          siendo poco clara... agrupar ambas cosas... que se llame Todo el
+          día"). SOLO para hoy — otros días no tienen bloque de tareas propio
+          separado del outliner. */}
+      {isToday && (
+        <div className="dc-group">
+          <div className="dc-group-headrow">
+            {header('allday', t('tip.allDay', 'Todo el día'))}
+            <button className="dc-group-add" onClick={() => setShowNewAllDayTask(true)} title={t('modal.newTask')}>+</button>
+          </div>
+          {!collapsed.has('allday') && allDayRows.map(renderAllDayRow)}
+        </div>
+      )}
+
+      {/* 2. HOY → cockpit (solo Atrasadas — hoy ya vive en Eventos/Todo el día). */}
       {isToday && <DailyCockpit bare disablePlanner hideToday />}
 
       {/* Otros días → tareas con due en ESE día. TaskRow ÚNICO (mismo que Hoy/Elementos). */}
@@ -563,6 +612,10 @@ export default function DayColumn({
           onCreated={id => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: id } }))}
         />
       )}
+
+      {/* Nueva tarea de todo el día — «+» de la cabecera «Todo el día». Sin hora
+          por defecto (defaultDueToday ya usa medianoche). */}
+      {showNewAllDayTask && <NewTaskModal onClose={() => setShowNewAllDayTask(false)} defaultDueToday />}
     </>
   )
 }
