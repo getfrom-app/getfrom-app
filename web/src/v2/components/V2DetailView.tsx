@@ -283,11 +283,14 @@ function V2CitationView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: s
   const e = parseExtraData(node.extraData)
   const sourceId = e._docSourceId as string | undefined
   const pid = e._docParagraphId as string | undefined
+  const citedText = e._docText as string | undefined
   const source = sourceId ? store.getNode(sourceId) : null
   const goToSource = () => {
     if (!sourceId) return
     window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: sourceId } }))
-    if (pid) setTimeout(() => window.dispatchEvent(new CustomEvent('from:scroll-to-paragraph', { detail: { nodeId: sourceId, pid } })), 300)
+    // `text` es fallback si el `pid` se regeneró (setContent externo tras
+    // un resync) — ver applyCiteIndicators en DocEditor.tsx.
+    if (pid || citedText) setTimeout(() => window.dispatchEvent(new CustomEvent('from:scroll-to-paragraph', { detail: { nodeId: sourceId, pid, text: citedText } })), 300)
   }
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>

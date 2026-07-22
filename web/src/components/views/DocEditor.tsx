@@ -252,18 +252,27 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     // Escaneo directo por `_docSourceId` (no `store.children`): las citas son
     // hijas de este documento, pero el filtro por extraData es más robusto
     // frente a cualquier desfase de la caché de hijos entre instancias/pestañas.
+    // Doble índice — por `pid` (preciso) y por TEXTO citado (fallback): un
+    // resync/setContent externo puede regenerar el `pid` de un párrafo ya
+    // citado (el plugin de ParagraphId solo rellena huecos, pero un reemplazo
+    // completo del doc borra el atributo y le asigna uno nuevo). Sin el
+    // fallback por texto, la cita queda huérfana para siempre en ese caso.
     const byPid = new Map<string, string>()
+    const byText = new Map<string, string>()
     for (const c of store.allActive()) {
       const e = parseExtraData(c.extraData)
       if (e._docSelection !== '1' || e._docSourceId !== node.id) continue
       const pid = e._docParagraphId as string | undefined
-      if (!pid) continue
+      const text = (e._docText as string | undefined)?.trim()
       const ctx = firstContextOf(c)
-      if (ctx) byPid.set(pid, contextColor(ctx.id))
+      if (!ctx) continue
+      const color = contextColor(ctx.id)
+      if (pid) byPid.set(pid, color)
+      if (text) byText.set(text, color)
     }
     wrap.querySelectorAll<HTMLElement>('[data-pid]').forEach(el => {
       const pid = el.getAttribute('data-pid')
-      const color = pid ? byPid.get(pid) : null
+      const color = (pid ? byPid.get(pid) : null) ?? byText.get((el.textContent || '').trim())
       if (color) { el.style.setProperty('--cite-color', color); el.classList.add('doc-para--cited') }
       else { el.classList.remove('doc-para--cited'); el.style.removeProperty('--cite-color') }
     })
@@ -276,7 +285,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     ed.state.doc.descendants(n => { if (n.attrs?.pid === pid) text = n.textContent })
     const trimmed = text.trim()
     if (!trimmed) return
-    const extra: Record<string, string> = { [DOC]: '1', _docSelection: '1', _docSourceId: node.id, _docParagraphId: pid }
+    const extra: Record<string, string> = { [DOC]: '1', _docSelection: '1', _docSourceId: node.id, _docParagraphId: pid, _docText: trimmed }
     const quote = store.createNode({ text: '', parentId: node.id, extraData: extra })
     const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     store.updateNode(quote.id, { body: `<blockquote><p>${esc(trimmed)}</p></blockquote>` })
@@ -310,9 +319,17 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // desde V2DetailView.tsx, botón «Ir a la nota» de una cita).
   useEffect(() => {
     const h = (e: Event) => {
-      const d = (e as CustomEvent<{ nodeId?: string; pid?: string }>).detail
-      if (!d?.nodeId || d.nodeId !== node.id || !d.pid) return
-      const el = contentWrapRef.current?.querySelector<HTMLElement>(`[data-pid="${d.pid}"]`)
+      const d = (e as CustomEvent<{ nodeId?: string; pid?: string; text?: string }>).detail
+      if (!d?.nodeId || d.nodeId !== node.id) return
+      const wrap = contentWrapRef.current
+      if (!wrap) return
+      // El `pid` puede haberse regenerado (ver applyCiteIndicators) — si no hay
+      // coincidencia exacta, cae al párrafo cuyo texto coincide con el citado.
+      let el = d.pid ? wrap.querySelector<HTMLElement>(`[data-pid="${d.pid}"]`) : null
+      if (!el && d.text) {
+        const target = d.text.trim()
+        el = Array.from(wrap.querySelectorAll<HTMLElement>('[data-pid]')).find(p => (p.textContent || '').trim() === target) || null
+      }
       if (!el) return
       el.scrollIntoView({ behavior: 'smooth', block: 'center' })
       el.classList.add('doc-para--flash')
