@@ -8,6 +8,7 @@ import type { Node } from '../types'
 import { structuralId, diaryId } from './deterministicId'
 import { findRootByKey, findContextRoot } from './rootLookup'
 import { getDailyTemplate, applyTemplate, applyRecurringTemplatesToDay } from './tagsHelper'
+import { DOC, isDocNode } from './docNode'
 
 const MONTHS_ES = [
   'Enero','Febrero','Marzo','Abril','Mayo','Junio',
@@ -63,6 +64,12 @@ function getOrCreateDay(date: Date, monthId: string): Node {
     // Auto-reparación: si el editor de documento pisó el título del día con «Documento»
     // (body vacío) o se quedó sin texto, restaurar el título canónico de la fecha.
     if (!existing.text || existing.text === 'Documento') store.updateNode(existing.id, { text: dayText })
+    // Auto-migración a documento: días creados antes de este cambio quedaron en
+    // formato clásico (outliner) — ya no se usa nunca (Alberto, 22 jul: "la nota
+    // diaria... debe estar como documento... ya no usamos NUNCA outliner"). No
+    // pierde nada: sus hijos (tareas de plantilla, notas sueltas) se siguen viendo
+    // en el bloque «Nodos» de DayColumn (columna derecha), que no depende de esto.
+    if (!isDocNode(existing)) migrateDiaryEntryToDoc(existing)
     return existing
   }
   const dayNode = store.createNode({
@@ -72,7 +79,9 @@ function getOrCreateDay(date: Date, monthId: string): Node {
     diaryDate: dayDate.toISOString(),
     siblingOrder: d,   // día del mes (1-31) como orden → siempre cronológico
     predefinedId: diaryId(dayDate) ?? undefined,  // canónico (idéntico a iOS) → no duplica
+    extraData: { [DOC]: '1' },
   })
+  store.updateNode(dayNode.id, { body: '<p></p>' })
   // Plantilla diaria: si el usuario marcó una plantilla para la nota diaria, se
   // aplica al crear el día (solo en días nuevos y vacíos).
   try {
@@ -84,6 +93,28 @@ function getOrCreateDay(date: Date, monthId: string): Node {
     applyRecurringTemplatesToDay(dayNode.id, dayDate)
   } catch { /* ignore */ }
   return dayNode
+}
+
+/** Pasa un día ya existente a formato documento (`_doc`), sin tocar sus hijos —
+ *  siguen viéndose en el bloque «Nodos» de DayColumn (columna derecha), que lee
+ *  `store.children(dayNode.id)` directamente y no depende de este flag. */
+function migrateDiaryEntryToDoc(day: Node): void {
+  let e: Record<string, unknown> = {}
+  try { e = JSON.parse(day.extraData || '{}') } catch { /* ignore */ }
+  e[DOC] = '1'
+  store.updateNode(day.id, { extraData: JSON.stringify(e), body: day.body || '<p></p>' })
+}
+
+/**
+ * migrateDiaryEntriesToDoc — pasa TODAS las notas diarias existentes a formato
+ * documento de una vez (antes: outliner clásico). Idempotente — solo toca las
+ * que aún no lo son. Alberto, 22 jul: "la nota diaria está en formato clasico,
+ * outliner. debe estar como documento... ya no usamos NUNCA outliner".
+ */
+export function migrateDiaryEntriesToDoc(): void {
+  for (const n of store.allActive().filter(n => n.isDiaryEntry)) {
+    if (!isDocNode(n)) migrateDiaryEntryToDoc(n)
+  }
 }
 
 // ── API pública ───────────────────────────────────────────────────────────────

@@ -20,7 +20,7 @@ import { cleanupOrphanProfileKnowledge, migrateKnowledgeNodesToFromly, migrateCo
 import { ensurePapeleraNode } from './papeleraHelper'
 import { ensureHomeRootAndReparent } from './homeHelper'
 import { ensurePromptsNode } from './promptsHelper'
-import { relocateRootDiariesToAgenda, cleanupYearMonthContexts } from './agendaHelper'
+import { relocateRootDiariesToAgenda, cleanupYearMonthContexts, migrateDiaryEntriesToDoc } from './agendaHelper'
 import { revertContextReferenceOnce } from './migrateContextReference'
 
 let _ranInThisSession = false
@@ -49,6 +49,7 @@ export async function runStartupMigrations(): Promise<void> {
   ensurePapeleraNode()
   ensureHomeRootAndReparent()
   await relocateRootDiariesToAgenda()
+  migrateDiaryEntriesToDoc()
   cleanupYearMonthContexts()
   cleanupNonAgendaContexts()
   cleanupSpuriousTags()
