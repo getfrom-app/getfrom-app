@@ -227,6 +227,50 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   const [citePicker, setCitePicker] = useState<{ pid: string; x: number; y: number; up: boolean } | null>(null)
   const citePickerRef = useRef<HTMLDivElement>(null)
 
+  // Todos los bloques con pid del documento, EN ORDEN — base compartida para la
+  // jerarquía de citas: heading > indentación (Alberto, 22 jul: "todos los
+  // párrafos indentados deberían pertenecer a la misma cita... es más, todos
+  // los párrafos bajo un heading mayor que tenga contexto, también deben
+  // pertenecer a ese heading. es un orden jerárquico").
+  type Block = { pid: string; type: string; level: number; indent: number; text: string }
+  const getOrderedBlocks = (): Block[] => {
+    const blocks: Block[] = []
+    editorRef.current?.state.doc.descendants(n => {
+      const pid = n.attrs?.pid as string | undefined
+      if (!pid) return
+      blocks.push({ pid, type: n.type.name, level: (n.attrs?.level as number) || 0, indent: (n.attrs?.indent as number) || 0, text: n.textContent })
+    })
+    return blocks
+  }
+
+  // Texto de un párrafo/heading MÁS todo lo que "cuelga" de él — sus hijos por
+  // indentación (Tab) o, si es un heading, todo lo que sigue hasta el próximo
+  // heading del mismo nivel o superior. Es lo que se guarda de verdad en la
+  // cita (Alberto, 22 jul: "la cita debería ampliarse con todos los hijos...
+  // la cita [debe] actualizarse automáticamente").
+  const collectDescendantText = (anchorPid: string): string => {
+    const blocks = getOrderedBlocks()
+    const idx = blocks.findIndex(b => b.pid === anchorPid)
+    if (idx === -1) return ''
+    const anchor = blocks[idx]
+    const parts = [anchor.text]
+    if (anchor.type === 'heading') {
+      for (let i = idx + 1; i < blocks.length; i++) {
+        const b = blocks[i]
+        if (b.type === 'heading' && b.level <= anchor.level) break
+        if (b.text.trim()) parts.push(b.text)
+      }
+    } else {
+      for (let i = idx + 1; i < blocks.length; i++) {
+        const b = blocks[i]
+        if (b.type === 'heading') break
+        if (b.indent <= anchor.indent) break
+        if (b.text.trim()) parts.push(b.text)
+      }
+    }
+    return parts.filter(p => p.trim()).join('\n\n')
+  }
+
   // Cita YA existente para un párrafo (si la hay) — por pid exacto o, si el pid
   // se regeneró (ver applyCiteIndicators), por el texto citado. La necesita el
   // hover para MOSTRAR el contexto ya asignado (no solo el botón de crear una
@@ -248,31 +292,40 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     return null
   }
 
-  // Contexto HEREDADO de la línea "padre" en el árbol de indentación (Tab
-  // sube el nivel de indentación de la línea, ver tiptapTabIndent.ts — un
-  // número por párrafo, no una lista real). Si la línea anterior con un
-  // indentación MENOR (la línea "padre") ya tiene cita, las líneas
-  // indentadas debajo se consideran del mismo contexto — ni hace falta
-  // citarlas una a una ni tiene sentido ofrecerles el «?» de crear una cita
-  // nueva (Alberto, 22 jul: "todas las líneas que estén indentadas a una
-  // línea con un contexto, deben mantener ese contexto y debe desaparecer el
-  // badge de ?"). Solo visual/UX — no crea citas reales para cada hijo.
-  const findAncestorContext = (el: HTMLElement): { node: import('../../types').Node; text: string } | null => {
-    const wrap = contentWrapRef.current
-    if (!wrap) return null
-    const paras = Array.from(wrap.querySelectorAll<HTMLElement>('[data-pid]'))
-    let idx = paras.indexOf(el)
-    let level = parseInt(el.getAttribute('data-indent') || '0', 10)
-    while (idx > 0 && level > 0) {
-      idx--
-      const prevLevel = parseInt(paras[idx].getAttribute('data-indent') || '0', 10)
-      if (prevLevel < level) {
-        const pid = paras[idx].getAttribute('data-pid')
-        if (pid) {
-          const cited = findCitationForPid(pid)
+  // Contexto HEREDADO del bloque "padre" — por indentación (Tab, ver
+  // tiptapTabIndent.ts) O por estar bajo un heading con cita, lo que
+  // encuentre primero subiendo. Un heading anterior SIEMPRE corta la
+  // búsqueda por indentación (un heading es un límite de sección, no
+  // depende de a qué indentación estuviera el párrafo) y empalma con la
+  // búsqueda por nivel de heading, en cascada hasta el principio del
+  // documento (Alberto, 22 jul: "todos los párrafos bajo un heading mayor
+  // que tenga contexto también deben pertenecer a ese heading. es un orden
+  // jerárquico... cualquier párrafo indentado a otro que tenga contexto o
+  // debajo de un header que tenga contexto, no necesita contexto, porque
+  // hereda"). Solo visual/UX para el hover — el contenido real vive en
+  // collectDescendantText, que ES la cita del ancestro.
+  const findAncestorContext = (pid: string): { node: import('../../types').Node; text: string } | null => {
+    const blocks = getOrderedBlocks()
+    const idx = blocks.findIndex(b => b.pid === pid)
+    if (idx === -1) return null
+    const self = blocks[idx]
+    let indentBoundary = self.type === 'heading' ? -1 : self.indent
+    let headingBoundary = self.type === 'heading' ? self.level : Infinity
+    for (let i = idx - 1; i >= 0; i--) {
+      const b = blocks[i]
+      if (b.type === 'heading') {
+        if (b.level < headingBoundary) {
+          const cited = findCitationForPid(b.pid)
           if (cited) return cited
+          headingBoundary = b.level
         }
-        level = prevLevel // sigue subiendo en cascada hasta el nivel 0
+        indentBoundary = -1 // un heading anterior anula cualquier indentación pendiente
+        continue
+      }
+      if (indentBoundary >= 0 && b.indent < indentBoundary) {
+        const cited = findCitationForPid(b.pid)
+        if (cited) return cited
+        indentBoundary = b.indent
       }
     }
     return null
@@ -381,20 +434,47 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     ed.view.dispatch(tr)
   }
 
+  // HTML del cuerpo de una cita — un <p> por párrafo (el texto completo, ancla
+  // + hijos, va unido con '\n\n' en collectDescendantText).
+  const citationBodyHtml = (fullText: string): string => {
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    return `<blockquote>${fullText.split('\n\n').map(p => `<p>${esc(p)}</p>`).join('')}</blockquote>`
+  }
+
   const createCitation = (pid: string, contextId: string) => {
     const ed = editorRef.current
     if (!ed) return
-    let text = ''
-    ed.state.doc.descendants(n => { if (n.attrs?.pid === pid) text = n.textContent })
-    const trimmed = text.trim()
-    if (!trimmed) return
-    const extra: Record<string, string> = { [DOC]: '1', _docSelection: '1', _docSourceId: node.id, _docParagraphId: pid, _docText: trimmed }
+    // Texto completo del bloque — el ancla MÁS lo que ya cuelgue de él en ese
+    // momento (hijos por indentación o por heading), no solo su propia línea
+    // (Alberto, 22 jul: "la cita debería ampliarse con todos los hijos").
+    const fullText = collectDescendantText(pid).trim()
+    if (!fullText) return
+    const extra: Record<string, string> = { [DOC]: '1', _docSelection: '1', _docSourceId: node.id, _docParagraphId: pid, _docText: fullText }
     const quote = store.createNode({ text: '', parentId: node.id, extraData: extra })
-    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    store.updateNode(quote.id, { body: `<blockquote><p>${esc(trimmed)}</p></blockquote>` })
+    store.updateNode(quote.id, { body: citationBodyHtml(fullText) })
     assignContext(quote.id, contextId)
     applyCiteIndicators()
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.citationSaved', 'Párrafo asignado al contexto'), type: 'success' } }))
+  }
+
+  // Mantiene cada cita de este documento SINCRONIZADA con sus hijos actuales
+  // — se llama tras cada guardado (debounce de onUpdate) para que añadir,
+  // editar o quitar líneas indentadas bajo un párrafo/heading YA citado
+  // actualice la cita sola, sin tener que volver a citar nada a mano
+  // (Alberto, 22 jul: "la cita [debe] actualizarse automáticamente").
+  const syncCitationDescendants = () => {
+    if (!editorRef.current) return
+    for (const c of store.allActive()) {
+      const e = parseExtraData(c.extraData)
+      if (e._docSelection !== '1' || e._docSourceId !== node.id) continue
+      const pid = e._docParagraphId as string | undefined
+      if (!pid) continue
+      const fullText = collectDescendantText(pid).trim()
+      if (!fullText) continue
+      const prevText = (e._docText as string | undefined)?.trim()
+      if (fullText === prevText) continue
+      store.updateNode(c.id, { body: citationBodyHtml(fullText), extraData: JSON.stringify({ ...e, _docText: fullText }) })
+    }
   }
 
   // Elegido un contexto desde el picker del hover: si el párrafo YA tiene cita,
@@ -632,6 +712,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         autoMagicTasks() // Magic: párrafos-tarea (fuera del cursor) → casilla
         store.updateNode(node.id, bodySave(editor.getHTML()))
         syncTasksToNodes()
+        syncCitationDescendants()
       }, 500)
       detectSlash()
     },
@@ -834,8 +915,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
           let existingCtx = existing ? firstContextOf(existing.node) : null
           let inherited = false
           if (!existingCtx) {
-            const hoveredEl = contentWrapRef.current?.querySelector<HTMLElement>(`[data-pid="${citeHover.pid}"]`)
-            const ancestor = hoveredEl ? findAncestorContext(hoveredEl) : null
+            const ancestor = findAncestorContext(citeHover.pid)
             const ancestorCtx = ancestor ? firstContextOf(ancestor.node) : null
             if (ancestorCtx) { existingCtx = ancestorCtx; inherited = true }
           }
