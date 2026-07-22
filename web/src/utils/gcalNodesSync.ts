@@ -85,7 +85,7 @@ export async function pushEventTitleChanges(diaryNode: Node): Promise<void> {
     lastSyncedTitle.set(gcalId, title)
     if (prev === undefined) continue          // primera vez visto → solo registrar
     if (prev !== title && title) {
-      try { await updateCalendarEvent(gcalId, { title }) } catch { /* silencioso */ }
+      try { await updateCalendarEvent(gcalId, { title }); window.dispatchEvent(new CustomEvent('from:gcal-events-changed')) } catch { /* silencioso */ }
     }
   }
 }
@@ -124,6 +124,7 @@ export async function pushEventToGcal(node: Node): Promise<void> {
       store.updateNode(node.id, { gcalEventId: result.id }) // columna real, no extraData
       lastSyncedTitle.set(result.id, title)
     }
+    window.dispatchEvent(new CustomEvent('from:gcal-events-changed'))
   } catch { /* sin conexión GCal — silencioso */ }
 }
 
@@ -137,6 +138,7 @@ export async function deleteGcalEventForNode(node: Node): Promise<boolean> {
   if (!gcalId) return false
   try { await deleteCalendarEvent(gcalId) } catch { /* silencioso */ }
   lastSyncedTitle.delete(gcalId)
+  window.dispatchEvent(new CustomEvent('from:gcal-events-changed'))
   return true
 }
 

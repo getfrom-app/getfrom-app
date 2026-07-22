@@ -94,8 +94,14 @@ export default function DayColumn({
   useEffect(() => {
     if (!node.isDiaryEntry || !node.diaryDate || !us.googleConnected) { setGcalEvents([]); return }
     let cancelled = false
-    getCalendarEvents(new Date(node.diaryDate)).then(evs => { if (!cancelled) setGcalEvents(evs) }).catch(() => {})
-    return () => { cancelled = true }
+    const fetchGcal = () => getCalendarEvents(new Date(node.diaryDate!)).then(evs => { if (!cancelled) setGcalEvents(evs) }).catch(() => {})
+    fetchGcal()
+    // Refresca si otra parte de la app (p.ej. el Planificador) acaba de crear/
+    // mover/borrar un evento en Google — misma instantánea local no-reactiva
+    // que PlannerPanel, mismo fix (Alberto, 22 jul: "debería eliminarse al
+    // momento").
+    window.addEventListener('from:gcal-events-changed', fetchGcal)
+    return () => { cancelled = true; window.removeEventListener('from:gcal-events-changed', fetchGcal) }
   }, [node.id, node.isDiaryEntry, node.diaryDate, us.googleConnected])
 
   // Auto-reparación defensiva: si este día llegó con el título corrompido a

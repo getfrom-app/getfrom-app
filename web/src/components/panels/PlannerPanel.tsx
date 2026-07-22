@@ -264,8 +264,16 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const [snapLine, setSnapLine]       = useState<{dayKey:string;top:number}|null>(null)
 
   // ── GCal ──────────────────────────────────────────────────────────────────
+  // Instantánea local, NO reactiva al store: borrar/mover una tarea enlazada a
+  // Google desde fuera (p.ej. el botón de eliminar de "Eventos de hoy" en
+  // DayColumn) actualiza el nodo local al instante, pero el bloque 'gcal' crudo
+  // — deduplicado por título+hora contra ese nodo — se queda huérfano aquí
+  // hasta que esta instantánea se refresque, así que el bloque parece no
+  // borrarse/moverse hasta hacer refresh (Alberto, 22 jul). `pushEventToGcal`/
+  // `deleteGcalEventForNode` disparan `from:gcal-events-changed` al escribir en
+  // Google — la escuchamos aquí para refrescar sin esperar al date-change.
   const [gcalError, setGcalError] = useState('')
-  useEffect(() => {
+  const fetchGcalEvents = () => {
     if (!us.googleConnected) return
     setGcalError('')
     getCalendarEventsRange(addDays(centerDate,-14), addDays(centerDate,14))
@@ -278,7 +286,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           us.markGoogleDisconnected()
         }
       })
-  }, [us.googleConnected, centerDate.toDateString()]) // eslint-disable-line
+  }
+  useEffect(fetchGcalEvents, [us.googleConnected, centerDate.toDateString()]) // eslint-disable-line
+  useEffect(() => {
+    window.addEventListener('from:gcal-events-changed', fetchGcalEvents)
+    return () => window.removeEventListener('from:gcal-events-changed', fetchGcalEvents)
+  }) // eslint-disable-line
 
   useEffect(() => {
     us.refreshGoogleStatus?.()

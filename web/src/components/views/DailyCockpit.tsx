@@ -255,7 +255,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
         return (
           <div className="dc-group">
             <div className="dc-group-headrow">
-              {gHeader('porhacer', 'Para hacer')}
+              {gHeader('porhacer', t('daily.tasksToday', 'Tareas para hoy'))}
               <button className="dc-group-add" onClick={() => setShowNewTask(true)} title={t('modal.newTask')}>+</button>
             </div>
             {/* hideToday oculta SOLO las tareas de hoy CON HORA (ya viven con
@@ -341,8 +341,10 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
     ? <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />
     : null
 
-  // Modal de nueva tarea (siempre HOY — «Para hacer» solo vive en el día de hoy).
-  const newTaskModal = showNewTask ? <NewTaskModal onClose={() => setShowNewTask(false)} /> : null
+  // Modal de nueva tarea — «Tareas para hoy» solo vive en el día de hoy, así que
+  // la fecha por defecto es HOY (Alberto, 22 jul: "se deben crear en el día de
+  // hoy por defecto. Ahora mismo se crean sin fecha").
+  const newTaskModal = showNewTask ? <NewTaskModal onClose={() => setShowNewTask(false)} defaultDueToday /> : null
 
   // Modo «bare»: sin caja blanca ni header — bloques sueltos (panel del día pizarra)
   if (bare) {

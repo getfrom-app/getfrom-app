@@ -4,12 +4,26 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { useToast } from '../Toast'
 
+// Fecha de hoy a medianoche LOCAL, formato datetime-local ("YYYY-MM-DDT00:00")
+// — medianoche es la convención de la app para "tarea de todo el día" (sin
+// hora concreta), la misma que usa `timeLabel()` para decidir si una tarea
+// tiene hora o no.
+function todayMidnightLocal(): string {
+  const d = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T00:00`
+}
+
 interface Props {
   onClose: () => void
   parentId?: string | null
+  // «Tareas para hoy» (Alberto, 22 jul: "se deben crear en el día de hoy por
+  // defecto. Ahora mismo se crean sin fecha") — el resto de sitios que abren
+  // este modal (sidebar, menú por-contexto) siguen sin fecha por defecto.
+  defaultDueToday?: boolean
 }
 
-export default function NewTaskModal({ onClose, parentId }: Props) {
+export default function NewTaskModal({ onClose, parentId, defaultDueToday }: Props) {
   const { t } = useTranslation()
   const [text, setText] = useState('')
   // Vacío por defecto: el input es datetime-local (fecha + hora), así que un
@@ -17,7 +31,7 @@ export default function NewTaskModal({ onClose, parentId }: Props) {
   // vacío) pero SIGUE siendo un string truthy en el estado — al enviar sin tocar
   // el campo, `due ? ... : null` colaba igualmente y creaba la tarea con
   // due=hoy medianoche UTC (02:00 en Madrid en verano) en vez de sin fecha.
-  const [due, setDue] = useState('')
+  const [due, setDue] = useState(defaultDueToday ? todayMidnightLocal() : '')
   const [priority, setPriority] = useState<'high' | 'medium' | 'low' | ''>('')
   const inputRef = useRef<HTMLInputElement>(null)
   const { showToast } = useToast()
