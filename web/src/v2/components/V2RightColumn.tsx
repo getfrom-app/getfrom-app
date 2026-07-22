@@ -202,7 +202,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
           Elementos, para que la rejilla llene todo el alto disponible. */}
       {!isRecordingActive && mode === 'dia' && (
         <div className="v2-right-fill v2-agenda-timeline">
-          <PlannerPanel initialView="day" initialDays={1} viewTabs={['day']} onClose={() => {}} />
+          <PlannerPanel initialView="day" initialDays={1} viewTabs={['day']} dayOnlyHeader onClose={() => {}} />
         </div>
       )}
 

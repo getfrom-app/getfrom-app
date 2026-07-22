@@ -17,7 +17,8 @@ import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
-import { ensureDayPath } from '../../utils/agendaHelper'
+import type { Node } from '../../types'
+import { ensureDayPath, diaryDayTitle } from '../../utils/agendaHelper'
 import { bumpReschedule } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { gcalEventNodeId } from '../../utils/deterministicId'
@@ -223,11 +224,17 @@ interface Props {
       propio tab») y el overlay del planificador (v2, abierto desde el tab Agenda)
       pasa ['week','month','year'] — Día ya no vive ahí. */
   viewTabs?: ViewMode[]
+  /** Tab «Día» de la columna derecha: cabecera simplificada, igual que Agenda
+   *  (título del día + HOY/CAL), en vez de ‹/›+Hoy+resetZoom — duplicaba el
+   *  título del día que ya muestra `pp-col-head` (Alberto, 22 jul: "aparece
+   *  dos veces miércoles... todo esto no es necesario"). CAL reutiliza la
+   *  vista Año que el planificador ya tiene (renderYear). */
+  dayOnlyHeader?: boolean
 }
 
 const ALL_VIEW_TABS: ViewMode[] = ['day', 'week', 'month', 'year']
 
-export default function PlannerPanel({ onClose, initialView, initialDays, viewTabs = ALL_VIEW_TABS }: Props) {
+export default function PlannerPanel({ onClose, initialView, initialDays, viewTabs = ALL_VIEW_TABS, dayOnlyHeader }: Props) {
   const s        = useStore()
   const us       = useUserStore()
   const navigate = useNavigate()
@@ -870,7 +877,8 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   }
 
   // ── Franja «todo el día»: tareas con fecha ese día pero SIN hora ────────────
-  function getAllDayTasks(day: Date) {
+  type AllDayItem = { kind: 'node'; node: Node } | { kind: 'gcal'; ev: CalendarEvent }
+  function getAllDayTasks(day: Date): AllDayItem[] {
     // Eventos de todo el día Y tareas sin hora, unificados aquí — mismo
     // criterio que el bloque «Todo el día» de DayColumn (Alberto, 22 jul:
     // "agrupar ambas cosas... y que aparezcan siempre en el planner en el
@@ -878,9 +886,32 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     // eventos de esta fila, así que arrastrar uno aquí lo hacía desaparecer
     // del Planificador en vez de convertirlo — Alberto, 21 jul: "arrastrar
     // eventos a todo el día debería convertirlos".
-    return store.allActive().filter(n =>
+    const nodes = store.allActive().filter(n =>
       n.due && !n.deletedAt && !isInPapelera(n.id) && (n.isEvent || !!n.gcalEventId || n.status != null) &&
       sameDay(new Date(n.due), day) && !hasTime(n.due))
+
+    // Eventos de todo el día que solo viven en Google (sin nodo local aún) —
+    // antes esta franja solo escaneaba `store.allActive()`, así que un
+    // festivo o evento creado directamente en Google Calendar no aparecía
+    // (Alberto, 22 jul: "asegúrate que en todo el día aparecerán... también
+    // los eventos, que no tengan hora"). Mismo criterio de dedup que
+    // getTimedBlocks: si ya hay un nodo local enlazado a ese id, se omite.
+    const fromGcalIds = new Set(store.allActive().map(n => n.gcalEventId).filter(Boolean))
+    const gcalAllDay = gcalEvents.filter(ev =>
+      ev.allDay && !fromGcalIds.has(ev.id) && sameDay(new Date(ev.start), day))
+
+    const items: AllDayItem[] = [
+      ...nodes.map(node => ({ kind: 'node' as const, node })),
+      ...gcalAllDay.map(ev => ({ kind: 'gcal' as const, ev })),
+    ]
+    // Dedup por título: un nodo local siempre gana sobre su crudo de Google.
+    const byKey = new Map<string, AllDayItem>()
+    for (const it of items) {
+      const key = (it.kind === 'node' ? it.node.text : it.ev.title || '').trim().toLowerCase()
+      const existing = byKey.get(key)
+      if (!existing || (existing.kind === 'gcal' && it.kind === 'node')) byKey.set(key, it)
+    }
+    return [...byKey.values()]
   }
   function handleAllDayDrop(e: React.DragEvent, day: Date) {
     e.preventDefault(); e.stopPropagation()
@@ -973,28 +1004,52 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   return (
     <div className="pp-root" style={{ width: '100%' }}>
 
-      {/* Header */}
+      {/* Header — la tab «Día» (dayOnlyHeader) replica la cabecera de Agenda: título
+          grande del día + HOY/CAL, en vez de ‹/›+Hoy+resetZoom (que además duplicaba
+          el título del día con `pp-col-head`, justo debajo — Alberto, 22 jul). CAL
+          reutiliza la vista Año que el planificador ya trae (renderYear). */}
       <div className="pp-header">
-        {viewTabs.length > 1 && (
-          <div className="pp-view-tabs">
-            {viewTabs.map(m => (
-              <button key={m} className={`pp-tab ${viewMode===m?'pp-tab--active':''}`} onClick={()=>setViewMode(m)}>
-                {m==='day'?t('timeline.dayMode'):m==='week'?t('timeline.weekMode'):m==='month'?t('timeline.monthMode'):t('tip.year')}
-              </button>
-            ))}
-          </div>
+        {dayOnlyHeader ? (
+          viewMode === 'year' ? (
+            <>
+              <button className="v2-head-action" onClick={()=>setViewMode('day')}>‹ {t('v2.rightColumn.back', 'Volver')}</button>
+              <button className="pp-nav-btn" onClick={()=>navDelta(-1)}>‹</button>
+              <span className="pp-nav-title">{navTitle}</span>
+              <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
+            </>
+          ) : (
+            <>
+              <h2 className="v2-agenda-day-title" style={{ flex: 1, margin: 0 }}>{diaryDayTitle(centerDate)}</h2>
+              {!sameDay(centerDate, today) && (
+                <button className="v2-head-action" onClick={()=>{ setCenterDate(today); setViewMode('day') }}>{t('v2.agenda.today', 'HOY')}</button>
+              )}
+              <button className="v2-head-action" onClick={()=>setViewMode('year')} title={t('v2.agenda.openYear', 'Calendario anual')}>{t('v2.agenda.year', 'CAL')}</button>
+            </>
+          )
+        ) : (
+          <>
+            {viewTabs.length > 1 && (
+              <div className="pp-view-tabs">
+                {viewTabs.map(m => (
+                  <button key={m} className={`pp-tab ${viewMode===m?'pp-tab--active':''}`} onClick={()=>setViewMode(m)}>
+                    {m==='day'?t('timeline.dayMode'):m==='week'?t('timeline.weekMode'):m==='month'?t('timeline.monthMode'):t('tip.year')}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button className="pp-nav-btn" onClick={()=>navDelta(-1)}>‹</button>
+            <span className="pp-nav-title">{navTitle}</span>
+            <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
+            <button className="pp-today-btn" onClick={()=>setCenterDate(today)}>{t('common.today')}</button>
+            <button className="pp-today-btn pp-reset-btn" onClick={resetZoom}
+              title={t('tip.resetZoom', { count: visibleDayCnt })}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+              </svg>
+            </button>
+          </>
         )}
-        <button className="pp-nav-btn" onClick={()=>navDelta(-1)}>‹</button>
-        <span className="pp-nav-title">{navTitle}</span>
-        <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
-        <button className="pp-today-btn" onClick={()=>setCenterDate(today)}>{t('common.today')}</button>
-        <button className="pp-today-btn pp-reset-btn" onClick={resetZoom}
-          title={t('tip.resetZoom', { count: visibleDayCnt })}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-            <path d="M3 3v5h5"/>
-          </svg>
-        </button>
       </div>
 
       {gcalError && (
@@ -1027,19 +1082,23 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       }}>
         {viewMode === 'year' ? renderYear() : viewMode === 'month' ? renderMonth() : (
           <>
-            {/* Cabeceras */}
-            <div className="pp-heads" ref={headRef} onMouseDown={handleHeadersDrag}
-              title={t('tip.dragDaysHint')}>
-              <div style={{width: AXIS_W, flexShrink:0, position:'sticky', left:0, background:'var(--bg-primary)', zIndex:10}} />
-              {visibleDays.map(d => (
-                <div key={d.toISOString()} className={`pp-col-head ${sameDay(d,today)?'pp-col-head--today':''} ${sameDay(d,centerDate)?'pp-col-head--center':''}`}
-                  style={{width:colW, flexShrink:0}}>
-                  {dayLabel(d, i18n.language)}
-                </div>
-              ))}
-            </div>
+            {/* Cabeceras — ocultas en la tab «Día» (dayOnlyHeader): el título grande de
+                arriba ya dice qué día es, esta fila solo duplicaba (Alberto, 22 jul). */}
+            {!dayOnlyHeader && (
+              <div className="pp-heads" ref={headRef} onMouseDown={handleHeadersDrag}
+                title={t('tip.dragDaysHint')}>
+                <div style={{width: AXIS_W, flexShrink:0, position:'sticky', left:0, background:'var(--bg-primary)', zIndex:10}} />
+                {visibleDays.map(d => (
+                  <div key={d.toISOString()} className={`pp-col-head ${sameDay(d,today)?'pp-col-head--today':''} ${sameDay(d,centerDate)?'pp-col-head--center':''}`}
+                    style={{width:colW, flexShrink:0}}>
+                    {dayLabel(d, i18n.language)}
+                  </div>
+                ))}
+              </div>
+            )}
 
-            {/* Franja «todo el día»: tareas con fecha pero sin hora. Arrastrables. */}
+            {/* Franja «todo el día»: tareas con fecha pero sin hora, Y eventos de todo
+                el día (locales o crudos de Google). Arrastrables. */}
             <div className="pp-allday">
               <div className="pp-allday-axis" style={{width:AXIS_W, flexShrink:0, position:'sticky', left:0, zIndex:10}}>{t('tip.allDayLower')}</div>
               {visibleDays.map(d => {
@@ -1050,7 +1109,19 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                     onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}
                     title={t('tip.clickAddUntimed')}
                     onClick={e=>{ if ((e.target as HTMLElement).closest('.pp-allday-chip, input')) return; setNewAllDay({ day: d, text: '' }); setTimeout(()=>newAllDayRef.current?.focus(), 20) }}>
-                    {items.slice(0, 5).map(n => {
+                    {items.slice(0, 5).map(it => {
+                      if (it.kind === 'gcal') {
+                        const ev = it.ev
+                        return (
+                          <div key={`gcal:${ev.id}`} className="pp-allday-chip"
+                            style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px solid var(--border)', borderLeft: `3px solid ${ev.backgroundColor || '#4a90d9'}` }}
+                            onClick={e=>{ e.stopPropagation(); setEditingGcal(ev) }}
+                            title={ev.title}>
+                            {ev.title || t('search.chipEvent')}
+                          </div>
+                        )
+                      }
+                      const n = it.node
                       const chipCtx = firstContextOf(n)
                       const chipAccent = chipCtx ? contextColor(chipCtx.id) : plannerBase
                       return (
