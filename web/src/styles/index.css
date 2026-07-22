@@ -13692,6 +13692,11 @@ textarea:focus-visible,
   flex-shrink: 0;
   width: 8px;
   height: 8px;
+  /* Centrado en el mismo hueco de 15px que ocupa .dc-check (checkbox de
+     tarea), para que el resto de la fila (hora/texto) quede alineado igual
+     tenga la fila un punto de color o un checkbox (Alberto, 22 jul: "los
+     eventos con dot están ligeramente a la izquierda respecto al resto"). */
+  margin: 0 3.5px;
   border-radius: 50%;
   background: #2563eb;
 }
