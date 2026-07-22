@@ -177,7 +177,10 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
           está en la columna derecha... la columna derecha mantendría todo
           igual"). Componente compartido con el visor central (V2ElementView). */}
       {!isRecordingActive && mode === 'detalles' && detailNodeId && (
-        <V2ElementView nodeId={detailNodeId} onClose={onCloseDetail} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
+        // key={detailNodeId}: mismo motivo que el visor central en V2App.tsx —
+        // sin desmontar entre nodos distintos, DocEditor puede guardar el texto
+        // del nodo VIEJO sobre el nodo NUEVO durante la ventana de un render.
+        <V2ElementView key={detailNodeId} nodeId={detailNodeId} onClose={onCloseDetail} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
       )}
 
       {/* Tab Detalles sin nodo abierto: el panel de la conversación activa, o vacío. */}

@@ -696,7 +696,19 @@ export default function V2App() {
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
       <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onDriveInCtx={onDriveInCtx} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
       {centerElementId ? (
-        <V2ElementView nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideBack />
+        // ⚠️ `key` es OBLIGATORIO: sin él, al pasar de un elemento a otro (p.ej.
+        // abrir una nota de Casa Alicante y luego la nota diaria de otro día
+        // desde la tab Día) React reutiliza la MISMA instancia de V2ElementView
+        // → V2DetailView → DocEditor en vez de desmontarla, y DocEditor tiene
+        // varios efectos con cierres sobre `editor`/`node.id` que NO se
+        // resincronizan de forma atómica entre renders — la editor instance de
+        // TipTap (useEditor) tarda un render extra en recrearse tras cambiar de
+        // id, y en esa ventana el texto de la nota VIEJA podía guardarse sobre
+        // el nodo NUEVO (Alberto, 22 jul: "estaba viendo una tarea... al dar al
+        // tab día... ese texto de esa tarea se ha copiado en la nota diaria").
+        // Con `key={centerElementId}` React desmonta y monta desde cero, sin
+        // ventana de solape posible.
+        <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideBack />
       ) : showProfile ? (
         <V2ProfileView onClose={() => setShowProfile(false)} />
       ) : (

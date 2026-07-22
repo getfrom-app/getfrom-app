@@ -87,7 +87,10 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
             </div>
           )}
         </div>
-        {node && (
+        {/* Nota diaria: la fecha YA es el título, «Creado/Modificado» no aporta
+            nada (Alberto, 22 jul: "en las notas diarias arriba no hace falta
+            que ponga la fecha de creación y modificación... es indiferente"). */}
+        {node && !node.isDiaryEntry && (
           <div className="v2-detail-dates" title={`${t('v2.rightColumn.created', 'Creado')}: ${fmtDateFull(node.createdAt, i18n.language)}\n${t('v2.rightColumn.updated', 'Modificado')}: ${fmtDateFull(node.updatedAt, i18n.language)}`}>
             {t('v2.rightColumn.created', 'Creado')} {fmtDate(node.createdAt, i18n.language)}
             {node.updatedAt && node.updatedAt !== node.createdAt && (

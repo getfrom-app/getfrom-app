@@ -189,7 +189,10 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
               <button className={isDayCanvas ? 'active' : ''} onClick={openDayCanvas}>{t('v2.dayCanvas', 'Lienzo')}</button>
             </div>
           )}
-          {!canvas && !hideContext && <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />}
+          {/* Notas diarias no tienen contexto — el lápiz para asignarlo no
+              aporta nada ahí (Alberto, 22 jul: "las notas diarias no tienen
+              contexto"). */}
+          {!canvas && !hideContext && !isDayNote && <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />}
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5 }}>
             <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite} style={{ ...actBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/></svg>
