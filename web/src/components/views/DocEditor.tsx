@@ -253,7 +253,13 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // transacción, así que sobreviven a esos redibujados solas. `lastSigRef` evita
   // dispatch redundantes (no hay cambios reales) en cada render.
   const lastCiteSigRef = useRef<string | null>(null)
-  const applyCiteIndicators = (flashPid?: string | null) => {
+  // pid en resalte breve («Ir a la nota») — NO un parámetro de applyCiteIndicators:
+  // esta función se llama constantemente sin argumento (cada render, cada
+  // transacción) y si el flash se pasara solo por parámetro, esas llamadas
+  // rutinarias lo resetearían a null casi al instante, borrándolo antes de que
+  // se llegara a ver. Vive en una ref para que sobreviva a esas llamadas.
+  const flashPidRef = useRef<string | null>(null)
+  const applyCiteIndicators = () => {
     const ed = editorRef.current
     if (!ed) return
     // Escaneo directo por `_docSourceId` (no `store.children`): las citas son
@@ -285,7 +291,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       const color = byStoredPid.get(pid) ?? byText.get(n.textContent.trim())
       if (color) map.set(pid, color)
     })
-    const fPid = flashPid !== undefined ? flashPid : null
+    const fPid = flashPidRef.current
     const sig = JSON.stringify(Array.from(map.entries())) + '|' + fPid
     if (sig === lastCiteSigRef.current) return
     lastCiteSigRef.current = sig
@@ -351,8 +357,14 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       }
       if (!el || !targetPid) return
       el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      flashPidRef.current = targetPid
       lastCiteSigRef.current = null // fuerza el dispatch aunque el mapa de citas no cambie
-      applyCiteIndicators(targetPid)
+      applyCiteIndicators()
+      setTimeout(() => {
+        flashPidRef.current = null
+        lastCiteSigRef.current = null
+        applyCiteIndicators()
+      }, 1600)
     }
     window.addEventListener('from:scroll-to-paragraph', h as EventListener)
     return () => window.removeEventListener('from:scroll-to-paragraph', h as EventListener)
