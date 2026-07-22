@@ -2342,5 +2342,6 @@
   "v2.citation.goToSource": "Notaya git",
   "elements.citas": "Alıntılar",
   "v2.citationUnassigned": "Bağlamsız alıntı",
-  "v2.inheritedContext": "Yukarıdaki satırdan devralındı — kendi bağlamınızı atamak için tıklayın"
+  "v2.inheritedContext": "Yukarıdaki satırdan devralındı — kendi bağlamınızı atamak için tıklayın",
+  "v2.newSubcontext": "Alt bağlam"
 }

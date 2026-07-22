@@ -99,6 +99,13 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
   const [addMenu, setAddMenu] = useState<{ id: string | null; x: number; y: number } | null>(null)
   const [newTaskCtx, setNewTaskCtx] = useState<{ id: string | null } | null>(null)
   const [newEventCtx, setNewEventCtx] = useState<{ id: string | null } | null>(null)
+  // «＋ Subcontexto» desde el menú de un contexto (Alberto, 22 jul: "el + de los
+  // chips de contexto debe añadir además nuevo subcontexto... crea un
+  // subcontexto bajo el contexto seleccionado, y se abre"). Distinto del botón
+  // de cabecera («Nuevo contexto», que usa `currentParent`, el nivel en el que
+  // se ha entrado): aquí el padre es SIEMPRE el contexto concreto del que salió
+  // el menú «＋», sea cual sea el nivel de drill-down actual.
+  const [newSubCtxParent, setNewSubCtxParent] = useState<{ id: string | null } | null>(null)
   const openAddMenu = (e: React.MouseEvent, id: string | null) => {
     e.preventDefault(); e.stopPropagation()
     setAddMenu({ id, x: e.clientX, y: e.clientY })
@@ -344,6 +351,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
             <button className="v2-ctx-menu-item" onClick={() => { onNewCanvasInCtx(addMenu.id); setAddMenu(null) }}>🎨 {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
             <div className="v2-ctx-menu-sep" />
             <button className="v2-ctx-menu-item" onClick={() => { onNewChatInCtx(addMenu.id); setAddMenu(null) }}>💬 {t('v2.newConversationInThisContext', 'Nueva conversación')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { setNewSubCtxParent({ id: addMenu.id }); setAddMenu(null) }}>🗂️ {t('v2.newSubcontext', 'Subcontexto')}</button>
           </div>
         </>
       )}
@@ -421,6 +429,13 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         <NewContextModal
           defaultParentId={currentParent?.id ?? null}
           onClose={() => setShowNewContext(false)}
+          onCreated={id => onSelectCtx(id)}
+        />
+      )}
+      {newSubCtxParent && (
+        <NewContextModal
+          defaultParentId={newSubCtxParent.id}
+          onClose={() => setNewSubCtxParent(null)}
           onCreated={id => onSelectCtx(id)}
         />
       )}

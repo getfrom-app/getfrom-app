@@ -2342,5 +2342,6 @@
   "v2.citation.goToSource": "Go to note",
   "elements.citas": "Citations",
   "v2.citationUnassigned": "Citation unassigned",
-  "v2.inheritedContext": "Inherited from the line above — click to assign your own"
+  "v2.inheritedContext": "Inherited from the line above — click to assign your own",
+  "v2.newSubcontext": "Subcontext"
 }

@@ -2342,5 +2342,6 @@
   "v2.citation.goToSource": "Перейти к заметке",
   "elements.citas": "Цитаты",
   "v2.citationUnassigned": "Цитата без контекста",
-  "v2.inheritedContext": "Унаследовано от строки выше — нажмите, чтобы назначить свой"
+  "v2.inheritedContext": "Унаследовано от строки выше — нажмите, чтобы назначить свой",
+  "v2.newSubcontext": "Подконтекст"
 }
