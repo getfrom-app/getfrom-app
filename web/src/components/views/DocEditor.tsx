@@ -276,6 +276,14 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       if (color) { el.style.setProperty('--cite-color', color); el.classList.add('doc-para--cited') }
       else { el.classList.remove('doc-para--cited'); el.style.removeProperty('--cite-color') }
     })
+    // DEBUG TEMPORAL (quitar tras verificar) — vuelca el estado al DOM para poder
+    // inspeccionarlo desde fuera del bundle (execute_javascript no ve variables JS
+    // de la página, solo el DOM).
+    wrap.setAttribute('data-cite-debug', JSON.stringify({
+      byPid: Array.from(byPid.entries()),
+      byText: Array.from(byText.entries()),
+      paras: Array.from(wrap.querySelectorAll<HTMLElement>('[data-pid]')).map(el => ({ pid: el.getAttribute('data-pid'), text: (el.textContent || '').trim() })),
+    }))
   }
 
   const createCitation = (pid: string, contextId: string) => {
