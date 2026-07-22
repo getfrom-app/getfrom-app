@@ -249,25 +249,31 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   }
 
   // Contexto HEREDADO de la línea "padre" en el árbol de indentación (Tab
-  // hunde un párrafo dentro de la lista de la línea de arriba — ver
-  // tiptapTabIndent.ts). Si esa línea padre (o LA SUYA, en cascada) ya tiene
-  // cita, las líneas indentadas debajo se consideran del mismo contexto — ni
-  // hace falta citarlas una a una ni tiene sentido ofrecerles el «?» de crear
-  // una cita nueva (Alberto, 22 jul: "todas las líneas que estén indentadas a
-  // una línea con un contexto, deben mantener ese contexto y debe desaparecer
-  // el badge de ?"). Solo visual/UX — no crea citas reales para cada hijo.
+  // sube el nivel de indentación de la línea, ver tiptapTabIndent.ts — un
+  // número por párrafo, no una lista real). Si la línea anterior con un
+  // indentación MENOR (la línea "padre") ya tiene cita, las líneas
+  // indentadas debajo se consideran del mismo contexto — ni hace falta
+  // citarlas una a una ni tiene sentido ofrecerles el «?» de crear una cita
+  // nueva (Alberto, 22 jul: "todas las líneas que estén indentadas a una
+  // línea con un contexto, deben mantener ese contexto y debe desaparecer el
+  // badge de ?"). Solo visual/UX — no crea citas reales para cada hijo.
   const findAncestorContext = (el: HTMLElement): { node: import('../../types').Node; text: string } | null => {
-    let li: HTMLElement | null = el.closest('li')
-    while (li) {
-      const parentLi: HTMLElement | null = li.parentElement?.closest('li') ?? null
-      if (!parentLi) return null
-      const parentP = parentLi.querySelector(':scope > p[data-pid]') as HTMLElement | null
-      const parentPid = parentP?.getAttribute('data-pid')
-      if (parentPid) {
-        const cited = findCitationForPid(parentPid)
-        if (cited) return cited
+    const wrap = contentWrapRef.current
+    if (!wrap) return null
+    const paras = Array.from(wrap.querySelectorAll<HTMLElement>('[data-pid]'))
+    let idx = paras.indexOf(el)
+    let level = parseInt(el.getAttribute('data-indent') || '0', 10)
+    while (idx > 0 && level > 0) {
+      idx--
+      const prevLevel = parseInt(paras[idx].getAttribute('data-indent') || '0', 10)
+      if (prevLevel < level) {
+        const pid = paras[idx].getAttribute('data-pid')
+        if (pid) {
+          const cited = findCitationForPid(pid)
+          if (cited) return cited
+        }
+        level = prevLevel // sigue subiendo en cascada hasta el nivel 0
       }
-      li = parentLi
     }
     return null
   }
