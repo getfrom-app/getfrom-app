@@ -2341,5 +2341,6 @@
   "v2.citation": "Cytat",
   "v2.citation.goToSource": "Przejdź do notatki",
   "elements.citas": "Cytaty",
-  "v2.citationUnassigned": "Cytat bez kontekstu"
+  "v2.citationUnassigned": "Cytat bez kontekstu",
+  "v2.inheritedContext": "Odziedziczone z linii powyżej — kliknij, aby przypisać własny"
 }

@@ -248,6 +248,30 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     return null
   }
 
+  // Contexto HEREDADO de la línea "padre" en el árbol de indentación (Tab
+  // hunde un párrafo dentro de la lista de la línea de arriba — ver
+  // tiptapTabIndent.ts). Si esa línea padre (o LA SUYA, en cascada) ya tiene
+  // cita, las líneas indentadas debajo se consideran del mismo contexto — ni
+  // hace falta citarlas una a una ni tiene sentido ofrecerles el «?» de crear
+  // una cita nueva (Alberto, 22 jul: "todas las líneas que estén indentadas a
+  // una línea con un contexto, deben mantener ese contexto y debe desaparecer
+  // el badge de ?"). Solo visual/UX — no crea citas reales para cada hijo.
+  const findAncestorContext = (el: HTMLElement): { node: import('../../types').Node; text: string } | null => {
+    let li: HTMLElement | null = el.closest('li')
+    while (li) {
+      const parentLi: HTMLElement | null = li.parentElement?.closest('li') ?? null
+      if (!parentLi) return null
+      const parentP = parentLi.querySelector(':scope > p[data-pid]') as HTMLElement | null
+      const parentPid = parentP?.getAttribute('data-pid')
+      if (parentPid) {
+        const cited = findCitationForPid(parentPid)
+        if (cited) return cited
+      }
+      li = parentLi
+    }
+    return null
+  }
+
   // Posición justo DESPUÉS del último carácter visible del párrafo (estilo Tana:
   // el icono va pegado al final del texto de la línea, no clavado al margen
   // derecho del documento entero — Alberto, 22 jul). `Range` sobre el último
@@ -801,12 +825,19 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
             cita ni puedo ponerlo"). */}
         {citeHover && !citePicker && (() => {
           const existing = findCitationForPid(citeHover.pid)
-          const existingCtx = existing ? firstContextOf(existing.node) : null
+          let existingCtx = existing ? firstContextOf(existing.node) : null
+          let inherited = false
+          if (!existingCtx) {
+            const hoveredEl = contentWrapRef.current?.querySelector<HTMLElement>(`[data-pid="${citeHover.pid}"]`)
+            const ancestor = hoveredEl ? findAncestorContext(hoveredEl) : null
+            const ancestorCtx = ancestor ? firstContextOf(ancestor.node) : null
+            if (ancestorCtx) { existingCtx = ancestorCtx; inherited = true }
+          }
           return existingCtx ? (
-            <button className="doc-cite-btn doc-cite-btn--assigned" style={{ top: citeHover.top, left: citeHover.left, ['--chip' as string]: contextColor(existingCtx.id) }}
+            <button className="doc-cite-btn doc-cite-btn--assigned" style={{ top: citeHover.top, left: citeHover.left, ['--chip' as string]: contextColor(existingCtx.id), opacity: inherited ? 0.6 : 1 }}
               onMouseDown={e => e.preventDefault()}
               onClick={e => openCitePicker(e, citeHover.pid)}
-              title={t('v2.changeContext', 'Cambiar contexto')}>{existingCtx.text}</button>
+              title={inherited ? t('v2.inheritedContext', 'Heredado de la línea de arriba — clic para asignar uno propio') : t('v2.changeContext', 'Cambiar contexto')}>{existingCtx.text}</button>
           ) : (
             <button className="doc-cite-btn" style={{ top: citeHover.top, left: citeHover.left }}
               onMouseDown={e => e.preventDefault()}

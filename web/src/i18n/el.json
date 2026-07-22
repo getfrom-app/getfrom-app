@@ -2341,5 +2341,6 @@
   "v2.citation": "Παράθεση",
   "v2.citation.goToSource": "Μετάβαση στη σημείωση",
   "elements.citas": "Παραθέσεις",
-  "v2.citationUnassigned": "Παράθεση χωρίς πλαίσιο"
+  "v2.citationUnassigned": "Παράθεση χωρίς πλαίσιο",
+  "v2.inheritedContext": "Κληρονομήθηκε από την παραπάνω γραμμή — κάντε κλικ για να ορίσετε το δικό σας"
 }

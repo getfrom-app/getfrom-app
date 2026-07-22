@@ -2341,5 +2341,6 @@
   "v2.citation": "Citaat",
   "v2.citation.goToSource": "Naar de notitie",
   "elements.citas": "Citaten",
-  "v2.citationUnassigned": "Citaat zonder context"
+  "v2.citationUnassigned": "Citaat zonder context",
+  "v2.inheritedContext": "Overgenomen van de regel erboven — klik om een eigen context toe te wijzen"
 }

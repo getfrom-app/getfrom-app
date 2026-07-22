@@ -2341,5 +2341,6 @@
   "v2.citation": "Zitat",
   "v2.citation.goToSource": "Zur Notiz",
   "elements.citas": "Zitate",
-  "v2.citationUnassigned": "Zitat ohne Kontext"
+  "v2.citationUnassigned": "Zitat ohne Kontext",
+  "v2.inheritedContext": "Von der Zeile darüber übernommen — klicken, um einen eigenen zuzuweisen"
 }

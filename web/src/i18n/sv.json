@@ -2341,5 +2341,6 @@
   "v2.citation": "Citat",
   "v2.citation.goToSource": "Gå till anteckningen",
   "elements.citas": "Citat",
-  "v2.citationUnassigned": "Citat utan kontext"
+  "v2.citationUnassigned": "Citat utan kontext",
+  "v2.inheritedContext": "Ärvt från raden ovanför — klicka för att tilldela en egen"
 }
