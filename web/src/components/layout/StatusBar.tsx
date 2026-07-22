@@ -9,7 +9,7 @@ import { scheduledAgentsSummary, relativeUntil } from '../../utils/scheduleHelpe
 import { estimateContextTokens, formatTokens } from '../../utils/contextBudget'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.6.921'
+export const WEB_VERSION = 'v9.6.922'
 
 interface Props {
   isSyncing: boolean

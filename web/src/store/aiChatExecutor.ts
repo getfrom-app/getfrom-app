@@ -57,7 +57,7 @@ export async function executeChatAction(
     case 'create_agent':   return createAgentAction(action, sessionId, currentNodeId)
     case 'update_agent':   return updateAgentAction(action)
     case 'create_prompt':  return createPromptAction(action, sessionId, currentNodeId)
-    case 'create_event':   return createEvent(action, sessionId)
+    case 'create_event':   return createEvent(action, sessionId, currentNodeId)
     case 'update_node':    return updateNode(action)
     case 'read_node':      return readNode(action)
     case 'find_nodes':     return findNodes(action)
@@ -358,7 +358,7 @@ function updateAgentAction(a: Record<string, unknown>): ExecutedAction {
     [nodeId])
 }
 
-function createEvent(a: Record<string, unknown>, sessionId?: string): ExecutedAction {
+function createEvent(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
   const text = (a.text as string) || 'Evento'
   const tags = (a.tags as string[]) || []
   const due = parseDate(a.due)
@@ -384,6 +384,13 @@ function createEvent(a: Record<string, unknown>, sessionId?: string): ExecutedAc
     updates.extraData = JSON.stringify(ed)
   }
   store.updateNode(created.id, updates)
+  // Contexto explícito: mismo bug que create_task — el nodo diario (parentId)
+  // es un árbol totalmente separado del de contextos, así que heredar por
+  // ancestro nunca enlazaba el evento al contexto activo (Alberto, 22 jul,
+  // sobre create_task: "no se le ha añadido ni la recurrencia ni el
+  // contexto" — mismo patrón, mismo fix, aplicado aquí también).
+  const ctxId = resolveActiveContextId(currentNodeId)
+  if (ctxId) assignContext(created.id, ctxId)
   // Sincroniza con Google Calendar (no-op si el usuario no está conectado).
   const eventNode = store.getNode(created.id)
   if (eventNode) pushEventToGcal(eventNode).catch(() => {})
