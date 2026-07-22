@@ -7557,6 +7557,23 @@ textarea:focus-visible,
 .doc-editor .ProseMirror s { text-decoration: line-through; }
 .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--text-tertiary, #aaa); float: left; pointer-events: none; height: 0; }
 .doc-title::placeholder { color: var(--text-tertiary, #bbb); }
+/* Cita de párrafo: «?» flotante al pasar el ratón (asigna el párrafo a un
+   contexto), indicador permanente de color en los ya asignados, y el resalte
+   breve al volver desde la cita con su ancla (Alberto, 22 jul: "hazlo con
+   ancla, hazlo completo"). */
+.doc-cite-btn {
+  position: absolute; right: 2px; width: 18px; height: 18px; margin-top: 1px;
+  border: 1px dashed var(--border, #ddd); border-radius: 50%; background: var(--bg-primary, #fff);
+  color: var(--text-tertiary, #bbb); cursor: pointer; padding: 0; font-weight: 700; font-size: 11px;
+  display: flex; align-items: center; justify-content: center; opacity: 0.7; z-index: 2;
+}
+.doc-cite-btn:hover { opacity: 1; color: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
+.doc-editor .ProseMirror [data-pid].doc-para--cited { box-shadow: -3px 0 0 var(--cite-color, var(--accent, #6c5ce7)); }
+.doc-editor .ProseMirror [data-pid].doc-para--flash { animation: doc-para-flash 1.6s ease; }
+@keyframes doc-para-flash {
+  0%, 100% { background: transparent; }
+  20% { background: color-mix(in srgb, var(--accent, #6c5ce7) 18%, transparent); }
+}
 /* Casillas de tarea dentro del texto (TaskList/TaskItem de TipTap). Mismo look que las
    tareas de From (checkbox rect redondeado: pending amarillo, done verde + check). Aplica
    TANTO en edición (.doc-editor .ProseMirror) como en reposo (.pizarra-text, que pinta el

@@ -2335,5 +2335,10 @@
   "settingsView.colorAubergine": "Patlıcan",
   "settingsView.colorOchre": "Aşı boyası",
   "settingsView.colorWine": "Şarap",
-  "settingsView.colorPetrol": "Petrol"
+  "settingsView.colorPetrol": "Petrol",
+  "v2.assignParagraphToContext": "Bu paragrafı bir bağlama ata",
+  "v2.citationSaved": "Paragraf bağlama atandı",
+  "v2.citation": "Alıntı",
+  "v2.citation.goToSource": "Notaya git",
+  "elements.citas": "Alıntılar"
 }

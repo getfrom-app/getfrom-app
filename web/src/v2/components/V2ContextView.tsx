@@ -193,6 +193,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
     { key: 'link',         icon: '🔗', label: t('elements.links', 'Enlaces') },
     { key: 'audio',        icon: '🎙', label: t('elements.audios', 'Audios') },
     { key: 'highlight',    icon: '🖍️', label: t('elements.highlights', 'Subrayados') },
+    { key: 'cita',         icon: '🔖', label: t('elements.citas', 'Citas') },
     { key: 'agent',        icon: '🤖', label: t('elements.agents', 'Agentes') },
     { key: 'prompt',       icon: '⚡', label: t('elements.prompts', 'Prompts') },
     { key: 'conversation', icon: '💬', label: t('elements.conversations', 'Conversaciones') },

@@ -2335,5 +2335,10 @@
   "settingsView.colorAubergine": "Aubergine",
   "settingsView.colorOchre": "Ockra",
   "settingsView.colorWine": "Vinröd",
-  "settingsView.colorPetrol": "Petrol"
+  "settingsView.colorPetrol": "Petrol",
+  "v2.assignParagraphToContext": "Tilldela detta stycke till ett sammanhang",
+  "v2.citationSaved": "Stycket tilldelat sammanhanget",
+  "v2.citation": "Citat",
+  "v2.citation.goToSource": "Gå till anteckningen",
+  "elements.citas": "Citat"
 }

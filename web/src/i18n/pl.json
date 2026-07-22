@@ -2335,5 +2335,10 @@
   "settingsView.colorAubergine": "Bakłażan",
   "settingsView.colorOchre": "Ochra",
   "settingsView.colorWine": "Wino",
-  "settingsView.colorPetrol": "Petrol"
+  "settingsView.colorPetrol": "Petrol",
+  "v2.assignParagraphToContext": "Przypisz ten akapit do kontekstu",
+  "v2.citationSaved": "Akapit przypisany do kontekstu",
+  "v2.citation": "Cytat",
+  "v2.citation.goToSource": "Przejdź do notatki",
+  "elements.citas": "Cytaty"
 }

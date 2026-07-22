@@ -16,10 +16,12 @@ import Color from '@tiptap/extension-color'
 import Image from '@tiptap/extension-image'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
+import { createPortal } from 'react-dom'
 import { store, useStore } from '../../store/nodeStore'
-import { assignContext } from '../../utils/cajones'
+import { assignContext, firstContextOf, contextColor } from '../../utils/cajones'
 import { isContextKnowledge, isProfileKnowledge } from '../../utils/knowledgeNodes'
-import { firstLineTitle } from '../../utils/docNode'
+import { parseExtraData } from '../../utils/papeleraHelper'
+import { firstLineTitle, DOC } from '../../utils/docNode'
 import { markdownToHtml } from '../../utils/importMarkdown'
 import DocMention from './DocMention'
 import { extractDateFromEnd } from '../../utils/naturalDate'
@@ -35,6 +37,8 @@ import type { DocSlashAction } from './DocSlashMenu'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
+import ContextPicker from '../panels/ContextPicker'
+import { ParagraphId, genPid } from '../../utils/tiptapParagraphId'
 
 // ¿El texto pegado parece MARKDOWN? (encabezados, listas, code fence, cita, enlaces,
 // negritas). Basta un marcador claro para tratarlo como markdown y renderizarlo.
@@ -208,6 +212,106 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     catch { /* silencioso */ }
   }
 
+  // ── Citas de párrafo: «?» al pasar el ratón → asignar ESE párrafo a un
+  // contexto. Crea un nodo-cita ligero (mismo patrón que un subrayado de PDF:
+  // `_doc:'1'` + blockquote con el texto, hijo de ESTE documento) anclado por
+  // `_docParagraphId` al párrafo de origen (id estable de ParagraphId, ver
+  // tiptapParagraphId.ts) — así aparece en el contexto elegido (Alberto, 22
+  // jul: "para que cuando trabajo en casa Alicante aparezca también ese
+  // párrafo") y desde la cita se vuelve exactamente a ese párrafo, con ancla,
+  // no solo se abre el documento entero ("hazlo con ancla, hazlo completo").
+  const contentWrapRef = useRef<HTMLDivElement>(null)
+  const [citeHover, setCiteHover] = useState<{ pid: string; top: number } | null>(null)
+  const [citePicker, setCitePicker] = useState<{ pid: string; x: number; y: number; up: boolean } | null>(null)
+  const citePickerRef = useRef<HTMLDivElement>(null)
+
+  const onContentMouseMove = (e: React.MouseEvent) => {
+    if (citePicker) return
+    const wrap = contentWrapRef.current
+    const target = (e.target as HTMLElement).closest('[data-pid]') as HTMLElement | null
+    if (!target || !wrap) { setCiteHover(null); return }
+    const pid = target.getAttribute('data-pid')
+    if (!pid) { setCiteHover(null); return }
+    setCiteHover({ pid, top: target.getBoundingClientRect().top - wrap.getBoundingClientRect().top })
+  }
+
+  const openCitePicker = (e: React.MouseEvent, pid: string) => {
+    e.stopPropagation()
+    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const up = window.innerHeight - r.bottom < 320
+    const x = Math.max(8, Math.min(r.left, window.innerWidth - 250))
+    setCitePicker(up ? { pid, x, y: window.innerHeight - r.top + 4, up: true } : { pid, x, y: r.bottom + 4, up: false })
+  }
+
+  const createCitation = (pid: string, contextId: string) => {
+    const ed = editorRef.current
+    if (!ed) return
+    let text = ''
+    ed.state.doc.descendants(n => { if (n.attrs?.pid === pid) text = n.textContent })
+    const trimmed = text.trim()
+    if (!trimmed) return
+    const extra: Record<string, string> = { [DOC]: '1', _docSelection: '1', _docSourceId: node.id, _docParagraphId: pid }
+    const quote = store.createNode({ text: '', parentId: node.id, extraData: extra })
+    const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    store.updateNode(quote.id, { body: `<blockquote><p>${esc(trimmed)}</p></blockquote>` })
+    assignContext(quote.id, contextId)
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.citationSaved', 'Párrafo asignado al contexto'), type: 'success' } }))
+  }
+
+  useEffect(() => {
+    if (!citePicker) return
+    const h = (e: PointerEvent) => {
+      const t = e.target as globalThis.Node
+      if (citePickerRef.current?.contains(t)) return
+      setCitePicker(null)
+    }
+    window.addEventListener('pointerdown', h, true)
+    return () => window.removeEventListener('pointerdown', h, true)
+  }, [citePicker])
+
+  // Indicador persistente: los párrafos que YA tienen alguna cita llevan un
+  // borde de color (el del contexto asignado) a la izquierda — para ver de un
+  // vistazo qué está ya repartido en contextos, sin pasar el ratón por todo el
+  // texto. Manipula el DOM directamente (fuera del modelo de TipTap): son solo
+  // datos de presentación derivados de OTROS nodos (las citas), no del propio
+  // documento, así que no tiene sentido guardarlos como transacción PM.
+  useEffect(() => {
+    const wrap = contentWrapRef.current
+    if (!wrap) return
+    const byPid = new Map<string, string>()
+    for (const c of store.children(node.id)) {
+      if (c.deletedAt) continue
+      const e = parseExtraData(c.extraData)
+      if (e._docSelection !== '1') continue
+      const pid = e._docParagraphId as string | undefined
+      if (!pid) continue
+      const ctx = firstContextOf(c)
+      if (ctx) byPid.set(pid, contextColor(ctx.id))
+    }
+    wrap.querySelectorAll<HTMLElement>('[data-pid]').forEach(el => {
+      const pid = el.getAttribute('data-pid')
+      const color = pid ? byPid.get(pid) : null
+      if (color) { el.style.setProperty('--cite-color', color); el.classList.add('doc-para--cited') }
+      else { el.classList.remove('doc-para--cited'); el.style.removeProperty('--cite-color') }
+    })
+  })
+
+  // Volver al párrafo exacto de una cita: scroll + resalte breve (disparado
+  // desde V2DetailView.tsx, botón «Ir a la nota» de una cita).
+  useEffect(() => {
+    const h = (e: Event) => {
+      const d = (e as CustomEvent<{ nodeId?: string; pid?: string }>).detail
+      if (!d?.nodeId || d.nodeId !== node.id || !d.pid) return
+      const el = contentWrapRef.current?.querySelector<HTMLElement>(`[data-pid="${d.pid}"]`)
+      if (!el) return
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('doc-para--flash')
+      setTimeout(() => el.classList.remove('doc-para--flash'), 1600)
+    }
+    window.addEventListener('from:scroll-to-paragraph', h as EventListener)
+    return () => window.removeEventListener('from:scroll-to-paragraph', h as EventListener)
+  }, [node.id])
+
   // ── Paso 2: sincroniza las CASILLAS del texto con tareas-From REALES ──────────
   // Cada `taskItem` ↔ un nodo-tarea hijo del `_doc` (con `_taskEmbed='1'`), status según
   // la casilla. Idempotente y anti-duplicación: reconcilia por `dataNodeId` (actualiza si
@@ -353,6 +457,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       // En la página en solitario de un documento sí ayuda, se mantiene.
       Placeholder.configure({ placeholder: compact ? '' : 'Escribe tu documento…' }),
       Image.configure({ inline: false, allowBase64: false }),
+      ParagraphId,
     ],
     content: node.body || '',
     // Por defecto: compact (tarjeta del lienzo) autoenfoca al montar; NO-compact (página en
@@ -382,6 +487,22 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       // del lienzo y en el panel derecho — consistencia total.
     },
     onTransaction: () => notifyDocEditor(),
+    // Documentos ya existentes (creados antes de ParagraphId) no tienen `pid` en
+    // ningún párrafo — el plugin de la extensión solo asigna ids en transacciones
+    // que YA cambian el doc, así que un documento abierto sin tocar se quedaría
+    // sin anclas para siempre. Backfill único al crear el editor.
+    onCreate: ({ editor: ed }) => {
+      const types = ['paragraph', 'heading', 'blockquote']
+      let tr = ed.state.tr
+      let changed = false
+      ed.state.doc.descendants((n, pos) => {
+        if (types.includes(n.type.name) && !n.attrs.pid) {
+          tr = tr.setNodeMarkup(pos, undefined, { ...n.attrs, pid: genPid() })
+          changed = true
+        }
+      })
+      if (changed) { tr.setMeta('addToHistory', false); ed.view.dispatch(tr) }
+    },
     editorProps: {
       // Pegar / soltar imágenes → subir a R2 e insertar.
       handlePaste: (_v, e) => {
@@ -531,8 +652,24 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
           </div>
         </BubbleMenu>
       )}
-      <div onClick={onContentClick}>
+      <div ref={contentWrapRef} style={{ position: 'relative' }} onClick={onContentClick}
+        onMouseMove={onContentMouseMove} onMouseLeave={() => setCiteHover(null)}>
         <EditorContent editor={editor} />
+        {/* «?» flotante al pasar el ratón por un párrafo — asigna ESE párrafo a
+            un contexto (mismo patrón que RowContextChip). */}
+        {citeHover && !citePicker && (
+          <button className="doc-cite-btn" style={{ top: citeHover.top }}
+            onMouseDown={e => e.preventDefault()}
+            onClick={e => openCitePicker(e, citeHover.pid)}
+            title={t('v2.assignParagraphToContext', 'Asignar este párrafo a un contexto')}>?</button>
+        )}
+        {citePicker && createPortal((
+          <div ref={citePickerRef} className="ctx-pick"
+            style={{ position: 'fixed', ...(citePicker.up ? { bottom: citePicker.y } : { top: citePicker.y }), left: citePicker.x, zIndex: 3000 }}
+            onClick={e => e.stopPropagation()}>
+            <ContextPicker currentId={null} onPick={id => { if (id) createCitation(citePicker.pid, id); setCitePicker(null) }} />
+          </div>
+        ), document.body)}
       </div>
       {editor && <DocMention editor={editor} selfId={node.id} />}
 

@@ -29,7 +29,7 @@ import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../view
 import type { FilterView } from '../views/FilterResultsView'
 import PizarraThumbnail from '../views/PizarraThumbnail'
 
-export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'dia'
+export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'dia' | 'cita'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; ctxId: string | null; due?: string | null; status?: string | null }
@@ -56,6 +56,7 @@ function classify(n: Node): ElemKind | null {
   if (e._containerNotes === '1') return null   // espacio de notas libres (estructural, no un elemento)
   if (isContextKnowledge(n.text)) return null  // 🧠 Memoria del contexto — estructural, no un elemento suelto
   if (e._pdfSelection != null) return 'highlight'   // subrayado guardado de un PDF (cita)
+  if (e._docSelection != null) return 'cita'        // párrafo de otra nota asignado a este contexto
   if (e._agentDef === '1') return 'agent'           // agente (v2: puede colgar de cualquier contexto)
   if (e._promptDef === '1') return 'prompt'         // prompt (v2: puede colgar de cualquier contexto)
   if (isMarkedContext(n)) return 'context'
@@ -91,7 +92,7 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
   return true
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', canvas: '🎨', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡', dia: '🗓️' }
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', canvas: '🎨', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡', dia: '🗓️', cita: '🔖' }
 const ROW_H = 46
 const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
 const ELEMENTS_SORT_KEY = 'from_v2_elements_sort'
@@ -272,6 +273,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     { key: 'link',    label: t('elements.links') },
     { key: 'pdf',     label: t('elements.pdfs') },
     { key: 'highlight', label: '🖍️ ' + t('elements.highlights', 'Subrayados') },
+    { key: 'cita',    label: '🔖 ' + t('elements.citas', 'Citas') },
     { key: 'image',   label: t('elements.images') },
     { key: 'context', label: t('elements.contexts') },
     { key: 'dia',     label: '🗓️ ' + t('elements.days', 'Días') },

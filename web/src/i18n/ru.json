@@ -2335,5 +2335,10 @@
   "settingsView.colorAubergine": "Баклажан",
   "settingsView.colorOchre": "Охра",
   "settingsView.colorWine": "Вино",
-  "settingsView.colorPetrol": "Петроль"
+  "settingsView.colorPetrol": "Петроль",
+  "v2.assignParagraphToContext": "Назначить этот абзац контексту",
+  "v2.citationSaved": "Абзац назначен контексту",
+  "v2.citation": "Цитата",
+  "v2.citation.goToSource": "Перейти к заметке",
+  "elements.citas": "Цитаты"
 }

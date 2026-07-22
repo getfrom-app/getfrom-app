@@ -7,7 +7,7 @@ import { isDocNode } from '../utils/docNode'
 import { isContextKnowledge } from '../utils/knowledgeNodes'
 import type { Node } from '../types'
 
-export type ElKind = 'document' | 'note' | 'pdf' | 'image' | 'link' | 'audio' | 'highlight'
+export type ElKind = 'document' | 'note' | 'pdf' | 'image' | 'link' | 'audio' | 'highlight' | 'cita'
 
 // PDF antiguos: los recursos subidos ANTES de guardar `_resourceType:'pdf'` no llevan
 // el tipo → sin esto abrirían como «Enlace» en vez de con el visor. Detectamos también
@@ -49,6 +49,10 @@ export function classifyElement(n: Node): { kind: ElKind; icon: string; label: s
   if (e._containerNotes === '1') return null                   // espacio de notas libres (no es un elemento)
   if (isContextKnowledge(n.text)) return null                  // 🧠 Memoria del contexto (no es un elemento)
   if (e._pdfSelection != null) return { kind: 'highlight', icon: '🖍️', label: 'Subrayado' }
+  // Cita de un párrafo de OTRA nota, asignada a este contexto (ver DocEditor.tsx,
+  // «?» al pasar el ratón). Mismo patrón que el subrayado de PDF, pero la fuente
+  // es un documento propio, no un PDF — su propio tipo para no confundirlos.
+  if (e._docSelection != null) return { kind: 'cita', icon: '🔖', label: 'Cita' }
   if (n.status != null || (n.types || []).includes('tarea')) return null   // tarea
   if (n.isEvent || (n.types || []).includes('evento')) return null         // evento
 

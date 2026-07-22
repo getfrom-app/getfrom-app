@@ -272,6 +272,40 @@ function V2ResourceView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: s
   )
 }
 
+// CITA de un párrafo de otra nota (extraData._docSelection='1', ver DocEditor.tsx
+// «?» al pasar el ratón sobre un párrafo). Encima del cuerpo normal de la nota
+// (V2NoteBody — deja editar/borrar/exportar la cita igual que cualquier nota),
+// un enlace «Ir a la nota» que abre el documento ORIGEN y salta exactamente al
+// párrafo citado (con ancla — `from:scroll-to-paragraph`, no solo abre el
+// documento entero — Alberto, 22 jul: "hazlo con ancla, hazlo completo").
+function V2CitationView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: string) => void }) {
+  const { t } = useTranslation()
+  const e = parseExtraData(node.extraData)
+  const sourceId = e._docSourceId as string | undefined
+  const pid = e._docParagraphId as string | undefined
+  const source = sourceId ? store.getNode(sourceId) : null
+  const goToSource = () => {
+    if (!sourceId) return
+    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: sourceId } }))
+    if (pid) setTimeout(() => window.dispatchEvent(new CustomEvent('from:scroll-to-paragraph', { detail: { nodeId: sourceId, pid } })), 300)
+  }
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+      <div className="v2-note-toolbar">
+        <span className="v2-section-label" style={{ padding: 0 }}>🔖 {t('v2.citation', 'Cita')}</span>
+        {source && (
+          <button className="v2-head-action" style={{ marginLeft: 'auto' }} onClick={goToSource}>
+            {t('v2.citation.goToSource', 'Ir a la nota')} — {source.text || t('common.noTitle')} ›
+          </button>
+        )}
+      </div>
+      <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+        <V2NoteBody node={node} onSelectCtx={onSelectCtx} hideToolbar={false} />
+      </div>
+    </div>
+  )
+}
+
 export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFiltered }: { nodeId: string; onSelectCtx: (id: string) => void; onOpenElementsFiltered?: (kind: 'agent' | 'prompt') => void }) {
   useStore()
   const { t } = useTranslation()
@@ -313,5 +347,7 @@ export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFilter
   // TAREA/EVENTO: NUNCA como documento genérico — antes caía aquí abajo (V2NoteBody)
   // con body vacío y el DocEditor le pisaba el título con «Documento» al guardar.
   if (node.status != null || node.isEvent) return <V2TaskDetailView node={node} onSelectCtx={onSelectCtx} />
+  // CITA de un párrafo de otra nota — vista propia con «Ir a la nota» (ver arriba).
+  if (ed._docSelection != null) return <V2CitationView node={node} onSelectCtx={onSelectCtx} />
   return <V2NoteBody node={node} onSelectCtx={onSelectCtx} />
 }

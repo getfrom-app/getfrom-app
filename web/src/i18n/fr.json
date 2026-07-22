@@ -2335,5 +2335,10 @@
   "settingsView.colorAubergine": "Aubergine",
   "settingsView.colorOchre": "Ocre",
   "settingsView.colorWine": "Vin",
-  "settingsView.colorPetrol": "Pétrole"
+  "settingsView.colorPetrol": "Pétrole",
+  "v2.assignParagraphToContext": "Attribuer ce paragraphe à un contexte",
+  "v2.citationSaved": "Paragraphe attribué au contexte",
+  "v2.citation": "Citation",
+  "v2.citation.goToSource": "Aller à la note",
+  "elements.citas": "Citations"
 }
