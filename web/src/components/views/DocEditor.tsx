@@ -222,7 +222,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // párrafo") y desde la cita se vuelve exactamente a ese párrafo, con ancla,
   // no solo se abre el documento entero ("hazlo con ancla, hazlo completo").
   const contentWrapRef = useRef<HTMLDivElement>(null)
-  const [citeHover, setCiteHover] = useState<{ pid: string; top: number } | null>(null)
+  const [citeHover, setCiteHover] = useState<{ pid: string; top: number; left: number } | null>(null)
   const [citePicker, setCitePicker] = useState<{ pid: string; x: number; y: number; up: boolean } | null>(null)
   const citePickerRef = useRef<HTMLDivElement>(null)
 
@@ -247,14 +247,43 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     return null
   }
 
+  // Posición justo DESPUÉS del último carácter visible del párrafo (estilo Tana:
+  // el icono va pegado al final del texto de la línea, no clavado al margen
+  // derecho del documento entero — Alberto, 22 jul). `Range` sobre el último
+  // nodo de texto para medir dónde termina realmente la línea visual (con
+  // wrap, la última línea puede no llegar al borde del párrafo).
+  const endOfTextPosition = (el: HTMLElement, wrap: HTMLElement) => {
+    const wrapRect = wrap.getBoundingClientRect()
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    let lastText: Text | null = null
+    let n: Node | null
+    while ((n = walker.nextNode())) { if (n.textContent) lastText = n as Text }
+    if (lastText) {
+      const range = document.createRange()
+      range.selectNodeContents(lastText)
+      const rects = range.getClientRects()
+      const r = rects[rects.length - 1]
+      if (r) return { top: r.top - wrapRect.top, left: r.right - wrapRect.left + 6 }
+    }
+    const r = el.getBoundingClientRect()
+    return { top: r.top - wrapRect.top, left: r.left - wrapRect.left + 6 }
+  }
+
   const onContentMouseMove = (e: React.MouseEvent) => {
     if (citePicker) return
+    // El botón flotante vive FUERA del párrafo en el DOM (hermano, no
+    // descendiente) — sin este corte, en cuanto el ratón lo tocaba,
+    // `.closest('[data-pid]')` fallaba, se escondía, y al siguiente frame el
+    // ratón volvía a estar "sobre" el párrafo de debajo → reaparecía →
+    // parpadeo infinito (Alberto, 22 jul: "parpadea muy rápidamente"). Estar
+    // sobre el propio botón cuenta como seguir sobre el párrafo.
+    if ((e.target as HTMLElement).closest('.doc-cite-btn')) return
     const wrap = contentWrapRef.current
     const target = (e.target as HTMLElement).closest('[data-pid]') as HTMLElement | null
     if (!target || !wrap) { setCiteHover(null); return }
     const pid = target.getAttribute('data-pid')
     if (!pid) { setCiteHover(null); return }
-    setCiteHover({ pid, top: target.getBoundingClientRect().top - wrap.getBoundingClientRect().top })
+    setCiteHover({ pid, ...endOfTextPosition(target, wrap) })
   }
 
   const openCitePicker = (e: React.MouseEvent, pid: string) => {
@@ -588,7 +617,18 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     // tras el backfill de `pid` (más abajo, `onCreate`) o cualquier transacción
     // que cambie pids, recalcula el mapa contra los pids VIGENTES sin esperar
     // al siguiente render de React. `lastCiteSigRef` evita dispatch redundantes.
-    onTransaction: () => { notifyDocEditor(); applyCiteIndicators() },
+    // Si el doc cambió (escribir, Enter…) el botón de hover queda obsoleto —
+    // su posición y su pid se calcularon para un párrafo que puede haber
+    // cambiado de alto/vecinos; sin este reset, mostraba el contexto del
+    // párrafo VIEJO sobre el sitio donde ahora hay uno nuevo (Alberto, 22 jul:
+    // "se pone el mismo contexto en todas las líneas... por defecto, no
+    // debería haber ningún contexto"). Se recalcula limpio en el próximo
+    // mousemove real.
+    onTransaction: ({ transaction }) => {
+      notifyDocEditor()
+      applyCiteIndicators()
+      if (transaction.docChanged) setCiteHover(null)
+    },
     // Documentos ya existentes (creados antes de ParagraphId) no tienen `pid` en
     // ningún párrafo — el plugin de la extensión solo asigna ids en transacciones
     // que YA cambian el doc, así que un documento abierto sin tocar se quedaría
@@ -761,12 +801,12 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
           const existing = findCitationForPid(citeHover.pid)
           const existingCtx = existing ? firstContextOf(existing.node) : null
           return existingCtx ? (
-            <button className="doc-cite-btn doc-cite-btn--assigned" style={{ top: citeHover.top, ['--chip' as string]: contextColor(existingCtx.id) }}
+            <button className="doc-cite-btn doc-cite-btn--assigned" style={{ top: citeHover.top, left: citeHover.left, ['--chip' as string]: contextColor(existingCtx.id) }}
               onMouseDown={e => e.preventDefault()}
               onClick={e => openCitePicker(e, citeHover.pid)}
               title={t('v2.changeContext', 'Cambiar contexto')}>{existingCtx.text}</button>
           ) : (
-            <button className="doc-cite-btn" style={{ top: citeHover.top }}
+            <button className="doc-cite-btn" style={{ top: citeHover.top, left: citeHover.left }}
               onMouseDown={e => e.preventDefault()}
               onClick={e => openCitePicker(e, citeHover.pid)}
               title={t('v2.assignParagraphToContext', 'Asignar este párrafo a un contexto')}>?</button>
