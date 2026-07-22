@@ -47,11 +47,17 @@ function EditableTitle({ nodeId }: { nodeId: string }) {
   )
 }
 
-export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElementsFiltered }: {
+export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElementsFiltered, hideBack }: {
   nodeId: string
   onClose: () => void
   onSelectCtx: (id: string) => void
   onOpenElementsFiltered?: (kind: ElemKind) => void
+  /** El espacio central sustituye, no apila — no hay «atrás» al que volver
+   *  (la siguiente navegación ya reemplaza esto). En la columna derecha
+   *  (tab Detalles) sí hace falta: cierra el artifact y descubre el chat
+   *  debajo (Alberto, 22 jul: "cada vez que se abre algo, se sustituye lo
+   *  que había... no es necesario que haya un botón atrás"). */
+  hideBack?: boolean
 }) {
   useStore()
   const { t, i18n } = useTranslation()
@@ -66,7 +72,7 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
     <div className="v2-right-fill">
       <div className="v2-detail-head">
         <div className="v2-detail-head-top">
-          <button className="v2-iconbtn" onClick={onClose} title={t('v2.rightColumn.back', 'Volver')}>‹</button>
+          {!hideBack && <button className="v2-iconbtn" onClick={onClose} title={t('v2.rightColumn.back', 'Volver')}>‹</button>}
           <EditableTitle nodeId={nodeId} />
           {isResourceLike && node && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>

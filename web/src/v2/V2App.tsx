@@ -128,6 +128,14 @@ export default function V2App() {
   // creando/usando (la excepción explícita que pidió mantener en la columna
   // derecha).
   const [centerElementId, setCenterElementId] = useState<string | null>(null)
+  // Ir a la tab Agenda siempre reabre el planificador en el centro, aunque
+  // hubiera un elemento abierto (p.ej. la nota del día) — la navegación es de
+  // SUSTITUCIÓN, no de pila (Alberto, 22 jul: "cada vez que se abre algo, se
+  // sustituye lo que había... estando la nota del día abierta, cuando vuelvo
+  // a la tab agenda, debería volverse a abrir el planner").
+  useEffect(() => {
+    if (rightMode === 'hoy') setCenterElementId(null)
+  }, [rightMode])
   // Ajustes a pantalla completa: null = modo normal; si no, la pestaña activa.
   // Sustituye al modal — nav a la izquierda (donde van los contextos), contenido
   // al centro, columna derecha vacía.
@@ -690,7 +698,7 @@ export default function V2App() {
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
       <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
       {centerElementId ? (
-        <V2ElementView nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
+        <V2ElementView nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideBack />
       ) : showProfile ? (
         <V2ProfileView onClose={() => setShowProfile(false)} />
       ) : (
