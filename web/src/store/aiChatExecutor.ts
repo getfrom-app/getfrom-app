@@ -46,13 +46,14 @@ function resolveActiveContextId(currentNodeId?: string): string | null {
 export async function executeChatAction(
   action: Record<string, unknown>,
   sessionId: string,
-  currentNodeId?: string   // fallback parent cuando el AI no especifica parent_id
+  currentNodeId?: string,  // fallback parent cuando el AI no especifica parent_id
+  userText?: string        // mensaje ORIGINAL del usuario (fallback de recurrencia en create_task)
 ): Promise<ExecutedAction> {
   const name = (action.action as string) || ''
   switch (name) {
     case 'create_note':    return createNote(action, sessionId, currentNodeId)
     case 'create_document':return createDocument(action, sessionId, currentNodeId)
-    case 'create_task':    return createTask(action, sessionId, currentNodeId)
+    case 'create_task':    return createTask(action, sessionId, currentNodeId, userText)
     case 'create_context': return createContextAction(action)
     case 'create_agent':   return createAgentAction(action, sessionId, currentNodeId)
     case 'update_agent':   return updateAgentAction(action)
@@ -178,7 +179,7 @@ function createDocument(a: Record<string, unknown>, sessionId?: string, currentN
   return result('create_document', true, `Documento «${title}» creado.`, [created.id])
 }
 
-function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
+function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string, userText?: string): ExecutedAction {
   const rawTitle = (a.text as string) || 'Tarea'
   // El esquema de create_task que maneja el modelo no tiene un campo de
   // recurrencia propio — sin este parseo (idéntico al de captureHelper.
@@ -190,6 +191,14 @@ function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeI
   const text = cleanNodeTitle(dp ? dp.cleanText : rawTitle)
   const tags = (a.tags as string[]) || []
   const due = parseDate(a.due) ?? (dp?.parsed.date ? dp.parsed.date.toISOString() : undefined)
+  // Respaldo de recurrencia: el modelo suele LIMPIAR la frase de recurrencia
+  // del título antes de devolverlo (calcula el `due` él mismo y no deja
+  // rastro en `text`) — verificado en vivo: "revisar factura de la luz cada
+  // 3 meses" volvía con text="Revisar factura de la luz" y el propio Magic
+  // avisando "cuando la completes, reprograma la siguiente" (o sea, SIN
+  // recurrencia real). Como último recurso, se busca la frase en el MENSAJE
+  // ORIGINAL del usuario — nunca se usa su fecha/título, solo la recurrencia.
+  const recurrence = dp?.parsed.recurrence ?? (userText ? extractDateFromEnd(userText)?.parsed.recurrence : undefined)
   const priority = a.priority as string | undefined
   // Validar parent_id: solo usarlo si es un UUID real que existe en el store
   const rawParent = (a.parent_id as string | undefined) || null
@@ -212,7 +221,7 @@ function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeI
   const updates: Record<string, unknown> = { status: 'pending' }
   if (due) updates.due = due
   if (priority) updates.priority = priority
-  if (dp?.parsed.recurrence) updates.recurrence = recurrenceToString(dp.parsed.recurrence)
+  if (recurrence) updates.recurrence = recurrenceToString(recurrence)
   store.updateNode(created.id, updates)
   // Contexto explícito: una tarea con `due` futuro cuelga del diario de ese día
   // (árbol completamente separado del de contextos), así que heredar por

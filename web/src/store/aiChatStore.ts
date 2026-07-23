@@ -497,7 +497,7 @@ class AIChatStore {
               })
             }
           }
-          const result = await executeChatAction(a, sid, currentNodeId)
+          const result = await executeChatAction(a, sid, currentNodeId, text)
           writeResults.push(result)
           // Recopilar IDs creados
           if (result.createdIds) undoBundle.createdIds.push(...result.createdIds)
