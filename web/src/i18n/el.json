@@ -2349,5 +2349,6 @@
   "tip.recMonthlyEveryN": "κάθε {{n}} μήνες",
   "tip.recYearlyEveryN": "κάθε {{n}} χρόνια",
   "v2.createDocFromSelection": "Δημιουργία εγγράφου από αυτή την επιλογή",
-  "v2.docCreatedFromSelection": "Το έγγραφο «{{title}}» δημιουργήθηκε"
+  "v2.docCreatedFromSelection": "Το έγγραφο «{{title}}» δημιουργήθηκε",
+  "elements.agentsDisabledHint": "Οι προκαθορισμένοι πράκτορες έρχονται απενεργοποιημένοι από προεπιλογή. Άνοιξέ τον και ενεργοποίησε τον διακόπτη Κατάστασης, ή πάτησε ▶ Εκτέλεση για να τον δοκιμάσεις πρώτα."
 }

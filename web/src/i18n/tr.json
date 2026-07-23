@@ -2349,5 +2349,6 @@
   "tip.recMonthlyEveryN": "her {{n}} ayda bir",
   "tip.recYearlyEveryN": "her {{n}} yılda bir",
   "v2.createDocFromSelection": "Bu seçimden belge oluştur",
-  "v2.docCreatedFromSelection": "\"{{title}}\" belgesi oluşturuldu"
+  "v2.docCreatedFromSelection": "\"{{title}}\" belgesi oluşturuldu",
+  "elements.agentsDisabledHint": "Önceden tanımlı ajanlar varsayılan olarak devre dışıdır. Birini açıp Durum düğmesini etkinleştirin veya önce denemek için ▶ Çalıştır'a dokunun."
 }

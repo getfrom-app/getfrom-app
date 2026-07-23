@@ -2349,5 +2349,6 @@
   "tip.recMonthlyEveryN": "every {{n}} months",
   "tip.recYearlyEveryN": "every {{n}} years",
   "v2.createDocFromSelection": "Create document from this selection",
-  "v2.docCreatedFromSelection": "Document \"{{title}}\" created"
+  "v2.docCreatedFromSelection": "Document \"{{title}}\" created",
+  "elements.agentsDisabledHint": "Predefined agents come disabled by default. Open one and toggle Status to activate it, or tap ▶ Run to try it first."
 }

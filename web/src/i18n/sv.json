@@ -2349,5 +2349,6 @@
   "tip.recMonthlyEveryN": "var {{n}}:e månad",
   "tip.recYearlyEveryN": "var {{n}}:e år",
   "v2.createDocFromSelection": "Skapa dokument från det markerade",
-  "v2.docCreatedFromSelection": "Dokumentet \"{{title}}\" har skapats"
+  "v2.docCreatedFromSelection": "Dokumentet \"{{title}}\" har skapats",
+  "elements.agentsDisabledHint": "Fördefinierade agenter är avaktiverade som standard. Öppna en och slå på statusreglaget, eller tryck på ▶ Kör för att prova den först."
 }

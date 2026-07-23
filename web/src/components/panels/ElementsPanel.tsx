@@ -448,6 +448,11 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             </button>
           </div>
         )}
+        {filter === 'agent' && (
+          <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.4, color: 'var(--text-tertiary,#999)' }}>
+            {t('elements.agentsDisabledHint', 'Los agentes predefinidos vienen desactivados. Ábrelos y activa el interruptor de Estado, o pulsa ▶ Ejecutar para probarlos primero.')}
+          </div>
+        )}
         {showTaskSub && (
           <div className="el-filterbar" style={{ marginTop: 4 }}>
             {SUB_CHIPS.map(c => {

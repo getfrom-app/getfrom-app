@@ -2349,5 +2349,6 @@
   "tip.recMonthlyEveryN": "alle {{n}} Monate",
   "tip.recYearlyEveryN": "alle {{n}} Jahre",
   "v2.createDocFromSelection": "Dokument aus dieser Auswahl erstellen",
-  "v2.docCreatedFromSelection": "Dokument „{{title}}\" erstellt"
+  "v2.docCreatedFromSelection": "Dokument „{{title}}\" erstellt",
+  "elements.agentsDisabledHint": "Vordefinierte Agenten sind standardmäßig deaktiviert. Öffne einen und aktiviere den Status-Schalter, oder tippe auf ▶ Ausführen, um ihn zuerst auszuprobieren."
 }

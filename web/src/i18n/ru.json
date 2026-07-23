@@ -2349,5 +2349,6 @@
   "tip.recMonthlyEveryN": "каждые {{n}} месяцев",
   "tip.recYearlyEveryN": "каждые {{n}} лет",
   "v2.createDocFromSelection": "Создать документ из выделенного текста",
-  "v2.docCreatedFromSelection": "Документ «{{title}}» создан"
+  "v2.docCreatedFromSelection": "Документ «{{title}}» создан",
+  "elements.agentsDisabledHint": "Предустановленные агенты по умолчанию отключены. Откройте нужного и включите переключатель Статус, либо нажмите ▶ Выполнить, чтобы сначала попробовать."
 }

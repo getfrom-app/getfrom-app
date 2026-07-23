@@ -2349,5 +2349,6 @@
   "tip.recMonthlyEveryN": "elke {{n}} maanden",
   "tip.recYearlyEveryN": "elke {{n}} jaar",
   "v2.createDocFromSelection": "Document maken van deze selectie",
-  "v2.docCreatedFromSelection": "Document \"{{title}}\" aangemaakt"
+  "v2.docCreatedFromSelection": "Document \"{{title}}\" aangemaakt",
+  "elements.agentsDisabledHint": "Vooraf gedefinieerde agenten zijn standaard uitgeschakeld. Open er een en zet de statusschakelaar aan, of tik op ▶ Uitvoeren om hem eerst te proberen."
 }

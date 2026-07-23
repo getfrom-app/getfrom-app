@@ -457,7 +457,9 @@ export function ensureAgentesNode(): void {
         _agentIcon:           def.icon,
         _agentSystemPrompt:   def.systemPrompt,
         _agentUserMessage:    userMsg,
-        _agentEnabled:        'true',
+        // Los predefinidos se siembran DESACTIVADOS: el usuario los activa a
+        // propósito desde sus Propiedades (Alberto, 23 jul).
+        _agentEnabled:        'false',
         _agentSchedule:       def.schedule ?? '',
         _agentConversational: def.conversational ? '1' : '',
       }),

@@ -2349,5 +2349,6 @@
   "tip.recMonthlyEveryN": "co {{n}} miesięcy",
   "tip.recYearlyEveryN": "co {{n}} lat",
   "v2.createDocFromSelection": "Utwórz dokument z tego zaznaczenia",
-  "v2.docCreatedFromSelection": "Utworzono dokument „{{title}}\""
+  "v2.docCreatedFromSelection": "Utworzono dokument „{{title}}\"",
+  "elements.agentsDisabledHint": "Predefiniowani agenci są domyślnie wyłączeni. Otwórz jednego i przełącz Status, albo dotknij ▶ Uruchom, aby najpierw go wypróbować."
 }
