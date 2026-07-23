@@ -2347,5 +2347,7 @@
   "tip.recDailyEveryN": "tous les {{n}} jours",
   "tip.recWeeklyEveryN": "toutes les {{n}} semaines",
   "tip.recMonthlyEveryN": "tous les {{n}} mois",
-  "tip.recYearlyEveryN": "tous les {{n}} ans"
+  "tip.recYearlyEveryN": "tous les {{n}} ans",
+  "v2.createDocFromSelection": "Créer un document avec cette sélection",
+  "v2.docCreatedFromSelection": "Document « {{title}} » créé"
 }

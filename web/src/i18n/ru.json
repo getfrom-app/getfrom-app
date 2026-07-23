@@ -2347,5 +2347,7 @@
   "tip.recDailyEveryN": "каждые {{n}} дней",
   "tip.recWeeklyEveryN": "каждые {{n}} недель",
   "tip.recMonthlyEveryN": "каждые {{n}} месяцев",
-  "tip.recYearlyEveryN": "каждые {{n}} лет"
+  "tip.recYearlyEveryN": "каждые {{n}} лет",
+  "v2.createDocFromSelection": "Создать документ из выделенного текста",
+  "v2.docCreatedFromSelection": "Документ «{{title}}» создан"
 }

@@ -2347,5 +2347,7 @@
   "tip.recDailyEveryN": "her {{n}} günde bir",
   "tip.recWeeklyEveryN": "her {{n}} haftada bir",
   "tip.recMonthlyEveryN": "her {{n}} ayda bir",
-  "tip.recYearlyEveryN": "her {{n}} yılda bir"
+  "tip.recYearlyEveryN": "her {{n}} yılda bir",
+  "v2.createDocFromSelection": "Bu seçimden belge oluştur",
+  "v2.docCreatedFromSelection": "\"{{title}}\" belgesi oluşturuldu"
 }

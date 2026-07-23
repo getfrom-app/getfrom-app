@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEditor, EditorContent, BubbleMenu, ReactNodeViewRenderer } from '@tiptap/react'
+import { DOMSerializer } from '@tiptap/pm/model'
 import StarterKit from '@tiptap/starter-kit'
 import Underline from '@tiptap/extension-underline'
 import Link from '@tiptap/extension-link'
@@ -517,6 +518,61 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     }
   }
 
+  // Primera FRASE del texto (hasta el primer . ! ? o salto de línea) — título
+  // del documento nuevo. Distinto de `firstLineTitle`: ese coge la 1ª LÍNEA
+  // completa, esto la 1ª frase (puede haber varias frases en una sola línea).
+  const firstSentence = (text: string): string => {
+    const trimmed = text.trim()
+    const m = /^[^.!?\n]+[.!?]?/.exec(trimmed)
+    return (m ? m[0] : trimmed).trim().slice(0, 120)
+  }
+
+  // «Crear documento» desde el texto seleccionado (menú flotante): MUEVE el
+  // fragmento seleccionado — no lo copia — a un documento nuevo, hijo de este
+  // mismo documento (mismo patrón que una cita), titulado con su primera
+  // frase. Si el fragmento cae bajo un párrafo/heading ya citado o heredando
+  // contexto (mismo criterio que el hover «?»), ese contexto se aplica
+  // también al documento nuevo (Alberto, 22 jul: "si el fragmento de texto
+  // seleccionado tuviera un contexto ya, se le aplicará el mismo contexto al
+  // documento nuevo").
+  const createDocFromSelection = () => {
+    const ed = editorRef.current
+    if (!ed) return
+    const { from, to, empty } = ed.state.selection
+    if (empty) return
+
+    const plainText = ed.state.doc.textBetween(from, to, '\n\n')
+    if (!plainText.trim()) return
+    const slice = ed.state.doc.slice(from, to)
+    const serializer = DOMSerializer.fromSchema(ed.schema)
+    const wrap = document.createElement('div')
+    wrap.appendChild(serializer.serializeFragment(slice.content))
+    const html = wrap.innerHTML
+
+    // Contexto heredado del fragmento: el primer bloque con pid dentro de la
+    // selección, cita propia si la tiene o ancestro (heading/indentación) si no.
+    let contextId: string | null = null
+    ed.state.doc.nodesBetween(from, to, n => {
+      if (contextId) return false
+      const pid = n.attrs?.pid as string | undefined
+      if (!pid) return
+      const cited = findCitationForPid(pid) ?? findAncestorContext(pid)
+      const ctxNode = cited ? firstContextOf(cited.node) : null
+      if (ctxNode) contextId = ctxNode.id
+      return
+    })
+
+    const title = firstSentence(plainText)
+    const created = store.createNode({ text: title, parentId: node.id, extraData: { [DOC]: '1' } })
+    store.updateNode(created.id, { body: html || `<p>${plainText}</p>` })
+    if (contextId) assignContext(created.id, contextId)
+    maybeUpdateContextKnowledge(store.getNode(created.id))
+
+    ed.chain().focus().deleteRange({ from, to }).run()
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.docCreatedFromSelection', 'Documento «{{title}}» creado', { title }), type: 'success' } }))
+    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
+  }
+
   useEffect(() => {
     if (!citePicker) return
     const h = (e: PointerEvent) => {
@@ -914,6 +970,8 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
                 <div className="ft-sep" />
                 <button className="ft-btn" title="Tarea (casilla)" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleTaskList().run() }}><span style={{ fontSize: 12 }}>☑</span></button>
                 <button className="ft-btn" title="Color" onMouseDown={e => { e.preventDefault(); setShowColors(true) }}><span style={{ fontWeight: 700, fontSize: 13, borderBottom: '2.5px solid #ef4444', lineHeight: 1 }}>A</span></button>
+                <div className="ft-sep" />
+                <button className="ft-btn" title={t('v2.createDocFromSelection', 'Crear documento con esta selección')} onMouseDown={e => { e.preventDefault(); createDocFromSelection() }}><span style={{ fontSize: 12 }}>📄</span></button>
               </>
             ) : (
               <div className="ft-color-panel">

@@ -2347,5 +2347,7 @@
   "tip.recDailyEveryN": "var {{n}}:e dag",
   "tip.recWeeklyEveryN": "var {{n}}:e vecka",
   "tip.recMonthlyEveryN": "var {{n}}:e månad",
-  "tip.recYearlyEveryN": "var {{n}}:e år"
+  "tip.recYearlyEveryN": "var {{n}}:e år",
+  "v2.createDocFromSelection": "Skapa dokument från det markerade",
+  "v2.docCreatedFromSelection": "Dokumentet \"{{title}}\" har skapats"
 }

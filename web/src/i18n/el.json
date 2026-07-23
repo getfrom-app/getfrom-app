@@ -2347,5 +2347,7 @@
   "tip.recDailyEveryN": "κάθε {{n}} ημέρες",
   "tip.recWeeklyEveryN": "κάθε {{n}} εβδομάδες",
   "tip.recMonthlyEveryN": "κάθε {{n}} μήνες",
-  "tip.recYearlyEveryN": "κάθε {{n}} χρόνια"
+  "tip.recYearlyEveryN": "κάθε {{n}} χρόνια",
+  "v2.createDocFromSelection": "Δημιουργία εγγράφου από αυτή την επιλογή",
+  "v2.docCreatedFromSelection": "Το έγγραφο «{{title}}» δημιουργήθηκε"
 }

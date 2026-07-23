@@ -2347,5 +2347,7 @@
   "tip.recDailyEveryN": "co {{n}} dni",
   "tip.recWeeklyEveryN": "co {{n}} tygodni",
   "tip.recMonthlyEveryN": "co {{n}} miesięcy",
-  "tip.recYearlyEveryN": "co {{n}} lat"
+  "tip.recYearlyEveryN": "co {{n}} lat",
+  "v2.createDocFromSelection": "Utwórz dokument z tego zaznaczenia",
+  "v2.docCreatedFromSelection": "Utworzono dokument „{{title}}\""
 }
