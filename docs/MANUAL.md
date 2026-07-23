@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 16 julio 2026
+> Web · Mac · iPhone · fromly.app · Última actualización: 23 julio 2026
 
 ---
 
@@ -38,6 +38,19 @@ navegador si algún día quieres repasarlo.
 
 ## Novedades (julio 2026, Fromly 2.0)
 
+- **Crear ya no está en la cabecera del chat**: el botón **＋ Nuevo elemento** de la barra izquierda
+  (bajo "Nueva conversación") y el **"+"** de cada contexto abren el mismo menú — Nota, Tarea,
+  Evento, Lienzo, 📎 Drive, 🎙 Grabar, Subcontexto — así siempre creas dentro del contexto correcto
+  sin depender de qué conversación tengas abierta.
+- **Crear documento desde una selección**: selecciona cualquier texto dentro de una nota y usa el
+  botón 📄 de la barra flotante de formato — el texto seleccionado se convierte en un documento
+  nuevo (título tomado de la primera frase, mismo contexto que la nota de origen) y desaparece del
+  original.
+- **8 agentes de ejemplo, listos pero desactivados**: toda cuenta nueva trae 8 agentes predefinidos
+  (informe de mercado, resumen de prensa, diario, seguimiento de objetivos, check-in de bienestar…)
+  para que veas ejemplos reales sin tener que crearlos desde cero. Vienen **desactivados** — ábrelos
+  desde Elementos → Agentes y activa el interruptor de Estado (o pulsa ▶ Ejecutar para probarlos
+  antes de decidir).
 - **Deshacer al eliminar**: al borrar cualquier nota, tarea o archivo (individual o en bloque desde
   Elementos), el aviso de confirmación incluye un botón "Deshacer" — nada desaparece sin que tengas
   unos segundos para recuperarlo antes de que pase a la papelera de forma silenciosa.
@@ -166,18 +179,29 @@ aprender: escribes como piensas.
   se incorpora a la conversación y queda indexado para preguntarle por su contenido cuando quieras
   (ver «Archivos y RAG» más abajo).
 
-### La cabecera del chat
+### Crear elementos — el botón "+" de la barra de contextos
 
-En la parte superior del chat tienes botones rápidos siempre a mano:
+Crear una nota, tarea, evento o lienzo no depende de tener una conversación abierta: se hace desde
+la **barra izquierda de contextos**.
 
-- **+Nota** — crea un documento nuevo (editor de texto enriquecido).
-- **+Lienzo** — crea un lienzo de dibujo dentro del contexto activo.
-- **+Tarea** — crea una tarea directamente, sin pasar por el chat.
-- **+Evento** — crea un evento con fecha y hora.
-- **Planificador** — abre la vista de calendario (día/semana/mes/año) en la columna derecha.
-- **Grabar** — abre la grabadora de audio (ver «Nota de voz» en la sección de tipos de elemento).
-- **📎 Drive** — abre el selector de Google Drive para adjuntar un archivo directamente a la
-  conversación (requiere haber conectado Google en Ajustes).
+- **＋ Nuevo elemento** (bajo "Nueva conversación", arriba de todo) crea en el contexto que tengas
+  seleccionado en ese momento, o sin contexto si no hay ninguno activo.
+- El **"+"** que aparece al pasar el ratón sobre cualquier contexto de la lista crea directamente
+  dentro de ese contexto, sin necesidad de entrar en él primero.
+
+Ambos abren el mismo menú:
+
+- **📝 Nota** — documento de texto enriquecido.
+- **☑️ Tarea** — tarea directa, sin pasar por el chat.
+- **📅 Evento** — evento con fecha y hora.
+- **🎨 Lienzo** — lienzo de dibujo.
+- **📎 Drive** — selector de Google Drive para adjuntar un archivo (requiere Google conectado en
+  Ajustes).
+- **🎙 Grabar** — abre la grabadora de audio (ver «Nota de voz» en la sección de tipos de elemento).
+- **🗂️ Subcontexto** — crea un proyecto nuevo colgando del contexto sobre el que abriste el menú.
+
+El **Planificador** (vista de calendario día/semana/mes/año) se abre desde la pestaña **Agenda** de
+la columna derecha, no desde el chat.
 
 Junto al campo de escritura, en el propio composer, tienes además:
 
@@ -286,13 +310,19 @@ orden entre última modificación, fecha de creación o título.
 
 Un documento es una nota de texto enriquecido — el mismo editor tipo Notion en cualquier sitio
 donde escribas una nota larga: formato, favoritos, exportar y publicar con una URL pública. Créalo
-con **+Nota** en la cabecera del chat, o pídeselo a la IA ("apúntame esto en una nota"). Pegar
-prosa larga en una conversación también puede convertirse en documento.
+con **📝 Nota** en el menú "+" de un contexto, o pídeselo a la IA ("apúntame esto en una nota").
+Pegar prosa larga en una conversación también puede convertirse en documento.
+
+**Crear documento desde una selección:** selecciona cualquier fragmento de texto dentro de un
+documento y pulsa el botón 📄 de la barra flotante de formato — el texto seleccionado se mueve a un
+documento nuevo (título = primera frase, mismo contexto que el original) y desaparece de la nota de
+origen.
 
 ### Lienzo (Pizarra)
 
 Un lienzo es un espacio de dibujo libre dentro de un contexto — distinto de un documento desde que
-lo creas ("+Lienzo" en la cabecera), no se convierte el uno en el otro después. Útil para bocetar,
+lo creas ("🎨 Lienzo" en el menú "+" de un contexto), no se convierte el uno en el otro después.
+Útil para bocetar,
 tomar notas a mano o organizar visualmente ideas.
 
 **Herramientas básicas:** lápiz, formas (línea, flecha, rectángulo, elipse), texto libre, borrador
@@ -307,7 +337,7 @@ tareas y eventos.
 
 Las tareas tienen un checkbox ☐/☑. Márcala como hecha para archivarla y actualizar su estado.
 
-**Cómo crear una tarea:** con el botón **+Tarea** de la cabecera del chat, o pidiéndoselo a la IA
+**Cómo crear una tarea:** con **☑️ Tarea** en el menú "+" de un contexto, o pidiéndoselo a la IA
 en lenguaje natural ("recuérdame llamar a Ana el lunes"). Fromly interpreta la fecha, la prioridad
 y el contexto directamente de lo que escribes.
 
@@ -376,6 +406,11 @@ informe diario de X") o con **+ Nuevo agente** en la pestaña Elementos (filtra 
 
 **Empiezan desactivados.** Tienes que revisar el prompt generado y activarlo tú mismo antes de que
 corra. El resultado de cada ejecución es un documento real, colgado del contexto del agente.
+
+**Agentes de ejemplo.** Toda cuenta trae 8 agentes predefinidos (📈 Informe de mercado, 📰 Resumen
+de prensa, 🔎 Investigar un tema, 🧾 Resumen de un enlace, 🗓 Revisión semanal, 🌅 Diario, 🎯
+Seguimiento de objetivos, 🧘 Check-in de bienestar) en Elementos → Agentes, también desactivados —
+ábrelos para ver cómo están planteados antes de crear los tuyos propios.
 
 **Horario (schedule):** al abrir la app, diario, semanal o manual (lo ejecutas tú cuando quieras
 con el botón ▶).

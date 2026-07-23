@@ -1,7 +1,44 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-14 (Web v9.6.820)
+> Última actualización: 2026-07-23 (Web v9.6.928)
+
+---
+
+## 🗓️ Sesión 2026-07-23 — Fix crítico key-prop (pérdida de datos), agentes predefinidos, QA en cuenta real
+
+Web **v9.6.916 → v9.6.928**. Log: `logs/2026-07-23.md`.
+
+**🔴 Bug crítico de pérdida de datos, root-caused y arreglado**: `V2ElementView`/`V2RightColumn` no
+llevaban `key={nodeId}` en su punto de render — React reutilizaba la misma instancia al navegar
+entre notas, y `useEditor()` de TipTap se recrea de forma asíncrona (un render por detrás) respecto
+a los props, dejando una ventana en la que `editor` apunta a la nota vieja mientras `node.id`/`body`
+ya son de la nueva. Confirmado en producción: dos notas diarias reales tenían su `body` sobrescrito
+con contenido de otra nota. Fix: `key={centerElementId}` (`v2/V2App.tsx`) y `key={detailNodeId}`
+(`v2/components/V2RightColumn.tsx`). Datos reparados a mano, verificados con `from_search`. Mismo
+bug corrompió 3 agentes predefinidos (instrucción vacía) — reparados con el texto canónico de
+`agentesHelper.ts`.
+
+**Agentes predefinidos**: `ensureAgentesNode()` ahora siembra los 8 predefinidos con
+`_agentEnabled: 'false'` (antes `'true'`) — coherente con los agentes creados por IA, que ya nacían
+desactivados. Nuevo banner en `ElementsPanel.tsx` explicando cómo activarlos.
+
+**Feature nueva**: "Crear documento con esta selección" en `DocEditor.tsx` — `DOMSerializer` de
+TipTap serializa el `Slice` de la selección a HTML real, hereda contexto de la cita/nota de origen.
+
+**Sidebar centraliza creación**: quitada la fila de botones de la cabecera del chat
+(`V2Chat.tsx`) — el menú "+" de `V2Sidebar.tsx` ahora cubre Nota/Tarea/Evento/Lienzo/Drive/Grabar/
+Subcontexto/Nuevo contexto (global).
+
+**IA — contexto y recurrencia en tareas/eventos por chat**: `aiChatExecutor.ts` no asignaba el
+contexto activo ni preservaba recurrencia en lenguaje natural cuando el modelo la limpiaba de su
+propio título — fix en dos capas (título del modelo primero, mensaje original del usuario como
+fallback solo para `.recurrence`).
+
+**Otros fixes**: `window.prompt()` nativo en "Nuevo agente"/"Nuevo prompt" sustituido por
+`NewNamedItemModal.tsx` (no automatizable por script, inconsistente visualmente); chip de
+recurrencia ignoraba el intervalo (`TaskRow.recLabel` reescrito); layout CAL/título en Agenda-Día;
+quitados timestamps y lápiz de contexto en notas diarias.
 
 ---
 
