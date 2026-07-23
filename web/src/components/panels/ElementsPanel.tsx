@@ -25,6 +25,7 @@ import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { createAgentUnder } from '../../utils/agentesHelper'
 import { createPromptUnder } from '../../utils/promptsHelper'
+import NewNamedItemModal from '../modals/NewNamedItemModal'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
 import type { FilterView } from '../views/FilterResultsView'
 import PizarraThumbnail from '../views/PizarraThumbnail'
@@ -296,16 +297,16 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     window.dispatchEvent(new CustomEvent('from:pizarra-flyto', { detail: { nodeId: id } }))
   }
 
-  function createNewAgent() {
-    const name = window.prompt(t('elements.newAgentPrompt', 'Nombre del agente:'))
-    if (!name || !name.trim()) return
-    const created = createAgentUnder({ parentId: null, label: name.trim(), icon: '🤖' })
+  // `window.prompt()` (diálogo nativo) sustituido por un modal propio — no se
+  // puede probar/interactuar con él por script, y desentona con el resto de la
+  // app (Alberto, 23 jul: "detecta fallos de usabilidad, luego repáralos").
+  const [newNamedModal, setNewNamedModal] = useState<'agent' | 'prompt' | null>(null)
+  function createNewAgent(name: string) {
+    const created = createAgentUnder({ parentId: null, label: name, icon: '🤖' })
     open(created.id)
   }
-  function createNewPrompt() {
-    const name = window.prompt(t('elements.newPromptPrompt', 'Nombre del prompt:'))
-    if (!name || !name.trim()) return
-    const created = createPromptUnder({ parentId: null, label: name.trim(), icon: '⚡' })
+  function createNewPrompt(name: string) {
+    const created = createPromptUnder({ parentId: null, label: name, icon: '⚡' })
     open(created.id)
   }
 
@@ -440,7 +441,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
         {(filter === 'agent' || filter === 'prompt') && (
           <div style={{ marginTop: 6 }}>
             <button
-              onClick={filter === 'agent' ? createNewAgent : createNewPrompt}
+              onClick={() => setNewNamedModal(filter === 'agent' ? 'agent' : 'prompt')}
               style={{ display: 'flex', alignItems: 'center', gap: 5, border: '1px dashed var(--border,#e2e2e2)', background: 'transparent', borderRadius: 7, padding: '5px 10px', fontSize: 12.5, fontWeight: 500, color: 'var(--accent,#6c5ce7)', cursor: 'pointer', fontFamily: 'inherit' }}
             >
               + {filter === 'agent' ? t('elements.newAgent', 'Nuevo agente') : t('elements.newPrompt', 'Nuevo prompt')}
@@ -726,6 +727,16 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
         const pn = store.getNode(propsNodeId)
         return pn ? <TaskPropsPopover node={pn} allowRename allowDelete onClose={() => setPropsNodeId(null)} /> : null
       })()}
+
+      {newNamedModal && (
+        <NewNamedItemModal
+          onClose={() => setNewNamedModal(null)}
+          onSubmit={name => (newNamedModal === 'agent' ? createNewAgent(name) : createNewPrompt(name))}
+          icon={newNamedModal === 'agent' ? '🤖' : '⚡'}
+          title={newNamedModal === 'agent' ? t('elements.newAgent', 'Nuevo agente') : t('elements.newPrompt', 'Nuevo prompt')}
+          placeholder={newNamedModal === 'agent' ? t('elements.newAgentPrompt', 'Nombre del agente:') : t('elements.newPromptPrompt', 'Nombre del prompt:')}
+        />
+      )}
     </div>
   )
 }
