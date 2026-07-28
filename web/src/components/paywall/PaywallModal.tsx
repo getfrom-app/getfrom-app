@@ -3,12 +3,22 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUserStore } from '../../store/userStore'
-import { changePlan, getCheckoutUrl } from '../../api/client'
+import { getCheckoutUrl } from '../../api/client'
+import { openUpgradeCheckout } from '../../utils/upgradeCheckout'
+import { openExternalUrl } from '../../utils/openExternal'
 
 const LS_BILLING = 'https://app.lemonsqueezy.com/billing'
 
+export type PaywallReason =
+  | 'node_limit'
+  | 'ai_limit'
+  | 'file_limit'
+  | 'publish_limit'
+  | 'agent_limit'
+  | 'free_chat_limit'
+
 interface Props {
-  reason: 'node_limit' | 'ai_limit'
+  reason: PaywallReason
   onClose: () => void
 }
 
@@ -22,10 +32,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
   async function openSubscriptionCheckout() {
     setLoading(true)
     try {
-      const res = await changePlan()
-      if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
-    } catch {
-      window.open('/pricing', '_blank')
+      await openUpgradeCheckout('subscription')
     } finally {
       setLoading(false)
       onClose()
@@ -36,10 +43,9 @@ export default function PaywallModal({ reason, onClose }: Props) {
     setLoading(true)
     try {
       const url = await getCheckoutUrl('topup', us.user?.id ?? '', us.user?.email ?? '')
-      if (url) window.open(url, '_blank')
-      else window.open(LS_BILLING, '_blank')
+      await openExternalUrl(url || LS_BILLING)
     } catch {
-      window.open(LS_BILLING, '_blank')
+      await openExternalUrl(LS_BILLING)
     } finally {
       setLoading(false)
       onClose()
@@ -61,6 +67,34 @@ export default function PaywallModal({ reason, onClose }: Props) {
     subtitle      = 'Con el plan gratuito puedes tener hasta 1.000 nodos. Suscríbete para tener nodos ilimitados y acceso completo a la IA.'
     primaryLabel  = 'Ver planes'
     primaryAction = () => { onClose(); navigate('/pricing') }
+
+  } else if (reason === 'file_limit') {
+    icon          = '📎'
+    title         = 'Adjuntar archivos requiere Fromly Pro'
+    subtitle      = 'Sube imágenes, PDFs y documentos sin límite con cualquier plan Pro.'
+    primaryLabel  = loading ? '…' : 'Suscribirme ahora'
+    primaryAction = openSubscriptionCheckout
+
+  } else if (reason === 'publish_limit') {
+    icon          = '🔗'
+    title         = 'Publicar notas requiere Fromly Pro'
+    subtitle      = 'Comparte cualquier nota con una URL pública — disponible en los planes Pro.'
+    primaryLabel  = loading ? '…' : 'Suscribirme ahora'
+    primaryAction = openSubscriptionCheckout
+
+  } else if (reason === 'agent_limit') {
+    icon          = '🤖'
+    title         = 'Ya tienes 1 agente activo'
+    subtitle      = 'El plan gratis permite tener 1 agente activo a la vez, para que puedas probarlo. Pásate a Pro para activar todos los que quieras.'
+    primaryLabel  = loading ? '…' : 'Suscribirme ahora'
+    primaryAction = openSubscriptionCheckout
+
+  } else if (reason === 'free_chat_limit') {
+    icon          = '💬'
+    title         = 'Has usado tus 5 chats gratis de este mes'
+    subtitle      = 'El plan gratis incluye 5 conversaciones nuevas de IA al mes. Con Pro tienes IA sin límite.'
+    primaryLabel  = loading ? '…' : 'Suscribirme ahora'
+    primaryAction = openSubscriptionCheckout
 
   } else if (isPremium) {
     // Suscriptor sin tokens
@@ -147,7 +181,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
           {/* Acción secundaria — solo en premium sin tokens */}
           {isPremium && reason === 'ai_limit' && (
             <button
-              onClick={() => { window.open(LS_BILLING, '_blank'); onClose() }}
+              onClick={() => { openExternalUrl(LS_BILLING); onClose() }}
               style={{
                 background: 'var(--bg-secondary)',
                 color: 'var(--text-secondary)',

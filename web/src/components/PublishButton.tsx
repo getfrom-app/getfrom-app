@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Node } from '../types'
 import { publishNodePublicly, unpublishNodePublicly } from '../utils/nodeExport'
+import { userStore } from '../store/userStore'
 
 export default function PublishButton({ node }: { node: Node }) {
   const { t } = useTranslation()
@@ -16,6 +17,13 @@ export default function PublishButton({ node }: { node: Node }) {
   const toast = (message: string) => window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type: 'success' } }))
 
   const doPublish = async () => {
+    // El servidor ya rechaza /notes/publish para free (402 publish_limit) —
+    // esto evita el intento fallido y muestra el paywall en el punto de fricción.
+    if (!userStore.isPremium) {
+      setMenuOpen(false)
+      window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'publish_limit' } }))
+      return
+    }
     setBusy(true)
     try {
       const url = await publishNodePublicly(node)

@@ -6,6 +6,7 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-
 import { store, useStore } from '../../store/nodeStore'
 import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
+import type { PaywallReason } from '../paywall/PaywallModal'
 import { getHotkeyKey } from '../../store/hotkeysStore'
 import StatusBar from './StatusBar'
 import NodeView from '../views/NodeView'
@@ -357,7 +358,7 @@ export default function MainLayout() {
     // Sidebar eliminado — función vacía por compatibilidad
     void e
   }
-  const [paywallReason, setPaywallReason] = useState<'node_limit' | 'ai_limit' | null>(null)
+  const [paywallReason, setPaywallReason] = useState<PaywallReason | null>(null)
   const [showUnifiedCapture, setShowUnifiedCapture] = useState(false)
   const [showNewTask, setShowNewTask] = useState(false)
   const [showNewNote, setShowNewNote] = useState(false)
@@ -815,7 +816,7 @@ export default function MainLayout() {
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const detail = (e as CustomEvent).detail as { reason: 'node_limit' | 'ai_limit' }
+      const detail = (e as CustomEvent).detail as { reason: PaywallReason }
       setPaywallReason(detail.reason)
     }
     window.addEventListener('from:paywall', handler)

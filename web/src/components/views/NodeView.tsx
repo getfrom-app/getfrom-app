@@ -754,7 +754,7 @@ export default function NodeView() {
           resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : undefined
         )
       } catch (err) {
-        if (err instanceof TokensError) { window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'ai_limit' } })) } else if (err instanceof Error && err.message !== 'AI_LIMIT') {
+        if (err instanceof TokensError) { window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: err.reason } })) } else if (err instanceof Error && err.message !== 'AI_LIMIT') {
           console.error('AI inline error', err)
         }
       } finally {
@@ -1425,7 +1425,7 @@ export default function NodeView() {
         resource ? { resourceUrl: resource.url, resourceKind: resource.kind } : undefined
       )
     } catch (err) {
-      if (err instanceof TokensError) { window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'ai_limit' } })) } else if (err instanceof Error && err.message !== 'AI_LIMIT') {
+      if (err instanceof TokensError) { window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: err.reason } })) } else if (err instanceof Error && err.message !== 'AI_LIMIT') {
         console.error('AI inline error', err)
       }
     } finally {

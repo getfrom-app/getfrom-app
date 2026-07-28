@@ -15,6 +15,7 @@ import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextE
 import HotkeysPane from '../settings/HotkeysPane'
 import { getGoogleOAuthUrl, disconnectGoogle } from '../../api/googleCalendar'
 import { downloadFullTextExport } from '../../utils/bulkTextExport'
+import { openExternalUrl } from '../../utils/openExternal'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -138,7 +139,7 @@ export function CuentaPane() {
         const url = user?.email
           ? `${res.checkoutUrl}${res.checkoutUrl.includes('?') ? '&' : '?'}checkout[email]=${encodeURIComponent(user.email)}`
           : res.checkoutUrl
-        window.open(url, '_blank')
+        await openExternalUrl(url)
       }
     } catch (err: unknown) { setSubError(err instanceof Error ? err.message : 'Error') }
     finally { setSubLoading(false) }
@@ -150,7 +151,7 @@ export function CuentaPane() {
     try {
       const res = await cancelSubscription()
       if (res.ok) await userStore.fetchMe()
-      else if (res.billingPortalUrl) window.open(res.billingPortalUrl, '_blank')
+      else if (res.billingPortalUrl) await openExternalUrl(res.billingPortalUrl)
     } catch (err: unknown) { setSubError(err instanceof Error ? err.message : 'Error') }
     finally { setSubLoading(false) }
   }
@@ -159,7 +160,7 @@ export function CuentaPane() {
     setSubError(''); setSubLoading(true)
     try {
       const url = await getBillingPortalUrl()
-      if (url) window.open(url, '_blank')
+      if (url) await openExternalUrl(url)
       else setSubError(t('account.billingUnavailable', 'No hay portal de facturación disponible para esta cuenta.'))
     } catch (err: unknown) { setSubError(err instanceof Error ? err.message : 'Error') }
     finally { setSubLoading(false) }

@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { getToken, setTokens } from './api/client'
 import { store } from './store/nodeStore'
-import { userStore } from './store/userStore'
+import { userStore, useUserStore } from './store/userStore'
+import { openUpgradeCheckout } from './utils/upgradeCheckout'
 import { connectGoogle } from './api/googleCalendar'
 import AuthPage from './components/auth/AuthPage'
 import ForgotPasswordPage from './components/auth/ForgotPasswordPage'
@@ -190,6 +191,33 @@ function usePostCheckoutRefresh() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 }
 
+// Detecta ?upgrade=annual (link de la landing pricing.html, botón Pro Anual —
+// antes apuntaba directo a un checkout de LemonSqueezy con el variant
+// EQUIVOCADO, cobraba como mensual) y arranca el checkout en cuanto haya
+// sesión. Se persiste en localStorage porque un visitante nuevo aterriza
+// primero en login/registro, no en la app — sin esto se perdería la intención
+// al completar el registro.
+const PENDING_UPGRADE_KEY = 'from_pending_upgrade'
+
+function usePendingUpgradeParam() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const u = useUserStore()
+
+  useEffect(() => {
+    if (searchParams.get('upgrade') === 'annual') {
+      localStorage.setItem(PENDING_UPGRADE_KEY, 'annual')
+      setSearchParams(prev => { const p = new URLSearchParams(prev); p.delete('upgrade'); return p }, { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (localStorage.getItem(PENDING_UPGRADE_KEY) === 'annual' && u.user && !u.isPremium) {
+      localStorage.removeItem(PENDING_UPGRADE_KEY)
+      openUpgradeCheckout('annual')
+    }
+  }, [u.user, u.isPremium])
+}
+
 // Sync disparado desde Rust (timer 15s + foco de ventana)
 function useTauriSyncListener() {
   useEffect(() => {
@@ -208,6 +236,7 @@ function AppInner() {
   useDesktopOAuthCallback()
   useTauriSyncListener()
   usePostCheckoutRefresh()
+  usePendingUpgradeParam()
   return (
     <Routes>
       {/* Rutas públicas */}

@@ -4,11 +4,16 @@ const BASE = import.meta.env.DEV
   ? '/api'
   : 'https://from-server-production.up.railway.app'
 
-// ── Error de tokens agotados — se lanza en cualquier respuesta 402 de IA ──
+// ── Error de tokens agotados / cuota gratis agotada — se lanza en cualquier
+// respuesta 402 de IA. `reason` distingue sin-tokens (Pro sin saldo) de la
+// cuota de chat del plan gratis (FREE_CHAT_LIMIT conversaciones/mes) — ambos
+// casos abren el paywall pero con copy distinto (ver PaywallModal).
 export class TokensError extends Error {
-  constructor(message = 'INSUFFICIENT_TOKENS') {
-    super(message)
+  reason: 'ai_limit' | 'free_chat_limit'
+  constructor(reason: 'ai_limit' | 'free_chat_limit' = 'ai_limit') {
+    super('INSUFFICIENT_TOKENS')
     this.name = 'TokensError'
+    this.reason = reason
   }
 }
 
@@ -16,9 +21,12 @@ export class TokensError extends Error {
 export async function assertAIResponse(res: Response): Promise<void> {
   if (res.ok) return
   if (res.status === 402) {
-    // Intentar leer el body para más contexto
-    try { await res.json() } catch { /* ignore */ }
-    throw new TokensError()
+    let reason: 'ai_limit' | 'free_chat_limit' = 'ai_limit'
+    try {
+      const body = await res.json()
+      if (body?.error === 'free_chat_limit') reason = 'free_chat_limit'
+    } catch { /* ignore */ }
+    throw new TokensError(reason)
   }
   throw new Error(`HTTP ${res.status}`)
 }
@@ -170,6 +178,11 @@ export interface UserProfile {
   /** true si la cuenta tiene contraseña (login email). false = solo Google.
    * Determina cómo confirmar acciones sensibles (borrar cuenta). */
   hasPassword?: boolean
+  /** Cuota de chat IA del plan gratis (2.0) — conversaciones nuevas usadas este
+   * mes natural / próximo reseteo / límite. Solo relevante si no es Pro. */
+  freeChatsUsed?: number
+  freeChatsResetAt?: string | null
+  freeChatLimit?: number
 }
 
 export async function getMe(): Promise<{ user: UserProfile }> {
@@ -451,7 +464,7 @@ export async function withTokenGuard<T>(
     return await fn()
   } catch (e) {
     if (e instanceof TokensError) {
-      window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'ai_limit' } }))
+      window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: e.reason } }))
       return null
     }
     throw e  // otros errores siguen propagándose

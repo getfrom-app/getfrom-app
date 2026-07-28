@@ -2,7 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUserStore } from '../../store/userStore'
-import { getToken, changePlan, changePlanAnnual, changePlanLifetime } from '../../api/client'
+import { getToken } from '../../api/client'
+import { openUpgradeCheckout } from '../../utils/upgradeCheckout'
 
 // Pricing rediseñado (jun 2026, v4): toggle FUERA de la caja (encima de Pro) →
 // tarjetas con estructura idéntica y alineadas. Precio en una sola línea.
@@ -25,10 +26,7 @@ export default function PricingView() {
     if (isGuest) { navigate('/register'); return }
     setLoading(true)
     try {
-      const res = annual ? await changePlanAnnual() : await changePlan()
-      if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
-    } catch (err) {
-      console.error('Error al iniciar checkout Pro:', err)
+      await openUpgradeCheckout(annual ? 'annual' : 'subscription')
     } finally {
       setLoading(false)
     }
@@ -38,10 +36,7 @@ export default function PricingView() {
     if (isGuest) { navigate('/register'); return }
     setLoadingLifetime(true)
     try {
-      const res = await changePlanLifetime()
-      if (res.checkoutUrl) window.open(res.checkoutUrl, '_blank')
-    } catch (err) {
-      console.error('Error al iniciar checkout Lifetime:', err)
+      await openUpgradeCheckout('license')
     } finally {
       setLoadingLifetime(false)
     }

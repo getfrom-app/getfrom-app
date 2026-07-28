@@ -651,8 +651,8 @@ class AIChatStore {
   /** Maneja errores de llamadas IA: TokensError → paywall, resto → lastError */
   private _handleAIError(e: unknown) {
     if (e instanceof TokensError) {
-      // Disparar el evento de paywall (MainLayout lo captura y muestra el modal)
-      window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'ai_limit' } }))
+      // Disparar el evento de paywall (MainLayout/V2App lo capturan y muestran el modal)
+      window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: e.reason } }))
       this.lastError = null  // no mostrar el error técnico en el chat
     } else {
       this.lastError = e instanceof Error ? e.message : String(e)

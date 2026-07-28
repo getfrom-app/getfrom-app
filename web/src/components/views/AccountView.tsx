@@ -6,6 +6,7 @@ import { userStore, useUserStore } from '../../store/userStore'
 import { useTheme } from '../../hooks/useTheme'
 import { store } from '../../store/nodeStore'
 import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
+import { openExternalUrl } from '../../utils/openExternal'
 
 export default function AccountView() {
   const { t } = useTranslation()
@@ -186,7 +187,7 @@ AL TERMINAR ("fin"):
         const url = us.user?.email
           ? `${res.checkoutUrl}${res.checkoutUrl.includes('?') ? '&' : '?'}checkout[email]=${encodeURIComponent(us.user.email)}`
           : res.checkoutUrl
-        window.open(url, '_blank')
+        await openExternalUrl(url)
       }
     } catch (err: unknown) {
       setSubError(err instanceof Error ? err.message : t('auth.errorUnknown'))
@@ -201,7 +202,7 @@ AL TERMINAR ("fin"):
     try {
       const res = await cancelSubscription()
       if (!res.ok && res.billingPortalUrl) {
-        window.open(res.billingPortalUrl, '_blank')
+        await openExternalUrl(res.billingPortalUrl)
       } else {
         await userStore.fetchMe()
       }

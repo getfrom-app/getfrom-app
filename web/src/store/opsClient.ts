@@ -230,13 +230,22 @@ class OpsClient {
     if (this.outbox.length === 0) return
     const batch = this.outbox.slice(0, 500)
     try {
-      const res = await apiRequest<{ accepted: number; deduped: number; invalid: number; latestSeq: number }>(
+      const res = await apiRequest<{
+        accepted: number; deduped: number; invalid: number; latestSeq: number
+        invalidDetail?: Array<{ opId?: string; err: string }>
+      }>(
         "/ops/push", { method: "POST", body: JSON.stringify({ ops: batch }) },
       )
       // Procesadas (aceptadas o ya existentes) → quitar del outbox
       this.outbox = this.outbox.slice(batch.length)
       saveOutbox(this.outbox)
       console.log(`[ops] push: +${res.accepted} aceptadas, ${res.deduped} dedupe, ${res.invalid} inválidas, latestSeq=${res.latestSeq}`)
+      // Límite de 1.000 nodos del plan gratis rechazado server-side (creates de
+      // OTRO dispositivo/pestaña pudieron llevar el conteo real por encima de lo
+      // que este cliente creía localmente) — mismo evento que atFreeNodeLimit().
+      if (res.invalidDetail?.some((d) => d.err === "node_limit")) {
+        window.dispatchEvent(new CustomEvent("from:paywall", { detail: { reason: "node_limit" } }))
+      }
     } catch (e) {
       console.warn("[ops] push falló (se reintenta):", e)
     }
