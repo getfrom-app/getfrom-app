@@ -190,7 +190,13 @@ function usePostCheckoutRefresh() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 }
 
-// Sync disparado desde Rust (timer 15s + foco de ventana)
+// Sync disparado desde Rust (timer 15s + foco de ventana). También refresca el
+// usuario (plan/suscripción): en Mac el checkout de LemonSqueezy abre el
+// navegador del sistema (proceso separado de la app Tauri), así que sin esto
+// la app de escritorio no se enteraba de una compra recién hecha hasta que el
+// usuario entrara manualmente en Ajustes — este evento ya dispara justo al
+// recuperar el foco de la ventana, que es exactamente cuando alguien vuelve
+// del navegador tras pagar.
 function useTauriSyncListener() {
   useEffect(() => {
     if (!isTauriEnv) return
@@ -198,6 +204,7 @@ function useTauriSyncListener() {
     import('@tauri-apps/api/event').then(({ listen }) => {
       listen('from:sync', () => {
         store.sync().catch(() => {})
+        userStore.fetchMe().catch(() => {})
       }).then((fn) => { unlisten = fn })
     }).catch(() => {})
     return () => { unlisten?.() }
