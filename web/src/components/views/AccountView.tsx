@@ -861,14 +861,13 @@ AL TERMINAR ("fin"):
               </button>
             )}
 
-            <a
-              href="https://app.lemonsqueezy.com/billing"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
               className="btn-secondary"
+              onClick={() => openExternalUrl('https://app.lemonsqueezy.com/billing')}
             >
               {t('account.manageBillingButton')}
-            </a>
+            </button>
           </div>
         </section>
 
