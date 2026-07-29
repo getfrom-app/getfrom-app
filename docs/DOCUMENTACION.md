@@ -1,7 +1,28 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-29 (Web v9.6.934)
+> Última actualización: 2026-07-29 (Web v9.6.935)
+
+---
+
+## 🗓️ Sesión 2026-07-29 (noche, parte 3) — "Sign in with Claude": investigado y descartado
+
+Sin cambios de código — investigación + documentación. Log: `logs/2026-07-29-sesion2.md` (sección
+"Parte 3"). Alberto recordaba correctamente que `from-app` (Mac Swift archivado, v1.0) tuvo un login
+OAuth real contra la suscripción Claude Pro/Max del usuario (con selector de modelo Opus/Sonnet/Haiku)
+que probó en persona. Confirmado clonando el repo archivado en modo lectura:
+`ClaudeAuthService.swift`/`AIService.swift` (commit `b46db95`) implementaban PKCE real contra
+`claude.ai/oauth/authorize`, `Authorization: Bearer` + `anthropic-beta: oauth-2025-04-20` para las
+llamadas — nunca falló, solo se quedó atrás al reescribir a la arquitectura actual.
+
+Pedido de Alberto: investigar si se puede registrar un client_id propio y replicarlo en 2.0 para
+todos los planes de pago. **Resultado: no se puede ni se debe** — la documentación oficial de
+Anthropic (`code.claude.com/docs/en/legal-and-compliance`) prohíbe explícitamente desde feb 2026 que
+apps de terceros usen credenciales OAuth de Free/Pro/Max en nombre de sus usuarios, con aplicación
+server-side sin aviso previo desde el 4 abr 2026. El client_id de Claude Code está hard-coded para esa
+única app. Documentado en `FROM.md` (tabla "❌ DESCARTADO") para que no se reintente. La alternativa
+que la propia Anthropic recomienda — API key propia — ya está implementada (sesión anterior, mismo
+día) para las 4 opciones de pago.
 
 ---
 
