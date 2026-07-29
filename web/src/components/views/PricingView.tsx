@@ -51,6 +51,7 @@ export default function PricingView() {
   const proFeatures = [
     t('pricing.proEverythingFree', 'Todo lo de Gratis, y además:'),
     t('pricing.featureAIIncluded', 'IA, prompts y agentes'),
+    t('pricing.featureOwnKey', 'Usa tu propia clave de Claude, GPT o Gemini'),
     t('pricing.featureAdvancedViews', 'Vistas tabla, kanban, calendario'),
     t('pricing.proPriority', 'Soporte prioritario'),
   ]
@@ -92,9 +93,9 @@ export default function PricingView() {
           <span className="pcard-name">{t('pricing.free', 'Gratis')}</span>
           <div className="pcard-hero">
             <span className="pcard-hero-num">1.000</span>
-            <span className="pcard-hero-label">{t('pricing.nodesLabel', 'nodos')}</span>
+            <span className="pcard-hero-label">{t('pricing.nodesLabel', 'elementos')}</span>
           </div>
-          <p className="pcard-note">{t('pricing.freeNodesNote', 'De sobra para empezar')}</p>
+          <p className="pcard-note">{t('pricing.freeNodesNote', 'Notas, tareas, chats, agentes — de sobra para empezar')}</p>
           <ul className="pcard-feats">
             {freeFeatures.map((f, i) => <li key={i}><span className="pcard-check">✓</span>{f}</li>)}
           </ul>

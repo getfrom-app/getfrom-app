@@ -333,10 +333,21 @@ export class NodeStore {
   }
 
   /** True si el usuario gratis ya alcanzó el límite de nodos. Si es así, dispara
-   *  el paywall (banner de pasar a Pro). Los usuarios Pro/Lifetime nunca se bloquean. */
+   *  el paywall (banner de pasar a Pro). Los usuarios Pro/Lifetime nunca se bloquean.
+   *  "1 chat = 1 elemento" (29 jul 2026, mismo criterio que el servidor en
+   *  ops.ts): el wrapper de transcript y cada mensaje individual de una
+   *  conversación NO cuentan — si contaran aquí también, este check local
+   *  bloquearía/avisaría de forma prematura frente a lo que el servidor
+   *  realmente permite. */
   atFreeNodeLimit(): boolean {
     if (userStore.isPremium) return false
-    if (this.allActive().length < FREE_NODE_LIMIT) return false
+    const countable = this.allActive().filter(n => {
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        return ed._aiTranscript !== '1' && ed._aiMsgRole === undefined
+      } catch { return true }
+    })
+    if (countable.length < FREE_NODE_LIMIT) return false
     window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'node_limit' } }))
     return true
   }

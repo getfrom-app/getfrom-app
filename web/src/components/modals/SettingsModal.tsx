@@ -587,8 +587,14 @@ export function IAPane() {
   const us = useUserStore()
   const [lang, setLang] = useState<string>(() => localStorage.getItem(AI_LANG_LS) || 'auto')
 
-  // Las API keys propias son un extra de la licencia perpetua (lifetime).
-  const isLifetime = us.user?.licenseStatus === 'active'
+  // Las API keys propias eran un extra exclusivo de la licencia perpetua
+  // (lifetime) — ampliado a CUALQUIER plan de pago (29 jul 2026, a petición de
+  // Alberto: quien trae su propia clave no gasta tokens de Fromly, así que
+  // interesa igual en Pro Mensual/Anual). El backend ya lo soporta así
+  // (resolveModelForUser en server/src/services/ai.ts) — antes esto se
+  // guardaba pero NUNCA se llegaba a usar en ninguna llamada real (bug real
+  // encontrado la misma sesión, no solo un límite de negocio).
+  const hasPaidPlan = us.isPremium
 
   function setLanguage(v: string) {
     setLang(v)
@@ -597,12 +603,12 @@ export function IAPane() {
 
   return (
     <div className="st-pane">
-      {/* API keys propias: solo lifetime puede usar sus propias claves. */}
-      {isLifetime && (
+      {/* API keys propias: cualquier plan de pago puede usar sus propias claves. */}
+      {hasPaidPlan && (
         <>
           <SectionTitle>{t('ai.sectionApiKeys')}</SectionTitle>
           {PROVIDERS.map(p => (
-            <ProviderKeyEditor key={p.id} provider={p} hasPaidPlan={isLifetime} />
+            <ProviderKeyEditor key={p.id} provider={p} hasPaidPlan={hasPaidPlan} />
           ))}
         </>
       )}

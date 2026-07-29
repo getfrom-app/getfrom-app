@@ -46,7 +46,7 @@ const TRANSLATIONS = {
     "index.step3_body":  "Crea nodos, organiza proyectos, programa tareas. La IA ya conoce tu contexto desde el minuto uno.",
 
     "index.pricing_teaser_title": "Simple y justo",
-    "index.pricing_teaser_body":  "Gratis para siempre hasta 1.000 nodos, sin IA. Pro desde €7/mes (o €49/año) con IA completa y nodos ilimitados. O paga una vez, €149, y ten todo Pro para siempre con Lifetime.",
+    "index.pricing_teaser_body":  "Gratis para siempre hasta 1.000 elementos (notas, tareas, chats...). Pro desde €7/mes (o €49/año) con IA completa, elementos ilimitados y la opción de usar tu propia clave de Claude, GPT o Gemini. O paga una vez, €149, y ten todo Pro para siempre con Lifetime.",
     "index.pricing_teaser_cta":   "Ver precios",
 
     "index.faq_title": "Preguntas frecuentes",
@@ -202,7 +202,7 @@ const TRANSLATIONS = {
     "index.step3_body":  "Create nodes, organize projects, schedule tasks. AI already knows your context from minute one.",
 
     "index.pricing_teaser_title": "Simple and fair",
-    "index.pricing_teaser_body":  "Free forever up to 1,000 nodes, no AI. Pro from €7/month (or €49/year) with full AI and unlimited nodes. Or pay once, €149, and get all of Pro forever with Lifetime.",
+    "index.pricing_teaser_body":  "Free forever up to 1,000 elements (notes, tasks, chats...). Pro from €7/month (or €49/year) with full AI, unlimited elements and the option to use your own Claude, GPT or Gemini key. Or pay once, €149, and get all of Pro forever with Lifetime.",
     "index.pricing_teaser_cta":   "View pricing",
 
     "index.faq_title": "Frequently asked questions",
