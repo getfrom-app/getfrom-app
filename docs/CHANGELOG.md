@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## iOS v2.12 (build 140) — 29 julio 2026 · Menos fricción, más claridad
+## iOS v2.12.140 — 29 julio 2026 · Menos fricción, más claridad
 
 - Al crear una tarea, nota, captura rápida o grabación de voz, se abre automáticamente para que veas
   dónde ha quedado — antes volvías a la lista sin más explicación.
