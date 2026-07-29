@@ -1,7 +1,62 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-29 (iOS v2.12 build 140)
+> Última actualización: 2026-07-29 (Web v9.6.933)
+
+---
+
+## 🗓️ Sesión 2026-07-29 (noche) — Web: artifacts del chat a la columna derecha, sync de agentes con el cron
+
+Web **v9.6.933**. Log: `logs/2026-07-29-sesion2.md`.
+
+**Bug real — agentes/prompts creados por chat no abrían en la columna derecha.** `createAgentAction`/
+`createPromptAction` (`aiChatExecutor.ts`) y el disparo genérico "se creó UN solo elemento" en
+`aiChatStore.ts` (`undoBundle.createdIds.length === 1`) usaban el evento `from:open-detail` — pero
+desde el 22 jul `onOpenNode` (su listener en `V2App.tsx`) cambió de comportamiento: para un elemento
+normal abre el CENTRO (sustituyendo el chat), no la columna derecha. Regresión no detectada hasta
+ahora. Arreglado con un evento nuevo y dedicado, `from:open-artifact` (`setDetailNodeId` +
+`rightMode('detalles')`, sin tocar el centro) — el chat se queda visible con la tarjeta inline del
+artifact y la columna derecha se abre sola. `from:open-detail`/`onOpenNode` sigue siendo correcto para
+cuando el USUARIO abre un elemento ya existente (navega, sustituye el centro). El disparo genérico
+excluye explícitamente tareas y eventos (decisión previa de Alberto: "no tareas sueltas").
+
+**Bug real — `update_agent` (chat) no sincronizaba con el servidor.** Activar o reprogramar un agente
+vía chat solo tocaba el `extraData` del nodo local — nunca llamaba a `POST /agents/schedule` como sí
+hace `AgentPropertiesPanel` (botón Activar / modal de programación). El cron del servidor
+(`agentSchedules`, tabla denormalizada) se quedaba con el estado viejo: un agente podía verse "Activo"
+en la UI sin ejecutarse nunca, o ejecutarse a una hora que ya no correspondía. Candidato más fuerte
+encontrado para un agente de check-in diario que Alberto reportó que dejó de funcionar tras días
+funcionando bien. Corregido: `updateAgentAction` hace el mismo POST de sync que la UI tras aplicar los
+cambios. Verificado en vivo contra una cuenta real: crear un agente por chat + "cambia la hora a las
+07:15" por chat → `GET /agents/schedules` mostró la fila creada de verdad con `schedule: "daily:07:15"`
+— antes de este fix esa fila nunca se habría creado.
+
+**Límite de plan gratis ya no falla en silencio.** `runAgentScheduleCron` (server) salta sin avisar
+(y sin desactivar) los `agentSchedules` que excedan `FREE_AGENT_LIMIT=1` en plan gratis — el agente
+sigue viéndose "Activo" sin correr de verdad. `GET /agents/schedules` ahora devuelve
+`skippedByPlanLimit` por fila; `AgentPropertiesPanel` muestra un aviso explícito cuando aplica.
+Verificado en vivo: cazó un caso real y preexistente en la cuenta de prueba (un agente semanal
+"Activo" que el cron llevaba saltándose).
+
+**Aviso en sidebar para agentes AUTÓNOMOS terminados.** Antes solo los agentes CONVERSACIONALES
+avisaban en la sidebar (`listPendingAgentConversations`/`_pendingReply`). Un agente autónomo que
+termina y guarda un documento no tenía ningún aviso en la web (solo push en iOS). Mismo patrón:
+`writeAgentResultToDiary` (servidor) marca el resultado con `_agentResultUnseen='1'`; `V2Sidebar`
+muestra "N informes de agente nuevos" (`listUnseenAgentResults`); se marca visto al abrir el nodo
+(`markAgentResultSeen`, en `onOpenNode`).
+
+**El aviso "N conversaciones esperando" no bajaba al abrir una.** Solo se limpiaba al enviar la
+primera respuesta (`aiChatStore.send()`), no al abrir la conversación — el botón seguía diciendo "2"
+después de leer una de ellas. Nuevo `markPendingConversationSeen(id)`, llamado desde
+`V2App.onOpenConversation`. Verificado en vivo: de "2 conversaciones esperando" a "1" al abrir.
+
+**Enlace "Pasar a Pro" siempre visible en plan gratis.** Antes solo aparecía el paywall al chocar con
+un límite concreto. Ahora, junto a "Plan gratuito" en la esquina inferior izquierda de la sidebar
+(`V2Sidebar.tsx`), un enlace de texto discreto navega directo a `/pricing`.
+
+**Vocabulario del chat — un contexto nunca se llama "nota".** El texto de confirmación al crear algo
+("lo he puesto bajo...") lo redacta el modelo libremente; regla 4bis nueva en el system prompt
+(`server/src/routes/ai.ts`) para que distinga contexto/área/proyecto de nota.
 
 ---
 

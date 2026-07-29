@@ -4,6 +4,22 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.933 — 29 julio 2026 · Agentes creados por chat, aviso de agentes que no corren
+
+- Crear un agente o un prompt por chat ya abre su ficha en la columna derecha sin sustituir la
+  conversación — antes se quedaba a medias por un evento que cambió de comportamiento en una sesión
+  anterior sin que nadie lo notara.
+- Activar o reprogramar un agente por chat ahora se sincroniza de verdad con el servidor — antes
+  podía quedar "Activo" en apariencia sin que el cron llegara a ejecutarlo nunca.
+- Si el plan gratis (1 agente activo) hace que uno de tus agentes no se esté ejecutando pese a verse
+  "Activo", ahora te avisa en su panel de Propiedades en vez de fallar en silencio.
+- Aviso en la sidebar cuando un agente autónomo termina de ejecutarse (antes solo pasaba con los
+  conversacionales).
+- El aviso "N conversaciones esperando" baja al abrir una, no solo al responderla.
+- Enlace "Pasar a Pro" siempre visible junto a "Plan gratuito" en la sidebar.
+
+---
+
 ## iOS v2.12.140 — 29 julio 2026 · Menos fricción, más claridad
 
 - Al crear una tarea, nota, captura rápida o grabación de voz, se abre automáticamente para que veas

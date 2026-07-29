@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 23 julio 2026
+> Web · Mac · iPhone · fromly.app · Última actualización: 29 julio 2026
 
 ---
 
@@ -418,6 +418,15 @@ con el botón ▶).
 **Aviso en iPhone/iPad:** cuando un agente programado termina de ejecutarse recibes una notificación
 push en el momento, sin tener que dejar la app abierta ni comprobarlo manualmente.
 
+**Aviso en web:** cuando pides por chat crear un agente (o un prompt), se abre solo en la columna
+derecha sin sustituir la conversación. Cuando un agente AUTÓNOMO termina de ejecutarse en el
+servidor, aparece un aviso "N informes de agente nuevos" en la sidebar (igual que ya pasaba con los
+agentes conversacionales, que avisan con "N conversaciones esperando" hasta que abres cada una).
+
+**Plan gratis — solo 1 agente activo a la vez.** Si activas un segundo agente sin ser Pro, el más
+reciente se queda "Activo" en apariencia pero el servidor no lo ejecuta — el panel de Propiedades del
+agente te avisa explícitamente cuando le pasa esto a uno de los tuyos.
+
 **Casos de uso habituales:**
 
 - Resumir el diario de hoy cada noche.
@@ -788,6 +797,9 @@ ver los disponibles en tu versión.
 
 **Recarga de tokens:** si agotas los tokens incluidos en tu plan Pro o Lifetime, puedes comprar un
 paquete adicional de 5.000.000 de tokens de forma puntual.
+
+**Enlace directo desde la sidebar:** en plan gratis, junto a "Plan gratuito" en la esquina inferior
+izquierda, un enlace "Pasar a Pro" lleva directo a esta comparativa sin esperar a chocar con un límite.
 
 **Sobre el plan Lifetime:** es un pago único que te da acceso a todo lo de Pro de forma indefinida,
 más 3.000.000 tokens de IA de regalo al comprarlo. El checkout está disponible tanto en **Ajustes →
