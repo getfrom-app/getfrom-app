@@ -305,6 +305,8 @@
 .v2-userchip .v2-el-main { min-width: 0; flex: 1; }
 .v2-userchip .v2-el-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v2-userchip-caret { flex: 0 0 auto; color: var(--text-tertiary); font-size: 12px; }
+.v2-userchip-upgrade { color: var(--accent); font-weight: 600; }
+.v2-userchip-upgrade:hover { text-decoration: underline; }
 .v2-avatar {
   width: 26px; height: 26px; border-radius: 50%; background: var(--accent);
   color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 12px; flex: 0 0 auto;

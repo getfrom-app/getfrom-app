@@ -83,6 +83,46 @@ export function listPendingAgentConversations(): Node[] {
   return store.allActive().filter(n => ed(n)._pendingReply === '1' && !isInPapelera(n.id))
 }
 
+/** Quita el aviso "N conversaciones esperando" de la sidebar para una sesión
+ *  concreta — se llama al ABRIR la conversación (V2App.onOpenConversation), no
+ *  solo al responder. Antes SOLO se limpiaba en send() al enviar el primer
+ *  mensaje, así que el botón seguía diciendo "2 conversaciones esperando"
+ *  después de abrir y leer una de ellas (Alberto, 29 jul: "al abrir una
+ *  debería poner 1 conversación esperando") — el aviso es para que no se te
+ *  pase por alto, no para forzar una respuesta inmediata; una vez la has
+ *  visto, ya ha cumplido su función. */
+export function markPendingConversationSeen(sessionId: string): void {
+  const n = store.getNode(sessionId)
+  if (!n) return
+  const e = ed(n)
+  if (e._pendingReply !== '1') return
+  delete e._pendingReply
+  store.updateNode(sessionId, { extraData: JSON.stringify(e) })
+}
+
+/** Resultados de agentes AUTÓNOMOS (no conversacionales) que el cron del servidor
+ *  acaba de escribir (writeAgentResultToDiary, `_agentResultUnseen='1'`) y el
+ *  usuario todavía no ha abierto — equivalente de listPendingAgentConversations
+ *  para el caso "agente que ejecuta y guarda un documento" en vez de "agente que
+ *  pregunta y espera respuesta" (28 jul: antes un informe terminado no tenía
+ *  ningún aviso en la web). Se marca como visto al abrirlo (ver onOpenNode en
+ *  V2App.tsx), nunca por temporizador — así no se pierde si el usuario no ha
+ *  abierto la app en varios días. */
+export function listUnseenAgentResults(): Node[] {
+  return store.allActive().filter(n => ed(n)._agentResultUnseen === '1' && !isInPapelera(n.id))
+}
+
+/** Marca un resultado de agente como visto (deja de avisar en la sidebar). No-op
+ *  si el nodo no tiene el flag. */
+export function markAgentResultSeen(nodeId: string): void {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  const e = ed(n)
+  if (e._agentResultUnseen !== '1') return
+  delete e._agentResultUnseen
+  store.updateNode(nodeId, { extraData: JSON.stringify(e) })
+}
+
 export interface ExecutedAction {
   action: string
   ok: boolean
@@ -338,10 +378,10 @@ class AIChatStore {
     }
     const sid = this.sessionId
 
-    // Si esta sesión la abrió un agente proactivo y estaba esperando la PRIMERA
-    // respuesta del usuario (_pendingReply='1', ver openAgentConversation en el
-    // servidor), este mensaje la resuelve — deja de contar como pendiente en el
-    // aviso de la barra lateral (listPendingAgentConversations).
+    // Por si acaso: normalmente ya se limpió al ABRIR la conversación
+    // (markPendingConversationSeen, V2App.onOpenConversation) — esto cubre el
+    // caso raro de responder sin pasar por ese flujo (p.ej. seguir escribiendo
+    // en una sesión ya cargada de otra forma).
     if (sid) {
       const sessionNode = store.getNode(sid)
       if (sessionNode) {
@@ -517,10 +557,24 @@ class AIChatStore {
         }
         this.notify()
         // Si se creó UN solo elemento (evita ambigüedad con creaciones múltiples,
-        // p.ej. un dictado que genera nota+tareas), abre su ficha en la columna derecha
-        // — mismo evento que usan los botones manuales «+Nota»/«+Tarea» (V2App.tsx).
+        // p.ej. un dictado que genera nota+tareas), abre su ficha en la columna
+        // derecha. ⚠️ 28 jul: usaba `from:open-detail` — el MISMO evento que los
+        // botones manuales «+Nota»/«+Tarea» (V2App.tsx), que desde el 22 jul abre
+        // en el CENTRO (onOpenNode), sustituyendo el chat activo. Para algo que la
+        // IA acaba de crear DENTRO de la conversación eso está mal — el chat debe
+        // seguir visible, solo se fija el artifact a la derecha (como en Claude).
+        // `from:open-artifact` hace justo eso (setDetailNodeId, sin tocar el
+        // centro) — mismo evento que ya usan create_agent/create_prompt.
+        // Excluye TAREAS a propósito (decisión de Alberto: "no tareas sueltas" —
+        // abrir la derecha en cada tarea creada por chat sería ruido) y EVENTOS,
+        // mismo criterio que el efecto de fin de streaming en V2App.tsx.
         if (undoBundle.createdIds.length === 1 && typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: undoBundle.createdIds[0] } }))
+          const createdId = undoBundle.createdIds[0]
+          const createdNode = store.nodes.get(createdId)
+          const isBareTaskOrEvent = !!createdNode && (createdNode.status != null || createdNode.isEvent)
+          if (!isBareTaskOrEvent) {
+            window.dispatchEvent(new CustomEvent('from:open-artifact', { detail: { nodeId: createdId } }))
+          }
         }
         // Acumular resultados y continuar el loop
         accumulatedReadResults = [...accumulatedReadResults, ...writeResults]

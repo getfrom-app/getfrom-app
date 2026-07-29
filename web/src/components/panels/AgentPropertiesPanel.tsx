@@ -4,7 +4,7 @@
  * programación, última y próxima ejecución. La ventana central muestra solo
  * el prompt del usuario (instrucciones editables).
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
@@ -52,6 +52,25 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
   const [saved, setSaved] = useState(false)
   const [scheduleModalOpen, setScheduleModalOpen] = useState(false)
   const isLoggedIn = !!getToken()
+
+  // Un agente "Activo" en la UI puede no estar corriendo de verdad en el cron del
+  // servidor (plan gratis: solo 1 agente habilitado se ejecuta, el resto se salta
+  // en silencio — ver GET /agents/schedules). Antes esto era invisible del todo;
+  // ahora se avisa aquí en vez de dejar que el usuario asuma que sigue funcionando.
+  const [skippedByPlanLimit, setSkippedByPlanLimit] = useState(false)
+  useEffect(() => {
+    if (!isLoggedIn) return
+    let cancelled = false
+    apiRequest<{ schedules: Array<{ nodeId: string; skippedByPlanLimit: boolean }> }>('/agents/schedules')
+      .then(res => {
+        if (cancelled) return
+        const row = res.schedules?.find(s => s.nodeId === nodeId)
+        setSkippedByPlanLimit(!!row?.skippedByPlanLimit)
+      })
+      .catch(() => { /* silencioso */ })
+    return () => { cancelled = true }
+  }, [nodeId, isLoggedIn, data?.enabled])
+
   if (!node || !data) return null
 
   function setSchedule(schedule: string, expiresAt: string) {
@@ -250,6 +269,12 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
           </div>
           {error && <div style={{ fontSize: 11.5, color: 'var(--danger, #ef4444)', marginTop: 8 }}>{error}</div>}
           {saved && <div style={{ fontSize: 11.5, color: 'var(--success, #22c55e)', marginTop: 8 }}>{t('ai.resultSaved', '✓ Resultado guardado en el diario')}</div>}
+          {data.enabled && skippedByPlanLimit && (
+            <div style={{ fontSize: 11.5, color: 'var(--danger, #ef4444)', marginTop: 8, lineHeight: 1.4 }}>
+              {t('agents.skippedByPlanLimit',
+                '⚠️ Activo pero NO se está ejecutando: tu plan gratis solo permite 1 agente en marcha a la vez y ya tienes otro más antiguo activo. Pásate a Pro o pausa el otro agente.')}
+            </div>
+          )}
         </div>
 
         {/* Programación — modal con hora/repetición/expiración (Alberto, 15 jul:

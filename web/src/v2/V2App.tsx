@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../store/nodeStore'
 import { userStore } from '../store/userStore'
-import { aiChatStore, useAIChat } from '../store/aiChatStore'
+import { aiChatStore, useAIChat, markAgentResultSeen, markPendingConversationSeen } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
@@ -289,6 +289,7 @@ export default function V2App() {
   const onOpenConversation = (id: string) => {
     setShowProfile(false)
     setCenterElementId(null)
+    markPendingConversationSeen(id) // quita el aviso "N esperando" al abrirla, no solo al responder
     aiChatStore.loadSession(id)
     // Mantener el contexto de la conversación en la barra lateral y el breadcrumb
     // (antes se limpiaba SIEMPRE — Alberto, 15 jul: "cuando se abre una conversación
@@ -495,6 +496,7 @@ export default function V2App() {
 
   const onOpenNode = (id: string) => {
     setShowProfile(false)
+    markAgentResultSeen(id) // deja de avisar en la sidebar en cuanto se abre (ver aiChatStore.ts)
     // Un CONTEXTO (marcado o área raíz) siempre abre su FICHA completa (tareas +
     // elementos + «Archivar» + «Lo que Fromly sabe»), sea cual sea la ruta de entrada
     // (sidebar, cockpit «Hoy», chip de contexto…). Antes solo la sidebar llegaba a
@@ -577,6 +579,24 @@ export default function V2App() {
     }
     window.addEventListener('from:open-detail', h as EventListener)
     return () => window.removeEventListener('from:open-detail', h as EventListener)
+  }, [])
+
+  // `from:open-artifact` — un elemento que el CHAT acaba de crear (agente, prompt…)
+  // se fija en la columna derecha como artifact de la conversación activa, mismo
+  // patrón que el efecto de streaming de abajo y que onFilesDropped (setDetailNodeId
+  // + rightMode 'detalles'). DISTINTO de `from:open-detail`/onOpenNode (28 jul: bug
+  // real) — ese evento es para cuando el USUARIO abre un elemento ya existente
+  // (navega, sustituye el centro); reutilizarlo aquí lo mandaba al centro en vez de
+  // a la derecha porque onOpenNode cambió de comportamiento el 22 jul y create_agent/
+  // create_prompt (aiChatExecutor.ts) se quedaron disparando el evento viejo sin
+  // que nadie se diera cuenta — la columna derecha nunca se abría.
+  useEffect(() => {
+    const h = (e: Event) => {
+      const id = (e as CustomEvent).detail?.nodeId
+      if (id) { setDetailNodeId(id); setRightMode('detalles') }
+    }
+    window.addEventListener('from:open-artifact', h as EventListener)
+    return () => window.removeEventListener('from:open-artifact', h as EventListener)
   }, [])
 
   // Cerrar el detalle cuando un panel lo pide (p.ej. al ELIMINAR el elemento abierto) —
@@ -705,7 +725,7 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onDriveInCtx={onDriveInCtx} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onDriveInCtx={onDriveInCtx} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
       {centerElementId ? (
         // ⚠️ `key` es OBLIGATORIO: sin él, al pasar de un elemento a otro (p.ej.
         // abrir una nota de Casa Alicante y luego la nota diaria de otro día

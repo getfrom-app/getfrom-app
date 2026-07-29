@@ -3,11 +3,12 @@
 // contexto: lo selecciona (la app reacciona) Y hace zoom-in a sus subcontextos
 // en la misma columna, con botón de volver.
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent, reparentContext, listContextsForParent } from '../../utils/cajones'
-import { listPendingAgentConversations } from '../../store/aiChatStore'
+import { listPendingAgentConversations, listUnseenAgentResults } from '../../store/aiChatStore'
 import { useTheme } from '../../hooks/useTheme'
 import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
@@ -60,6 +61,9 @@ interface Props {
   // Abre una conversación existente (chat al centro + sus elementos a la
   // derecha) — lo usa el aviso de conversaciones pendientes de un agente.
   onOpenConversation?: (id: string) => void
+  // Abre cualquier nodo (usado por el aviso de informes de agentes autónomos
+  // terminados — marca el resultado como visto y lo abre, ver markAgentResultSeen).
+  onOpenNode?: (id: string) => void
   // Perfil — la nota personal que Fromly tiene siempre en cuenta (metas, contexto
   // vital…). Se abre en lugar del chat (Alberto, 15 jul).
   onOpenProfile: () => void
@@ -77,9 +81,10 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onDriveInCtx, onRecordInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenProfile }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onDriveInCtx, onRecordInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenNode, onOpenProfile }: Props) {
   useStore()
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const user = useUserStore()
   const [dragOver, setDragOver] = useState(false) // resaltado visual mientras se arrastra (ya no por-contexto)
   const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer.types || []).includes('Files')
@@ -251,6 +256,26 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
             💬 {pending.length === 1
               ? t('v2.pendingConversationOne', '1 conversación esperando')
               : t('v2.pendingConversationsMany', '{{count}} conversaciones esperando', { count: pending.length })}
+          </button>
+        )
+      })()}
+
+      {/* Aviso de informes de agentes AUTÓNOMOS (no conversacionales) que el cron ya
+          terminó — equivalente al aviso de arriba, pero para "ejecuta y guarda un
+          documento" en vez de "pregunta y espera respuesta" (28 jul, ver
+          listUnseenAgentResults en aiChatStore.ts). Se abre el más reciente; el resto
+          queda accesible en el contexto del agente igual que siempre. */}
+      {(() => {
+        const unseen = listUnseenAgentResults()
+        if (unseen.length === 0 || !onOpenNode) return null
+        const mostRecent = [...unseen].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))[0]
+        return (
+          <button className="v2-newchat" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent)', marginTop: -2 }}
+            onClick={() => onOpenNode(mostRecent.id)}
+            title={unseen.length > 1 ? t('v2.unseenAgentResultsHint', 'Hay más informes nuevos en sus contextos') : undefined}>
+            📄 {unseen.length === 1
+              ? t('v2.unseenAgentResultOne', '1 informe de agente nuevo')
+              : t('v2.unseenAgentResultsMany', '{{count}} informes de agente nuevos', { count: unseen.length })}
           </button>
         )
       })()}
@@ -438,7 +463,24 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
           <span className="v2-avatar">{initial}</span>
           <span className="v2-el-main">
             <span className="v2-el-title">{displayName}</span>
-            <span className="v2-el-meta">{user.planLabel}</span>
+            <span className="v2-el-meta">
+              {user.planLabel}
+              {/* Enlace siempre visible en plan gratis (Alberto, 29 jul: "que ponga
+                  después con enlace Pasar a Pro") — antes solo se veía el paywall
+                  al chocar con un límite concreto; esto da una salida directa sin
+                  esperar a toparse con uno. */}
+              {!user.isPremium && (
+                <>
+                  {' · '}
+                  <span
+                    className="v2-userchip-upgrade"
+                    onClick={e => { e.stopPropagation(); navigate('/pricing') }}
+                  >
+                    {t('v2.upgradeToPro', 'Pasar a Pro')}
+                  </span>
+                </>
+              )}
+            </span>
           </span>
           <span className="v2-userchip-caret">⌄</span>
         </button>

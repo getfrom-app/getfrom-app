@@ -13,6 +13,7 @@ import { markdownToHtml } from '../utils/importMarkdown'
 import { createContext, appendContextFacts, maybeUpdateContextKnowledge, assignContext, isRootContext, isMarkedContext, firstContextOf } from '../utils/cajones'
 import { extractDateFromEnd, recurrenceToString } from '../utils/naturalDate'
 import { userStore } from './userStore'
+import { apiRequest, getToken } from '../api/client'
 
 /** Quita prefijos de lista de un título de nodo: "1. ", "12) ", "- ", "* ", "• ".
  * (Magic a veces genera cada idea como "1. ..." → todos salían con un "1." delante.) */
@@ -272,9 +273,11 @@ function createAgentAction(a: Record<string, unknown>, sessionId?: string, curre
   // Abrir SIEMPRE en la columna derecha + toast — antes dependía de que fuera la
   // ÚNICA acción del turno (send() en aiChatStore.ts), así que a veces no se
   // abría (Alberto, 15 jul: "debe aparecer allí mismo en el chat... y abrirse a
-  // la derecha. Añade además un toast de confirmación").
+  // la derecha. Añade además un toast de confirmación"). `from:open-artifact`
+  // (no `from:open-detail`, 28 jul): ese otro evento pasa por onOpenNode, que
+  // desde el 22 jul manda los elementos normales al CENTRO, no a la derecha.
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
+    window.dispatchEvent(new CustomEvent('from:open-artifact', { detail: { nodeId: created.id } }))
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Agente «${label}» creado`, type: 'success' } }))
   }
   return result('create_agent', true,
@@ -295,9 +298,10 @@ function createPromptAction(a: Record<string, unknown>, sessionId?: string, curr
   const parentId = explicitParent ?? sessionId ?? currentNodeId ?? null
 
   const created = createPromptUnder({ parentId, label, content })
-  // Abrir SIEMPRE en la columna derecha + toast, igual que create_agent (Alberto, 15 jul).
+  // Abrir SIEMPRE en la columna derecha + toast, igual que create_agent (Alberto, 15
+  // jul). `from:open-artifact`, no `from:open-detail` — ver comentario en createAgentAction.
   if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
+    window.dispatchEvent(new CustomEvent('from:open-artifact', { detail: { nodeId: created.id } }))
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Prompt «${label}» creado`, type: 'success' } }))
   }
   return result('create_prompt', true, `Prompt «${label}» creado.`, [created.id])
@@ -361,6 +365,28 @@ function updateAgentAction(a: Record<string, unknown>): ExecutedAction {
   }
 
   if (!changes.length) return result('update_agent', false, 'No se especificó ningún cambio (enabled/schedule/user_message).')
+
+  // ⚠️ Sync al servidor (registra/actualiza el cron) — bug real encontrado 28 jul:
+  // arriba solo se tocaba el extraData del NODO (local), nunca se llamaba a
+  // POST /agents/schedule como sí hace AgentPropertiesPanel.toggleEnabled/setSchedule.
+  // Si activar/reprogramar un agente pasaba SOLO por el chat (sin tocar nunca el
+  // botón de Propiedades), la UI mostraba "Activo"/la hora nueva pero el cron del
+  // servidor seguía con el `agentSchedules` viejo — un agente podía parecer activo
+  // y no ejecutarse nunca, o ejecutarse a una hora que ya no correspondía. Mismo
+  // patrón exacto que el toggle/schedule de la UI: solo sincroniza si hay sesión Y
+  // ya hay una programación (sin schedule no hay cron que registrar).
+  const fresh = getAgentData(nodeId)
+  if (fresh && fresh.schedule && getToken()) {
+    apiRequest('/agents/schedule', {
+      method: 'POST',
+      body: JSON.stringify({
+        nodeId, agentId: fresh.agentId, agentTitle: node.text,
+        systemPrompt: fresh.systemPrompt, userMessage: fresh.userMessage,
+        schedule: fresh.schedule, enabled: fresh.enabled,
+        expiresAt: fresh.scheduleExpiresAt || undefined,
+      }),
+    }).catch(() => { /* silencioso, igual que el resto de syncs de agente */ })
+  }
 
   return result('update_agent', true,
     `Agente «${node.text}» actualizado: ${changes.join(', ')}.`,
