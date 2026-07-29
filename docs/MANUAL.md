@@ -790,10 +790,17 @@ ver los disponibles en tu versión.
 
 | Plan | Precio | Incluye |
 |---|---|---|
-| **Gratis** | €0 | Hasta 1.000 nodos sincronizados. Outliner + diario, búsqueda avanzada, Mac + iPhone + web, sync en tiempo real. Sin IA, sin archivos adjuntos, sin publicar notas. |
-| **Pro Mensual** | €7/mes | Todo lo de Gratis + nodos ilimitados + IA completa (Claude) + Agentes + Prompts + vistas tabla/kanban/calendario + archivos adjuntos + publicar notas con URL + soporte prioritario + 2.000.000 tokens de IA al mes incluidos. |
+| **Gratis** | €0 | Hasta 1.000 elementos sincronizados (notas, tareas, chats, agentes — cada conversación entera cuenta como 1 solo elemento, no cada mensaje). Outliner + diario, búsqueda avanzada, Mac + iPhone + web, sync en tiempo real. Sin IA, sin archivos adjuntos, sin publicar notas. |
+| **Pro Mensual** | €7/mes | Todo lo de Gratis + elementos ilimitados + IA completa (Claude) + Agentes + Prompts + vistas tabla/kanban/calendario + archivos adjuntos + publicar notas con URL + soporte prioritario + 2.000.000 tokens de IA al mes incluidos + opción de usar tu propia clave de Claude/GPT/Gemini. |
 | **Pro Anual** | €49/año (~€4,08/mes) | Todo lo de Pro Mensual, facturado anualmente. Ahorras cerca de un **42%** frente al mensual (7×12 = 84€ → 49€). |
 | **Lifetime** | €149 pago único | Todo lo de Pro, para siempre, sin suscripciones, + 3.000.000 tokens de IA incluidos de una vez. |
+
+**Usa tu propia clave de IA (BYOK):** en **Ajustes → IA**, cualquier plan de pago (Pro Mensual, Pro
+Anual o Lifetime) puede guardar su propia clave de Anthropic (Claude), OpenAI (GPT) o Google
+(Gemini). Si la guardas, Fromly la usa de verdad en tus conversaciones y ejecuciones de agentes —
+esas llamadas las pagas tú directamente al proveedor y no consumen tus tokens incluidos de Fromly.
+No es lo mismo que una suscripción de consumo (ChatGPT Plus, Claude Pro/Max): hace falta una clave de
+API (facturación por uso, en la consola de cada proveedor), no las credenciales de tu app de chat.
 
 **Recarga de tokens:** si agotas los tokens incluidos en tu plan Pro o Lifetime, puedes comprar un
 paquete adicional de 5.000.000 de tokens de forma puntual.
@@ -843,9 +850,10 @@ para aprender Fromly de forma gradual sin saturar tu bandeja de entrada.
 Sí. La app Mac e iPhone funciona sin conexión. Los cambios se sincronizan automáticamente cuando
 recuperas la conexión.
 
-**¿Qué pasa si supero los 1.000 nodos en el plan gratuito?**
+**¿Qué pasa si supero los 1.000 elementos en el plan gratuito?**
 Puedes seguir leyendo tus notas, pero no crear nuevas hasta que elimines contenido o actualices a
-Pro.
+Pro. Chatear con Fromly dentro de una conversación ya empezada no cuenta contra este límite — solo
+cuenta 1 elemento por conversación, no cada mensaje.
 
 **¿Dónde se guardan mis datos?**
 En los servidores de Fromly (Europa) y, en Mac, también en un backup local en tu propio ordenador.

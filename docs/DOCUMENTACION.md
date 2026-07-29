@@ -1,7 +1,39 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-29 (Web v9.6.933)
+> Última actualización: 2026-07-29 (Web v9.6.934)
+
+---
+
+## 🗓️ Sesión 2026-07-29 (noche, parte 2) — BYOK realmente roto, precios más claros, "1 chat = 1 elemento"
+
+Web **v9.6.933 → v9.6.934**. Log: `logs/2026-07-29-sesion2.md` (sección "Parte 2").
+
+Alberto, mirando la página de precios, pidió aclarar "nodos" (ya no es el modelo mental del usuario)
+y llevar la opción de "usa tu propia clave de IA" a cualquier plan de pago, no solo Lifetime — con
+Claude y ChatGPT integrados. Investigando antes de tocar nada aparecieron dos sorpresas: (1) lo que
+Alberto recordaba como "ya conectas tu suscripción Claude" es en realidad la función MCP (Fromly
+como servidor OAuth para que claude.ai/Claude Code lean tus notas — dirección contraria a "la IA de
+Fromly usa tu Claude"); (2) **bug real** — la clave API propia de Ajustes → IA se guardaba cifrada
+pero NINGÚN endpoint de IA la leía nunca, todas las llamadas usaban siempre el pool compartido de
+Fromly. Corregido de raíz: `resolveModelForUser()` nuevo en `server/src/services/ai.ts` prioriza la
+clave del usuario si existe (cualquier plan de pago), y `/ai/chat` + `executor.ts` (agentes manual y
+cron) + `middleware/tokens.ts` se saltan el gate/descuento de balance cuando se usa. Cliente
+(`SettingsModal.tsx`): gate ampliado de Lifetime a cualquier plan de pago.
+
+Además, "1 chat = 1 elemento": el límite gratis de 1.000 contaba el nodo-sesión, el wrapper de
+transcript Y cada mensaje individual — una charla larga se comía decenas de "elementos" invisibles.
+`routes/ops.ts` (enforcement real) y `nodeStore.ts atFreeNodeLimit()` (gate proactivo cliente) ahora
+excluyen el wrapper y los mensajes del recuento y de la capacidad.
+
+Pricing (`PricingView.tsx`, `landing/i18n.js`, `index.html`): "nodos"→"elementos", nuevo bullet Pro
+"Usa tu propia clave de Claude, GPT o Gemini" (heredado por Lifetime).
+
+Verificado en vivo (regresión, cuenta de prueba gratis): el chat normal sigue funcionando tras el
+cambio de resolución de modelo/clave; el contador de Elementos confirmó que una conversación de 2
+mensajes solo sumó pocos elementos, no docenas. No verificado: el camino BYOK con una clave de pago
+real (no hay ninguna disponible para probar sin fabricarla) — pendiente de que Alberto lo compruebe
+con su propia clave en una cuenta de pago.
 
 ---
 

@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.934 — 29 julio 2026 · Tu propia clave de IA, ahora en cualquier plan de pago
+
+- Usar tu propia clave de Claude, GPT o Gemini (Ajustes → IA) ya no es exclusivo de Lifetime —
+  disponible en cualquier plan de pago. Corregido además un bug real: la clave se guardaba pero no se
+  usaba de verdad en ninguna llamada, así que ponerla no tenía efecto — ahora sí evita gastar tus
+  tokens incluidos de Fromly.
+- El límite de 1.000 elementos del plan gratis ya no cuenta cada mensaje de un chat por separado —
+  toda una conversación cuenta como 1 solo elemento.
+- Página de precios: "nodos" → "elementos", más claro con lo que ves hoy (notas, tareas, chats,
+  agentes).
+
+---
+
 ## Web v9.6.933 — 29 julio 2026 · Agentes creados por chat, aviso de agentes que no corren
 
 - Crear un agente o un prompt por chat ya abre su ficha en la columna derecha sin sustituir la
