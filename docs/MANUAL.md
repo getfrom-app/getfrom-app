@@ -415,6 +415,9 @@ Seguimiento de objetivos, 🧘 Check-in de bienestar) en Elementos → Agentes, 
 **Horario (schedule):** al abrir la app, diario, semanal o manual (lo ejecutas tú cuando quieras
 con el botón ▶).
 
+**Aviso en iPhone/iPad:** cuando un agente programado termina de ejecutarse recibes una notificación
+push en el momento, sin tener que dejar la app abierta ni comprobarlo manualmente.
+
 **Casos de uso habituales:**
 
 - Resumir el diario de hoy cada noche.
@@ -517,7 +520,9 @@ capturas en iPhone aparece sincronizado en tiempo real en el resto de tus dispos
 
 Lo que puedes dar por seguro hoy en iPhone:
 
-- **Notas, tareas y eventos**: crearlos, editarlos, marcarlos como hechos, asignarles fecha.
+- **Notas, tareas y eventos**: crearlos, editarlos, marcarlos como hechos, asignarles fecha. Al
+  crear cualquier elemento (desde el botón "+", la captura rápida o grabando una nota de voz) se
+  abre automáticamente para que veas dónde ha quedado.
 - **Sincronización en tiempo real** con la misma cuenta que web y Mac, viajando solo los cambios
   (deltas), no la base de datos completa.
 - **Compartir a Fromly** desde otras apps (ver sección anterior).

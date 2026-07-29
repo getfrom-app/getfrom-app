@@ -1,7 +1,56 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-23 (Web v9.6.928)
+> Última actualización: 2026-07-29 (iOS v2.12 build 140)
+
+---
+
+## 🗓️ Sesión 2026-07-29 — Push notifications APNs, apertura automática al crear, re-auditoría completa
+
+iOS **2.11 → 2.12 (build 140)**. Log: `logs/2026-07-29.md`.
+
+**Push notifications reales (APNs), extremo a extremo**: los agentes programados corren en el cron
+del servidor (`runAgentScheduleCron`), no en el dispositivo, así que una notificación local no sirve.
+Generada clave APNs en developer.apple.com, configurada en Railway (`APNS_KEY_ID`/`APNS_TEAM_ID`/
+`APNS_PRIVATE_KEY`), tabla `device_tokens` (server), rutas `POST /devices/register` y
+`POST /devices/unregister` (`requireAuth`), `server/src/lib/push.ts` firma JWT ES256 con `jose` contra
+`api.push.apple.com`. iOS: `AppDelegate` vía `@UIApplicationDelegateAdaptor` (SwiftUI no tiene
+delegate directo para `didRegisterForRemoteNotificationsWithDeviceToken`) puentea el token a
+`FromServerService.registerDeviceToken()`. El logout ahora desregistra el token (`unregisterDeviceToken()`,
+guardado en `UserDefaults`) **antes** de limpiar la sesión — pendiente de sesiones anteriores, resuelto.
+
+**Bug real encontrado de paso**: `device_tokens.userId` no tenía `onDelete: cascade` — un usuario con
+push registrado no podía borrar su cuenta (violación de FK). Corregido en `DELETE /auth/account`
+borrando esas filas antes que el usuario. Detectado revisando el flujo de logout, antes de que
+ocurriera en producción.
+
+**Apertura automática al crear (iOS)**: crear una tarea (`IOSQuickTaskSheet`), una nota desde el "+"
+(`IOSV2Shell.createNote()`), una grabación de voz (`toggleVoiceRecording()`) o usar "Captura rápida"
+(`IOSSmartCaptureSheet`) ahora abre el detalle del elemento recién creado (`detailNode =`) en vez de
+volver a la lista sin más — patrón `onCreated: ((Node) -> Void)?` añadido a ambas hojas de creación.
+
+**Bug de UI encontrado durante la prueba en vivo**: la grabación de voz mostraba "✓ Guardado" incluso
+cuando el transcript estaba vacío y no se guardaba nada (el caso `.error` de `VoiceCapturePhase` caía
+en el mismo branch que `.processing`/`.idle`). Corregido para mostrar el mensaje de error real.
+
+**Build 2.12 archivado, exportado y subido** a App Store Connect vía `altool` (UUID
+`0ed9a107-43df-46ae-a76c-b354b8ebbbe6`, build 140 — Apple permite reutilizar el mismo número de build
+en distintas versiones, confirmado viendo 2.10/2.11/2.12 todas con build 140 en TestFlight). **Crear
+la versión y adjuntar el build sigue bloqueado**: 2.11 continúa "Pendiente de revisión" en Apple;
+Alberto decidió esperar en vez de retirarla de la cola.
+
+**Re-auditoría completa de las ~39 tareas de la sesión de paywall/free-tier** (server, web, iOS,
+Mac) vía 4 agentes en paralelo verificando código real, no descripciones previas — prácticamente todo
+confirmado. Hallazgos de la propia auditoría: (1) el target Xcode "From" (macOS nativo, Swift) está
+abandonado a propósito — Sparkle.framework no se re-vendorizó tras borrarlo, sin relación con la app
+Mac real (Tauri, `from-mac/`, que sí está verificada y publicada — v9.5.80); (2) la tabla de variants
+de LemonSqueezy en `FROM.md` estaba desactualizada (Mensual y Anual habían intercambiado su variant
+ID en algún momento sin actualizar la doc) — corregida; (3) el workflow de GitHub Pages
+(`pages.yml`) no ejecuta `npm run build`, solo sube el repo tal cual — el bundle de `landing/app/`
+depende de compilarse y commitearse manualmente en local antes de cada deploy, sin automatizar; (4)
+la validación de recibos StoreKit (`appStoreServer.ts`) decodifica el JWS sin verificar su firma/
+cadena x5c (documentado como mejora futura en el propio código) y cae a confiar en el cliente si
+faltan las variables `APPLE_ASSA_*` en el entorno — confirmado que SÍ están configuradas en Railway.
 
 ---
 

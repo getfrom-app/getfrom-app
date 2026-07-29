@@ -4,6 +4,23 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## iOS v2.12 (build 140) — 29 julio 2026 · Menos fricción, más claridad
+
+- Al crear una tarea, nota, captura rápida o grabación de voz, se abre automáticamente para que veas
+  dónde ha quedado — antes volvías a la lista sin más explicación.
+- El aviso de plan gratis ya no es un banner permanente: aparece solo al principio y se puede cerrar;
+  al usar una función Pro real (adjuntar archivo, publicar nota, límite de nodos) aparece la pantalla
+  de "pasar a Pro" en el momento justo.
+- Corregido el texto del paywall que decía que la sincronización era un beneficio Pro — es gratis
+  para cualquier cuenta.
+- Crear Nota/Tarea/Planificador se mueve del chat de Magic al botón "+" de Agenda en iPhone.
+- Quitada la información de contexto duplicada en cada tarea de Agenda.
+- Notificación push cuando un agente programado termina de ejecutarse (antes solo se veía si abrías
+  la app).
+- Colores de marca en toda la app (antes había un morado que no correspondía a Fromly).
+
+---
+
 ## Web v9.6.804 — 13 julio 2026 · "Lo que Fromly sabe" y "Notas" unificados
 
 En la vista de Contexto había dos bloques separados y confusos: un textarea estrecho ("Lo que
