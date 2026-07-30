@@ -32,6 +32,7 @@ export interface UndoBundle {
   restoredNodes: Array<{      // nodes to restore to previous state
     id: string
     prevText: string
+    prevBody: string | null
     prevStatus: string | null
     prevDue: string | null
     prevTypes: string[]
@@ -540,8 +541,16 @@ class AIChatStore {
       const KNOWN_WRITE_ACTIONS = new Set(['create_note','create_document','create_task','create_event','create_context','create_agent','update_agent','create_prompt','create_resource','update_node','add_column','fill_column','add_row','change_view','run_prompt'])
       const writeActions = allActions.filter(a => {
         if (READ_ACTIONS.has(a.action as string)) return false
-        // Ignorar update_node que solo modifica body (body desactivado en Fromly)
-        if (a.action === 'update_node' && a.body && !a.text && !a.status && !a.due && !a.tags) return false
+        // update_node con SOLO body: permitido si el nodo destino es un DOCUMENTO
+        // (_doc='1' — ahí el body ES el contenido, mismo patrón que create_document),
+        // descartado si no (segunda barrera de "la IA nunca escribe body" — ver
+        // aiChatExecutor.ts updateNode(); esta vivía en un archivo distinto y se me
+        // escapó al arreglar la primera, Alberto, 30 jul: probado en vivo, el modelo
+        // SÍ generaba la acción con el body completo y aun así no pasaba nada).
+        if (a.action === 'update_node' && a.body && !a.text && !a.status && !a.due && !a.tags) {
+          const target = a.id ? store.nodes.get(a.id as string) : undefined
+          if (!target || ed(target)._doc !== '1') return false
+        }
         // Ignorar acciones desconocidas sin texto — solo generarían 'Sin título' en la UI
         if (!KNOWN_WRITE_ACTIONS.has(a.action as string) && !a.text && !a.title) return false
         return true
@@ -584,6 +593,7 @@ class AIChatStore {
               undoBundle.restoredNodes.push({
                 id: existing.id,
                 prevText: existing.text,
+                prevBody: existing.body ?? null,
                 prevStatus: existing.status ?? null,
                 prevDue: existing.due ?? null,
                 prevTypes: [...(existing.types || [])],
@@ -783,6 +793,7 @@ class AIChatStore {
     restoredNodes.forEach(n => {
       store.updateNode(n.id, {
         text: n.prevText,
+        body: n.prevBody,
         status: n.prevStatus as Node['status'],
         due: n.prevDue,
         types: n.prevTypes,

@@ -439,11 +439,17 @@ function updateNode(a: Record<string, unknown>): ExecutedAction {
   // create_document; para el resto de nodos, outliner clásico, sigue prohibido
   // — el contenido vive en hijos, no en body). Alberto, 30 jul: "si a partir
   // de un documento en el chat le digo que me añada párrafos, puede cambiar
-  // directamente el propio documento" — el prompt del servidor ya declara
-  // "body"?: string en update_node y ya inyecta el body actual + el ID de la
-  // nota abierta; solo faltaba que el cliente no lo tirase.
+  // directamente el propio documento".
+  // A DIFERENCIA de create_document (título nuevo, sin contenido previo, pide
+  // markdown y lo convierte con mdToHtml), aquí el modelo ya ha LEÍDO el body
+  // actual como HTML (currentNoteContent le inyecta el HTML real, con sus
+  // data-pid) y, probado en vivo, devuelve HTML válido extendiendo ESE mismo
+  // documento — no markdown. Pasarlo por mdToHtml lo escapaba como texto
+  // literal («<p>» visible tal cual en vez de un párrafo real) en vez de
+  // aplicarlo. Se usa tal cual: preserva los data-pid existentes (los mismos
+  // que usan las citas — ver DocEditor.tsx `scroll-to-paragraph`).
   if (typeof a.body === 'string' && parseExtraData(node.extraData)._doc === '1') {
-    updates.body = mdToHtml(a.body)
+    updates.body = a.body
   }
   if (Array.isArray(a.tags)) updates.types = a.tags
   if ('status' in a) updates.status = a.status === null ? null : a.status

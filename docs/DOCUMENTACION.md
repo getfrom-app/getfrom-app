@@ -46,6 +46,18 @@ pero nunca decía explícitamente que debía usarlos para editarla — regla añ
 (chat) creaba el formato clásico de nodos en vez de documento — ahora siempre `_doc='1'`, igual que
 `create_document`, consistente con el editor unificado desde el 13 jul.
 
+**Fase 4 — deploy a producción + dos bugs MÁS al verificar la edición de documento ya desplegada.**
+Railway sufrió una incidencia real de plataforma (`status.railway.com`), resuelta y reintentada con
+éxito. Ya en producción: (3) `aiChatStore.ts` (archivo distinto al de la fase 3) tenía una SEGUNDA
+barrera — `writeActions` descartaba en silencio cualquier `update_node` con solo `body` ("body
+desactivado en Fromly") — el modelo generaba la acción bien y aun así no pasaba nada; corregido
+igual, permitido si el nodo es `_doc='1'`, y `undoBundle` ahora guarda `prevBody` (antes "Deshacer"
+no revertía una edición de body); (4) con las barreras abiertas, apareció HTML literal escapado como
+texto en el documento — el modelo responde en HTML real (no markdown) porque ya LEE el body actual
+como HTML, pero el cliente lo pasaba por `mdToHtml()` (pensado para crear desde cero); corregido,
+`update_node` usa el body tal cual, sin conversión, preservando los `data-pid` existentes. Verificado
+en vivo tras el segundo deploy: el párrafo aparece REALMENTE renderizado, no solo confirmado por texto.
+
 ---
 
 ## 🗓️ Sesión 2026-07-29 (noche, parte 3) — "Sign in with Claude": investigado y descartado
