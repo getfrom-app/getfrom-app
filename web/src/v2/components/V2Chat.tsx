@@ -45,6 +45,11 @@ function stripActions(s: string): string {
     // Red de seguridad: el marcador de chips de seguimiento ya se separa en el store
     // (parseChips), pero nunca debe poder colarse crudo al chat pase lo que pase.
     .replace(/\{\{chips:[\s\S]*?\}\}/g, '')
+    // Red de seguridad: pese a la instrucción del prompt, el modelo a veces suelta
+    // <function_calls> justo antes del bloque de acción (hábito de otros formatos
+    // de function-calling) — nunca debe verse como texto suelto en el chat.
+    .replace(/<\/?function_calls?>/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
 

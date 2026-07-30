@@ -81,6 +81,9 @@ function stripActionBlocksForDisplay(s: string): string {
     .replace(/```from-action[\s\S]*?```/g, '')
     .replace(/```from-action[\s\S]*$/, '')
     .replace(/\{\{chips:[\s\S]*?\}\}/g, '')
+    // Red de seguridad: ver el mismo replace en stripActions (V2Chat.tsx).
+    .replace(/<\/?function_calls?>/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
 
