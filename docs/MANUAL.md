@@ -278,9 +278,12 @@ y editarlo tú mismo como un documento normal en cualquier momento.
 
 La columna derecha cambia de contenido según la pestaña que elijas arriba:
 
-- **Contexto** — qué sabe Fromly del tema en el que estás trabajando ("Memoria", arriba del
-  todo, con un aviso discreto de cuándo se actualizó por última vez), más las tareas y
-  elementos que cuelgan de ese contexto.
+- **Contexto** — al elegir un contexto en la barra lateral, su "Memoria" (qué sabe Fromly del
+  tema) se abre directamente en el centro, como cualquier documento — con más espacio para leer
+  y editar, y con su propio chat en la pestaña Chat. Aquí, en la columna derecha, ves una ficha
+  compacta: un acceso rápido de vuelta a la Memoria (con la fecha de la última actualización) más
+  las tareas y elementos que cuelgan de ese contexto. Cambiar de pestaña nunca te hace perder de
+  vista lo que tengas abierto en el centro — solo elegir OTRO contexto lo sustituye.
 - **Chat** — la conversación de lo que tengas abierto en el centro (una nota, tarea, PDF, imagen,
   agente…), independiente de Contexto: abrir un elemento no te hace perder de vista la memoria del
   tema. Es SIEMPRE la misma conversación para ese elemento, la retomes cuando la retomes — no una

@@ -11,7 +11,7 @@ import { aiChatStore, useAIChat, markAgentResultSeen, markPendingConversationSee
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
-import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent, mostRecentConversationOf } from '../utils/cajones'
+import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent, getOrCreateContextKnowledgeDoc } from '../utils/cajones'
 import { darkenHex, lightenHex, hexToRgba } from '../utils/color'
 import { htmlToMarkdown } from '../utils/htmlMarkdown'
 import { createMarkdownNode } from '../utils/importMarkdown'
@@ -99,20 +99,24 @@ export default function V2App() {
   // Elemento abierto en el ESPACIO CENTRAL — regla ÚNICA de dónde vive cada cosa
   // (Alberto, 30 jul: "me parece confuso que a veces los elementos se abran a la
   // derecha, a veces al centro"). Si hay un elemento, es el centro; si no, el
-  // centro es el chat general. La columna derecha (tab «Detalles») SIEMPRE es la
+  // centro es el chat general. La columna derecha (tab «Chat») SIEMPRE es la
   // conversación asociada a lo que hay aquí — la misma cada vez, nunca un
   // artifact aparte que compita por su propio hueco (ya no existe `detailNodeId`:
   // era exactamente la ambigüedad que causaba la confusión — un elemento a veces
   // en el centro, a veces «de artifact» a la derecha, sin regla predecible).
+  //
+  // ⚠️ DESACOPLADO de qué tab está activa (rediseño 30 jul, segunda vuelta): clicar
+  // una tab NUNCA toca `centerElementId` (antes, ir a la tab Agenda vaciaba el
+  // centro — quitado) y abrir un elemento cualquiera NUNCA cambia `rightMode`
+  // (onOpenNode no lo toca; ver comentario en onOpenConversation). Dos excepciones
+  // deliberadas, confirmadas explícitamente por Alberto, no descuidos:
+  //   1. Seleccionar un CONTEXTO (onSelectCtx) SÍ navega a la tab Contexto — es
+  //      cambiar de área de trabajo, no «abrir un elemento».
+  //   2. Cuando el chat CREA un artifact, la tab SÍ salta a Chat — no es que «abrir
+  //      un elemento cambie la tab», es que EL CHAT que estaba en el centro se
+  //      traslada a la derecha porque el artifact ocupa su sitio; es el mismo chat
+  //      relocalizándose, no una tab ajena reaccionando a algo que pasó en el centro.
   const [centerElementId, setCenterElementId] = useState<string | null>(null)
-  // Ir a la tab Agenda siempre reabre el planificador en el centro, aunque
-  // hubiera un elemento abierto (p.ej. la nota del día) — la navegación es de
-  // SUSTITUCIÓN, no de pila (Alberto, 22 jul: "cada vez que se abre algo, se
-  // sustituye lo que había... estando la nota del día abierta, cuando vuelvo
-  // a la tab agenda, debería volverse a abrir el planner").
-  useEffect(() => {
-    if (rightMode === 'hoy') setCenterElementId(null)
-  }, [rightMode])
   // Ajustes a pantalla completa: null = modo normal; si no, la pestaña activa.
   // Sustituye al modal — nav a la izquierda (donde van los contextos), contenido
   // al centro, columna derecha vacía.
@@ -199,22 +203,29 @@ export default function V2App() {
   }, [])
 
   // Al elegir un contexto, la columna derecha muestra SIEMPRE su ficha completa
-  // (vista de contexto): contenido agrupado + qué sabe Fromly + archivar. La tab
-  // Detalles es independiente — no se toca aquí, así que lo que hubiera abierto
-  // sigue disponible al volver a ella (Alberto, 15 jul).
+  // (vista de contexto: tareas + elementos + acceso a «Lo que Fromly sabe») — es
+  // cambiar de área de trabajo, no «abrir un elemento», así que SÍ navega
+  // (Alberto, 30 jul: confirmado explícitamente frente a la regla general de abajo).
+  // El documento de memoria del contexto se abre en el CENTRO, como cualquier
+  // documento (rediseño 30 jul: antes vivía embebido en esta misma columna,
+  // compitiendo por espacio con tareas/elementos — "debería mostrarse en el
+  // espacio central como un documento normal"). Ya no se intenta "retomar la
+  // última conversación" del contexto (mostRecentConversationOf, 15 jul): con la
+  // memoria como documento real, su chat asociado (getOrCreateElementSession) es
+  // ahora el hilo canónico del contexto — la tab Chat lo encuentra solo. General
+  // (id null) no tiene documento propio, así que limpia el centro y empieza un
+  // chat en blanco, como siempre.
   const onSelectCtx = (id: string | null) => {
     setShowProfile(false)
-    setCenterElementId(null)
     setSelectedCtxId(id)
     setFocusNodeId(null)
-    setRightMode(id ? 'contexto' : 'hoy')
-    // Retomar la última conversación de este contexto si existe, en vez de siempre
-    // resetear a un chat en blanco (Alberto, 15 jul: "cuando se vuelva el contexto,
-    // me gustaría que se mantuviese el último chat que sea abierto, por si el
-    // usuario quiere continuarlo").
-    const recent = id ? mostRecentConversationOf(id) : null
-    if (recent) aiChatStore.loadSession(recent.id)
-    else aiChatStore.startNewSession()
+    setRightMode('contexto')
+    if (id) {
+      setCenterElementId(getOrCreateContextKnowledgeDoc(id).id)
+    } else {
+      setCenterElementId(null)
+      aiChatStore.startNewSession()
+    }
   }
 
   // Botón «Nueva conversación» (barra izquierda) → SIEMPRE sin contexto (General).
@@ -257,41 +268,26 @@ export default function V2App() {
     setCenterElementId(n.id)
   }
 
-  // Abrir una conversación: si tiene UN solo elemento, ese elemento pasa a ser el
-  // centro (y esta misma conversación, su chat a la derecha — `getOrCreateElementSession`
-  // la encuentra sola vía `findOriginSession`); si tiene varios o ninguno, el centro
-  // es la propia conversación (chat general) y la derecha lista lo creado. La tab
-  // Contexto se mantiene intacta (ficha del contexto, si lo hay).
+  // Abrir una conversación guardada: es un elemento como cualquier otro (Alberto,
+  // 30 jul: "esa conversación sería un elemento por tanto va al centro") — al
+  // centro, sin tocar la tab activa. Se ve vía V2Chat (centerElementId null +
+  // sesión cargada = exactamente lo que ya renderiza el chat general). Ya no hace
+  // falta decidir "1 elemento adjunto → ábrelo, si no → la conversación": los
+  // elementos que nacieron de un chat encuentran SU chat solos al abrirlos
+  // (`onOpenNode` → `findOriginSession`) — no hay un caso especial que resolver
+  // aquí, la conversación en sí ya no tiene una vista "de artifact" separada.
   const onOpenConversation = (id: string) => {
     setShowProfile(false)
     markPendingConversationSeen(id) // quita el aviso "N esperando" al abrirla, no solo al responder
     aiChatStore.loadSession(id)
-    // Mantener el contexto de la conversación en la barra lateral y el breadcrumb
-    // (antes se limpiaba SIEMPRE — Alberto, 15 jul: "cuando se abre una conversación
-    // dentro del contexto diario, se debería mantener ese contexto diario. Y arriba,
-    // en el breadcrumb, debería poner contexto y luego la conversación en sí").
+    // Mantener el contexto de la conversación en la barra lateral (antes se
+    // limpiaba SIEMPRE — Alberto, 15 jul: "cuando se abre una conversación dentro
+    // del contexto diario, se debería mantener ese contexto diario").
     const sessionNode = store.getNode(id)
     const sessionCtx = sessionNode ? firstContextOf(sessionNode) : null
     setSelectedCtxId(sessionCtx?.id ?? null)
     setFocusNodeId(null)
-    const content = store.children(id).filter(n => {
-      if (n.deletedAt || !n.text) return false
-      const ed = parseExtraData(n.extraData)
-      if (ed._aiTranscript === '1' || ed._aiMsgRole) return false
-      // «Notas» de la conversación (getOrCreateContainerNotes) NO es un elemento
-      // real — es la zona de anotación libre embebida al final del panel de la
-      // conversación. Antes se colaba aquí como "el único elemento adjunto" en
-      // cuanto se creaba vacía al ver el panel, y la columna derecha se abría en
-      // su detalle de nota a pantalla completa en vez de mostrar la conversación
-      // (Alberto, 15 jul).
-      if (ed._containerNotes === '1') return false
-      if (n.status != null || (n.types || []).includes('tarea')) return false
-      if ((n.types || []).includes('evento') || n.isEvent) return false
-      return true
-    })
-    setRightMode('detalles')
-    setCenterElementId(content.length === 1 ? content[0].id : null)
-    if (content.length !== 1) setFocusNodeId(null)
+    setCenterElementId(null)
   }
 
   // «← Agentes»/«← Prompts» desde el detalle: cierra el detalle y abre la tab

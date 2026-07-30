@@ -1,7 +1,33 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-30 (Web v9.6.936)
+> Última actualización: 2026-07-30 (Web v9.6.938)
+
+---
+
+## 🗓️ Sesión 2026-07-30 (fase 5) — Navegabilidad: memoria del contexto al centro, tabs desacopladas
+
+Log completo: `logs/2026-07-30.md` (fase 5). Alberto pidió repasar TODA la navegación de las 3
+columnas: "vamos a buscar sentido a toda la navegabilidad". Regla final acordada punto por punto
+(con una pregunta directa sobre un detalle de diseño): **clicar una pestaña nunca toca el centro;
+abrir un elemento cualquiera (ahora también conversaciones guardadas) va al centro sin mover la
+pestaña**. Dos excepciones deliberadas: seleccionar un CONTEXTO sí navega a su ficha (cambiar de
+área de trabajo, no "abrir un elemento"); el chat CREANDO un documento sigue saltando a la pestaña
+Chat (es el mismo chat trasladándose, no una tab reaccionando a algo ajeno).
+
+**"Lo que Fromly sabe" sale de la columna derecha** — antes vivía embebida ahí compitiendo por
+espacio con tareas/elementos; ahora se abre en el centro como cualquier documento al seleccionar el
+contexto (elegido explícitamente por Alberto frente a la alternativa de vista-previa-bajo-demanda),
+heredando de regalo su propio chat asociado y edición por chat (fase 1-4). La ficha queda con una
+fila compacta de acceso rápido + Tareas + Elementos, con mucho más espacio.
+
+`V2App.tsx`: `onSelectCtx` reescrito (abre el doc de memoria en el centro, navega siempre a
+'contexto'); quitado el efecto que vaciaba el centro al entrar en la tab Agenda; `onOpenConversation`
+simplificado (la conversación se ve en el centro vía V2Chat, ya no decide "1 elemento → detalle").
+`V2ContextView.tsx`: memoria de editor inline (`V2NoteBody`) a fila clicable (`V2ElementRow`).
+Quitado `mostRecentConversationOf` (ya no se "adivina" la última conversación al seleccionar el
+contexto — el chat de la memoria es ahora el hilo canónico). Verificado en vivo los 5 escenarios de
+navegación; solo cambios de cliente, sin tocar el servidor.
 
 ---
 

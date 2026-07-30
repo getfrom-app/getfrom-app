@@ -2178,6 +2178,7 @@
   "v2.context.addParent": "Añadir contexto padre",
   "v2.context.noParent": "Sin contexto padre",
   "v2.context.knowledgeUpdated": "Actualizado",
+  "v2.context.knowledgeEmpty": "Vacío",
   "v2.context.knowledgeUpdatedToast": "🧠 \"{{name}}\" actualizado",
   "v2.context.convertLegacyNotes": "Convertir {{count}} nota(s) antigua(s) en documento",
   "v2.context.tasks": "Tareas",

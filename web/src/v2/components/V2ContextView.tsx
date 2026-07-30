@@ -17,14 +17,13 @@ import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
-import { V2NoteBody } from './V2DetailView'
 import ContextPicker from '../../components/panels/ContextPicker'
 import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
 import { isAgentNode, getAgentData } from '../../utils/agentesHelper'
 import { isPromptNode } from '../../utils/promptsHelper'
-import { fmtDate, fmtRelative, fmtDateFull } from '../../utils/formatDate'
+import { fmtDate, fmtRelative } from '../../utils/formatDate'
 import type { Node } from '../../types'
 
 interface Props {
@@ -283,27 +282,26 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
         </button>
       )}
 
-      {/* Lo que Fromly sabe — bloque ÚNICO fusionado (memoria de la IA + notas libres
-          del usuario): EL MISMO editor completo que cualquier nota (favorito, exportar,
-          cabeceras, formato…), no una versión reducida. Fromly añade hechos aquí
-          automáticamente (maybeUpdateContextKnowledge) y el usuario puede escribir con
-          la misma comodidad que en cualquier documento. Sin cabecera ni fila de acciones
-          propia (Alberto: no hace falta título "Lo que Fromly sabe" ni sus botones) —
-          es la descripción viva del contexto, va justo debajo del título y antes de
-          tareas/elementos, no al final. General no tiene documento de conocimiento
-          propio (no es un nodo real). */}
+      {/* Lo que Fromly sabe — YA NO se edita embebido aquí (rediseño 30 jul, Alberto:
+          "el espacio de texto del contexto... debería mostrarse en el espacio central
+          como un documento normal, para no quitar espacio a los elementos y tareas de
+          debajo"). Al seleccionar el contexto se abre solo en el centro
+          (V2App.onSelectCtx → centerElementId), como cualquier documento — con toda su
+          barra de formato, exportar, y su propio chat asociado. Esta fila es solo un
+          acceso rápido de vuelta (V2ElementRow, mismo componente que el resto de
+          Elementos) para cuando el usuario ha navegado a otra cosa en el centro sin
+          cambiar de tab (las pestañas ya no tocan el centro, ver V2RightColumn). General
+          no tiene documento de conocimiento propio (no es un nodo real). */}
       {knowledgeDoc && (
-        <>
-          {!!knowledgeDoc.body && knowledgeDoc.body.trim() !== '<p></p>' && (
-            <div
-              style={{ fontSize: 11, color: 'var(--text-tertiary,#999)', marginBottom: 4 }}
-              title={fmtDateFull(knowledgeDoc.updatedAt, i18n.language)}
-            >
-              {t('v2.context.knowledgeUpdated', 'Actualizado')} {fmtRelative(knowledgeDoc.updatedAt, i18n.language)}
-            </div>
-          )}
-          <V2NoteBody node={knowledgeDoc} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
-        </>
+        <V2ElementRow
+          node={knowledgeDoc}
+          icon="🧠"
+          onOpen={onOpenNode}
+          hideContext
+          extraMeta={!!knowledgeDoc.body && knowledgeDoc.body.trim() !== '<p></p>'
+            ? `${t('v2.context.knowledgeUpdated', 'Actualizado')} ${fmtRelative(knowledgeDoc.updatedAt, i18n.language)}`
+            : t('v2.context.knowledgeEmpty', 'Vacío')}
+        />
       )}
 
       {/* Tareas del contexto — estilo Hoy. */}
