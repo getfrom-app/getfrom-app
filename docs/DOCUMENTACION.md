@@ -1,7 +1,32 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-30 (Web v9.6.939)
+> Última actualización: 2026-07-30 (Web v9.6.940)
+
+---
+
+## 🗓️ Sesión 2026-07-30 (fase 7) — El mismo bug seguía sin resolverse del todo: max_tokens con margen real
+
+Web **v9.6.939 → v9.6.940**. Log completo: `logs/2026-07-30.md` (fase 7).
+
+Al reverificar en vivo el caso real de la fase 6 (checklist exhaustiva del contrato de Cliente
+Nova) tras desplegar `max_tokens=8192`, se seguía cortando. Además, la respuesta cruda reveló que
+el modelo a veces escribe un `<function_calls>` literal como preámbulo antes del bloque
+`from-action` — no forma parte de nuestro protocolo, es un hábito de otros formatos de
+function-calling, y se vería como texto suelto feo en el chat si la respuesta llega a completarse.
+
+Lo que realmente lo resolvió: la documentación oficial de Anthropic confirma que `claude-haiku-4-5`
+(el modelo real de la mayoría de usuarios) soporta hasta **64.000 tokens de salida** en la API
+síncrona — el límite de 8192 estaba lejísimos de ese techo sin motivo. Subido a 16000. Se
+complementó con un tope numérico duro en el prompt (máx. 6 secciones, máx. 6 puntos cada una — un
+límite concreto es más fácil de seguir para el modelo que una prioridad cualitativa) y con un
+filtro de `<function_calls>` en cliente (`stripActions` en `V2Chat.tsx`,
+`stripActionBlocksForDisplay` en `aiChatStore.ts`).
+
+Verificado en vivo con el mismo mensaje otra vez: el modelo generó 15 secciones (no respetó el
+tope de 6) pero el documento se completó entero sin cortarse — confirma que el margen real de
+tokens, no la instrucción de prompt, era lo que faltaba. Datos de prueba limpiados, cuenta
+devuelta a su estado exacto previo.
 
 ---
 
