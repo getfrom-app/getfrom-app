@@ -1,7 +1,50 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-29 (Web v9.6.935)
+> Última actualización: 2026-07-30 (Web v9.6.936)
+
+---
+
+## 🗓️ Sesión 2026-07-30 — Chat asociado a documento: rediseño chat-elemento, edición por chat
+
+Log completo: `logs/2026-07-30.md`. Sesión en tres fases, cada una motivada por feedback en vivo de
+Alberto probando el resultado de la anterior.
+
+**Fase 1**: botón "Hablar de esto" en cualquier documento/tarea/recurso abierto en el centro — abre
+una conversación centrada en ese nodo, en la columna derecha, con `V2Chat.tsx` en un nuevo modo
+`embedded`. De paso, banner de upgrade: morado fijo → `var(--accent)`, texto actualizado a "1.000
+elementos · Sin IA", y un bug real encontrado (el banner tapaba la cabecera del documento, incluido
+el botón nuevo).
+
+**Fase 2 — rediseño completo**: Alberto probó el botón y señaló que el modelo de navegación era
+confuso (a veces el chat en el centro, a veces a la derecha; cada conversación aislada del documento
+del que hablaba) y pidió estudiar patrones de otros productos (ChatGPT Canvas, Claude Artifacts,
+comentarios de Linear/Google Docs) antes de tocar más código. Propuesta aceptada: **regla única de
+sitio** — el centro es siempre lo que está abierto (o el chat general si no hay nada); la columna
+derecha es siempre la conversación asociada. **Una conversación por elemento**:
+`aiChatStore.getOrCreateElementSession(nodeId)` (nuevo) resuelve la sesión de origen
+(`findOriginSession`, movido aquí desde V2App.tsx), o la enlazada (`extraData._chatSessionId` +
+`_aboutNodeId` inverso en la sesión), o crea una nueva y la enlaza — nunca una nueva aislada cada
+vez. `detailNodeId` (el "artifact de la columna derecha" del diseño de la sesión del 22 jul)
+desaparece por completo: `centerElementId` (`V2App.tsx`) es ahora la ÚNICA fuente de verdad de qué
+hay abierto. Nuevo componente `V2ElementChat.tsx` monta el chat en la tab derecha
+(`V2RightColumn.tsx`, prop `elementId`), con sugerencias/saludo propios para el modo `embedded`
+("Resume esto"/"Sácame tareas"/"Mejora la redacción"/"¿Falta algo?" en vez de las genéricas de
+"resume mi día"). Bug real encontrado probando: la tab Agenda y la reapertura automática de "Chat"
+al primer mensaje competían entre sí — corregido marcando como gestionada cualquier sesión que pase
+por el modo elemento.
+
+**Fase 3 — ajustes tras probar el rediseño**: tab renombrada "Detalles"→"Chat" (ya no tenía otro
+uso); confirmado en vivo que funciona igual en tarea/documento/agente (PDF/imagen no probado en vivo
+por falta de datos de prueba, pero misma cabecera sin condición de tipo). **El chat ahora puede
+editar el documento abierto** — dos bugs reales: (1) cliente, `aiChatExecutor.ts` `updateNode()`
+tiraba siempre `body` ("la IA nunca escribe body", correcto para el outliner clásico pero no para un
+documento, cuyo body ES el contenido) — excepción añadida solo para `_doc='1'`, igual que
+`create_document`; (2) servidor, el modelo no ejecutaba la acción pese al fix de cliente — el prompt
+(`server/src/routes/ai.ts`) declaraba `body` en `update_node` e inyectaba ID+body de la nota abierta,
+pero nunca decía explícitamente que debía usarlos para editarla — regla añadida. De paso, `create_note`
+(chat) creaba el formato clásico de nodos en vez de documento — ahora siempre `_doc='1'`, igual que
+`create_document`, consistente con el editor unificado desde el 13 jul.
 
 ---
 

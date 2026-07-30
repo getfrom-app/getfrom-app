@@ -24,6 +24,16 @@ interface Props {
    *  en la tab Agenda (`rightMode === 'hoy'`, ver V2App.tsx) y desaparece solo al
    *  cambiar a cualquier otra tab o abrir otra cosa. */
   showPlanner: boolean
+  /** Mismo chat, montado dentro de la columna derecha en vez del espacio central
+   *  — SIEMPRE que hay un elemento abierto en el centro, es su chat asociado
+   *  (V2ElementChat/V2RightColumn.tsx). `.v2-col.v2-center` fija `height:100vh`,
+   *  correcto solo como columna raíz del grid — en `embedded` se usa
+   *  `.v2-right-fill` (mismo flex:1/min-height:0 que el resto de contenido de
+   *  la columna derecha). También cambia el saludo/sugerencias del estado
+   *  vacío: sobre EL DOCUMENTO, no genéricos de "resume mi día" (Alberto, 30
+   *  jul: "no debería aparecer, debería ser un chat dedicado al tema del que
+   *  se está hablando"). */
+  embedded?: boolean
 }
 
 // Oculta los bloques ```from-action``` (completos o el parcial que aún se está
@@ -38,14 +48,25 @@ function stripActions(s: string): string {
     .trim()
 }
 
-export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, showPlanner }: Props) {
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, showPlanner, embedded }: Props) {
   const { t } = useTranslation()
-  const SUGGESTIONS = [
+  // Sugerencias del estado vacío del chat GENERAL (sin elemento asociado) — sobre
+  // el día, las notas guardadas o tareas sueltas, nada de un documento concreto.
+  const GENERAL_SUGGESTIONS = [
     { t: t('v2.chat.suggestSummarizeDayTitle', 'Resume mi día'), d: t('v2.chat.suggestSummarizeDayDesc', 'Tareas y eventos de hoy'), p: t('v2.chat.suggestSummarizeDayPrompt', '¿Qué tengo para hoy? Resume mis tareas y eventos.') },
     { t: t('v2.chat.suggestSearchNotesTitle', 'Busca en mis notas'), d: t('v2.chat.suggestSearchNotesDesc', 'Pregunta a todo lo guardado'), p: t('v2.chat.suggestSearchNotesPrompt', 'Busca en mis notas lo que sé sobre ') },
     { t: t('v2.chat.suggestOrganizeTitle', 'Organiza esto'), d: t('v2.chat.suggestOrganizeDesc', 'Ordena y prioriza'), p: t('v2.chat.suggestOrganizePrompt', 'Ayúdame a organizar y priorizar mis tareas pendientes.') },
     { t: t('v2.chat.suggestCreateTaskTitle', 'Crea una tarea'), d: t('v2.chat.suggestCreateTaskDesc', 'Captura rápida'), p: t('v2.chat.suggestCreateTaskPrompt', 'Crea una tarea: ') },
   ]
+  // Sugerencias cuando el chat está asociado a UN elemento concreto (embedded,
+  // columna derecha) — accionables sobre EL DOCUMENTO que ya está abierto al lado.
+  const ELEMENT_SUGGESTIONS = [
+    { t: t('v2.chat.suggestSummarizeDocTitle', 'Resume esto'), d: t('v2.chat.suggestSummarizeDocDesc', 'Los puntos clave'), p: t('v2.chat.suggestSummarizeDocPrompt', 'Resume este documento en pocas frases.') },
+    { t: t('v2.chat.suggestTasksFromDocTitle', 'Sácame tareas'), d: t('v2.chat.suggestTasksFromDocDesc', 'Conviértelo en pendientes'), p: t('v2.chat.suggestTasksFromDocPrompt', 'Convierte esto en una lista de tareas.') },
+    { t: t('v2.chat.suggestImproveDocTitle', 'Mejora la redacción'), d: t('v2.chat.suggestImproveDocDesc', 'Más claro y directo'), p: t('v2.chat.suggestImproveDocPrompt', 'Repasa y mejora la redacción de este documento.') },
+    { t: t('v2.chat.suggestWhatsMissingTitle', '¿Falta algo?'), d: t('v2.chat.suggestWhatsMissingDesc', 'Revisa huecos'), p: t('v2.chat.suggestWhatsMissingPrompt', '¿Qué le falta a esto, o qué deberíamos añadir?') },
+  ]
+  const SUGGESTIONS = embedded ? ELEMENT_SUGGESTIONS : GENERAL_SUGGESTIONS
   const chat = useAIChat()
   useStore()
   const [input, setInput] = useState('')
@@ -228,26 +249,36 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, sh
   const sessionNode = chat.sessionId ? store.getNode(chat.sessionId) : null
   const convTitle = sessionNode ? (sessionNode.text || '').replace(/^✦\s*/, '').trim() : ''
 
+  const Wrapper = embedded ? 'div' : 'main'
   return (
-    <main
-      className="v2-col v2-center"
-      onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+    <Wrapper
+      className={embedded ? 'v2-right-fill' : 'v2-col v2-center'}
+      onDragOver={(e: React.DragEvent) => { e.preventDefault(); setDragOver(true) }}
       onDragLeave={() => setDragOver(false)}
       onDrop={onDrop}
       style={{ position: 'relative' }}
     >
       <div className="v2-center-head">
+        {/* Embedded: sin título dinámico — el documento YA muestra su título en el
+            centro, repetirlo aquí es ruido; una etiqueta fija basta para decir qué
+            es este panel. */}
         <span className="v2-center-title">
-          {hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}
-          {chat.sessionId ? (convTitle || t('v2.chat.conversation', 'Conversación')) : t('v2.chat.newConversation', 'Nueva conversación')}
+          {embedded
+            ? `💬 ${t('v2.rightColumn.tabChat', 'Chat')}`
+            : <>
+                {hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}
+                {chat.sessionId ? (convTitle || t('v2.chat.conversation', 'Conversación')) : t('v2.chat.newConversation', 'Nueva conversación')}
+              </>}
         </span>
       </div>
 
       <div className="v2-chat-scroll" ref={scrollRef}>
         {isEmpty ? (
           <div className="v2-empty">
-            <h1>{t('v2.chat.greeting', 'Hola')} 👋</h1>
-            <p>{t('v2.chat.emptyHint', 'Habla con Fromly. Pregúntale a todo lo que guardas, crea notas y tareas, o sube archivos arrastrándolos aquí.')}</p>
+            <h1>{embedded ? t('v2.chat.elementGreeting', 'Habla sobre esto') : t('v2.chat.greeting', 'Hola')} 👋</h1>
+            <p>{embedded
+              ? t('v2.chat.elementEmptyHint', 'Pregunta por este documento, pídele que lo resuma, lo convierta en tareas, o lo mejore. Ya sabe de qué se trata.')
+              : t('v2.chat.emptyHint', 'Habla con Fromly. Pregúntale a todo lo que guardas, crea notas y tareas, o sube archivos arrastrándolos aquí.')}</p>
             <div className="v2-suggest-grid">
               {SUGGESTIONS.map((s, i) => (
                 <button key={i} className="v2-suggest" onClick={() => { setInput(s.p); taRef.current?.focus() }}>
@@ -436,6 +467,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, sh
           <PlannerPanel initialView="week" initialDays={7} viewTabs={['week', 'month', 'year']} onClose={() => {}} />
         </div>
       )}
-    </main>
+    </Wrapper>
   )
 }

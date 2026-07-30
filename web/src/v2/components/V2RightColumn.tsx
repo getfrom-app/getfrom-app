@@ -4,13 +4,20 @@
 //            el panel de conversación/detalle y se perdía sin forma de volver,
 //            Alberto 15 jul: "debe haber una forma de volver a la columna de
 //            contexto y no la hay"). Separado del contenido específico:
-// Detalles:  el panel de la conversación activa, o el ARTIFACT que esa
-//            conversación está creando/usando en este momento (Alberto, 22 jul:
-//            "la excepción es cuando el chat trabaja con un elemento y ese
-//            elemento está en la columna derecha" — el resto de elementos se
-//            abren en el espacio CENTRAL, ver V2App.tsx `centerElementId`).
-//            Contexto y Detalles son independientes: cambiar de tab entre
-//            ellos NUNCA pierde lo que había en el otro.
+// Chat:      la conversación asociada a lo que hay abierto — id interno
+//            'detalles' (histórico, no se renombra por bajo impacto/alto
+//            riesgo de tocar todas sus referencias), pero la ETIQUETA que ve
+//            el usuario es «Chat» desde el 30 jul (Alberto: "¿para qué se usa
+//            la pestaña Detalles, además de para el chat, si no se usa para
+//            nada más? Debería llamarse Chat"). Regla ÚNICA: si hay un
+//            elemento en el CENTRO (`elementId`), esto es SIEMPRE su chat real
+//            — la misma conversación cada vez (V2ElementChat →
+//            aiChatStore.getOrCreateElementSession), nunca un «artifact»
+//            aparte que compitiera por su propio hueco. Si no hay elemento
+//            (chat general en el centro), es el panel de la conversación
+//            activa (tareas/elementos/notas). Contexto y Chat son
+//            independientes: cambiar de tab entre ellos NUNCA pierde lo que
+//            había en el otro.
 // Elementos: buscador global de todo lo guardado (notas, tareas, archivos,
 //            conversaciones…) — Historial se retiró (10 jul 26): era el mismo
 //            buscador con el filtro "conversación" implícito y sus elementos
@@ -25,12 +32,11 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
-import { useAIChat } from '../../store/aiChatStore'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
 import V2ContextView from './V2ContextView'
 import V2ConversationView from './V2ConversationView'
-import V2ElementView from './V2ElementView'
+import V2ElementChat from './V2ElementChat'
 import V2AgendaView from './V2AgendaView'
 import PlannerPanel from '../../components/panels/PlannerPanel'
 import type { Node } from '../../types'
@@ -43,10 +49,10 @@ interface Props {
   selectedCtxId: string | null
   importDragOver?: boolean
   onOpenNode: (id: string) => void
-  onStartAbout: (id: string) => void
   onSelectCtx: (id: string) => void
-  detailNodeId: string | null
-  onCloseDetail: () => void
+  /** El elemento abierto en el CENTRO (`V2App.centerElementId`) — si lo hay, la
+   *  tab Detalles es su chat. */
+  elementId: string | null
   onResize: (w: number) => void
   activeSessionId: string | null
   onOpenConversation: (id: string) => void
@@ -58,6 +64,7 @@ interface Props {
    *  derecha entera (prioridad sobre detalle/tabs): es un estado transitorio que el
    *  usuario necesita ver, no algo que competir por espacio con el resto. */
   recorder?: { recording: boolean; busy: boolean; elapsedSec: number; liveTranscript: string; stop: () => void }
+  onFilesDropped: (files: File[]) => void
 }
 
 function fmtTimer(sec: number): string {
@@ -80,10 +87,9 @@ function classify(n: Node): { icon: string; label: string } {
   return { icon: '📝', label: 'Nota' }
 }
 
-export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onStartAbout, onSelectCtx, detailNodeId, onCloseDetail, onResize, activeSessionId, onOpenConversation, elementsFilter, onOpenElementsFiltered, recorder }: Props) {
+export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, activeSessionId, onOpenConversation, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped }: Props) {
   useStore()
   const { t, i18n } = useTranslation()
-  const chat = useAIChat()
   const [today, setToday] = useState<Node | null>(() => store.todayDiary())
 
   // La nota de hoy se garantiza SOLO al abrir «Hoy» (no al arrancar el shell).
@@ -98,7 +104,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
   // anual vive DENTRO de ella, vía un botón (ver V2AgendaView) — Alberto, 21 jul.
   const tabs: { id: RightMode; label: string }[] = [
     { id: 'contexto', label: t('v2.rightColumn.tabContext', 'Contexto') },
-    { id: 'detalles', label: t('v2.rightColumn.tabDetails', 'Detalles') },
+    { id: 'detalles', label: t('v2.rightColumn.tabChat', 'Chat') },
     { id: 'elementos', label: t('v2.rightColumn.tabElements', 'Elementos') },
     { id: 'hoy', label: t('v2.rightColumn.tabAgenda', 'Agenda') },
     { id: 'dia', label: t('v2.rightColumn.tabDay', 'Día') },
@@ -132,14 +138,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
           <button
             key={tb.id}
             className={`v2-right-tab ${mode === tb.id ? 'active' : ''}`}
-            onClick={() => {
-              // Contexto ⟷ Detalles son independientes — cambiar entre ellos NUNCA
-              // pierde lo que había en el otro (Alberto, 15 jul: "debe haber una
-              // forma de volver a la columna de contexto"). Solo se cierra el
-              // detalle al salir a Elementos/Hoy/Agenda.
-              if (tb.id !== 'contexto' && tb.id !== 'detalles') onCloseDetail()
-              onMode(tb.id)
-            }}
+            onClick={() => onMode(tb.id)}
           >{tb.label}</button>
         ))}
       </div>
@@ -170,21 +169,19 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
         </div>
       )}
 
-      {/* Detalle de un elemento — SOLO en la tab Detalles, y SOLO para el artifact
-          que la conversación activa está creando/usando en este momento (el
-          resto de elementos se abren en el espacio central — Alberto, 22 jul:
-          "la excepción es cuando el chat trabaja con un elemento y ese elemento
-          está en la columna derecha... la columna derecha mantendría todo
-          igual"). Componente compartido con el visor central (V2ElementView). */}
-      {!isRecordingActive && mode === 'detalles' && detailNodeId && (
-        // key={detailNodeId}: mismo motivo que el visor central en V2App.tsx —
-        // sin desmontar entre nodos distintos, DocEditor puede guardar el texto
-        // del nodo VIEJO sobre el nodo NUEVO durante la ventana de un render.
-        <V2ElementView key={detailNodeId} nodeId={detailNodeId} onClose={onCloseDetail} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
+      {/* Detalles — SIEMPRE la conversación de lo que hay en el centro. Con
+          elemento abierto (`elementId`): su chat real de siempre (nunca uno
+          nuevo y aislado, ver V2ElementChat). Sin elemento (chat general en
+          el centro): el panel de la conversación activa (tareas/elementos/
+          notas) o vacío. */}
+      {!isRecordingActive && mode === 'detalles' && elementId && (
+        // key={elementId}: mismo motivo que el visor central en V2App.tsx —
+        // sin desmontar entre nodos distintos, el chat de uno se solapa con
+        // el del otro durante la ventana de un render.
+        <V2ElementChat key={elementId} nodeId={elementId} onFilesDropped={onFilesDropped} />
       )}
 
-      {/* Tab Detalles sin nodo abierto: el panel de la conversación activa, o vacío. */}
-      {!isRecordingActive && mode === 'detalles' && !detailNodeId && (
+      {!isRecordingActive && mode === 'detalles' && !elementId && (
         <div className="v2-right-body">
           {activeSessionId
             ? <V2ConversationView sessionId={activeSessionId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />

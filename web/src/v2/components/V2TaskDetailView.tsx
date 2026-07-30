@@ -11,10 +11,10 @@ import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
-import { firstContextOf, contextColor, getOrCreateContainerNotes } from '../../utils/cajones'
+import { getOrCreateContainerNotes } from '../../utils/cajones'
 import { timeLabel, dueLabel, dueColor, recLabel } from '../../components/panels/TaskRow'
 import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
-import { V2NoteBody } from './V2DetailView'
+import { V2NoteBody, V2NoteContext } from './V2DetailView'
 
 interface Props {
   node: Node
@@ -26,7 +26,6 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
   const { t, i18n } = useTranslation()
   const [showProps, setShowProps] = useState(false)
   const done = node.status === 'done'
-  const ctx = firstContextOf(node)
 
   const notesNode = useMemo(() => getOrCreateContainerNotes(node.id), [node.id])
 
@@ -59,16 +58,11 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
         </button>
       </div>
 
-      {/* Contexto — clic navega (sidebar + columna derecha), antes no hacía nada. */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-        {ctx ? (
-          <button className="v2-el-ctxchip" style={{ ['--chip' as string]: contextColor(ctx.id), cursor: 'pointer', border: '1px solid var(--border)', background: 'transparent' }}
-            onClick={() => onSelectCtx(ctx.id)}>
-            {ctx.text}
-          </button>
-        ) : (
-          <span className="v2-el-meta">{t('v2.taskDetail.noContext', 'Sin contexto')}</span>
-        )}
+      {/* Contexto — chip + lápiz para editarlo (antes solo lectura: si había
+          contexto navegaba, si no, "Sin contexto" era un texto inerte). Mismo
+          patrón que cualquier nota (V2NoteContext, ver V2DetailView.tsx). */}
+      <div style={{ marginBottom: 8 }}>
+        <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />
       </div>
 
       {/* Notas — EL MISMO editor completo que cualquier nota, NO es el título de la tarea. */}

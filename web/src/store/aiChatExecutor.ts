@@ -14,6 +14,7 @@ import { createContext, appendContextFacts, maybeUpdateContextKnowledge, assignC
 import { extractDateFromEnd, recurrenceToString } from '../utils/naturalDate'
 import { userStore } from './userStore'
 import { apiRequest, getToken } from '../api/client'
+import { parseExtraData } from '../utils/papeleraHelper'
 
 /** Quita prefijos de lista de un título de nodo: "1. ", "12) ", "- ", "* ", "• ".
  * (Magic a veces genera cada idea como "1. ..." → todos salían con un "1." delante.) */
@@ -98,39 +99,30 @@ function setFilter(a: Record<string, unknown>): ExecutedAction {
   return result('set_filter', true, query ? `Filtrando: ${query}` : 'Filtro limpio.')
 }
 
-/** ¿El body trae una jerarquía real (encabezados markdown o sub-items indentados)?
- *  create_note aplana todo a hijos de un solo nivel — si el modelo manda esto
- *  (a veces pide "nota" para algo que en realidad tiene secciones con sub-items,
- *  pese a la regla del prompt), es mejor crear un documento y conservar la
- *  estructura que perderla en una lista plana (Alberto, 17 jul). */
-function hasNestedStructure(body: string): boolean {
-  return body.split('\n').some(l => /^#{1,3}\s+\S/.test(l.trim()) || /^\s{2,}[-*•]\s+\S/.test(l))
-}
-
+/** create_note — SIEMPRE crea un DOCUMENTO (`_doc`), igual que create_document, solo
+ *  que con su propio título por defecto y mensaje de confirmación ("Nota" en vez de
+ *  "Documento"). Antes aplanaba el body a hijos de un solo nivel (formato clásico del
+ *  outliner) salvo que detectara jerarquía real (encabezados/sub-items) — pero eso
+ *  dejaba una nota de chat con body plano en el formato viejo, distinto del resto de
+ *  la app («+Nota» del sidebar, cualquier nota sin hijos…) que desde el 13 jul edita
+ *  TODO como documento (ver V2NoteBody.tsx). Alberto, 30 jul, probando el rediseño del
+ *  chat: "lo creado en el formato antiguo de nodos... que realmente cree un documento,
+ *  en todos los casos". */
 function createNote(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
-  const body = a.body as string | undefined
-  if (body && hasNestedStructure(body)) {
-    return createDocument(a, sessionId, currentNodeId)
-  }
   const text = cleanNodeTitle((a.text as string) || 'Nota sin título')
   const tags = (a.tags as string[]) || []
   // Validar parent_id: solo usarlo si es un UUID real que existe en el store
   const rawParent = (a.parent_id as string | undefined) || null
   const explicitParent = rawParent && store.nodes.get(rawParent) ? rawParent : null
+  const body = ((a.body as string) || '').trim()
 
   const created = store.createNode({
     text,
-    parentId: explicitParent ?? sessionId ?? null,
+    parentId: explicitParent ?? sessionId ?? currentNodeId ?? null,
     types: tags,
-    extraData: {},
+    extraData: { _doc: '1' },
   })
-  // Si hay body, crear nodos hijos en lugar de usar el editor de body
-  if (body) {
-    const lines = body.split('\n').map((l: string) => l.trim()).filter(Boolean)
-    for (const line of lines) {
-      store.createNode({ text: cleanNodeTitle(line), parentId: created.id })
-    }
-  }
+  store.updateNode(created.id, { body: mdToHtml(body) })
   const tagPart = tags.length > 0 ? ` con tags #${tags.join(' #')}` : ''
   maybeUpdateContextKnowledge(store.getNode(created.id))
   return result('create_note', true, `Nota «${text}» creada${tagPart}.`, [created.id])
@@ -442,11 +434,22 @@ function updateNode(a: Record<string, unknown>): ExecutedAction {
 
   const updates: Record<string, unknown> = {}
   if (typeof a.text === 'string') updates.text = a.text
-  // body nunca se escribe — en Fromly todo el contenido va en nodos hijos
+  // body: solo se escribe si el nodo es un DOCUMENTO (_doc='1') — ahí el body
+  // ES el contenido real que edita el usuario (misma excepción documentada que
+  // create_document; para el resto de nodos, outliner clásico, sigue prohibido
+  // — el contenido vive en hijos, no en body). Alberto, 30 jul: "si a partir
+  // de un documento en el chat le digo que me añada párrafos, puede cambiar
+  // directamente el propio documento" — el prompt del servidor ya declara
+  // "body"?: string en update_node y ya inyecta el body actual + el ID de la
+  // nota abierta; solo faltaba que el cliente no lo tirase.
+  if (typeof a.body === 'string' && parseExtraData(node.extraData)._doc === '1') {
+    updates.body = mdToHtml(a.body)
+  }
   if (Array.isArray(a.tags)) updates.types = a.tags
   if ('status' in a) updates.status = a.status === null ? null : a.status
   if ('due' in a) updates.due = parseDate(a.due) ?? null
   store.updateNode(id, updates)
+  if ('body' in updates) maybeUpdateContextKnowledge(store.getNode(id))
   return result('update_node', true,
     `Nodo «${node.text}» actualizado (${Object.keys(updates).join(', ')}).`,
     [id])

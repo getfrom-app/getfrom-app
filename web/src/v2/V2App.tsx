@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../store/nodeStore'
 import { userStore } from '../store/userStore'
-import { aiChatStore, useAIChat, markAgentResultSeen, markPendingConversationSeen } from '../store/aiChatStore'
+import { aiChatStore, useAIChat, markAgentResultSeen, markPendingConversationSeen, findOriginSession } from '../store/aiChatStore'
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
@@ -40,19 +40,6 @@ import V2UpgradeBanner from './components/V2UpgradeBanner'
 import './styles/v2.css'
 
 export const V2_VERSION = 'v2.0.0-beta.1'
-
-// La conversación que creó un nodo (si la hay): las acciones de escritura de la IA
-// parentan lo creado bajo la sesión (`aiChatExecutor.ts`), así que basta subir por
-// `parentId` hasta encontrar el nodo `_aiSession`. Tope de 10 niveles por seguridad.
-function findOriginSession(id: string): string | null {
-  let cur = store.getNode(id)
-  let guard = 0
-  while (cur && guard++ < 10) {
-    if (parseExtraData(cur.extraData)._aiSession === '1') return cur.id
-    cur = cur.parentId ? store.getNode(cur.parentId) : undefined
-  }
-  return null
-}
 
 // Color de acento PROPIO de un contexto (sube por la cadena de padres) — a
 // diferencia de `contextColor()` de cajones.ts, NO cae al acento del tema si
@@ -108,26 +95,15 @@ export default function V2App() {
   }, [ownAccent])
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
   const [rightMode, setRightMode] = useState<RightMode>('hoy')
-  // Recuerda la última tab que NO era «detalles», para poder volver a ella al
-  // cerrar el detalle con «‹» — antes onCloseDetail solo vaciaba detailNodeId y
-  // rightMode se quedaba en 'detalles' (o saltaba a 'contexto' si el elemento
-  // tenía contexto, vía setSelectedCtxId en onOpenNode), así que «atrás» nunca
-  // devolvía a Elementos/Agenda, la tab desde la que se abrió el elemento
-  // (Alberto, 22 jul: "al darle atrás debería volver a la tab anterior... pero
-  // vuelve al detalle del contexto").
-  const lastNonDetailModeRef = useRef<RightMode>('hoy')
-  useEffect(() => {
-    if (rightMode !== 'detalles') lastNonDetailModeRef.current = rightMode
-  }, [rightMode])
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
-  const [detailNodeId, setDetailNodeId] = useState<string | null>(null) // artifact de la conversación activa, en la columna derecha
-  // Elemento abierto en el ESPACIO CENTRAL (sustituye al chat, mismo patrón que
-  // showProfile) — Alberto, 22 jul: "los elementos deberían poder abrirse igual
-  // que el chat en el espacio principal... es más cómodo trabajar con un
-  // documento o un lienzo en el espacio grande". Distinto de `detailNodeId`:
-  // ese sigue siendo solo para el artifact que la conversación activa está
-  // creando/usando (la excepción explícita que pidió mantener en la columna
-  // derecha).
+  // Elemento abierto en el ESPACIO CENTRAL — regla ÚNICA de dónde vive cada cosa
+  // (Alberto, 30 jul: "me parece confuso que a veces los elementos se abran a la
+  // derecha, a veces al centro"). Si hay un elemento, es el centro; si no, el
+  // centro es el chat general. La columna derecha (tab «Detalles») SIEMPRE es la
+  // conversación asociada a lo que hay aquí — la misma cada vez, nunca un
+  // artifact aparte que compita por su propio hueco (ya no existe `detailNodeId`:
+  // era exactamente la ambigüedad que causaba la confusión — un elemento a veces
+  // en el centro, a veces «de artifact» a la derecha, sin regla predecible).
   const [centerElementId, setCenterElementId] = useState<string | null>(null)
   // Ir a la tab Agenda siempre reabre el planificador en el centro, aunque
   // hubiera un elemento abierto (p.ej. la nota del día) — la navegación es de
@@ -170,9 +146,10 @@ export default function V2App() {
   // título Y cuerpo vacíos a la vez (agentes/prompts/lienzos/"Lo que Fromly sabe" siempre
   // tienen texto), así que descartarlo al cerrar es seguro sin importar cuándo se creó.
   // No toca lienzos (`_v2canvas`): su "vacío" es JSON de pizarra, no `<p></p>`.
+  // Depende de `centerElementId` — único lugar donde se abre un elemento ahora.
   useEffect(() => {
-    if (!detailNodeId) return
-    const id = detailNodeId
+    if (!centerElementId) return
+    const id = centerElementId
     return () => {
       const node = store.getNode(id)
       if (!node || node.deletedAt) return
@@ -181,15 +158,15 @@ export default function V2App() {
       const blank = !(node.text || '').trim() && (!node.body || node.body === '<p></p>' || !htmlToMarkdown(node.body).trim())
       if (blank && store.children(id).every(c => c.deletedAt)) store.deleteNode(id)
     }
-  }, [detailNodeId])
+  }, [centerElementId])
 
   // maybeUpdateContextKnowledge (cajones.ts) — compartida con aiChatExecutor.ts, que la
   // dispara también al crear contenido por chat (antes SOLO se disparaba aquí, al cerrar
   // una nota editada a mano; la mayoría del contenido de un producto chat-first se crea
   // por chat, así que la memoria del contexto casi nunca se alimentaba).
   useEffect(() => {
-    if (!detailNodeId) return
-    const id = detailNodeId
+    if (!centerElementId) return
+    const id = centerElementId
     const openNode = store.getNode(id)
     const snapshot = { text: openNode?.text || '', body: openNode?.body || '' }
     return () => {
@@ -198,7 +175,7 @@ export default function V2App() {
       if (node.text === snapshot.text && node.body === snapshot.body) return // nada cambió
       maybeUpdateContextKnowledge(node)
     }
-  }, [detailNodeId])
+  }, [centerElementId])
 
   // Arranque del motor SOLO si la v1 no lo cargó ya en esta sesión SPA.
   // NO re-ejecutamos las migraciones estructurales de v1 (algunas destructivas):
@@ -230,7 +207,6 @@ export default function V2App() {
     setCenterElementId(null)
     setSelectedCtxId(id)
     setFocusNodeId(null)
-    setDetailNodeId(null)
     setRightMode(id ? 'contexto' : 'hoy')
     // Retomar la última conversación de este contexto si existe, en vez de siempre
     // resetear a un chat en blanco (Alberto, 15 jul: "cuando se vuelva el contexto,
@@ -247,7 +223,6 @@ export default function V2App() {
     setCenterElementId(null)
     setSelectedCtxId(null)
     setFocusNodeId(null)
-    setDetailNodeId(null)
     setRightMode('detalles') // durante una conversación, la derecha muestra su panel
     aiChatStore.startNewSession()
   }
@@ -260,7 +235,6 @@ export default function V2App() {
     setCenterElementId(null)
     setSelectedCtxId(id)
     setFocusNodeId(null)
-    setDetailNodeId(null)
     setRightMode('detalles')  // se está iniciando una conversación, no viendo la ficha
     aiChatStore.startNewSession()
   }
@@ -283,12 +257,13 @@ export default function V2App() {
     setCenterElementId(n.id)
   }
 
-  // Abrir una conversación: chat al CENTRO + su(s) elemento(s) en la tab DETALLES a
-  // la vez. 1 elemento → se abre en detalle; varios → listados en el panel de la
-  // conversación. La tab Contexto se mantiene intacta (ficha del contexto, si lo hay).
+  // Abrir una conversación: si tiene UN solo elemento, ese elemento pasa a ser el
+  // centro (y esta misma conversación, su chat a la derecha — `getOrCreateElementSession`
+  // la encuentra sola vía `findOriginSession`); si tiene varios o ninguno, el centro
+  // es la propia conversación (chat general) y la derecha lista lo creado. La tab
+  // Contexto se mantiene intacta (ficha del contexto, si lo hay).
   const onOpenConversation = (id: string) => {
     setShowProfile(false)
-    setCenterElementId(null)
     markPendingConversationSeen(id) // quita el aviso "N esperando" al abrirla, no solo al responder
     aiChatStore.loadSession(id)
     // Mantener el contexto de la conversación en la barra lateral y el breadcrumb
@@ -315,25 +290,27 @@ export default function V2App() {
       return true
     })
     setRightMode('detalles')
-    setDetailNodeId(content.length === 1 ? content[0].id : null)
+    setCenterElementId(content.length === 1 ? content[0].id : null)
+    if (content.length !== 1) setFocusNodeId(null)
   }
 
   // «← Agentes»/«← Prompts» desde el detalle: cierra el detalle y abre la tab
   // Elementos ya filtrada por ese tipo (kind = ElemKind de ElementsPanel, p.ej.
   // 'agent'|'prompt').
   const onOpenElementsFiltered = (kind: ElemKind) => {
-    setDetailNodeId(null)
     setCenterElementId(null)
     setElementsFilter(kind)
     setRightMode('elementos')
   }
 
-  // «Empezar una conversación a partir de un contenido existente»: nueva sesión
-  // centrada en ese nodo (buildPayload le inyecta ese nodo como contexto).
-  const onStartAbout = (nodeId: string) => {
-    setFocusNodeId(nodeId)
-    aiChatStore.startNewSession()
-  }
+  // «Hablar de esto» (botón en la cabecera de un documento/tarea/PDF/imagen
+  // abierto en el CENTRO, V2ElementView): el elemento YA es el centro — solo
+  // hace falta enseñar la tab Detalles, que SIEMPRE muestra el chat asociado a
+  // lo que hay en el centro (V2RightColumn → V2ElementChat →
+  // aiChatStore.getOrCreateElementSession). No hay estado propio que gestionar
+  // aquí: a diferencia del botón de antes, no crea una conversación nueva y
+  // aislada cada vez — reutiliza la de siempre.
+  const onOpenChatAbout = () => setRightMode('detalles')
 
   const isTextFile = (f: File) => /\.(md|markdown|txt)$/i.test(f.name) || f.type === 'text/markdown' || f.type === 'text/plain'
 
@@ -377,17 +354,14 @@ export default function V2App() {
     const textFiles = files.filter(isTextFile)
     const otherFiles = files.filter(f => !isTextFile(f))
 
-    // Notas de texto: siempre se importan como documento. Si hay conversación
-    // activa, se abre en la columna derecha (no tapa el chat en el centro); si
-    // no, en el espacio central como cualquier elemento nuevo.
+    // Notas de texto: siempre se importan como documento, y siempre al centro —
+    // como cualquier elemento nuevo (regla única, ver `centerElementId` arriba).
+    // Si había conversación activa, su chat sigue disponible en la tab Detalles.
     let lastNote: string | null = null
     for (const f of textFiles) {
       try { const note = createMarkdownNode(captureParentId(), await f.text(), f.name, false); if (note) lastNote = note.id } catch { /* */ }
     }
-    if (lastNote) {
-      if (aiChatStore.sessionId) { setDetailNodeId(lastNote); setRightMode('detalles') }
-      else setCenterElementId(lastNote)
-    }
+    if (lastNote) { setCenterElementId(lastNote); setRightMode('detalles') }
 
     if (!otherFiles.length) return
 
@@ -402,7 +376,7 @@ export default function V2App() {
     if (aiChatStore.sessionId) {
       // Hay conversación → adjuntar a ella.
       const sid = aiChatStore.sessionId
-      setDetailNodeId(null); setRightMode('detalles')
+      setRightMode('detalles')
       let ok = 0
       for (const f of otherFiles) { if (await uploadResourceNode(f, sid)) { ok++; toast(t('v2.attachedToConversation', '📎 {{name}} adjuntado a la conversación', { name: f.name })) } }
       if (ok > 0) {
@@ -444,7 +418,7 @@ export default function V2App() {
 
     if (aiChatStore.sessionId) {
       const sid = aiChatStore.sessionId
-      setDetailNodeId(null); setRightMode('detalles')
+      setRightMode('detalles')
       createDriveResourceNode(result, sid)
       toast(t('v2.attachedToConversation', '📎 {{name}} adjuntado a la conversación', { name: result.name }))
       aiChatStore.addNotice(t('v2.filesIncorporatedNotice', 'He incorporado {{label}} a esta conversación. Ya puedes preguntarme sobre su contenido.', { label: `**${result.name}**` }))
@@ -527,14 +501,17 @@ export default function V2App() {
     if (ctx) setSelectedCtxId(ctx.id)
 
     // Elemento normal: se abre en el ESPACIO CENTRAL (visor/editor según su
-    // tipo), sustituyendo al chat — mismo patrón que el Perfil (Alberto, 22
-    // jul). `detailNodeId`/columna derecha quedan reservados para el artifact
-    // de la conversación ACTIVA, no para esto.
+    // tipo), sustituyendo al chat — mismo patrón que el Perfil (Alberto, 22 jul).
     setCenterElementId(id)
   }
 
-  // Artifacts: cuando la IA crea un documento/nota/recurso en una conversación,
-  // se abre solo en la columna derecha (como Claude). Detecta el fin del turno.
+  // Artifacts: cuando la IA crea un documento/nota/recurso en una conversación
+  // (general o ya centrada en un elemento), ese artifact pasa a ser el CENTRO —
+  // la MISMA conversación sigue disponible en la tab Detalles (la encuentra sola,
+  // `getOrCreateElementSession`→`findOriginSession` resuelve el nuevo nodo como
+  // hijo de esta sesión al instante, sin crear nada ni perder el hilo). Mismo
+  // patrón que Claude: el chat se aparta, el artifact toma el centro. Detecta
+  // el fin del turno.
   const prevStreaming = useRef(false)
   useEffect(() => {
     if (prevStreaming.current && !chat.isStreaming) {
@@ -545,30 +522,42 @@ export default function V2App() {
         const nodes = ids.map(id => store.getNode(id)).filter(Boolean) as ReturnType<typeof store.getNode>[]
         const artifact = nodes.find(n => !!n && (isDocNode(n) || !!n.isResource))
           || nodes.find(n => !!n && n.status == null && !n.isEvent)
-        if (artifact) setDetailNodeId(artifact.id)
+        if (artifact) { setCenterElementId(artifact.id); setRightMode('detalles') }
       } catch { /* noop */ }
     }
     prevStreaming.current = chat.isStreaming
   }, [chat.isStreaming])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Al aparecer el PRIMER mensaje de usuario de una conversación, la columna derecha
-  // va sola a «Detalles» → se ve el panel de la conversación (Tareas/Elementos/Notas)
-  // sin cambiar de tab a mano. Se dispara por mensaje (no por sessionId, que puede
-  // venir persistido del reload), una sola vez por sesión, y solo desde la tab por
-  // defecto «Hoy» para no pisar una elección deliberada (Elementos/Contexto/Agenda).
-  // Contexto y Detalles son tabs independientes desde el 15 jul (Alberto: "debe haber
-  // una forma de volver a la columna de contexto") — este efecto ya no necesita tocar
-  // ni compararse con el estado de la ficha del contexto, que ahora vive aparte.
+  // Al aparecer el PRIMER mensaje de usuario de una conversación GENERAL (sin
+  // elemento en el centro), la columna derecha va sola a «Detalles» → se ve el
+  // panel de la conversación (Tareas/Elementos/Notas) sin cambiar de tab a mano.
+  // Se dispara por mensaje (no por sessionId, que puede venir persistido del
+  // reload), una sola vez por sesión, y solo desde la tab por defecto «Hoy» para
+  // no pisar una elección deliberada (Elementos/Contexto/Agenda). Si hay un
+  // elemento en el centro, su tab Detalles ya muestra el chat en curso — este
+  // efecto no tiene nada que hacer ahí.
   const switchedFor = useRef<string | null>(null)
+  // Cualquier sesión que pase por el modo «elemento» (centerElementId puesto)
+  // queda marcada como ya gestionada por el efecto de abajo. Sin esto: al
+  // volver de un elemento con conversación ya iniciada a la tab Agenda (que
+  // limpia `centerElementId`, ver el useEffect de `rightMode==='hoy'` más
+  // arriba), la sesión "aparecía" por primera vez ante el efecto de abajo con
+  // mensajes de usuario ya puestos → lo interpretaba como "primer mensaje
+  // recién escrito" y devolvía la tab a Detalles, peleándose con el clic
+  // explícito en Agenda (bug real, encontrado probando en vivo el 30 jul).
+  useEffect(() => {
+    if (centerElementId && chat.sessionId) switchedFor.current = chat.sessionId
+  }, [centerElementId, chat.sessionId])
+
   useEffect(() => {
     const sid = chat.sessionId
-    if (!sid || detailNodeId) return
+    if (!sid || centerElementId) return
     if (switchedFor.current === sid || rightMode !== 'hoy') return
     if (chat.messages.some(m => m.role === 'user')) {
       switchedFor.current = sid
       setRightMode('detalles')
     }
-  }, [chat.sessionId, chat.messages.length])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [chat.sessionId, chat.messages.length, centerElementId])  // eslint-disable-line react-hooks/exhaustive-deps
 
   // El ElementsPanel de v1 abre nodos disparando `from:open-detail` (en vez de navegar).
   // Lo escuchamos aquí para abrir el elemento desde el buscador universal.
@@ -581,28 +570,22 @@ export default function V2App() {
     return () => window.removeEventListener('from:open-detail', h as EventListener)
   }, [])
 
-  // `from:open-artifact` — un elemento que el CHAT acaba de crear (agente, prompt…)
-  // se fija en la columna derecha como artifact de la conversación activa, mismo
-  // patrón que el efecto de streaming de abajo y que onFilesDropped (setDetailNodeId
-  // + rightMode 'detalles'). DISTINTO de `from:open-detail`/onOpenNode (28 jul: bug
-  // real) — ese evento es para cuando el USUARIO abre un elemento ya existente
-  // (navega, sustituye el centro); reutilizarlo aquí lo mandaba al centro en vez de
-  // a la derecha porque onOpenNode cambió de comportamiento el 22 jul y create_agent/
-  // create_prompt (aiChatExecutor.ts) se quedaron disparando el evento viejo sin
-  // que nadie se diera cuenta — la columna derecha nunca se abría.
+  // `from:open-artifact` — un elemento que el CHAT acaba de crear (agente, prompt…):
+  // mismo destino que cualquier elemento (el centro, vía onOpenNode — ya no hay un
+  // «artifact de la columna derecha» separado, ver `centerElementId` arriba), más
+  // revelar la tab Detalles para que se vea su chat de inmediato.
   useEffect(() => {
     const h = (e: Event) => {
       const id = (e as CustomEvent).detail?.nodeId
-      if (id) { setDetailNodeId(id); setRightMode('detalles') }
+      if (id) { onOpenNode(id); setRightMode('detalles') }
     }
     window.addEventListener('from:open-artifact', h as EventListener)
     return () => window.removeEventListener('from:open-artifact', h as EventListener)
-  }, [])
+  }, [])  // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Cerrar el detalle cuando un panel lo pide (p.ej. al ELIMINAR el elemento abierto) —
-  // puede estar en la columna derecha (artifact) o en el espacio central.
+  // Cerrar el elemento cuando un panel lo pide (p.ej. al ELIMINARLO estando abierto).
   useEffect(() => {
-    const h = () => { setDetailNodeId(null); setCenterElementId(null) }
+    const h = () => setCenterElementId(null)
     window.addEventListener('from:close-detail', h)
     return () => window.removeEventListener('from:close-detail', h)
   }, [])
@@ -739,7 +722,7 @@ export default function V2App() {
         // tab día... ese texto de esa tarea se ha copiado en la nota diaria").
         // Con `key={centerElementId}` React desmonta y monta desde cero, sin
         // ventana de solape posible.
-        <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideBack />
+        <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} onOpenChat={onOpenChatAbout} />
       ) : showProfile ? (
         <V2ProfileView onClose={() => setShowProfile(false)} />
       ) : (
@@ -761,10 +744,8 @@ export default function V2App() {
         onMode={setRightMode}
         selectedCtxId={selectedCtxId}
         onOpenNode={onOpenNode}
-        onStartAbout={onStartAbout}
         onSelectCtx={onSelectCtx}
-        detailNodeId={detailNodeId}
-        onCloseDetail={() => { setDetailNodeId(null); setRightMode(lastNonDetailModeRef.current) }}
+        elementId={centerElementId}
         onResize={setRightWidth}
         activeSessionId={chat.sessionId}
         onOpenConversation={onOpenConversation}
@@ -772,6 +753,7 @@ export default function V2App() {
         elementsFilter={elementsFilter}
         onOpenElementsFiltered={onOpenElementsFiltered}
         recorder={recorder}
+        onFilesDropped={onFilesDropped}
       />
       {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
       {showCapture && (

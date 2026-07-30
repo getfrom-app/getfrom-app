@@ -29,9 +29,18 @@
 
 /* ── Banner de upgrade a Pro (free) — píldora flotante, ver V2UpgradeBanner ── */
 .v2-upgrade-banner {
-  position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 500;
+  /* top:68px, no 10px — a 10px tapaba por completo la cabecera de un documento
+     abierto en el centro (título, renombrar, "Hablar de esto", publicar/eliminar),
+     ambas del mismo alto máximo: .v2-center-head (48px) y .v2-detail-head (~63px)
+     con su fecha creado/modificado. Encontrado probando en vivo el botón "Hablar
+     de esto" — el clic caía sobre el banner en vez del botón que tenía debajo. */
+  position: fixed; top: 68px; left: 50%; transform: translateX(-50%); z-index: 500;
   display: flex; align-items: center; gap: 10px;
-  background: linear-gradient(90deg, #7c3aed, #5b21b6);
+  /* var(--accent)/--accent-hover, NUNCA morado fijo — "steel" (azul) es el
+     acento por defecto de Fromly, morado es solo un tema opcional más (ver
+     [data-accent="purple"] en styles/index.css). Este banner debe seguir el
+     acento que el usuario tenga elegido, como el resto de la app. */
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
   color: white; border-radius: 999px; padding: 7px 8px 7px 16px;
   font-size: 12.5px; box-shadow: 0 6px 20px rgba(0,0,0,0.25);
   max-width: calc(100vw - 40px);

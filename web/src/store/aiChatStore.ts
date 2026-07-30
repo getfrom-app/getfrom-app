@@ -25,7 +25,7 @@ import { extractUserKnowledge } from '../api/autoClassify'
 import { aiLangBase, aiLangBCP47 } from '../utils/aiLang'
 import { saveUserKnowledgeToProfile, readProfileLines } from '../api/userKnowledge'
 import { getAgentData, getAgentReferencedElements, readElementContent } from '../utils/agentesHelper'
-import { isInPapelera } from '../utils/papeleraHelper'
+import { isInPapelera, parseExtraData } from '../utils/papeleraHelper'
 
 export interface UndoBundle {
   createdIds: string[]        // node IDs to delete on undo
@@ -91,6 +91,20 @@ export function listPendingAgentConversations(): Node[] {
  *  debería poner 1 conversación esperando") — el aviso es para que no se te
  *  pase por alto, no para forzar una respuesta inmediata; una vez la has
  *  visto, ya ha cumplido su función. */
+/** La conversación que creó un nodo (si la hay): las acciones de escritura de la IA
+ *  parentan lo creado bajo la sesión (`aiChatExecutor.ts`), así que basta subir por
+ *  `parentId` hasta encontrar el nodo `_aiSession`. Tope de 10 niveles por seguridad.
+ *  (Movido aquí desde V2App.tsx — lo necesita también `getOrCreateElementSession`.) */
+export function findOriginSession(id: string): string | null {
+  let cur = store.getNode(id)
+  let guard = 0
+  while (cur && guard++ < 10) {
+    if (parseExtraData(cur.extraData)._aiSession === '1') return cur.id
+    cur = cur.parentId ? store.getNode(cur.parentId) : undefined
+  }
+  return null
+}
+
 export function markPendingConversationSeen(sessionId: string): void {
   const n = store.getNode(sessionId)
   if (!n) return
@@ -297,6 +311,46 @@ class AIChatStore {
     }
     this.notify()
     return this.sessionId
+  }
+
+  /** Conversación asociada a UN elemento (documento/tarea/recurso/agente/prompt) —
+   *  SIEMPRE la misma, nunca una nueva aislada cada vez que se abre su tab «Chat»
+   *  (Alberto, 30 jul: "cada documento tenga un chat en el que poder hablar de ese
+   *  elemento", no un elemento nuevo desconectado del documento del que habla).
+   *  Prioridad: (1) si el nodo nació DENTRO de una conversación, esa es la suya
+   *  (`findOriginSession` — ya la carga `onOpenNode` de forma síncrona al abrir,
+   *  así que normalmente esta función no tiene que hacer nada); (2) si ya se
+   *  habló de él antes, `extraData._chatSessionId` la recuerda; (3) si no,
+   *  se crea una vez y se enlaza al nodo para las próximas veces. Hereda el
+   *  contexto del elemento (si tiene) para que la conversación aparezca en su
+   *  ficha, y guarda `_aboutNodeId` en la sesión para poder mostrar de qué habla. */
+  getOrCreateElementSession(nodeId: string): string {
+    const origin = findOriginSession(nodeId)
+    if (origin) {
+      if (this.sessionId !== origin) this.loadSession(origin)
+      return origin
+    }
+    const node = store.getNode(nodeId)
+    if (!node) return this.ensureSession()
+    const e = parseExtraData(node.extraData)
+    const linked = typeof e._chatSessionId === 'string' ? e._chatSessionId : null
+    if (linked) {
+      const linkedNode = store.getNode(linked)
+      if (linkedNode && !linkedNode.deletedAt) {
+        if (this.sessionId !== linked) this.loadSession(linked)
+        return linked
+      }
+    }
+    const sid = this.createSessionNode(node.text || 'Conversación')
+    store.updateNode(nodeId, { extraData: JSON.stringify({ ...e, _chatSessionId: sid }) })
+    try { const ctx = firstContextOf(node); if (ctx) assignContext(sid, ctx.id) } catch { /* noop */ }
+    const sessionNode = store.getNode(sid)
+    if (sessionNode) {
+      const se = parseExtraData(sessionNode.extraData)
+      store.updateNode(sid, { extraData: JSON.stringify({ ...se, _aboutNodeId: nodeId }) })
+    }
+    this.loadSession(sid)
+    return sid
   }
 
   /** Añade un aviso (mensaje de Magic) al chat sin llamar a la IA. Efímero: informa de

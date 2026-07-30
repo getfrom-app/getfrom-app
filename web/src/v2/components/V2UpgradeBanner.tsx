@@ -39,7 +39,7 @@ export default function V2UpgradeBanner() {
   return (
     <div className="v2-upgrade-banner" role="status">
       <span className="v2-upgrade-banner-text">
-        ✨ {t('v2.upgradeBanner.message', 'Plan gratis · 1.000 nodos · 5 chats IA/mes · 1 agente')}
+        ✨ {t('v2.upgradeBanner.message', 'Plan gratis · 1.000 elementos · Sin IA')}
       </span>
       <button className="v2-upgrade-banner-cta" onClick={handleUpgrade} disabled={loading}>
         {loading ? '…' : t('v2.upgradeBanner.cta', 'Pasar a Pro')}

@@ -281,8 +281,14 @@ La columna derecha cambia de contenido según la pestaña que elijas arriba:
 - **Contexto** — qué sabe Fromly del tema en el que estás trabajando ("Memoria", arriba del
   todo, con un aviso discreto de cuándo se actualizó por última vez), más las tareas y
   elementos que cuelgan de ese contexto.
-- **Detalles** — la ficha de lo que tengas abierto (una nota, tarea o conversación concreta),
-  independiente de Contexto: abrir un elemento no te hace perder de vista la memoria del tema.
+- **Chat** — la conversación de lo que tengas abierto en el centro (una nota, tarea, PDF, imagen,
+  agente…), independiente de Contexto: abrir un elemento no te hace perder de vista la memoria del
+  tema. Es SIEMPRE la misma conversación para ese elemento, la retomes cuando la retomes — no una
+  nueva cada vez que le hablas. Puedes pedirle que resuma, convierta en tareas, mejore la redacción,
+  o directamente que **edite el documento que tienes delante** ("añade un párrafo sobre...",
+  "quita la segunda sección") — lo hace sobre la marcha, sin que tengas que copiar/pegar tú el
+  resultado. Si no tienes nada abierto, aquí ves las tareas, elementos y notas de la conversación
+  general activa.
 - **Elementos** — el buscador de todo lo que tienes guardado: notas, tareas, eventos, archivos,
   lienzos, conversaciones, agentes y prompts (clic en una conversación la retoma donde la
   dejaste, filtra por "💬 Conversaciones" para verlas solas). Filtra por tipo y, debajo, por

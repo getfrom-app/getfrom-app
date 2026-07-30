@@ -1,12 +1,10 @@
 // Vista de un elemento (documento/PDF/imagen/audio/nota/tarea/evento): cabecera
-// (volver + título editable + publicar/eliminar si es un recurso + fechas) +
-// cuerpo (V2DetailView). Extraído de V2RightColumn para reutilizarse en DOS
-// sitios (Alberto, 22 jul: "los elementos deberían poder abrirse igual que el
-// chat en el espacio principal... la columna derecha mantendría todo igual"):
-//   1. Columna derecha, tab Detalles — SOLO para el artifact de la conversación
-//      activa (el elemento que el chat está creando/usando en este momento).
-//   2. Espacio central — para cualquier otro elemento abierto (Elementos,
-//      Agenda, sidebar, búsqueda…), reemplazando al chat como hace el Perfil.
+// (título editable + botón de chat + publicar/eliminar si es un recurso +
+// fechas) + cuerpo (V2DetailView). ÚNICO sitio donde se abre un elemento
+// (`V2App.centerElementId`, espacio central) — desde el rediseño del 30 jul
+// ya no hay una segunda instancia «artifact» en la columna derecha: su chat
+// asociado vive ahí (V2ElementChat/V2RightColumn.tsx), pero el elemento en sí
+// solo se ve una vez, aquí.
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { parseExtraData } from '../../utils/papeleraHelper'
@@ -47,17 +45,15 @@ function EditableTitle({ nodeId }: { nodeId: string }) {
   )
 }
 
-export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElementsFiltered, hideBack }: {
+export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElementsFiltered, onOpenChat }: {
   nodeId: string
   onClose: () => void
   onSelectCtx: (id: string) => void
   onOpenElementsFiltered?: (kind: ElemKind) => void
-  /** El espacio central sustituye, no apila — no hay «atrás» al que volver
-   *  (la siguiente navegación ya reemplaza esto). En la columna derecha
-   *  (tab Detalles) sí hace falta: cierra el artifact y descubre el chat
-   *  debajo (Alberto, 22 jul: "cada vez que se abre algo, se sustituye lo
-   *  que había... no es necesario que haya un botón atrás"). */
-  hideBack?: boolean
+  /** Abre la tab Detalles (columna derecha) — que YA es el chat de este elemento,
+   *  siempre (V2RightColumn.tsx). Solo un atajo/afordancia junto al título; no
+   *  crea ni gestiona nada aquí. */
+  onOpenChat?: () => void
 }) {
   useStore()
   const { t, i18n } = useTranslation()
@@ -72,8 +68,12 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
     <div className="v2-right-fill">
       <div className="v2-detail-head">
         <div className="v2-detail-head-top">
-          {!hideBack && <button className="v2-iconbtn" onClick={onClose} title={t('v2.rightColumn.back', 'Volver')}>‹</button>}
           <EditableTitle nodeId={nodeId} />
+          {onOpenChat && node && (
+            <button className="v2-iconbtn" onClick={onOpenChat} title={t('v2.rightColumn.chatAboutThis', 'Hablar de esto')}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+            </button>
+          )}
           {isResourceLike && node && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <PublishButton node={node} />
