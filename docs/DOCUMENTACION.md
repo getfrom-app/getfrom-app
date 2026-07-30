@@ -1,7 +1,44 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-30 (Web v9.6.938)
+> Última actualización: 2026-07-30 (Web v9.6.939)
+
+---
+
+## 🗓️ Sesión 2026-07-30 (fase 6) — Bug real: el chat pisaba la nota abierta al crear un documento
+
+Web **v9.6.938 → v9.6.939**. Server: `max_tokens` 2048→4096 en `/ai/chat` + instrucción de JSON
+válido en el prompt. Ambos desplegados a producción. Log completo: `logs/2026-07-30.md`.
+
+Caso práctico real de Alberto (no un test dirigido): con una tarea abierta en el centro y su chat
+asociado a la derecha, pidió un dossier comercial largo. Reportó tres problemas encadenados en un
+único mensaje ("vamos con todo"), root-causados y arreglados en vivo contra la cuenta real:
+
+1. **`create_document` fallaba en silencio con contenido largo**: `extractActions` (`aiChatStore.ts`)
+   hacía `JSON.parse` directo del bloque `from-action` — con contenido largo el modelo casi siempre
+   mete saltos de línea reales dentro del string en vez de `\n` escapado, JSON inválido, parseo
+   falla sin fallback, el chat dice "hecho" y no pasa nada. Arreglado con `parseActionJson` +
+   `sanitizeJsonControlChars` (reintento escapando control chars solo dentro de strings) y aviso
+   explícito al usuario si sigue sin parsear con el bloque cerrado. `max_tokens` subido a 4096 en el
+   servidor — un dossier con secciones + el JSON + la prosa se acercaba al límite de 2048.
+2. **El documento creado apartaba la nota que se estaba trabajando** (corrige la nota de la fase 5,
+   arriba: "el chat creando un documento salta a la pestaña Chat" ya NO es el comportamiento
+   correcto tras este fix). Dos causas independientes: `aiChatStore.ts` disparaba
+   `from:open-artifact` para CUALQUIER creación de un solo elemento (ahora solo `create_agent`/
+   `create_prompt`, vía `AUTO_OPEN_ALONE`); y el efecto de `V2App.tsx` que promueve un artifact al
+   centro al terminar el streaming no comprobaba si ya había algo abierto (corregido comprobando el
+   `centerElementId` actual — un primer intento con un ref de "estado al empezar el turno" no
+   funcionó de forma fiable por el doble-montaje de efectos de React StrictMode). Documentos/notas/
+   recursos creados desde el chat de un elemento ahora quedan como chip clicable en el propio mensaje
+   (mismo patrón que ya existía para agentes/prompts) en vez de sustituir el centro solos.
+3. **JSON crudo visible al reabrir la conversación por Elementos**: `appendToTranscript` persistía el
+   texto sin limpiar de bloques `from-action` — la burbuja en vivo se veía bien porque el stripping
+   solo se aplicaba en pantalla (`V2Chat.tsx`). Nueva `stripActionBlocksForDisplay` aplicada también
+   antes de persistir.
+
+Verificado en vivo end-to-end tras desplegar servidor y cliente: documento largo creado sin
+cortarse, centro intacto en la tarea original, chip clicable en el chat, clic abre el documento.
+Datos de prueba limpiados de la cuenta al terminar.
 
 ---
 

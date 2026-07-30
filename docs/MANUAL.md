@@ -427,10 +427,13 @@ con el botón ▶).
 **Aviso en iPhone/iPad:** cuando un agente programado termina de ejecutarse recibes una notificación
 push en el momento, sin tener que dejar la app abierta ni comprobarlo manualmente.
 
-**Aviso en web:** cuando pides por chat crear un agente (o un prompt), se abre solo en la columna
-derecha sin sustituir la conversación. Cuando un agente AUTÓNOMO termina de ejecutarse en el
-servidor, aparece un aviso "N informes de agente nuevos" en la sidebar (igual que ya pasaba con los
-agentes conversacionales, que avisan con "N conversaciones esperando" hasta que abres cada una).
+**Aviso en web:** cuando pides por chat crear un agente (o un prompt), se abre solo, con el chat
+siguiéndolo a la columna derecha. Si le pides otra cosa desde el chat de un elemento — un
+documento, una nota, un recurso — no se abre solo: aparece como un enlace en el propio mensaje del
+chat para que decidas tú cuándo verlo, así nunca pierdes de vista lo que ya tenías abierto. Cuando
+un agente AUTÓNOMO termina de ejecutarse en el servidor, aparece un aviso "N informes de agente
+nuevos" en la sidebar (igual que ya pasaba con los agentes conversacionales, que avisan con "N
+conversaciones esperando" hasta que abres cada una).
 
 **Plan gratis — solo 1 agente activo a la vez.** Si activas un segundo agente sin ser Pro, el más
 reciente se queda "Activo" en apariencia pero el servidor no lo ejecuta — el panel de Propiedades del
