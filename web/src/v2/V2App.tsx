@@ -502,15 +502,33 @@ export default function V2App() {
   }
 
   // Artifacts: cuando la IA crea un documento/nota/recurso en una conversación
-  // (general o ya centrada en un elemento), ese artifact pasa a ser el CENTRO —
+  // GENERAL (sin nada abierto en el centro), ese artifact pasa a ser el CENTRO —
   // la MISMA conversación sigue disponible en la tab Detalles (la encuentra sola,
   // `getOrCreateElementSession`→`findOriginSession` resuelve el nuevo nodo como
   // hijo de esta sesión al instante, sin crear nada ni perder el hilo). Mismo
-  // patrón que Claude: el chat se aparta, el artifact toma el centro. Detecta
-  // el fin del turno.
+  // patrón que Claude: el chat se aparta, el artifact toma el centro.
+  //
+  // ⚠️ Si YA había un elemento en el centro cuando empezó el turno (chat de un
+  // elemento — V2ElementChat, ver `elementId` en V2RightColumn), NO se hace esto:
+  // antes se pisaba sin más la nota que se estaba trabajando por la que acababa
+  // de crear la IA, dejándola fuera del centro sin ningún aviso, y el propio
+  // chat (embebido en la columna derecha de ESA nota) desaparecía con ella al
+  // cambiar `centerElementId` (Alberto, 30 jul, caso real: pidió un dossier
+  // desde el chat de una tarea y el documento nuevo se llevó por delante la
+  // tarea en la que estaba trabajando). En ese caso el documento se queda
+  // enlazado como chip clicable dentro del propio mensaje del chat (ver
+  // V2Chat.tsx) — el usuario decide si quiere abrirlo, y al hacerlo sustituye
+  // el centro de forma explícita, no automática.
+  // Nota sobre la implementación: se comprueba el valor ACTUAL de `centerElementId`
+  // en vez de "capturar" su valor al empezar el turno con un ref — nada más lo
+  // toca durante un envío, así que el valor actual al terminar el streaming ya
+  // ES equivalente a "qué había abierto antes de que la IA creara esto", sin
+  // depender de la sincronía exacta de efectos (React StrictMode duplica el
+  // montaje de efectos en desarrollo, lo que hacía frágil un ref de "inicio de
+  // turno" separado — visto en vivo probando este mismo fix, 30 jul).
   const prevStreaming = useRef(false)
   useEffect(() => {
-    if (prevStreaming.current && !chat.isStreaming) {
+    if (prevStreaming.current && !chat.isStreaming && !centerElementId) {
       try {
         const last = [...chat.messages].reverse().find(m => m.role === 'assistant' && m.actions && m.actions.length > 0)
         const ids: string[] = last ? last.actions.flatMap((a: { createdIds?: string[] }) => a.createdIds || []) : []
@@ -522,7 +540,7 @@ export default function V2App() {
       } catch { /* noop */ }
     }
     prevStreaming.current = chat.isStreaming
-  }, [chat.isStreaming])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [chat.isStreaming, centerElementId])  // eslint-disable-line react-hooks/exhaustive-deps
 
   // Al aparecer el PRIMER mensaje de usuario de una conversación GENERAL (sin
   // elemento en el centro), la columna derecha va sola a «Detalles» → se ve el

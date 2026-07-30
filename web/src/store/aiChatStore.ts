@@ -71,6 +71,19 @@ export function parseChips(text: string): { cleanText: string; chips: string[] }
   } catch { return { cleanText, chips: [] } }
 }
 
+/** Quita los bloques ```from-action``` (completos o el parcial que aún se
+ *  estaba escribiendo cuando se cortó el stream) y cualquier {{chips:...}}
+ *  suelto — mismo patrón que `stripActions` en V2Chat.tsx (duplicado ahí
+ *  porque se aplica en cada render de la burbuja en vivo), usado aquí para
+ *  limpiar el texto ANTES de persistirlo en el transcript. */
+function stripActionBlocksForDisplay(s: string): string {
+  return s
+    .replace(/```from-action[\s\S]*?```/g, '')
+    .replace(/```from-action[\s\S]*$/, '')
+    .replace(/\{\{chips:[\s\S]*?\}\}/g, '')
+    .trim()
+}
+
 function ed(n: Node): Record<string, unknown> {
   try { return JSON.parse(n.extraData || '{}') } catch { return {} }
 }
@@ -531,8 +544,15 @@ class AIChatStore {
         // lo crea realmente"). Con instrucciones muy largas (agentes con
         // user_message extenso) es más probable llegar al límite de la respuesta
         // a mitad del bloque. Avisar en vez de fallar en silencio.
-        if (hasUnclosedActionBlock(assistantText)) {
+        const diag = actionBlockDiagnostics(assistantText)
+        if (diag.opens > diag.closed) {
           this.addNotice('⚠️ Se me ha cortado la respuesta a mitad de una acción y no he llegado a ejecutarla. Pídemelo otra vez — si es una instrucción muy larga, dímelo en dos mensajes.')
+        } else if (diag.closed > 0) {
+          // Bloque cerrado pero el JSON de dentro no era válido (ni siquiera tras el
+          // rescate de parseActionJson) — sin este aviso, la IA podía "decir" que
+          // había creado o editado algo sin que pasara nada de verdad (Alberto, 30
+          // jul: "dice que me ha creado un documento, no lo ha hecho").
+          this.addNotice('⚠️ No he podido ejecutar lo que te acabo de decir — el formato de la acción no era válido y no se ha creado ni cambiado nada. Vuelve a pedírmelo.')
         }
         break
       }
@@ -620,23 +640,25 @@ class AIChatStore {
           this.persistActionsOnNode(assistantMsgId, allWriteResults)
         }
         this.notify()
-        // Si se creó UN solo elemento (evita ambigüedad con creaciones múltiples,
-        // p.ej. un dictado que genera nota+tareas), abre su ficha en la columna
-        // derecha. ⚠️ 28 jul: usaba `from:open-detail` — el MISMO evento que los
-        // botones manuales «+Nota»/«+Tarea» (V2App.tsx), que desde el 22 jul abre
-        // en el CENTRO (onOpenNode), sustituyendo el chat activo. Para algo que la
-        // IA acaba de crear DENTRO de la conversación eso está mal — el chat debe
-        // seguir visible, solo se fija el artifact a la derecha (como en Claude).
-        // `from:open-artifact` hace justo eso (setDetailNodeId, sin tocar el
-        // centro) — mismo evento que ya usan create_agent/create_prompt.
-        // Excluye TAREAS a propósito (decisión de Alberto: "no tareas sueltas" —
-        // abrir la derecha en cada tarea creada por chat sería ruido) y EVENTOS,
-        // mismo criterio que el efecto de fin de streaming en V2App.tsx.
+        // Agentes/prompts creados por el chat se abren SOLOS (evento `from:open-artifact`,
+        // capturado en V2App.tsx → onOpenNode) — nunca documentos/notas/recursos. ⚠️ Hasta
+        // el 30 jul este `if` disparaba el evento para CUALQUIER creación única sin mirar
+        // el tipo de acción (`isBareTaskOrEvent` solo descartaba tareas/eventos), con un
+        // comentario que decía "sin tocar el centro" — cierto ANTES del rediseño del 30 jul
+        // (`from:open-artifact` abría un artifact aparte en la columna derecha), falso
+        // DESPUÉS (el mismo evento ahora pasa por `onOpenNode`, que SIEMPRE mueve el
+        // centro). Resultado real, probado en vivo: pedir un documento desde el chat de
+        // una tarea ya abierta la apartaba del centro sin avisar (Alberto, 30 jul, caso
+        // real). Documentos/notas/recursos YA NO se abren solos desde aquí — o bien los
+        // promueve al centro el efecto de fin de streaming en V2App.tsx (solo si el
+        // centro estaba vacío, chat general) o quedan como chip clicable en el propio
+        // mensaje del chat (V2Chat.tsx) para abrirlos a demanda sin perder de vista lo
+        // que ya había abierto.
+        const AUTO_OPEN_ALONE = new Set(['create_agent', 'create_prompt'])
         if (undoBundle.createdIds.length === 1 && typeof window !== 'undefined') {
           const createdId = undoBundle.createdIds[0]
-          const createdNode = store.nodes.get(createdId)
-          const isBareTaskOrEvent = !!createdNode && (createdNode.status != null || createdNode.isEvent)
-          if (!isBareTaskOrEvent) {
+          const sourceAction = writeResults.find(r => r.createdIds.length === 1 && r.createdIds[0] === createdId)
+          if (sourceAction && AUTO_OPEN_ALONE.has(sourceAction.action)) {
             window.dispatchEvent(new CustomEvent('from:open-artifact', { detail: { nodeId: createdId } }))
           }
         }
@@ -1263,18 +1285,25 @@ class AIChatStore {
   }
 
   /** Añade un mensaje como nodo hijo del transcript. Guarda rol + contenido limpio +
-   * (si es voz) audioKey, para poder RECARGAR la conversación al abrir el nodo. */
+   * (si es voz) audioKey, para poder RECARGAR la conversación al abrir el nodo.
+   * El texto se limpia de bloques ```from-action``` (y cualquier {{chips:...}}
+   * suelto) ANTES de persistir — antes solo se limpiaba al pintar la burbuja en
+   * vivo (`stripActions` en V2Chat.tsx), así que el nodo guardado en el árbol
+   * conservaba el JSON crudo de la acción; buscarlo luego en Elementos o volver
+   * a abrir la conversación lo enseñaba tal cual, sin formatear (Alberto, 30 jul:
+   * encontró el mensaje con el JSON en crudo buscando en Elementos). */
   private appendToTranscript(sessionId: string, role: 'user' | 'assistant', text: string, audioKey?: string, audioDuration?: number) {
-    if (!text.trim()) return
+    const clean = stripActionBlocksForDisplay(text)
+    if (!clean.trim()) return
     const transcriptNode = store.children(sessionId).find(c => {
       try { return JSON.parse(c.extraData || '{}')._aiTranscript === '1' } catch { return false }
     })
     if (!transcriptNode) return
     const label = role === 'user' ? 'Tú' : 'Magic'
-    const ed: Record<string, string> = { _aiMsgRole: role, _aiMsgContent: text }
+    const ed: Record<string, string> = { _aiMsgRole: role, _aiMsgContent: clean }
     if (audioKey) { ed._audioKey = audioKey; if (audioDuration) ed._audioDuration = String(audioDuration) }
     store.createNode({
-      text:     `${label}: ${text}`,   // texto legible en el árbol
+      text:     `${label}: ${clean}`,   // texto legible en el árbol
       parentId: transcriptNode.id,
       extraData: ed,
     })
@@ -1313,28 +1342,80 @@ function formatDate(d: Date): string {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
+/** El modelo a veces devuelve el bloque ```from-action``` bien CERRADO pero con
+ *  saltos de línea reales (sin escapar como \n) dentro de un valor string —
+ *  típico en `body` de create_document/update_node con contenido largo
+ *  (tablas, varias secciones). Eso es JSON inválido: `JSON.parse` directo
+ *  falla. Antes de rendirse, se reintenta escapando los caracteres de
+ *  control (\n, \r, \t) que aparecen DENTRO de una cadena (fuera de cadenas
+ *  se dejan intactos — son solo espacio en blanco de formato del JSON).
+ *  Sin este rescate, un documento largo con newlines reales fallaba en
+ *  silencio: la IA decía "creado" y no se creaba nada (Alberto, 30 jul, caso
+ *  real con un dossier comercial). */
+function sanitizeJsonControlChars(raw: string): string {
+  let out = ''
+  let inString = false
+  let escaped = false
+  for (let i = 0; i < raw.length; i++) {
+    const ch = raw[i]
+    if (!inString) {
+      if (ch === '"') inString = true
+      out += ch
+      continue
+    }
+    if (escaped) { out += ch; escaped = false; continue }
+    if (ch === '\\') { out += ch; escaped = true; continue }
+    if (ch === '"') { inString = false; out += ch; continue }
+    if (ch === '\n') { out += '\\n'; continue }
+    if (ch === '\r') { out += '\\r'; continue }
+    if (ch === '\t') { out += '\\t'; continue }
+    out += ch
+  }
+  return out
+}
+
+function parseActionJson(raw: string): Record<string, unknown> | null {
+  try {
+    const obj = JSON.parse(raw)
+    return (obj && typeof obj === 'object') ? obj as Record<string, unknown> : null
+  } catch {
+    try {
+      const obj = JSON.parse(sanitizeJsonControlChars(raw))
+      return (obj && typeof obj === 'object') ? obj as Record<string, unknown> : null
+    } catch {
+      return null
+    }
+  }
+}
+
 function extractActions(text: string): Array<Record<string, unknown>> {
   const out: Array<Record<string, unknown>> = []
   const regex = /```from-action\s*\n([\s\S]*?)\n```/g
   let m: RegExpExecArray | null
   while ((m = regex.exec(text)) !== null) {
-    try {
-      const obj = JSON.parse(m[1])
-      if (obj && typeof obj === 'object') out.push(obj as Record<string, unknown>)
-    } catch { /* ignore malformed JSON */ }
+    const obj = parseActionJson(m[1])
+    if (obj) out.push(obj)
   }
   return out
 }
 
-// Detecta un bloque ```from-action abierto que nunca llegó a cerrarse (la
-// respuesta se cortó a mitad, típicamente por un user_message muy largo al
-// crear un agente). extractActions() exige el cierre para poder parsear el
-// JSON, así que sin esto el fallo era completamente silencioso.
-function hasUnclosedActionBlock(text: string): boolean {
+// Diagnóstico de bloques ```from-action``` en el texto: cuántos se abrieron y
+// cuántos llegaron a cerrarse. Dos causas de fallo silencioso distintas, que
+// hay que distinguir para avisar con el mensaje correcto:
+//  - abiertos > cerrados: la respuesta se cortó a mitad (típicamente un
+//    user_message muy largo al crear un agente, o un documento largo con el
+//    límite de tokens ajustado).
+//  - cerrados pero extractActions() no sacó ninguna acción: el bloque se
+//    cerró pero el JSON de dentro no era válido ni siquiera tras el rescate
+//    de sanitizeJsonControlChars (comillas sin escapar, backticks anidados
+//    que cortan el cierre antes de tiempo, etc.).
+function actionBlockDiagnostics(text: string): { opens: number; closed: number } {
   const opens = (text.match(/```from-action/g) || []).length
-  if (opens === 0) return false
   const closed = (text.match(/```from-action\s*\n[\s\S]*?\n```/g) || []).length
-  return opens > closed
+  return { opens, closed }
+}
+function hasUnclosedActionBlock(text: string): boolean {
+  return actionBlockDiagnostics(text).opens > 0 && actionBlockDiagnostics(text).opens > actionBlockDiagnostics(text).closed
 }
 
 export const aiChatStore = new AIChatStore()

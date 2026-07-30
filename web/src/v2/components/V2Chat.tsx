@@ -309,12 +309,17 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, sh
                       ))}
                     </div>
                   )}
-                  {/* Referencia clicable al agente/prompt recién creado, en el propio mensaje
-                      del chat — antes solo quedaba descrito en el texto, sin nada a lo que
-                      hacer clic aquí mismo (Alberto, 15 jul: "debe aparecer allí mismo en el
-                      chat que se ha creado y se debe abrir a la derecha"). */}
+                  {/* Referencia clicable al elemento recién creado, en el propio mensaje del
+                      chat — antes solo quedaba descrito en el texto, sin nada a lo que hacer
+                      clic aquí mismo (Alberto, 15 jul, sobre agentes/prompts: "debe aparecer
+                      allí mismo en el chat que se ha creado y se debe abrir a la derecha").
+                      Extendido a documentos/notas (Alberto, 30 jul): cuando el chat está
+                      centrado en un elemento (V2ElementChat) y la IA crea un documento nuevo,
+                      V2App.tsx YA NO lo abre solo en el centro (eso apartaría la nota que se
+                      estaba trabajando) — este chip es la única forma de llegar a él desde
+                      aquí, a un clic, sin perder de vista lo que había abierto. */}
                   {m.actions
-                    .filter(a => a.ok && (a.action === 'create_agent' || a.action === 'create_prompt') && a.createdIds.length === 1)
+                    .filter(a => a.ok && ['create_agent', 'create_prompt', 'create_document', 'create_note', 'create_resource'].includes(a.action) && a.createdIds.length === 1)
                     .map(a => {
                       const node = store.getNode(a.createdIds[0])
                       if (!node) return null
