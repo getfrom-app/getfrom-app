@@ -282,27 +282,18 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
         </button>
       )}
 
-      {/* Lo que Fromly sabe — YA NO se edita embebido aquí (rediseño 30 jul, Alberto:
+      {/* «Lo que Fromly sabe» — YA NO se edita embebido aquí (rediseño 30 jul, Alberto:
           "el espacio de texto del contexto... debería mostrarse en el espacio central
           como un documento normal, para no quitar espacio a los elementos y tareas de
-          debajo"). Al seleccionar el contexto se abre solo en el centro
-          (V2App.onSelectCtx → centerElementId), como cualquier documento — con toda su
-          barra de formato, exportar, y su propio chat asociado. Esta fila es solo un
-          acceso rápido de vuelta (V2ElementRow, mismo componente que el resto de
-          Elementos) para cuando el usuario ha navegado a otra cosa en el centro sin
-          cambiar de tab (las pestañas ya no tocan el centro, ver V2RightColumn). General
-          no tiene documento de conocimiento propio (no es un nodo real). */}
-      {knowledgeDoc && (
-        <V2ElementRow
-          node={knowledgeDoc}
-          icon="🧠"
-          onOpen={onOpenNode}
-          hideContext
-          extraMeta={!!knowledgeDoc.body && knowledgeDoc.body.trim() !== '<p></p>'
-            ? `${t('v2.context.knowledgeUpdated', 'Actualizado')} ${fmtRelative(knowledgeDoc.updatedAt, i18n.language)}`
-            : t('v2.context.knowledgeEmpty', 'Vacío')}
-        />
-      )}
+          debajo"). Al seleccionar el contexto se abre SIEMPRE en el centro
+          (V2App.onSelectCtx → centerElementId es incondicional), así que una fila de
+          acceso rápido aquí es pura duplicación del mismo documento que ya está abierto
+          al lado (Alberto, 4 ago 2026: "veo que ahora en todos los contextos aparece
+          una nota de Memoria con iconos de cerebros. esto sobra"). Se quitó la fila
+          (antes V2ElementRow con icono 🧠) — antes existía por si el usuario navegaba
+          el centro a otra cosa sin cambiar de tab, pero en la práctica onSelectCtx
+          fuerza el centro cada vez que se entra al contexto, así que casi nunca se veía
+          «vacía»: aparecía duplicada nada más entrar. */}
 
       {/* Tareas del contexto — estilo Hoy. */}
       <div className="v2-section-label" style={{ padding: '18px 0 6px' }}>

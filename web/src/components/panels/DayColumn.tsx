@@ -301,6 +301,37 @@ export default function DayColumn({
   const renderTaskCheckboxRow = (task: Node, inAllDayGroup = false) => {
     const done = task.status === 'done'
     const timeStr = timeLabel(task, i18n.language) || t('tip.allDay')
+    // «Todo el día»: dos líneas + chip de contexto, mismo estilo que Atrasadas/Futuro/
+    // Sin fecha (TaskRow) — antes esta fila (propia de DayColumn, no el TaskRow
+    // compartido) no mostraba el contexto y el título competía con el resto en una
+    // sola línea (Alberto, 4 ago 2026: "en TODO EL DÍA... deberían aparecer los
+    // contextos como en ATRASADAS... todos los bloques deben ser iguales"). «Eventos
+    // de hoy» (con hora, inAllDayGroup=false) NO cambia — el badge de hora en cabecera
+    // es un diseño aparte, deliberado, no parte de esta queja.
+    if (inAllDayGroup) {
+      return (
+        <div key={`task:${task.id}`} className={`dc-row dc-row--event ${done ? 'dc-row--done' : ''}`} data-node-id={task.id}
+          draggable
+          onDragStart={e => { e.dataTransfer.setData('nodeId', task.id); e.dataTransfer.effectAllowed = 'move' }}
+          onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: task.id, x: e.clientX, y: e.clientY } })) }}>
+          <button className={`dc-check ${done ? 'dc-check--done' : ''}`}
+            onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
+            title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
+          <div className="dc-row-main">
+            <div className="dc-row-l1">
+              <span className="dc-text dc-text--wrap" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
+                {task.text ? renderInline(task.text) : t('common.noTitle')}
+              </span>
+            </div>
+            <div className="dc-row-l2">
+              <span style={{ flex: 1 }} />
+              <TaskHoverActions node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
+              <RowContextChip node={task} />
+            </div>
+          </div>
+        </div>
+      )
+    }
     return (
       <div key={`task:${task.id}`} className={`dc-row dc-row--event ${done ? 'dc-row--done' : ''}`} data-node-id={task.id}
         draggable
@@ -309,7 +340,7 @@ export default function DayColumn({
         <button className={`dc-check ${done ? 'dc-check--done' : ''}`}
           onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
           title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
-        {!inAllDayGroup && <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>}
+        <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
         <span className="dc-text" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
           {task.text ? renderInline(task.text) : t('common.noTitle')}
         </span>
@@ -327,6 +358,64 @@ export default function DayColumn({
     const allDay = isAllDay(ev)
     const rec = recShort(ev.recurrence, t)
     const timeStr = allDay ? t('tip.allDay') : (ev.due ? hhmm(ev.due) : '')
+    // Mismos hover actions que una tarea normal (Alberto, 22 jul: "las tareas que son
+    // eventos necesitan igual que las que no lo son los botones para reprogramar,
+    // eliminar o enviar a futuro"). Reprogramar reutiliza el mismo popover de fecha
+    // (TaskPropsPopover) que las tareas — la hora se sigue editando aparte con el
+    // badge de arriba. Eliminar usa deleteRow (borra también en Google), no el
+    // trashNode genérico de TaskHoverActions. Mover a Futuro sigue el mismo patrón que
+    // «Convertir en tarea»: pierde isEvent/hora y pasa a tarea aparcada sin fecha.
+    const actions = (
+      <span className="dc-actions">
+        <button className="dc-action" title={t('dailyCockpit.editDateRecurrence', 'Cambiar fecha')}
+          onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === ev.id ? null : ev.id) }}>
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4.5" width="14" height="13" rx="2" /><path d="M3 8.5h14M7 3v3M13 3v3" />
+          </svg>
+        </button>
+        <button className="dc-action" title={t('taskHover.moveToFuture', 'Mover a Futuro')}
+          onClick={e => { e.stopPropagation(); store.updateNode(ev.id, { isEvent: false, status: 'future', due: null, dueEnd: null }) }}>
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 10h11M11 5.5l4.5 4.5-4.5 4.5" />
+          </svg>
+        </button>
+        <button className="dc-action dc-action--del" title={t('common.delete')}
+          onClick={e => { e.stopPropagation(); deleteRow(ev) }}>
+          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" />
+          </svg>
+        </button>
+      </span>
+    )
+    // «Todo el día»: dos líneas + chip de contexto, mismo estilo que
+    // renderTaskCheckboxRow de arriba y que TaskRow (Atrasadas/Futuro/Sin fecha) —
+    // antes esta fila no mostraba contexto (Alberto, 4 ago 2026, ver comentario en
+    // renderTaskCheckboxRow). «Eventos de hoy» (con hora) no cambia.
+    if (inAllDayGroup) {
+      return (
+        <div key={`node:${ev.id}`}>
+          <div className="dc-row dc-row--event" data-node-id={ev.id}
+            draggable
+            onDragStart={e => { e.dataTransfer.setData('nodeId', ev.id); e.dataTransfer.effectAllowed = 'copy' }}
+            onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
+            <span className="dc-event-dot" style={color ? { background: color } : undefined} />
+            <div className="dc-row-main">
+              <div className="dc-row-l1">
+                <span className="dc-text dc-text--wrap" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
+                  {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
+                </span>
+              </div>
+              <div className="dc-row-l2">
+                {rec && <span className="dc-rec" title={rec}>🔁 {rec}</span>}
+                <span style={{ flex: 1 }} />
+                {actions}
+                <RowContextChip node={ev} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )
+    }
     return (
       <div key={`node:${ev.id}`}>
         <div className="dc-row dc-row--event" data-node-id={ev.id}
@@ -334,48 +423,18 @@ export default function DayColumn({
           onDragStart={e => { e.dataTransfer.setData('nodeId', ev.id); e.dataTransfer.effectAllowed = 'copy' }}
           onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: ev.id, x: e.clientX, y: e.clientY } })) }}>
           <span className="dc-event-dot" style={color ? { background: color } : undefined} />
-          {!inAllDayGroup && (
-            <button
-              className="dc-ev-badge dc-ev-badge--lead"
-              onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
-              title={t('tip.editTimeAndRepeat')}
-            >
-              {timeStr}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
-            </button>
-          )}
+          <button
+            className="dc-ev-badge dc-ev-badge--lead"
+            onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
+            title={t('tip.editTimeAndRepeat')}
+          >
+            {timeStr}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
+          </button>
           <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
             {ev.text ? renderInline(ev.text) : t('search.chipEvent')}
           </span>
           <span style={{ flex: 1 }} />
-          {/* Mismos hover actions que una tarea normal (Alberto, 22 jul: "las
-              tareas que son eventos necesitan igual que las que no lo son los
-              botones para reprogramar, eliminar o enviar a futuro"). Reprogramar
-              reutiliza el mismo popover de fecha (TaskPropsPopover) que las
-              tareas — la hora se sigue editando aparte con el badge de arriba.
-              Eliminar usa deleteRow (borra también en Google), no el trashNode
-              genérico de TaskHoverActions. Mover a Futuro sigue el mismo patrón
-              que «Convertir en tarea»: pierde isEvent/hora y pasa a tarea
-              aparcada sin fecha. */}
-          <span className="dc-actions">
-            <button className="dc-action" title={t('dailyCockpit.editDateRecurrence', 'Cambiar fecha')}
-              onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === ev.id ? null : ev.id) }}>
-              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4.5" width="14" height="13" rx="2" /><path d="M3 8.5h14M7 3v3M13 3v3" />
-              </svg>
-            </button>
-            <button className="dc-action" title={t('taskHover.moveToFuture', 'Mover a Futuro')}
-              onClick={e => { e.stopPropagation(); store.updateNode(ev.id, { isEvent: false, status: 'future', due: null, dueEnd: null }) }}>
-              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 10h11M11 5.5l4.5 4.5-4.5 4.5" />
-              </svg>
-            </button>
-            <button className="dc-action dc-action--del" title={t('common.delete')}
-              onClick={e => { e.stopPropagation(); deleteRow(ev) }}>
-              <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" />
-              </svg>
-            </button>
-          </span>
+          {actions}
         </div>
         {editEv === ev.id && !allDay && ev.due && (
           <div className="dc-ev-edit" onClick={e => e.stopPropagation()}>

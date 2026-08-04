@@ -42,6 +42,7 @@ export function classifyElement(n: Node): { kind: ElKind; icon: string; label: s
   // elemento (bullets sueltos sin marcar) siguen fuera: caen en 'note' más abajo, y
   // los dos consumidores (V2RightColumn/V2ContextView) ya filtran `kind === 'note'`.
   if (n.deletedAt) return null
+  if (n.isDiaryEntry) return null                               // nota diaria — solo Calendario/tab Día, nunca Elementos (Alberto, 4 ago 2026)
   const e = parseExtraData(n.extraData)
   if (e._absorbedBy != null) return null                       // oculto dentro de un bloque
   if (e._aiSession === '1' || e._aiTranscript === '1' || e._aiMsgRole) return null

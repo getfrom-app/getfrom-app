@@ -30,7 +30,7 @@ import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../view
 import type { FilterView } from '../views/FilterResultsView'
 import PizarraThumbnail from '../views/PizarraThumbnail'
 
-export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'dia' | 'cita'
+export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'cita'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; ctxId: string | null; due?: string | null; status?: string | null }
@@ -45,10 +45,12 @@ function classify(n: Node): ElemKind | null {
   // Mensajes/transcripciones DENTRO de una conversación no son elementos sueltos (solo
   // la sesión en sí lo es, como tipo 'conversation' — ver más abajo).
   if (e._aiTranscript != null || e._aiMsgRole != null) return null
-  // Nota diaria (📅 Agenda → Año → Mes → Día) — antes quedaba fuera de `isNote`/
-  // `isDocNode` (estructural) y por tanto invisible en el buscador. Ahora es su
-  // propio tipo buscable (Alberto, 22 jul: "serían un elemento nuevo llamado Día").
-  if (n.isDiaryEntry) return 'dia'
+  // Nota diaria (📅 Agenda → Año → Mes → Día) — NUNCA es un elemento suelto (Alberto,
+  // 4 ago 2026: "las notas diarias no deben aparecer en elementos, son notas que solo
+  // se abren desde el calendario o desde la tab día"). Reemplaza la decisión anterior
+  // (22 jul: se había convertido en su propio tipo buscable 'dia') — revertida porque
+  // duplicaba el acceso ya cubierto por Calendario/tab Día y añadía ruido a la lista.
+  if (n.isDiaryEntry) return null
   // La conversación (sesión ✦) SÍ es un elemento — Alberto: "la conversación en sí también
   // debería ser un elemento". Antes se ocultaban aquí las sesiones de comando rápido (1
   // turno, sin continuidad); ahora TODOS los chats se guardan y se listan (15 jul: "quiero
@@ -93,8 +95,13 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
   return true
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', canvas: '🎨', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡', dia: '🗓️', cita: '🔖' }
+const KIND_ICON: Record<ElemKind, string> = { text: '📝', canvas: '🎨', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡', cita: '🔖' }
 const ROW_H = 46
+// Fila de TAREA (TaskRow) es más alta desde que pasó a dos líneas (Alberto, 4 ago
+// 2026: "las tareas de la tab agenda se deben leer completas") — el resto de tipos
+// (nota, PDF, enlace…) siguen en una línea a ROW_H. Lista virtualizada: hay que
+// declarar la altura real por fila o las filas de tarea se solapan/recortan.
+const TASK_ROW_H = 58
 const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
 const ELEMENTS_SORT_KEY = 'from_v2_elements_sort'
 
@@ -260,9 +267,19 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   const virtualizer = useVirtualizer({
     count: filtered.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => ROW_H,
+    estimateSize: i => (filtered[i]?.kind === 'task' ? TASK_ROW_H : ROW_H),
     overscan: 12,
   })
+  // Remedido forzado tras el primer pintado: con altura dinámica (medida por fila,
+  // ver measureElement más abajo) la primera fila visible a veces se queda con el
+  // tamaño ESTIMADO en vez del medido — la siguiente fila arrancaba unos px antes
+  // de que la anterior terminase (solapamiento visto en vivo en Elementos, Alberto,
+  // 4 ago 2026). `measure()` limpia la caché de tamaños y fuerza recalcular todas
+  // las filas ya montadas contra su altura real.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => virtualizer.measure())
+    return () => cancelAnimationFrame(id)
+  }, [filtered.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const CHIPS: { key: ElemKind | 'all' | 'favorite'; label: string }[] = [
     { key: 'all',      label: t('elements.all') },
@@ -277,7 +294,6 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     { key: 'cita',    label: '🔖 ' + t('elements.citas', 'Citas') },
     { key: 'image',   label: t('elements.images') },
     { key: 'context', label: t('elements.contexts') },
-    { key: 'dia',     label: '🗓️ ' + t('elements.days', 'Días') },
     { key: 'agent',   label: '🤖 ' + t('elements.agents', 'Agentes') },
     { key: 'prompt',  label: '⚡ ' + t('elements.prompts', 'Prompts') },
     { key: 'conversation', label: '💬 ' + t('elements.conversations', 'Conversaciones') },
@@ -586,7 +602,13 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
               const r = filtered[vi.index]
               const isRenaming = renaming === r.id
               const isSelected = selected.has(r.id)
-              const wrapStyle: React.CSSProperties = { position: 'absolute', top: 0, left: 0, width: '100%', height: ROW_H, transform: `translateY(${vi.start}px)`, boxSizing: 'border-box' }
+              // Sin altura fija: react-virtual mide la altura REAL de cada fila vía
+              // `measureElement` (ver más abajo) y reposiciona las siguientes en
+              // consecuencia. Necesario desde que el título dejó de truncarse — antes
+              // una altura fija por tipo (ROW_H/TASK_ROW_H) bastaba, pero un título largo
+              // + chip de contexto puede envolver a más líneas de las previstas y las
+              // filas se solapaban (Alberto, 4 ago 2026, visto en vivo en Elementos).
+              const wrapStyle: React.CSSProperties = { position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${vi.start}px)`, boxSizing: 'border-box' }
 
               let inner: React.ReactNode = null
               // Tarea → TaskRow ÚNICO compartido con toda la app (Hoy, Contexto, otros
@@ -598,38 +620,48 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                   <TaskRow
                     node={n}
                     onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)}
-                    style={{ position: 'static', width: '100%', height: '100%', boxSizing: 'border-box' }}
+                    style={{ position: 'static', width: '100%', boxSizing: 'border-box' }}
                   />
                 )
               } else if (r.kind === 'event' && !isRenaming) {
                 // Evento: pieza propia (sin checkbox de tarea real / chips de repetición).
+                // Dos líneas + título sin truncar, mismo patrón que TaskRow (Alberto, 4 ago
+                // 2026: "aquí en elementos pasa lo mismo, se truncan... usar dos líneas").
                 const n = store.getNode(r.id)
                 if (n) inner = (
                   <div
                     className={`dc-row ${n.status === 'done' ? 'dc-row--done' : ''}`}
                     data-node-id={n.id}
                     onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openMenu(r.id, e.clientX, e.clientY) }}
-                    style={{ width: '100%', height: '100%', boxSizing: 'border-box' }}
+                    style={{ width: '100%', boxSizing: 'border-box' }}
                   >
                     <button
                       className={`dc-check ${n.status === 'done' ? 'dc-check--done' : ''}`}
                       onClick={(e) => { e.stopPropagation(); toggleTaskDone(n) }}
                     >{n.status === 'done' ? '✓' : ''}</button>
-                    <span className="dc-text dc-text--tight" onClick={() => openNodeDetail(n.id)}>{n.text ? renderInline(n.text) : t('tip.task', 'Tarea')}</span>
-                    <span style={{ flex: 1 }} />
-                    <TaskHoverActions node={n} onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
-                    <RowContextChip node={n} />
+                    <div className="dc-row-main">
+                      <div className="dc-row-l1">
+                        <span className="dc-text dc-text--wrap" onClick={() => openNodeDetail(n.id)}>{n.text ? renderInline(n.text) : t('tip.task', 'Tarea')}</span>
+                      </div>
+                      <div className="dc-row-l2">
+                        <span style={{ flex: 1 }} />
+                        <TaskHoverActions node={n} onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
+                        <RowContextChip node={n} />
+                      </div>
+                    </div>
                   </div>
                 )
               } else {
+                // Resto de tipos (nota, PDF, enlace, conversación…): mismo patrón dos-líneas
+                // — título arriba SIN truncar (envuelve si hace falta), fecha + acciones abajo.
                 inner = (
                   <div
                     className="dc-row el-row"
                     onClick={() => { if (!isRenaming) open(r.id) }}
                     onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openMenu(r.id, e.clientX, e.clientY) }}
-                    style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '0 4px 0 6px', cursor: 'pointer', boxSizing: 'border-box' }}
+                    style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: 8, padding: '4px 4px 4px 6px', cursor: 'pointer', boxSizing: 'border-box' }}
                   >
-                    <span style={{ fontSize: 15, flexShrink: 0 }}>{KIND_ICON[r.kind]}</span>
+                    <span style={{ fontSize: 15, flexShrink: 0, lineHeight: '20px' }}>{KIND_ICON[r.kind]}</span>
                     <div style={{ minWidth: 0, flex: 1 }} title={`${t('v2.rightColumn.created', 'Creado')}: ${fmtDateFull(r.createdAt, i18n.language)}\n${t('v2.rightColumn.updated', 'Modificado')}: ${fmtDateFull(r.updatedAt, i18n.language)}`}>
                       {isRenaming ? (
                         <input
@@ -641,44 +673,45 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                           onBlur={commitRename}
                           style={{ width: '100%', boxSizing: 'border-box', border: '1px solid var(--accent,#6c5ce7)', borderRadius: 5, padding: '2px 6px', fontSize: 13, background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontFamily: 'inherit' }}
                         />
-                      ) : (<>
-                        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text,#222)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
-                        {r.snippet && r.snippet !== r.title && (
-                          <div style={{ fontSize: 11.5, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.snippet}</div>
-                        )}
-                      </>)}
+                      ) : (
+                        <div className="dc-row-l1">
+                          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text,#222)', lineHeight: 1.3, wordBreak: 'break-word' }}>{r.title}</div>
+                        </div>
+                      )}
+                      {!isRenaming && (
+                        <div className="dc-row-l2" style={{ marginTop: 2 }}>
+                          {r.snippet && r.snippet !== r.title && (
+                            <span style={{ fontSize: 11.5, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }}>{r.snippet}</span>
+                          )}
+                          <span style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap' }}>
+                            {fmtDate(sortBy === 'created' ? r.createdAt : r.updatedAt, i18n.language)}
+                          </span>
+                          <span style={{ flex: 1 }} />
+                          {/* Eliminar directo al hover — mismo patrón que el resto de listas de la app. */}
+                          <button
+                            className="el-row-del"
+                            title={t('tip.delete', 'Eliminar')}
+                            onClick={(e) => { e.stopPropagation(); del(r.id) }}
+                            style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: '4px 5px', borderRadius: 4, display: 'flex', alignItems: 'center' }}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                          </button>
+                          <button
+                            className="el-more"
+                            title={t('elements.actions', 'Acciones')}
+                            onClick={(e) => { e.stopPropagation(); const rc = (e.currentTarget as HTMLElement).getBoundingClientRect(); openMenu(r.id, rc.right - 200, rc.bottom + 2) }}
+                            style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 16, lineHeight: 1, padding: '2px 6px', borderRadius: 4 }}
+                          >⋯</button>
+                        </div>
+                      )}
                     </div>
-                    {!isRenaming && (
-                      <span style={{ flexShrink: 0, fontSize: 11, color: 'var(--text-tertiary,#999)', whiteSpace: 'nowrap' }}>
-                        {fmtDate(sortBy === 'created' ? r.createdAt : r.updatedAt, i18n.language)}
-                      </span>
-                    )}
-                    {!isRenaming && (
-                      <>
-                        {/* Eliminar directo al hover — mismo patrón que el resto de listas de la app. */}
-                        <button
-                          className="el-row-del"
-                          title={t('tip.delete', 'Eliminar')}
-                          onClick={(e) => { e.stopPropagation(); del(r.id) }}
-                          style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: '4px 5px', borderRadius: 4, display: 'flex', alignItems: 'center' }}
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                        </button>
-                        <button
-                          className="el-more"
-                          title={t('elements.actions', 'Acciones')}
-                          onClick={(e) => { e.stopPropagation(); const rc = (e.currentTarget as HTMLElement).getBoundingClientRect(); openMenu(r.id, rc.right - 200, rc.bottom + 2) }}
-                          style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', fontSize: 16, lineHeight: 1, padding: '2px 6px', borderRadius: 4 }}
-                        >⋯</button>
-                      </>
-                    )}
                   </div>
                 )
               }
 
               if (!inner) return null
               return (
-                <div key={r.id} style={wrapStyle}>
+                <div key={r.id} data-index={vi.index} ref={virtualizer.measureElement} style={wrapStyle}>
                   {inner}
                   {/* Overlay de selección — intercepta el clic sin tocar TaskRow ni el resto
                       de filas; el contenido de debajo sigue visible (fondo transparente). */}

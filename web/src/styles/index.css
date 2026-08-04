@@ -13873,6 +13873,11 @@ textarea:focus-visible,
    hueco en blanco. El spacer explícito tras los chips empuja el contexto y las
    acciones al borde derecho. */
 .dc-row > .dc-text.dc-text--tight { flex: 0 1 auto; min-width: 0; }
+/* Título que NUNCA se trunca: envuelve a varias líneas en vez de recortar con "..."
+   (Alberto, 4 ago 2026: "se debe leer el título entero" — Agenda, Elementos, tarjetas
+   de tarea/evento). Usado en la línea 1 de una fila .dc-row-l1, o como título propio
+   de una fila de lienzo/genérica de Elementos. */
+.dc-text--wrap { white-space: normal; overflow: visible; text-overflow: clip; word-break: break-word; line-height: 1.3; }
 .dc-due {
   flex-shrink: 0;
   font-size: 11px;

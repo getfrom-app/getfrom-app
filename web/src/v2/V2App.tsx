@@ -108,7 +108,7 @@ export default function V2App() {
   // ⚠️ DESACOPLADO de qué tab está activa (rediseño 30 jul, segunda vuelta): clicar
   // una tab NUNCA toca `centerElementId` (antes, ir a la tab Agenda vaciaba el
   // centro — quitado) y abrir un elemento cualquiera NUNCA cambia `rightMode`
-  // (onOpenNode no lo toca; ver comentario en onOpenConversation). Dos excepciones
+  // (onOpenNode no lo toca; ver comentario en onOpenConversation). Excepciones
   // deliberadas, confirmadas explícitamente por Alberto, no descuidos:
   //   1. Seleccionar un CONTEXTO (onSelectCtx) SÍ navega a la tab Contexto — es
   //      cambiar de área de trabajo, no «abrir un elemento».
@@ -116,6 +116,15 @@ export default function V2App() {
   //      un elemento cambie la tab», es que EL CHAT que estaba en el centro se
   //      traslada a la derecha porque el artifact ocupa su sitio; es el mismo chat
   //      relocalizándose, no una tab ajena reaccionando a algo que pasó en el centro.
+  //   3. Las tabs Agenda («hoy») y Día («dia») SÍ van unidas a un centro fijo propio
+  //      (Alberto, 4 ago 2026, tras reportar que abrir una tarea desde Agenda y
+  //      volver a pulsar la tab dejaba la tarea pegada en el centro en vez de
+  //      recuperar el planner): pulsar Agenda siempre limpia `centerElementId`
+  //      (centro = planner); pulsar Día siempre abre la nota diaria de hoy como
+  //      `centerElementId`. A diferencia de las demás tabs, Agenda y Día NO son
+  //      navegación genérica — son la MISMA vista repartida entre columnas, así
+  //      que pulsarlas de nuevo debe siempre devolver a esa vista por defecto,
+  //      cierre lo que cierre en el centro. Ver `handleRightMode` más abajo.
   const [centerElementId, setCenterElementId] = useState<string | null>(null)
   // Ajustes a pantalla completa: null = modo normal; si no, la pestaña activa.
   // Sustituye al modal — nav a la izquierda (donde van los contextos), contenido
@@ -226,6 +235,28 @@ export default function V2App() {
       setCenterElementId(null)
       aiChatStore.startNewSession()
     }
+  }
+
+  // Handler de las tabs de la columna derecha — excepción 3 del bloque de arriba:
+  // Agenda y Día llevan su propio centro fijo (planner / nota diaria), así que
+  // pulsarlas siempre lo restaura, a diferencia del resto de tabs (que no tocan
+  // `centerElementId`, ver `onMode={handleRightMode}` más abajo).
+  const handleRightMode = (m: RightMode) => {
+    if (m === 'hoy') {
+      setCenterElementId(null)
+    } else if (m === 'dia') {
+      try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
+    } else if (m === 'elementos') {
+      // Un clic normal en la tab Elementos siempre debe abrir «Todos» — sin esto,
+      // `elementsFilter` se quedaba pegado al último filtro pedido por «← Agentes»/
+      // «← Prompts» (`onOpenElementsFiltered`, que sí lo pone explícitamente) y
+      // reaparecía cada vez que se volvía a esta tab por cualquier otro camino,
+      // incluso después de que el usuario hubiera elegido «Todos» a mano dentro del
+      // propio panel (auditoría, 4 ago 2026). `onOpenElementsFiltered` llama a
+      // `setRightMode` directamente (no a este handler), así que no compite con esto.
+      setElementsFilter(null)
+    }
+    setRightMode(m)
   }
 
   // Botón «Nueva conversación» (barra izquierda) → SIEMPRE sin contexto (General).
@@ -494,7 +525,7 @@ export default function V2App() {
       setFocusNodeId(null)
     }
     const ctx = node ? firstContextOf(node) : null
-    if (ctx) setSelectedCtxId(ctx.id)
+    setSelectedCtxId(ctx ? ctx.id : null)
 
     // Elemento normal: se abre en el ESPACIO CENTRAL (visor/editor según su
     // tipo), sustituyendo al chat — mismo patrón que el Perfil (Alberto, 22 jul).
@@ -755,7 +786,7 @@ export default function V2App() {
       )}
       <V2RightColumn
         mode={rightMode}
-        onMode={setRightMode}
+        onMode={handleRightMode}
         selectedCtxId={selectedCtxId}
         onOpenNode={onOpenNode}
         onSelectCtx={onSelectCtx}

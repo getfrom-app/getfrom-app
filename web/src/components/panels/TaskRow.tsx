@@ -102,18 +102,31 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
         onClick={e => { e.stopPropagation(); toggleTaskDone(node) }}
         title={t('daily.markDone')} aria-label={t('daily.markDone')}
       >{done ? '✓' : ''}</button>
-      <span className="dc-text dc-text--tight">{node.text ? renderInline(node.text) : t('common.noTitle')}</span>
-      {extra}
-      {due && (
-        <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(node), flexShrink: 0 }}
-          title={t('dailyCockpit.editDateRecurrence')}
-          onClick={e => { e.stopPropagation(); onOpenDate(node) }}>{due}</span>
-      )}
-      {time && <span className="dc-time">{time}</span>}
-      {rec && <span className="dc-rec" title={rec}>🔁 {rec}</span>}
-      <span style={{ flex: 1 }} />
-      <TaskHoverActions node={node} onOpenDate={onOpenDate} />
-      <RowContextChip node={node} />
+      {/* Dos líneas (Alberto, 4 ago 2026: "las tareas de la tab agenda se deben leer
+          completas" — con checkbox + título + fecha + chip de contexto compitiendo en
+          una sola línea, el título llegaba a encogerse casi a 0px en filas con chip).
+          Título SIEMPRE en su propia línea, a ancho completo — mismo patrón .dc-row-main/
+          .dc-row-l1/.dc-row-l2 que ya usa PorPlanificarPanel, ahora también aquí (el
+          componente ÚNICO de fila de tarea, así que se aplica a Agenda, Elementos,
+          Contexto y otros días a la vez — no una copia distinta por pestaña). */}
+      <div className="dc-row-main">
+        <div className="dc-row-l1">
+          <span className="dc-text dc-text--wrap">{node.text ? renderInline(node.text) : t('common.noTitle')}</span>
+          {extra}
+        </div>
+        <div className="dc-row-l2">
+          {due && (
+            <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(node) }}
+              title={t('dailyCockpit.editDateRecurrence')}
+              onClick={e => { e.stopPropagation(); onOpenDate(node) }}>{due}</span>
+          )}
+          {time && <span className="dc-time">{time}</span>}
+          {rec && <span className="dc-rec" title={rec}>🔁 {rec}</span>}
+          <span style={{ flex: 1 }} />
+          <TaskHoverActions node={node} onOpenDate={onOpenDate} />
+          <RowContextChip node={node} />
+        </div>
+      </div>
     </div>
   )
 }

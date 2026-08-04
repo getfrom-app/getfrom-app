@@ -91,6 +91,16 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
   useStore()
   const { t, i18n } = useTranslation()
   const [today, setToday] = useState<Node | null>(() => store.todayDiary())
+  // Bumped en cada clic en la tab «Agenda» para forzar el remount de V2AgendaView y
+  // que vuelva siempre al planner de hoy — un clic en la tab ya activa (mode no
+  // cambia de valor) no re-renderiza por sí solo y dejaba «pegado» el día/sub-vista
+  // que el usuario hubiera abierto antes (Alberto, 4 ago).
+  const [agendaResetKey, setAgendaResetKey] = useState(0)
+  // Mismo mecanismo para la tab «Día» — se olvidó al arreglar Agenda (auditoría, 4
+  // ago): sin esto, navegar a otro día/año dentro del timeline y volver a pulsar
+  // Día dejaba el timeline de la derecha desincronizado del centro (que sí vuelve
+  // a la nota de hoy vía `handleRightMode` en V2App.tsx).
+  const [diaResetKey, setDiaResetKey] = useState(0)
 
   // La nota de hoy se garantiza SOLO al abrir «Hoy» (no al arrancar el shell).
   useEffect(() => {
@@ -138,7 +148,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
           <button
             key={tb.id}
             className={`v2-right-tab ${mode === tb.id ? 'active' : ''}`}
-            onClick={() => onMode(tb.id)}
+            onClick={() => { if (tb.id === 'hoy') setAgendaResetKey(k => k + 1); if (tb.id === 'dia') setDiaResetKey(k => k + 1); onMode(tb.id) }}
           >{tb.label}</button>
         ))}
       </div>
@@ -202,7 +212,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
           Elementos, para que la rejilla llene todo el alto disponible. */}
       {!isRecordingActive && mode === 'dia' && (
         <div className="v2-right-fill v2-agenda-timeline">
-          <PlannerPanel initialView="day" initialDays={1} viewTabs={['day']} dayOnlyHeader onClose={() => {}} />
+          <PlannerPanel key={diaResetKey} initialView="day" initialDays={1} viewTabs={['day']} dayOnlyHeader onClose={() => {}} />
         </div>
       )}
 
@@ -216,7 +226,7 @@ export default function V2RightColumn({ mode, onMode, selectedCtxId, importDragO
           <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} onOpenConversation={onOpenConversation} />
         )}
 
-        {mode === 'hoy' && <V2AgendaView todayNode={today} />}
+        {mode === 'hoy' && <V2AgendaView key={agendaResetKey} todayNode={today} />}
       </div>
       )}
     </aside>

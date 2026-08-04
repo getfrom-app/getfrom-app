@@ -1,7 +1,62 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-07-30 (Web v9.6.940)
+> Última actualización: 2026-08-04 (Web v9.6.941)
+
+---
+
+## 🗓️ Sesión 2026-08-04 — Navegación v2: Agenda/Día vuelven a su centro, Elementos sin truncar ni duplicar
+
+Web **v9.6.940 → v9.6.941**. Desplegado a producción (solo cliente). Log completo:
+`logs/2026-08-04-navegacion-v2-agenda-elementos.md`.
+
+Sesión de reportes reales encadenados sobre la v2 (chat-first), cada fix revelando el siguiente:
+
+1. **Tab Agenda se quedaba con la tarea abierta** en vez de volver al planner al pulsarla de
+   nuevo. La causa era que un comentario en `V2App.tsx` describía un mecanismo ("pulsar Agenda
+   limpia `centerElementId`") que ya no existía en el código — se había quitado a propósito el 30
+   jul al desacoplar las tabs del centro. Como el fix revertía esa decisión explícita, se confirmó
+   el alcance con Alberto antes de tocar nada: Agenda y Día pasan a ser la excepción 3 de la regla
+   ("clicar una tab nunca toca el centro") — cada una lleva su propio centro fijo (planner / nota
+   diaria de hoy), así que pulsarlas siempre lo restaura. Implementado en `handleRightMode`
+   (`V2App.tsx`). `V2AgendaView` tenía además su propio bug de estado (día/año navegado se quedaba
+   pegado) — remount forzado vía `key={agendaResetKey}`, incrementada en cada clic en la tab.
+2. **Sidebar de contexto se quedaba naranja** tras abrir un elemento sin contexto — `onOpenNode`
+   solo actualizaba `selectedCtxId` cuando el nodo abierto SÍ tenía contexto asignado. Fix:
+   `setSelectedCtxId(ctx ? ctx.id : null)` incondicional (mismo patrón que `onOpenConversation`).
+3. **Fila "🧠 Memoria" duplicada** en la tab Contexto — como `onSelectCtx` ya abre siempre la
+   memoria del contexto en el centro (decisión del 30 jul), la fila de acceso rápido en
+   `V2ContextView.tsx` mostraba el mismo documento ya abierto al lado. Quitada.
+4. **`TaskRow` (componente único de fila de tarea, usado en TODA la app) rediseñado a dos
+   líneas**: título siempre completo arriba, fecha/hora/repetición/contexto/acciones abajo —
+   mismo patrón `.dc-row-main`/`.dc-row-l1`/`.dc-row-l2` que ya existía en `PorPlanificarPanel`.
+   Antes competían todos en una sola línea y el título podía encogerse casi a 0px en filas con
+   chip de contexto. Aplicado también a los dos renders de "Todo el día" en `DayColumn.tsx`, que
+   antes ni siquiera pintaban el chip de contexto (tenían su propio render, fuera de `TaskRow`).
+5. **Mismo truncado en `ElementsPanel.tsx`** (lista virtualizada, `@tanstack/react-virtual`) —
+   al quitar el truncado en sus filas de evento/nota/conversación, las alturas fijas por tipo
+   (`ROW_H`/`TASK_ROW_H`) dejaron de bastar y las filas empezaron a solaparse. Fix: medición
+   dinámica real por fila (`ref={virtualizer.measureElement}` + `data-index`) + un
+   `virtualizer.measure()` forzado tras el primer pintado (sin esto, la primera fila visible se
+   quedaba con su tamaño ESTIMADO en vez del medido). Verificado con `getBoundingClientRect()`
+   fila a fila: 0 solapamientos tras el fix, en listas mezclando tipos.
+6. **Notas diarias excluidas de Elementos** — revierte una decisión del 22 jul (entonces tenían su
+   propio tipo buscable 'día'); ahora `classify()`/`classifyElement()` devuelven `null` para
+   `n.isDiaryEntry` en ambos clasificadores (`ElementsPanel.tsx` y `v2/elementKind.ts`). Solo se
+   abren desde Calendario o la tab Día.
+7. **Auditoría explícita** ("revisa si hay más bugs o indicaciones contradictorias") sobre el
+   mismo patrón (comentario describiendo un mecanismo que el código ya no tiene) encontró 3 más:
+   la tab Día tenía el bug del punto 1 sin arreglar (mismo fix aplicado, `diaResetKey`);
+   `elementsFilter` no se reseteaba nunca tras "← Agentes"/"← Prompts" (`handleRightMode` ahora lo
+   limpia al entrar a Elementos por un clic normal); y la clase `dc-text--wrap` (la que de verdad
+   desactiva el truncado vía CSS) se aplicó bien en `ElementsPanel.tsx` pero se olvidó en
+   `TaskRow.tsx` y en los dos renders de `DayColumn.tsx` del punto 4 — los títulos seguían
+   cortándose con "…" pese al rediseño a dos líneas.
+
+Verificado en vivo end-to-end contra la cuenta real (`localhost:5173` apuntando a producción):
+`tsc -b` limpio, 80/80 tests (`vitest run`), build de producción sin errores. Datos de prueba
+creados durante la verificación (1 tarea temporal, 1 nota sin título, 1 conversación) eliminados
+al terminar.
 
 ---
 
