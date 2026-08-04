@@ -4,6 +4,8 @@
 import type { Node } from '../types'
 import { store } from '../store/nodeStore'
 import { isInPapelera } from './papeleraHelper'
+import { ensureDayPath } from './agendaHelper'
+import { nextRecurrence, recurrenceFromString, type RecurrenceConfig } from './naturalDate'
 
 export interface DailyCockpitData {
   /** Tareas pendientes con due anterior a hoy */
@@ -29,8 +31,64 @@ export function wasCompletedToday(n: Node): boolean {
   try { return JSON.parse(n.extraData || '{}')._doneAt === todayFocusKey() } catch { return false }
 }
 
+/** Crea la siguiente instancia de un nodo recurrente en el día correcto del diario.
+ *  ÚNICA (Alberto, 5 ago 2026 — bug real: las tareas completadas desde cualquier
+ *  checkbox de la v2 nunca creaban la siguiente instancia porque `toggleTaskDone`
+ *  no llamaba a esto — solo lo hacía el `toggleTask`/`toggleCheckbox` del outliner
+ *  v1, así que una tarea recurrente marcada como hecha desde Agenda/Elementos/
+ *  Contexto se "perdía": no volvía a aparecer nunca en Futuro). Reciclar el nodo
+ *  cambiando `due` está descartado (FROM.md) — SIEMPRE crea un nodo nuevo. */
+export function spawnRecurrence(node: Node): void {
+  try {
+    let ed: Record<string, unknown> = {}
+    try { ed = JSON.parse(node.extraData || '{}') } catch { /* extraData corrupto, sigue sin legado */ }
+    // Prioritario: node.recurrence (campo DB); fallback: extraData._recurrence (legado).
+    const rec: RecurrenceConfig | undefined = node.recurrence
+      ? (recurrenceFromString(node.recurrence) ?? undefined)
+      : (ed._recurrence as RecurrenceConfig | undefined)
+    if (!rec) return
+
+    const parent = node.parentId ? store.getNode(node.parentId) : null
+    const baseDate = parent?.diaryDate ? new Date(parent.diaryDate) : new Date()
+    baseDate.setHours(0, 0, 0, 0)
+    const nextDate = nextRecurrence(baseDate, rec)
+    const dayNode = ensureDayPath(nextDate)
+    const sibs = store.children(dayNode.id)
+    const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
+
+    // Due del nuevo nodo: evento con hora → preserva la hora en el nuevo día;
+    // tarea o evento sin hora → usa la fecha del nuevo día.
+    let newDue: string | undefined
+    if (node.due) {
+      const origDue = new Date(node.due)
+      const hasTime = origDue.getHours() !== 0 || origDue.getMinutes() !== 0
+      newDue = hasTime
+        ? new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate(), origDue.getHours(), origDue.getMinutes()).toISOString()
+        : new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate()).toISOString()
+    }
+
+    const newNode = store.createNode({
+      text: node.text,
+      parentId: dayNode.id,
+      siblingOrder: lastOrder + 1000,
+      isTask: !node.isEvent,
+      types: node.types,
+    })
+    store.updateNode(newNode.id, {
+      ...(node.isEvent ? { isEvent: true } : { status: 'pending' }),
+      ...(newDue ? { due: newDue } : {}),
+      recurrence: node.recurrence ?? undefined,
+      extraData: JSON.stringify({ ...ed, _recurrence: rec }),
+    })
+  } catch (e) {
+    console.error('[recurrence] Error creando siguiente instancia:', e)
+  }
+}
+
 /** Completa/reabre una tarea desde el cockpit. Al completar estampa _doneAt=hoy
- *  para que siga visible (tachada) durante el día; mañana desaparece sola. */
+ *  para que siga visible (tachada) durante el día; mañana desaparece sola. Si la
+ *  tarea es recurrente, crea la siguiente instancia (solo al completar, nunca al
+ *  reabrir). */
 export function toggleTaskDone(n: Node): void {
   let extra: Record<string, unknown> = {}
   try { extra = JSON.parse(n.extraData || '{}') } catch { /* extraData corrupto → lo regeneramos */ }
@@ -40,6 +98,7 @@ export function toggleTaskDone(n: Node): void {
   } else {
     extra._doneAt = todayFocusKey()
     store.updateNode(n.id, { status: 'done', extraData: JSON.stringify(extra) })
+    spawnRecurrence(n)
   }
 }
 

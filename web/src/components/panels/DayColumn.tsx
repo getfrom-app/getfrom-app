@@ -325,6 +325,14 @@ export default function DayColumn({
             </div>
             <div className="dc-row-l2">
               <span style={{ flex: 1 }} />
+              {/* Editar fecha/recurrencia: esta fila (a diferencia de TaskRow) no
+                  muestra la fecha como texto — "hoy" ya es implícito — así que el
+                  botón de calendario que TaskHoverActions perdió (Alberto, 5 ago
+                  2026: sustituido por el badge de TaskRow) sigue haciendo falta AQUÍ,
+                  no hay otro sitio donde clicar para abrir el popover. */}
+              <button className="dc-due dc-due--empty" style={{ cursor: 'pointer' }}
+                title={t('dailyCockpit.editDateRecurrence')}
+                onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === task.id ? null : task.id) }}>📅</button>
               <TaskHoverActions node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
               <RowContextChip node={task} />
             </div>
@@ -340,7 +348,12 @@ export default function DayColumn({
         <button className={`dc-check ${done ? 'dc-check--done' : ''}`}
           onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
           title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
-        <span className="dc-ev-badge dc-ev-badge--lead">{timeStr}</span>
+        {/* Clicable: mismo fin que el badge de fecha de TaskRow — antes solo se podía
+            editar fecha/recurrencia vía el botón de calendario de TaskHoverActions,
+            quitado el 5 ago 2026. */}
+        <button className="dc-ev-badge dc-ev-badge--lead" style={{ cursor: 'pointer' }}
+          title={t('dailyCockpit.editDateRecurrence')}
+          onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === task.id ? null : task.id) }}>{timeStr}</button>
         <span className="dc-text" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
           {task.text ? renderInline(task.text) : t('common.noTitle')}
         </span>

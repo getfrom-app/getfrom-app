@@ -13,7 +13,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import TaskRow from '../panels/TaskRow'
 import NewTaskModal from '../modals/NewTaskModal'
-import { listActiveContexts, contextColor, contextParent, nodesInContext, isContextClosed, setContextClosed, isContextFollowed, setContextFollowed, firstContextOf, clearContextParent, convertToTask } from '../../utils/cajones'
+import { listActiveContexts, contextColor, contextParent, isContextClosed, setContextClosed, isContextFollowed, setContextFollowed, firstContextOf, clearContextParent, convertToTask } from '../../utils/cajones'
 import ContextChip from '../panels/ContextChip'
 import type { Node } from '../../types'
 
@@ -183,12 +183,16 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
   // aparecer aquí solo por estar abierto (Alberto, 15 jul).
   const seguimientoCtxs = activeCtxs.filter(c => !ctxTasks.has(c.id) && !!contextParent(c.id) && isContextFollowed(c))
 
-  // Fila de un contexto (dot color + padre + contadores + tareas anidadas si las
-  // hay). Reutilizada en «Para hacer» y «Seguimiento».
+  // Fila de un contexto — mismo estilo dos-líneas que TaskRow (Alberto, 5 ago 2026:
+  // "seguimiento tiene contextos en lugar de tareas, pero guarda el mismo estilo con
+  // las tareas del resto de bloques"): dot + título arriba, contexto PADRE alineado a
+  // la derecha abajo (mismo sitio que el chip de contexto de una tarea) en vez de
+  // pegado al título. Quitados los contadores numéricos (nº de tareas del contexto /
+  // nº de nodos que contiene) — "irrelevantes", según Alberto viéndolos en vivo.
+  // Reutilizada en «Para hacer» y «Seguimiento».
   const renderCtxRow = (c: Node) => {
     const color = contextColor(c.id)
     const parent = contextParent(c.id)
-    const n = nodesInContext(c.id).length
     const closing = ctxClosing?.id === c.id
     const due = ctxTasks.get(c.id)
     return (
@@ -206,20 +210,20 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
           {/* Dot del color del contexto — mismo estilo/grosor/alineamiento
               que los dots del bloque «Eventos de hoy» (.dc-event-dot). */}
           <span className="dc-event-dot" style={{ background: color }} aria-label={t('common.context')} />
-          <span className="dc-text">{c.text || 'Contexto'}</span>
-          {parent && (
-            <ContextChip context={parent} title={t('dailyCockpit.goParentContext')}
-              removeTitle="Quitar del contexto padre"
-              onClick={e => { e.stopPropagation(); openNodeDetail(parent.id) }}
-              onRemove={() => clearContextParent(c.id)} />
-          )}
-          <span style={{ flex: 1 }} />
-          {due && (due.overdue.length + due.today.length) > 0 && (
-            <span style={{ fontSize: 11, fontWeight: 600, color: due.overdue.length > 0 ? 'var(--danger,#e03131)' : color }}>
-              {due.overdue.length + due.today.length}
-            </span>
-          )}
-          {n > 0 && <span style={{ fontSize: 11, color: 'var(--text-tertiary)', marginLeft: 6 }}>{n}</span>}
+          <div className="dc-row-main">
+            <div className="dc-row-l1">
+              <span className="dc-text dc-text--wrap">{c.text || 'Contexto'}</span>
+            </div>
+            <div className="dc-row-l2">
+              <span style={{ flex: 1 }} />
+              {parent && (
+                <ContextChip context={parent} title={t('dailyCockpit.goParentContext')}
+                  removeTitle="Quitar del contexto padre"
+                  onClick={e => { e.stopPropagation(); openNodeDetail(parent.id) }}
+                  onRemove={() => clearContextParent(c.id)} />
+              )}
+            </div>
+          </div>
         </div>
         {due && (
           <div className="dc-ctx-tasks" style={{ paddingLeft: 18 }}>

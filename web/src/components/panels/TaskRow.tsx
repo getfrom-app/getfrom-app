@@ -120,6 +120,18 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
               title={t('dailyCockpit.editDateRecurrence')}
               onClick={e => { e.stopPropagation(); onOpenDate(node) }}>{due}</span>
           )}
+          {/* Sin fecha: badge para ponerla, mismo patrón que el «?» de contexto — un
+              solo glifo, sin texto (así no necesita traducción en los 12 idiomas)
+              (Alberto, 5 ago 2026: "que no tienen fecha, podrían tener debajo del
+              título un pequeño badge para añadirle fecha... como el badge de
+              interrogación de contexto"). Sustituye al botón de calendario que antes
+              vivía en TaskHoverActions — visible solo al hover y redundante con esto
+              (quitado de ahí). Solo para tareas abiertas: una tarea hecha sin fecha no
+              necesita invitar a ponérsela. */}
+          {!node.due && !done && (
+            <span className="dc-due dc-due--empty" title={t('dailyCockpit.editDateRecurrence')}
+              onClick={e => { e.stopPropagation(); onOpenDate(node) }}>+</span>
+          )}
           {time && <span className="dc-time">{time}</span>}
           {rec && <span className="dc-rec" title={rec}>🔁 {rec}</span>}
           <span style={{ flex: 1 }} />

@@ -1,7 +1,51 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-04 (Web v9.6.942)
+> Última actualización: 2026-08-05 (Web v9.6.943)
+
+---
+
+## 🗓️ Sesión 2026-08-05 — Bug real de recurrencia, badge de fecha, Seguimiento con estilo de tarea
+
+Web **v9.6.942 → v9.6.943**. Desplegado a producción (solo cliente). Log completo:
+`logs/2026-08-05-recurrencia-fecha-badge-seguimiento.md`.
+
+1. **Bug real: las tareas recurrentes completadas desde la v2 nunca creaban la siguiente
+   instancia.** Alberto marcó "Revisar el morning fórmula" (cada 6 meses) como hecha desde la tab
+   Agenda — no apareció ninguna instancia nueva en Futuro. Root cause: `toggleTaskDone`
+   (`utils/dailyCockpit.ts`), la función que usa TODO checkbox de tarea de la v2 (`TaskRow`,
+   `DailyCockpit`, `DayColumn`), nunca llamaba a `spawnRecurrence` — esa lógica solo existía
+   duplicada dentro de `OutlinerNode.tsx` (el outliner v1). Cualquier tarea recurrente completada
+   desde Agenda, Elementos o Contexto en la v2 se "perdía" — nunca volvía a aparecer. Fix:
+   `spawnRecurrence(node)` extraída a `utils/dailyCockpit.ts` (misma lógica — crea SIEMPRE un nodo
+   nuevo bajo el día correcto del diario, nunca recicla el `due` del nodo existente), llamada
+   desde `toggleTaskDone` al completar. `OutlinerNode.tsx` no se tocó (v1, ya funcionaba
+   correctamente, fuera del alcance del bug). Verificado en vivo end-to-end contra producción:
+   tarea de prueba con recurrencia "cada 6 meses" completada hoy (5 ago 2026) → nueva instancia
+   confirmada el 5 feb 2027 con el badge `🔁 cada 6 meses`, comprobado navegando el calendario
+   anual. Datos de prueba eliminados al terminar.
+2. **Badge "+" para poner fecha, quitado el botón de calendario del hover.** Alberto: "las tareas
+   que no tienen fecha, podrían tener debajo del título un pequeño badge para añadirle fecha...
+   como el badge de interrogación de contexto... y de esa forma quitamos el botón de calendario
+   que aparece en hover, porque ya no sería necesario." Implementado en `TaskRow.tsx`: badge
+   `.dc-due--empty` ("+", mismo lenguaje visual dashed-border que `.dc-ctx-chip--empty`) cuando no
+   hay fecha, visible solo para tareas abiertas. Quitado el botón de calendario de
+   `TaskHoverActions.tsx` (ahora solo: 🎯 Hoy · → Futuro · 🗑 Eliminar). **Regresión encontrada y
+   corregida en la misma sesión**: `TaskHoverActions` es compartido por 5 componentes, y 3 no
+   tenían ningún otro sitio para abrir el popover de fecha/recurrencia (dependían solo del botón
+   quitado) — `DayColumn.tsx` (ambas variantes de `renderTaskCheckboxRow`), `ElementsPanel.tsx`
+   (fila de tipo `'event'`) y `ContextPropertiesPanel.tsx` (tareas sin fecha). Añadido el mismo
+   badge en los tres sitios.
+3. **Bloque Seguimiento — mismo estilo que las tareas, sin números irrelevantes.** Alberto: "el
+   bloque seguimiento... el contexto padre debería aparecer alineado a la derecha, como en el
+   resto de bloques... los números que aparecen son irrelevantes, quítalos... que seguimiento
+   tenga contextos en lugar de tareas, pero guarde el mismo estilo con las tareas del resto de
+   bloques." `renderCtxRow` (`DailyCockpit.tsx`) pasa al mismo patrón dos-líneas que `TaskRow`:
+   título arriba (`dc-text--wrap`), contexto PADRE alineado a la derecha abajo (mismo sitio que el
+   chip de contexto de una tarea) en vez de pegado al título. Quitados los dos contadores
+   numéricos (nº de tareas del contexto, nº de nodos que contiene).
+
+Verificado: `tsc -b` limpio, 80/80 tests, build sin errores.
 
 ---
 

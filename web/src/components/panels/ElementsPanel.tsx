@@ -19,7 +19,7 @@ import { openNodeDetail } from '../../utils/canvasNav'
 import { renderInline } from '../outliner/InlineRenderer'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
-import TaskRow from './TaskRow'
+import TaskRow, { dueLabel, dueColor } from './TaskRow'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
@@ -628,6 +628,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                 // Dos líneas + título sin truncar, mismo patrón que TaskRow (Alberto, 4 ago
                 // 2026: "aquí en elementos pasa lo mismo, se truncan... usar dos líneas").
                 const n = store.getNode(r.id)
+                const evDue = n ? dueLabel(n, i18n.language) : ''
                 if (n) inner = (
                   <div
                     className={`dc-row ${n.status === 'done' ? 'dc-row--done' : ''}`}
@@ -644,6 +645,17 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                         <span className="dc-text dc-text--wrap" onClick={() => openNodeDetail(n.id)}>{n.text ? renderInline(n.text) : t('tip.task', 'Tarea')}</span>
                       </div>
                       <div className="dc-row-l2">
+                        {/* Fecha/recurrencia — mismo badge que TaskRow (con fecha, clicable;
+                            sin fecha, «+»). Único sitio para abrir el popover desde que se quitó
+                            el botón de calendario de TaskHoverActions (Alberto, 5 ago 2026). */}
+                        {evDue ? (
+                          <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(n) }}
+                            title={t('dailyCockpit.editDateRecurrence')}
+                            onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{evDue}</span>
+                        ) : n.status !== 'done' && (
+                          <span className="dc-due dc-due--empty" title={t('dailyCockpit.editDateRecurrence')}
+                            onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>+</span>
+                        )}
                         <span style={{ flex: 1 }} />
                         <TaskHoverActions node={n} onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
                         <RowContextChip node={n} />

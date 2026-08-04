@@ -172,7 +172,7 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
               )}
               <span className="dc-text">{a.text || t('ctxPanel.noText')}</span>
               <span style={{ flex: 1 }} />
-              {(a.status != null || a.isEvent) && a.due && (() => {
+              {(a.status != null || a.isEvent) && (a.due ? (() => {
                 const d = new Date(a.due)
                 const base = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })
                 const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0
@@ -184,7 +184,13 @@ export default function ContextPropertiesPanel({ nodeId, onBack }: Props) {
                     {label}
                   </span>
                 )
-              })()}
+              })() : a.status !== 'done' && (
+                // Sin fecha: badge para ponerla — único sitio para abrir el popover
+                // desde que se quitó el botón de calendario de TaskHoverActions
+                // (Alberto, 5 ago 2026).
+                <span className="dc-due dc-due--empty" title={t('ctxPanel.dateRecurrence')}
+                  onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>+</span>
+              ))}
               {a.recurrence && (() => { const [u, nn] = a.recurrence.split(':'); const map: Record<string, string> = { daily: t('ctxPanel.recDay'), weekly: t('ctxPanel.recWeek'), monthly: t('ctxPanel.recMonth'), yearly: t('ctxPanel.recYear') }; const c = parseInt(nn || '1') || 1; return <span className="node-recurrence-badge" style={{ fontSize: 10, cursor: 'pointer' }} title={t('ctxPanel.dateRecurrence')} onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === a.id ? null : a.id) }}>↻ {c > 1 ? c + ' ' : ''}{map[u] || u}</span> })()}
               {a.status != null && !a.isEvent ? (
                 // Tarea: mismo set de hover que la columna del día (foco · fecha · borrar).

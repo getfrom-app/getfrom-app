@@ -1,9 +1,12 @@
 // TaskHoverActions — acciones de hover comunes a CUALQUIER fila de tarea, esté
 // donde esté (columna del día, contextos, etc.). Mismo set en todos los sitios:
-//   🎯 al foco de hoy (toggle)  ·  📅 poner/cambiar fecha (abre el modal de
-//   fecha + repetición + prioridad vía onOpenDate)  ·  🗑 borrar.
+//   🎯 al foco de hoy (toggle)  ·  → mover a Futuro  ·  🗑 borrar.
 // Se ocultan y aparecen en hover por el contenedor `.dc-actions` (la fila debe
 // ser `.dc-row`). Para tareas completadas solo se muestra borrar.
+// ⚠️ El botón de "poner/cambiar fecha" que vivía aquí se quitó (Alberto, 5 ago
+// 2026): con fecha, el propio badge `.dc-due` de TaskRow ya abre `onOpenDate` al
+// clicarlo; sin fecha, el nuevo badge `.dc-due--empty` ("+") hace lo mismo — el
+// botón de hover quedó puramente redundante en los dos casos.
 import type { Node } from '../../types'
 import { useTranslation } from 'react-i18next'
 import { scheduleTask } from '../../utils/dailyCockpit'
@@ -25,14 +28,6 @@ export default function TaskHoverActions({ node, onOpenDate }: {
         <button className="dc-action dc-action--hoy" title={t('taskHover.scheduleToday')}
           onClick={e => { e.stopPropagation(); scheduleTask(node, 0) }}>
           Hoy
-        </button>
-      )}
-      {!done && (
-        <button className="dc-action" title={node.due ? 'Cambiar fecha' : 'Poner fecha'}
-          onClick={e => { e.stopPropagation(); onOpenDate(node) }}>
-          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4.5" width="14" height="13" rx="2" /><path d="M3 8.5h14M7 3v3M13 3v3" />
-          </svg>
         </button>
       )}
       {/* → Futuro: aparca la tarea (status='future') para sacarla rápido del día sin

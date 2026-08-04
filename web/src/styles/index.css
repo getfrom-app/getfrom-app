@@ -13886,6 +13886,25 @@ textarea:focus-visible,
   background: none;
   padding: 0;
 }
+/* Badge «poner fecha» — mismo lenguaje visual que .dc-ctx-chip--empty (el «?» de
+   contexto): hueco discreto, borde discontinuo, se realza en hover de la fila.
+   Sustituye al botón de calendario que antes vivía en TaskHoverActions. */
+.dc-due--empty {
+  cursor: pointer;
+  color: var(--text-tertiary, #bbb);
+  border: 1px dashed var(--border, #ddd);
+  border-radius: 5px;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  opacity: 0.55;
+  transition: opacity .12s, color .12s, border-color .12s;
+}
+.dc-row:hover .dc-due--empty { opacity: 0.85; }
+.dc-due--empty:hover { opacity: 1; color: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
 .dc-rec {
   flex-shrink: 0;
   font-size: 10.5px;
