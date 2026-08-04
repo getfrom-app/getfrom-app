@@ -652,8 +652,15 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                   </div>
                 )
               } else {
-                // Resto de tipos (nota, PDF, enlace, conversación…): mismo patrón dos-líneas
-                // — título arriba SIN truncar (envuelve si hace falta), fecha + acciones abajo.
+                // Resto de tipos (nota, PDF, enlace, conversación…): título en una línea con
+                // truncado — fecha + acciones abajo. Se probó dejar el título sin truncar
+                // (envolviendo a 2 líneas), pero un título de 2 líneas dejaba la fecha de la l2
+                // pegada al icono de la fila siguiente, sin aire entre filas (Alberto, 4 ago
+                // 2026, visto en vivo: "la fecha de bajo se pega con el elemento siguiente...
+                // en este caso sí que el título se debería truncar"). A diferencia de TaskRow
+                // (que si necesita dos líneas completas por ser el foco de la fila), aquí el
+                // título es solo el encabezado de una fila más densa — truncar es el patrón
+                // correcto.
                 inner = (
                   <div
                     className="dc-row el-row"
@@ -675,7 +682,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                         />
                       ) : (
                         <div className="dc-row-l1">
-                          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text,#222)', lineHeight: 1.3, wordBreak: 'break-word' }}>{r.title}</div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--text,#222)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.title}</div>
                         </div>
                       )}
                       {!isRenaming && (

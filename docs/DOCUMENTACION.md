@@ -1,13 +1,13 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-04 (Web v9.6.941)
+> Última actualización: 2026-08-04 (Web v9.6.942)
 
 ---
 
 ## 🗓️ Sesión 2026-08-04 — Navegación v2: Agenda/Día vuelven a su centro, Elementos sin truncar ni duplicar
 
-Web **v9.6.940 → v9.6.941**. Desplegado a producción (solo cliente). Log completo:
+Web **v9.6.940 → v9.6.942**. Desplegado a producción (solo cliente). Log completo:
 `logs/2026-08-04-navegacion-v2-agenda-elementos.md`.
 
 Sesión de reportes reales encadenados sobre la v2 (chat-first), cada fix revelando el siguiente:
@@ -52,6 +52,12 @@ Sesión de reportes reales encadenados sobre la v2 (chat-first), cada fix revela
    desactiva el truncado vía CSS) se aplicó bien en `ElementsPanel.tsx` pero se olvidó en
    `TaskRow.tsx` y en los dos renders de `DayColumn.tsx` del punto 4 — los títulos seguían
    cortándose con "…" pese al rediseño a dos líneas.
+8. **Corrección sobre el punto 5**: en Elementos, un título de nota/conversación a 2 líneas
+   dejaba la fecha de la l2 pegada al icono de la fila siguiente, sin aire entre filas (Alberto,
+   en vivo tras el deploy: "en este caso sí que el título se debería truncar... que no ocupe dos
+   líneas"). Solo afecta a la fila genérica de `ElementsPanel.tsx` (nota/PDF/enlace/conversación)
+   — vuelve a truncar en una línea con elipsis. `TaskRow` y las filas de evento (el caso que sí se
+   pidió arreglar en el punto 4) se quedan a dos líneas sin truncar, sin este problema.
 
 Verificado en vivo end-to-end contra la cuenta real (`localhost:5173` apuntando a producción):
 `tsc -b` limpio, 80/80 tests (`vitest run`), build de producción sin errores. Datos de prueba
