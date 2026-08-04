@@ -276,14 +276,16 @@ y editarlo tú mismo como un documento normal en cualquier momento.
 
 ## 5. La columna derecha — cinco pestañas
 
-La columna derecha cambia de contenido según la pestaña que elijas arriba:
+La columna derecha cambia de contenido según la pestaña que elijas arriba: Contexto, Chat,
+Elementos, Agenda y Día. Cambiar de pestaña nunca te hace perder de vista lo que tengas abierto
+en el centro — con dos excepciones a propósito, porque Agenda y Día son en realidad la misma
+vista repartida entre las dos columnas (ver más abajo).
 
 - **Contexto** — al elegir un contexto en la barra lateral, su "Memoria" (qué sabe Fromly del
   tema) se abre directamente en el centro, como cualquier documento — con más espacio para leer
-  y editar, y con su propio chat en la pestaña Chat. Aquí, en la columna derecha, ves una ficha
-  compacta: un acceso rápido de vuelta a la Memoria (con la fecha de la última actualización) más
-  las tareas y elementos que cuelgan de ese contexto. Cambiar de pestaña nunca te hace perder de
-  vista lo que tengas abierto en el centro — solo elegir OTRO contexto lo sustituye.
+  y editar, y con su propio chat en la pestaña Chat. Aquí, en la columna derecha, ves las tareas y
+  elementos que cuelgan de ese contexto. Solo elegir OTRO contexto sustituye lo que tengas
+  abierto en el centro.
 - **Chat** — la conversación de lo que tengas abierto en el centro (una nota, tarea, PDF, imagen,
   agente…), independiente de Contexto: abrir un elemento no te hace perder de vista la memoria del
   tema. Es SIEMPRE la misma conversación para ese elemento, la retomes cuando la retomes — no una
@@ -297,12 +299,14 @@ La columna derecha cambia de contenido según la pestaña que elijas arriba:
   dejaste, filtra por "💬 Conversaciones" para verlas solas). Filtra por tipo y, debajo, por
   contexto. Kanban y Calendario solo aparecen al filtrar Tareas — para el resto no hay estado
   ni fecha que organizar en un tablero. El icono ✓ junto al buscador activa la **selección
-  múltiple**: marca varios elementos y elimínalos de golpe.
-- **Hoy** — la agenda de tu día: eventos, tareas por hacer, seguimiento y lo que tienes por
-  planificar. Puedes arrastrar cualquier tarea de aquí directamente al Planificador para darle
-  hora.
-- **Agenda** — el calendario anual: navega a cualquier día y verás exactamente la misma vista que
-  la pestaña Hoy, con botones "+" para crear eventos o tareas de ese día.
+  múltiple**: marca varios elementos y elimínalos de golpe. Las notas diarias no aparecen aquí —
+  se abren solo desde el Calendario o la pestaña Día.
+- **Agenda** — eventos de hoy, todo el día, atrasadas, seguimiento y lo que tienes por planificar;
+  el botón CAL abre el calendario anual para navegar a cualquier día. Pulsar esta pestaña siempre
+  te devuelve al Planificador en el centro, aunque tuvieras algo abierto — Agenda y Planificador
+  son la misma vista repartida entre las dos columnas.
+- **Día** — el timeline horario de hoy, hora a hora. Pulsarla siempre abre la nota diaria de HOY
+  en el centro, igual que el botón CAL de Agenda para navegar a otro día.
 
 ---
 
