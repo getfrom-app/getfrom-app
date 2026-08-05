@@ -2350,5 +2350,12 @@
   "tip.recYearlyEveryN": "var {{n}}:e år",
   "v2.createDocFromSelection": "Skapa dokument från det markerade",
   "v2.docCreatedFromSelection": "Dokumentet \"{{title}}\" har skapats",
-  "elements.agentsDisabledHint": "Fördefinierade agenter är avaktiverade som standard. Öppna en och slå på statusreglaget, eller tryck på ▶ Kör för att prova den först."
+  "elements.agentsDisabledHint": "Fördefinierade agenter är avaktiverade som standard. Öppna en och slå på statusreglaget, eller tryck på ▶ Kör för att prova den först.",
+  "ai.sectionModel": "Model",
+  "ai.modelLabel": "Model to use",
+  "ai.modelHint": "Only applies with your own key. With Fromly's included tokens, the server picks the model.",
+  "ai.modelAuto": "Automatic (recommended)",
+  "ai.modelErrorSaving": "Could not save the model",
+  "ai.ownKeyBillingHint": "With your own key, requests go straight to your provider and don't use Fromly tokens.",
+  "ai.deepseekWarning": "DeepSeek processes requests on servers in China. Your note content would leave the EU. Fromly never uses DeepSeek on its own: only if you paste your own key here."
 }

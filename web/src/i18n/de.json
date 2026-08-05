@@ -2350,5 +2350,12 @@
   "tip.recYearlyEveryN": "alle {{n}} Jahre",
   "v2.createDocFromSelection": "Dokument aus dieser Auswahl erstellen",
   "v2.docCreatedFromSelection": "Dokument „{{title}}\" erstellt",
-  "elements.agentsDisabledHint": "Vordefinierte Agenten sind standardmäßig deaktiviert. Öffne einen und aktiviere den Status-Schalter, oder tippe auf ▶ Ausführen, um ihn zuerst auszuprobieren."
+  "elements.agentsDisabledHint": "Vordefinierte Agenten sind standardmäßig deaktiviert. Öffne einen und aktiviere den Status-Schalter, oder tippe auf ▶ Ausführen, um ihn zuerst auszuprobieren.",
+  "ai.sectionModel": "Model",
+  "ai.modelLabel": "Model to use",
+  "ai.modelHint": "Only applies with your own key. With Fromly's included tokens, the server picks the model.",
+  "ai.modelAuto": "Automatic (recommended)",
+  "ai.modelErrorSaving": "Could not save the model",
+  "ai.ownKeyBillingHint": "With your own key, requests go straight to your provider and don't use Fromly tokens.",
+  "ai.deepseekWarning": "DeepSeek processes requests on servers in China. Your note content would leave the EU. Fromly never uses DeepSeek on its own: only if you paste your own key here."
 }

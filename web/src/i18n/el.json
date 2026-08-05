@@ -2350,5 +2350,12 @@
   "tip.recYearlyEveryN": "κάθε {{n}} χρόνια",
   "v2.createDocFromSelection": "Δημιουργία εγγράφου από αυτή την επιλογή",
   "v2.docCreatedFromSelection": "Το έγγραφο «{{title}}» δημιουργήθηκε",
-  "elements.agentsDisabledHint": "Οι προκαθορισμένοι πράκτορες έρχονται απενεργοποιημένοι από προεπιλογή. Άνοιξέ τον και ενεργοποίησε τον διακόπτη Κατάστασης, ή πάτησε ▶ Εκτέλεση για να τον δοκιμάσεις πρώτα."
+  "elements.agentsDisabledHint": "Οι προκαθορισμένοι πράκτορες έρχονται απενεργοποιημένοι από προεπιλογή. Άνοιξέ τον και ενεργοποίησε τον διακόπτη Κατάστασης, ή πάτησε ▶ Εκτέλεση για να τον δοκιμάσεις πρώτα.",
+  "ai.sectionModel": "Model",
+  "ai.modelLabel": "Model to use",
+  "ai.modelHint": "Only applies with your own key. With Fromly's included tokens, the server picks the model.",
+  "ai.modelAuto": "Automatic (recommended)",
+  "ai.modelErrorSaving": "Could not save the model",
+  "ai.ownKeyBillingHint": "With your own key, requests go straight to your provider and don't use Fromly tokens.",
+  "ai.deepseekWarning": "DeepSeek processes requests on servers in China. Your note content would leave the EU. Fromly never uses DeepSeek on its own: only if you paste your own key here."
 }

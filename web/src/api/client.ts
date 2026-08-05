@@ -174,7 +174,15 @@ export interface UserProfile {
   /** AI API keys propias del usuario (solo lifetime / suscripción activa).
    * El servidor las almacena cifradas y las devuelve descifradas. Si no hay
    * keys o el usuario no tiene plan, llega un objeto vacío. */
-  aiApiKeys?: { anthropic?: string; openai?: string; google?: string }
+  aiApiKeys?: { anthropic?: string; openai?: string; google?: string; deepseek?: string }
+  /** Modelo elegido en Ajustes → IA. Solo surte efecto si el usuario tiene
+   * clave propia del proveedor correspondiente: con el pool compartido de
+   * Fromly el modelo lo decide el routing por tier del servidor. */
+  aiPreferredModel?: string | null
+  aiPreferredProvider?: string | null
+  /** Modelos que este usuario puede elegir (los de los proveedores para los
+   * que tiene clave propia guardada). Vacío = sin claves → "automático". */
+  availableModels?: Array<{ provider: string; model: string; label: string; tier: string }>
   /** true si la cuenta tiene contraseña (login email). false = solo Google.
    * Determina cómo confirmar acciones sensibles (borrar cuenta). */
   hasPassword?: boolean
@@ -211,7 +219,9 @@ export async function updateMe(data: {
   name?: string
   /** Pasar `null` o `{}` borra todas las keys del usuario en server.
    * Cifrado AES-256-GCM, gating server-side por plan (paridad Mac). */
-  aiApiKeys?: { anthropic?: string; openai?: string; google?: string } | null
+  aiApiKeys?: { anthropic?: string; openai?: string; google?: string; deepseek?: string } | null
+  /** Modelo preferido. `null` vuelve a automático. Solo aplica con clave propia. */
+  aiPreferredModel?: string | null
 }): Promise<{ user: UserProfile }> {
   return apiRequest('/auth/me', {
     method: 'PUT',

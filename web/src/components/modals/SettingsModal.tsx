@@ -468,9 +468,10 @@ export function AparienciaPane() {
 const ANTHROPIC_KEY_LS = 'from_anthropic_api_key'
 const OPENAI_KEY_LS    = 'from_openai_api_key'
 const GOOGLE_KEY_LS    = 'from_google_api_key'
+const DEEPSEEK_KEY_LS  = 'from_deepseek_api_key'
 const AI_LANG_LS = 'from_ai_language'
 
-type ProviderId = 'anthropic' | 'openai' | 'google'
+type ProviderId = 'anthropic' | 'openai' | 'google' | 'deepseek'
 
 interface ProviderConfig {
   id: ProviderId
@@ -478,6 +479,8 @@ interface ProviderConfig {
   lsKey: string
   placeholder: string
   getKeyUrl: string
+  /** Aviso que se muestra bajo el campo antes de guardar la clave. */
+  warning?: string
 }
 
 const PROVIDERS: ProviderConfig[] = [
@@ -487,6 +490,13 @@ const PROVIDERS: ProviderConfig[] = [
     getKeyUrl: 'https://platform.openai.com/api-keys' },
   { id: 'google',    label: 'Google (Gemini)',    lsKey: GOOGLE_KEY_LS,    placeholder: 'AIza…',
     getKeyUrl: 'https://aistudio.google.com/apikey' },
+  // DeepSeek es BYOK-only: Fromly nunca enruta aquí con su clave compartida.
+  // El aviso NO es decorativo — sus servidores están en China y el contenido
+  // de las notas sale de la UE. Con clave propia, esa decisión la toma el
+  // usuario de forma informada; sin este texto, no sería informada.
+  { id: 'deepseek',  label: 'DeepSeek',           lsKey: DEEPSEEK_KEY_LS,  placeholder: 'sk-…',
+    getKeyUrl: 'https://platform.deepseek.com/api_keys',
+    warning: 'ai.deepseekWarning' },
 ]
 
 // Editor por proveedor — extraído para evitar duplicar markup.
@@ -575,9 +585,66 @@ function ProviderKeyEditor({ provider, hasPaidPlan }: { provider: ProviderConfig
           {t('ai.getKeyButton')}
         </a>
       </div>
+      {provider.warning && (
+        <div style={{ color: '#a86', fontSize: 12, marginTop: 6, lineHeight: 1.5 }}>
+          ⚠️ {t(provider.warning)}
+        </div>
+      )}
       {keyError && (
         <div style={{ color: '#c33', fontSize: 12, marginTop: 6 }}>{keyError}</div>
       )}
+    </>
+  )
+}
+
+/** Selector de modelo — solo tiene efecto con clave propia (BYOK). Con el pool
+ *  compartido de Fromly el modelo lo decide el routing por tier del servidor,
+ *  así que si el usuario no tiene ninguna clave, esto ni se muestra. */
+function ModelSelector() {
+  const { t } = useTranslation()
+  const us = useUserStore()
+  const available = (us.user?.availableModels ?? []) as Array<{
+    provider: string; model: string; label: string; tier: string
+  }>
+  const current = (us.user?.aiPreferredModel as string | undefined) ?? ''
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (available.length === 0) return null
+
+  async function select(model: string) {
+    setSaving(true)
+    setError(null)
+    try {
+      await updateMe({ aiPreferredModel: model || null })
+      await us.fetchMe()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t('ai.modelErrorSaving'))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <>
+      <SectionTitle>{t('ai.sectionModel')}</SectionTitle>
+      <Row label={t('ai.modelLabel')} hint={t('ai.modelHint')}>
+        <select
+          className="st-input"
+          value={current}
+          disabled={saving}
+          onChange={e => select(e.target.value)}
+          style={{ fontSize: 13, minWidth: 220 }}
+        >
+          <option value="">{t('ai.modelAuto')}</option>
+          {available.map(m => (
+            <option key={`${m.provider}/${m.model}`} value={m.model}>
+              {m.label} · {m.tier}
+            </option>
+          ))}
+        </select>
+      </Row>
+      {error && <div style={{ color: '#c33', fontSize: 12, marginTop: 6 }}>{error}</div>}
     </>
   )
 }
@@ -610,6 +677,8 @@ export function IAPane() {
           {PROVIDERS.map(p => (
             <ProviderKeyEditor key={p.id} provider={p} hasPaidPlan={hasPaidPlan} />
           ))}
+          <Row label="" hint={t('ai.ownKeyBillingHint')} />
+          <ModelSelector />
         </>
       )}
 
