@@ -25,7 +25,7 @@ const ctxMenuItem: CSSProperties = {
   padding: '7px 10px', borderRadius: 6,
 }
 
-export default function DailyCockpit({ disablePlanner = false, bare = false, hideToday = false }: { disablePlanner?: boolean; bare?: boolean; hideToday?: boolean } = {}) {
+export default function DailyCockpit({ disablePlanner = false, bare = false, hideToday = false, hideFuture = false }: { disablePlanner?: boolean; bare?: boolean; hideToday?: boolean; hideFuture?: boolean } = {}) {
   useStore() // suscripción: re-render con cada cambio del store
   const { t, i18n } = useTranslation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
@@ -283,7 +283,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
       {/* FUTURO — tareas aparcadas explícitamente (status='future') PRIMERO, y debajo
           las tareas con fecha en próximos días en orden cronológico (Alberto, 22 jul:
           "así, realmente, el bloque futuro se completa"). Colapsado por defecto. */}
-      {(data.future.length > 0 || upcoming.length > 0) && (
+      {!hideFuture && (data.future.length > 0 || upcoming.length > 0) && (
         <div className="dc-group">
           {gHeader('futuro', `Futuro · ${data.future.length + upcoming.length}`)}
           {!collapsedG.has('futuro') && data.future.map(n => renderTaskRow(n, { showDue: true }))}

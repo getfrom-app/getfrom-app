@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next'
 import { useAIChat, aiChatStore } from '../../store/aiChatStore'
 import type { ChatMessage } from '../../store/aiChatStore'
 import { store, useStore } from '../../store/nodeStore'
-import PlannerPanel from '../../components/panels/PlannerPanel'
 import { renderChatContent } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
@@ -18,12 +17,6 @@ interface Props {
   currentNodeId: string | null
   contextLabel: string
   onFilesDropped: (files: File[]) => void
-  /** El Planificador ya no tiene botón propio ni X para cerrarlo (Alberto, 21 jul:
-   *  "yo quitaría el botón... cuando se abre cualquier otra cosa en su lugar el
-   *  planificador se quita") — se muestra solo/siempre que la columna derecha está
-   *  en la tab Agenda (`rightMode === 'hoy'`, ver V2App.tsx) y desaparece solo al
-   *  cambiar a cualquier otra tab o abrir otra cosa. */
-  showPlanner: boolean
   /** Mismo chat, montado dentro de la columna derecha en vez del espacio central
    *  — SIEMPRE que hay un elemento abierto en el centro, es su chat asociado
    *  (V2ElementChat/V2RightColumn.tsx). `.v2-col.v2-center` fija `height:100vh`,
@@ -34,6 +27,14 @@ interface Props {
    *  jul: "no debería aparecer, debería ser un chat dedicado al tema del que
    *  se está hablando"). */
   embedded?: boolean
+  /** `embedded` mezclaba dos cosas — maquetación (columna derecha vs centro) Y si el
+   *  copy/sugerencias son "sobre este documento" vs genéricos. El destino "Chat"
+   *  general (Alberto, 5 ago 2026) necesita la maquetación de `embedded` pero el
+   *  copy GENÉRICO (no hay documento del que hablar) — este prop desacopla lo
+   *  segundo. Por defecto cae en `embedded` (`scoped = elementScoped ?? embedded`),
+   *  así que los sitios existentes (centro, `V2ElementChat`) no cambian de
+   *  comportamiento al no pasarlo nunca. */
+  elementScoped?: boolean
 }
 
 // Oculta los bloques ```from-action``` (completos o el parcial que aún se está
@@ -53,8 +54,11 @@ function stripActions(s: string): string {
     .trim()
 }
 
-export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, showPlanner, embedded }: Props) {
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, embedded, elementScoped }: Props) {
   const { t } = useTranslation()
+  // Ver comentario del prop `elementScoped` — decide copy (sugerencias/saludo/título),
+  // NO maquetación (esa se queda en `embedded` puro más abajo).
+  const scoped = elementScoped ?? embedded
   // Sugerencias del estado vacío del chat GENERAL (sin elemento asociado) — sobre
   // el día, las notas guardadas o tareas sueltas, nada de un documento concreto.
   const GENERAL_SUGGESTIONS = [
@@ -71,7 +75,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, sh
     { t: t('v2.chat.suggestImproveDocTitle', 'Mejora la redacción'), d: t('v2.chat.suggestImproveDocDesc', 'Más claro y directo'), p: t('v2.chat.suggestImproveDocPrompt', 'Repasa y mejora la redacción de este documento.') },
     { t: t('v2.chat.suggestWhatsMissingTitle', '¿Falta algo?'), d: t('v2.chat.suggestWhatsMissingDesc', 'Revisa huecos'), p: t('v2.chat.suggestWhatsMissingPrompt', '¿Qué le falta a esto, o qué deberíamos añadir?') },
   ]
-  const SUGGESTIONS = embedded ? ELEMENT_SUGGESTIONS : GENERAL_SUGGESTIONS
+  const SUGGESTIONS = scoped ? ELEMENT_SUGGESTIONS : GENERAL_SUGGESTIONS
   const chat = useAIChat()
   useStore()
   const [input, setInput] = useState('')
@@ -268,7 +272,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, sh
             centro, repetirlo aquí es ruido; una etiqueta fija basta para decir qué
             es este panel. */}
         <span className="v2-center-title">
-          {embedded
+          {scoped
             ? `💬 ${t('v2.rightColumn.tabChat', 'Chat')}`
             : <>
                 {hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}
@@ -280,8 +284,8 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, sh
       <div className="v2-chat-scroll" ref={scrollRef}>
         {isEmpty ? (
           <div className="v2-empty">
-            <h1>{embedded ? t('v2.chat.elementGreeting', 'Habla sobre esto') : t('v2.chat.greeting', 'Hola')} 👋</h1>
-            <p>{embedded
+            <h1>{scoped ? t('v2.chat.elementGreeting', 'Habla sobre esto') : t('v2.chat.greeting', 'Hola')} 👋</h1>
+            <p>{scoped
               ? t('v2.chat.elementEmptyHint', 'Pregunta por este documento, pídele que lo resuma, lo convierta en tareas, o lo mejore. Ya sabe de qué se trata.')
               : t('v2.chat.emptyHint', 'Habla con Fromly. Pregúntale a todo lo que guardas, crea notas y tareas, o sube archivos arrastrándolos aquí.')}</p>
             <div className="v2-suggest-grid">
@@ -463,20 +467,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, sh
       </div>
 
       {dragOver && <div className="v2-drop-overlay">{chat.sessionId ? `📎 ${t('v2.chat.importToConversation', 'Importar a la conversación')}` : `📥 ${t('v2.chat.importToFromly', 'Importar a Fromly')}`}</div>}
-
-      {/* Planificador — reutiliza el PlannerPanel completo de la v1 (semana/mes/año —
-          Día vive ahora en su propio tab de la columna derecha, ver V2RightColumn),
-          a pantalla completa, sin recortar funcionalidad. Sin botón propio ni X: se
-          muestra en cuanto la columna derecha está en la tab Agenda y desaparece
-          solo al cambiar a otra tab o abrir cualquier otra cosa (Alberto, 21 jul). */}
-      {showPlanner && (
-        <div className="v2-planner-overlay">
-          <div className="v2-planner-overlay-bar">
-            <span className="v2-planner-overlay-title">📅 {t('wftopbar.planner', 'Planificador')}</span>
-          </div>
-          <PlannerPanel initialView="week" initialDays={7} viewTabs={['week', 'month', 'year']} onClose={() => {}} />
-        </div>
-      )}
     </Wrapper>
   )
 }

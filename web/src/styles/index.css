@@ -13096,6 +13096,7 @@ textarea:focus-visible,
 .pp-col-wrap { border-right: 1px solid var(--border); }
 .pp-col-wrap:last-child { border-right: none; }
 .pp-col { cursor: crosshair; position: relative; }
+.pp-col--today { background: var(--accent-soft); }
 .pp-slot { position: absolute; left: 0; right: 0; pointer-events: none; height: 0; }
 .pp-slot--hr   { border-top: 1px solid var(--border); }
 .pp-slot--half { border-top: 1px dashed color-mix(in srgb, var(--border) 40%, transparent); }

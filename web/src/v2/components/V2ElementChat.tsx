@@ -32,7 +32,6 @@ export default function V2ElementChat({ nodeId, onFilesDropped }: { nodeId: stri
       currentNodeId={nodeId}
       contextLabel={title}
       onFilesDropped={onFilesDropped}
-      showPlanner={false}
     />
   )
 }

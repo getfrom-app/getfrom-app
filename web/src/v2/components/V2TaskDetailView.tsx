@@ -5,13 +5,13 @@
 // elementos llamados Documento»). Sigue siendo una TAREA: checkbox + chips de
 // fecha/hora/repetición (clic abre el popover real) + su contexto (clic navega,
 // antes no hacía nada) + un espacio de NOTAS libre (no el body de la tarea).
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
-import { getOrCreateContainerNotes } from '../../utils/cajones'
+import { containerNotesNode, getOrCreateContainerNotes } from '../../utils/cajones'
 import { timeLabel, dueLabel, dueColor, recLabel } from '../../components/panels/TaskRow'
 import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
 import { V2NoteBody, V2NoteContext } from './V2DetailView'
@@ -27,7 +27,17 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
   const [showProps, setShowProps] = useState(false)
   const done = node.status === 'done'
 
-  const notesNode = useMemo(() => getOrCreateContainerNotes(node.id), [node.id])
+  // Get-or-create FUERA del render (antes vivía en un useMemo, que ejecuta
+  // `store.createNode` en fase de render la primera vez que se abre una tarea
+  // sin «Notas» todavía — mutación con efecto secundario durante el render de
+  // OTRO componente suscrito al store, `V2App` entre ellos: React lo marcaba
+  // con "Cannot update a component while rendering a different component").
+  // Lectura (`containerNotesNode`) sigue siendo síncrona para no perder un
+  // render con las notas ya existentes; solo la CREACIÓN pasa a un efecto.
+  const [notesNode, setNotesNode] = useState<Node | null>(() => containerNotesNode(node.id))
+  useEffect(() => {
+    setNotesNode(containerNotesNode(node.id) ?? getOrCreateContainerNotes(node.id))
+  }, [node.id])
 
   const time = timeLabel(node, i18n.language)
   const due = dueLabel(node, i18n.language)
@@ -68,7 +78,7 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
       {/* Notas — EL MISMO editor completo que cualquier nota, NO es el título de la tarea. */}
       <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
         <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('v2.context.notes', 'Notas')}</div>
-        <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />
+        {notesNode && <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />}
       </div>
 
       {showProps && <TaskPropsPopover node={node} allowDelete onDeleted={() => window.dispatchEvent(new Event('from:close-detail'))} onClose={() => setShowProps(false)} />}

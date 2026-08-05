@@ -34,6 +34,12 @@ function setContextAccentColor(id: string, color: string) {
 interface Props {
   selectedCtxId: string | null
   onSelectCtx: (id: string | null) => void
+  // Destinos globales (rediseño 5 ago 2026): Chat/Agenda/Elementos/Día viven al
+  // mismo nivel que un contexto en vez de tabs de la columna derecha — no
+  // describen "lo seleccionado", son vistas de toda la app. `activeGeneralDest`
+  // resalta la fila activa (null = ninguno, p.ej. hay un contexto real elegido).
+  onSelectGeneral: (dest: 'agenda' | 'chat' | 'elementos') => void
+  activeGeneralDest: 'agenda' | 'chat' | 'elementos' | null
   onNewChat: () => void
   // id=null desde el menú GLOBAL (bajo "Nueva conversación") crea sin contexto
   // (General) — Alberto, 22 jul: "todos ellos se deben poder crear desde aquí".
@@ -81,7 +87,7 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onDriveInCtx, onRecordInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenNode, onOpenProfile }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral, activeGeneralDest, onNewChat, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onDriveInCtx, onRecordInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenNode, onOpenProfile }: Props) {
   useStore()
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -242,15 +248,42 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
           destino (null = General, sin contexto). */}
       <button className="v2-newchat v2-newchat--secondary" onClick={(e) => openAddMenu(e, selectedCtxId, true)}>＋ {t('v2.newElement', 'Nuevo elemento')}</button>
 
-      {/* Aviso de conversaciones abiertas por un agente proactivo (Alberto, 15 jul:
-          "quiero un agente que cada día me pregunte..."). Fase 0 sin push real: sin
-          canal para avisar con la app cerrada, así que se destaca aquí en cuanto se
-          abre la app — mejor que perderse silenciosamente como una nota más. */}
+      {/* Destinos globales (rediseño 5 ago 2026, fusión Agenda+Día el mismo día) —
+          Agenda/Chat/Elementos, al mismo nivel que un contexto, sin etiqueta de
+          sección propia (la palabra "General" ya la usa la fila pseudo-contexto de
+          más abajo; repetirla aquí confundiría cuál es cuál). Mismo estilo visual
+          que una fila de contexto. Agenda va primera — destino por defecto al abrir
+          la app (Alberto: "Agenda y Día son en la práctica la misma área de
+          trabajo"); Día vive ahora dentro de Agenda, como una de sus 2 tabs de la
+          columna derecha (ver V2RightColumn.tsx), no como fila propia aquí. */}
+      {/* `flex: 'none'`: sin esto hereda `flex:1` de `.v2-ctx-list` (misma clase que
+          la lista de Contextos, de abajo) y se estira ocupando todo el espacio
+          libre — con solo 3 filas cortas, eso dejaba un hueco en blanco enorme
+          entre "Elementos" y "Contextos" (Alberto, 5 ago 2026). */}
+      <div className="v2-ctx-list" style={{ marginBottom: 8, flex: 'none' }}>
+        <div className={`v2-ctx-row ${activeGeneralDest === 'agenda' ? 'active' : ''}`} onClick={() => onSelectGeneral('agenda')}>
+          <span className="v2-el-title">📅 {t('v2.rightColumn.tabAgenda', 'Agenda')}</span>
+        </div>
+        <div className={`v2-ctx-row ${activeGeneralDest === 'chat' ? 'active' : ''}`} onClick={() => onSelectGeneral('chat')}>
+          <span className="v2-el-title">💬 {t('v2.rightColumn.tabChat', 'Chat')}</span>
+        </div>
+        <div className={`v2-ctx-row ${activeGeneralDest === 'elementos' ? 'active' : ''}`} onClick={() => onSelectGeneral('elementos')}>
+          <span className="v2-el-title">📁 {t('v2.rightColumn.tabElements', 'Elementos')}</span>
+        </div>
+      </div>
+
+      {/* Avisos (conversación de agente pendiente / informe de agente nuevo) — texto
+          destacado, NO un botón como "Nueva conversación" (Alberto, 5 ago 2026: "en
+          lugar de como botones, ponlos como de texto... pero destacado que se vea
+          que es una notificación"). Franja de acento a la izquierda + fondo sutil
+          solo al hover, mismo patrón que una notificación de lista, no una acción
+          primaria — y bastante más compactos, así dejan de comerse el hueco entre
+          Elementos y Contextos con o sin avisos activos. */}
       {(() => {
         const pending = listPendingAgentConversations()
         if (pending.length === 0 || !onOpenConversation) return null
         return (
-          <button className="v2-newchat" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent)', marginTop: -2 }}
+          <button className="v2-sidebar-notice"
             onClick={() => onOpenConversation(pending[0].id)}
             title={pending.length > 1 ? t('v2.pendingConversationsHint', 'Hay más de una esperando respuesta') : undefined}>
             💬 {pending.length === 1
@@ -260,17 +293,12 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onNewChat, onNew
         )
       })()}
 
-      {/* Aviso de informes de agentes AUTÓNOMOS (no conversacionales) que el cron ya
-          terminó — equivalente al aviso de arriba, pero para "ejecuta y guarda un
-          documento" en vez de "pregunta y espera respuesta" (28 jul, ver
-          listUnseenAgentResults en aiChatStore.ts). Se abre el más reciente; el resto
-          queda accesible en el contexto del agente igual que siempre. */}
       {(() => {
         const unseen = listUnseenAgentResults()
         if (unseen.length === 0 || !onOpenNode) return null
         const mostRecent = [...unseen].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))[0]
         return (
-          <button className="v2-newchat" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent)', marginTop: -2 }}
+          <button className="v2-sidebar-notice"
             onClick={() => onOpenNode(mostRecent.id)}
             title={unseen.length > 1 ? t('v2.unseenAgentResultsHint', 'Hay más informes nuevos en sus contextos') : undefined}>
             📄 {unseen.length === 1

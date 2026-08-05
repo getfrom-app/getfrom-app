@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 29 julio 2026
+> Web · Mac · iPhone · fromly.app · Última actualización: 5 agosto 2026
 
 ---
 
@@ -11,20 +11,23 @@ experiencia, que es la única disponible en web, Mac e iPhone.
 
 Al entrar en Fromly tienes **tres columnas**:
 
-- **Izquierda — Contextos**: tus Áreas (siempre activas, p. ej. "Trabajo", "Personal") y Proyectos
-  (subcontextos que se abren y se cierran), en jerarquía. Clic en uno para centrar la conversación
-  en él.
-- **Centro — el chat**: tu forma principal de trabajar. Escribe lo que necesites en lenguaje
-  natural — «recuérdame llamar a Ana el lunes», «resume mi día», «busca en mis notas sobre X» —
-  y la IA crea tareas, notas y eventos, les pone fecha, los clasifica en su contexto, o te
-  responde con lo que ya guardas. Arrastra un PDF, una imagen o un archivo directamente al chat
-  para incorporarlo a la conversación.
-- **Derecha — cinco pestañas**: **Contexto** (qué sabe Fromly de este tema, más sus tareas y
-  elementos), **Detalles** (la ficha de lo que tengas abierto — una nota, tarea o conversación
-  concreta — independiente de Contexto, así una no tapa a la otra), **Elementos** (buscador de todo
-  tu contenido, incluidas tus conversaciones — filtra por "💬 Conversaciones" para verlas solas),
-  **Hoy** (la agenda de tu día, arrastrable al Planificador) y **Agenda** (cualquier día, calendario
-  anual).
+- **Izquierda — Agenda / Chat / Elementos, y tus Contextos**: arriba del todo, tres accesos
+  generales que no dependen de ningún contexto — **Agenda** (tu día, es el destino por defecto al
+  abrir la app), **Chat** (empezar una conversación nueva sin contexto) y **Elementos** (buscador
+  de todo tu contenido). Debajo, tus Áreas (siempre activas, p. ej. "Trabajo", "Personal") y
+  Proyectos (subcontextos que se abren y se cierran), en jerarquía. Clic en cualquiera de los dos
+  —destino general o contexto— para cambiar lo que ves en el centro y la derecha.
+- **Centro — el chat, o lo que tengas abierto**: tu forma principal de trabajar. Escribe lo que
+  necesites en lenguaje natural — «recuérdame llamar a Ana el lunes», «resume mi día», «busca en
+  mis notas sobre X» — y la IA crea tareas, notas y eventos, les pone fecha, los clasifica en su
+  contexto, o te responde con lo que ya guardas. Arrastra un PDF, una imagen o un archivo
+  directamente al chat para incorporarlo a la conversación. Si abres una nota, tarea o el
+  Planificador, ocupan este mismo espacio central.
+- **Derecha — cambia según lo que elijas a la izquierda**: normalmente 1 o 2 pestañas — la del
+  destino/contexto activo (p. ej. la Ficha de un contexto, el buscador de Elementos, o el timeline
+  del día en Agenda) y, en cuanto abres algo concreto, una pestaña **Chat** con la conversación de
+  ESE elemento (siempre la misma, la retomes cuando la retomes). Agenda tiene además su propia
+  pestaña **Planner** para el calendario completo (ver sección 5 y 7).
 
 **Archivos y RAG.** Cuando subes un archivo, Fromly lo indexa: puedes preguntarle sobre su
 contenido en cualquier momento, no solo justo después de subirlo. Los PDF se abren con visor real
@@ -152,10 +155,10 @@ Instala la app e inicia sesión con la misma cuenta. Tus notas aparecen en segun
 
 ### El primer arranque: qué ves
 
-La primera vez que entras aterrizas directamente en el chat, con las tres columnas descritas al
-principio de este manual (Contextos a la izquierda, chat en el centro, cinco pestañas a la
-derecha). Un **tour guiado de 6 pasos** te va señalando cada pieza — puedes saltarlo en cualquier
-momento.
+La primera vez que entras aterrizas directamente en Agenda (tu día de hoy), con las tres columnas
+descritas al principio de este manual (Agenda/Chat/Elementos + Contextos a la izquierda, el centro,
+la columna derecha según lo que elijas). Un **tour guiado de 6 pasos** te va señalando cada pieza —
+puedes saltarlo en cualquier momento.
 
 No hace falta configurar nada antes de empezar: escribe tu primer mensaje en el chat ("tengo que
 preparar la reunión del jueves", "apunta que Marina llega el viernes a Madrid"...) y Fromly ya crea
@@ -200,8 +203,8 @@ Ambos abren el mismo menú:
 - **🎙 Grabar** — abre la grabadora de audio (ver «Nota de voz» en la sección de tipos de elemento).
 - **🗂️ Subcontexto** — crea un proyecto nuevo colgando del contexto sobre el que abriste el menú.
 
-El **Planificador** (vista de calendario día/semana/mes/año) se abre desde la pestaña **Agenda** de
-la columna derecha, no desde el chat.
+El **Planificador** (vista de calendario semana/mes/año) se abre desde **Agenda**, en la pestaña
+**Planner** de la columna derecha — no desde el chat.
 
 Junto al campo de escritura, en el propio composer, tienes además:
 
@@ -235,8 +238,10 @@ Los contextos son la forma en la que Fromly organiza tu vida: cada nota, tarea o
   (un lanzamiento, una mudanza, un viaje). Puedes archivarlos cuando terminan sin perder su
   contenido.
 
-Clic en cualquier contexto de la columna izquierda para centrar la conversación en él — el chat, la
-pestaña Contexto y la pestaña Elementos pasan a mostrar lo relacionado con ese contexto.
+Clic en cualquier contexto de la columna izquierda para centrar la conversación en él — el centro
+abre su Memoria y la columna derecha su Ficha (tareas y elementos de ese contexto). Elementos, en
+cambio, es un buscador global: para verlo filtrado por un contexto concreto, elige ese contexto en
+el propio filtro del buscador.
 
 ### Asignar un contexto
 
@@ -261,8 +266,9 @@ derecha, para reorganizar tu jerarquía de Áreas y Proyectos sin perder nada.
 Cada contexto acumula su propia memoria: un documento vivo, "Memoria", que se actualiza solo a
 medida que guardas cosas relevantes ahí. No hace falta contárselo aparte — Fromly decide si algo
 es lo bastante significativo para recordarlo y cómo integrarlo (puede reescribir o fusionar la
-información existente, no solo añadir al final). Abre la pestaña **Contexto** de cualquier
-conversación para verlo.
+información existente, no solo añadir al final). Se abre sola en el centro en cuanto eliges ese
+contexto en la columna izquierda — con su propio chat en la pestaña Chat de la derecha, para
+pedirle que la resuma, corrija o amplíe.
 
 ### Perfil — quién eres tú, no un contexto concreto
 
@@ -274,39 +280,61 @@ y editarlo tú mismo como un documento normal en cualquier momento.
 
 ---
 
-## 5. La columna derecha — cinco pestañas
+## 5. Navegación — Agenda, Chat, Elementos y tus Contextos
 
-La columna derecha cambia de contenido según la pestaña que elijas arriba: Contexto, Chat,
-Elementos, Agenda y Día. Cambiar de pestaña nunca te hace perder de vista lo que tengas abierto
-en el centro — con dos excepciones a propósito, porque Agenda y Día son en realidad la misma
-vista repartida entre las dos columnas (ver más abajo).
+Arriba de tus Contextos, en la columna izquierda, tienes tres accesos generales que no dependen de
+ningún contexto concreto: **Agenda**, **Chat** y **Elementos**. Clic en cualquiera de los tres, o
+en un contexto de más abajo, cambia lo que ves en el centro y en la columna derecha.
 
-- **Contexto** — al elegir un contexto en la barra lateral, su "Memoria" (qué sabe Fromly del
-  tema) se abre directamente en el centro, como cualquier documento — con más espacio para leer
-  y editar, y con su propio chat en la pestaña Chat. Aquí, en la columna derecha, ves las tareas y
-  elementos que cuelgan de ese contexto. Solo elegir OTRO contexto sustituye lo que tengas
-  abierto en el centro.
-- **Chat** — la conversación de lo que tengas abierto en el centro (una nota, tarea, PDF, imagen,
-  agente…), independiente de Contexto: abrir un elemento no te hace perder de vista la memoria del
-  tema. Es SIEMPRE la misma conversación para ese elemento, la retomes cuando la retomes — no una
-  nueva cada vez que le hablas. Puedes pedirle que resuma, convierta en tareas, mejore la redacción,
-  o directamente que **edite el documento que tienes delante** ("añade un párrafo sobre...",
-  "quita la segunda sección") — lo hace sobre la marcha, sin que tengas que copiar/pegar tú el
-  resultado. Si no tienes nada abierto, aquí ves las tareas, elementos y notas de la conversación
-  general activa.
-- **Elementos** — el buscador de todo lo que tienes guardado: notas, tareas, eventos, archivos,
-  lienzos, conversaciones, agentes y prompts (clic en una conversación la retoma donde la
-  dejaste, filtra por "💬 Conversaciones" para verlas solas). Filtra por tipo y, debajo, por
-  contexto. Kanban y Calendario solo aparecen al filtrar Tareas — para el resto no hay estado
-  ni fecha que organizar en un tablero. El icono ✓ junto al buscador activa la **selección
-  múltiple**: marca varios elementos y elimínalos de golpe. Las notas diarias no aparecen aquí —
-  se abren solo desde el Calendario o la pestaña Día.
-- **Agenda** — eventos de hoy, todo el día, atrasadas, seguimiento y lo que tienes por planificar;
-  el botón CAL abre el calendario anual para navegar a cualquier día. Pulsar esta pestaña siempre
-  te devuelve al Planificador en el centro, aunque tuvieras algo abierto — Agenda y Planificador
-  son la misma vista repartida entre las dos columnas.
-- **Día** — el timeline horario de hoy, hora a hora. Pulsarla siempre abre la nota diaria de HOY
-  en el centro, igual que el botón CAL de Agenda para navegar a otro día.
+### Agenda — tu día, y el Planificador completo
+
+Es el destino por defecto al abrir Fromly. El centro muestra siempre la nota del día activo (hoy,
+al entrar); la columna derecha tiene 2 pestañas propias:
+
+- **Día** — el timeline horario de ese día, hora a hora, con tus tareas y eventos con hora
+  concreta. El botón **CAL** salta al calendario anual para ir a cualquier otro día.
+- **Planner** — pulsarla cambia el CENTRO al Planificador completo (semana/mes/año navegable, ver
+  sección 7) y la columna derecha muestra solo lo que el Planificador no cubre: tareas atrasadas,
+  sin fecha, y tus contextos en seguimiento.
+
+Volver a pulsar **Agenda** en la barra izquierda siempre te devuelve a la vista por defecto (Día,
+la nota de hoy), pulses lo que pulses mientras tanto. Si abres una tarea normal desde cualquiera de
+las dos pestañas, se centra y gana su propia pestaña **Chat** (ver más abajo) — la nota del día en
+sí no tiene chat propio.
+
+### Chat — empezar una conversación sin contexto
+
+Abre un composer completo en la columna derecha, con el centro en blanco — lo que crees desde ahí
+(una nota, una tarea, un documento) pasa al centro en cuanto la IA lo crea, y la conversación sigue
+disponible en su propia pestaña Chat, sin perder el hilo.
+
+### Elementos — el buscador de todo lo que tienes guardado
+
+Notas, tareas, eventos, archivos, lienzos, conversaciones, agentes y prompts (clic en una
+conversación la retoma donde la dejaste; filtra por "💬 Conversaciones" para verlas solas). Filtra
+por tipo y, debajo, por contexto. Kanban y Calendario solo aparecen al filtrar Tareas — para el
+resto no hay estado ni fecha que organizar en un tablero. El icono ✓ junto al buscador activa la
+**selección múltiple**: marca varios elementos y elimínalos de golpe. Las notas diarias no
+aparecen aquí — se abren solo desde el Calendario o desde Agenda.
+
+### Un contexto — Ficha + Chat
+
+Al elegir un contexto en la barra lateral, su "Memoria" (qué sabe Fromly del tema) se abre
+directamente en el centro, como cualquier documento — con más espacio para leer y editar. La
+columna derecha tiene 2 pestañas: **Contexto** (su Ficha — tareas y elementos que cuelgan de él) y
+**Chat** (la conversación de la Memoria, siempre la misma). Elegir OTRO contexto sustituye lo que
+tengas abierto en el centro.
+
+### La pestaña Chat, en cualquier sitio
+
+En Elementos, en un contexto, o tras abrir cualquier nota/tarea/PDF/imagen desde donde sea, en
+cuanto algo queda centrado aparece una pestaña **Chat** en la columna derecha — la conversación de
+ESE elemento, independiente de dónde estuvieras navegando. Es SIEMPRE la misma conversación para
+ese elemento, la retomes cuando la retomes — no una nueva cada vez que le hablas. Puedes pedirle
+que resuma, convierta en tareas, mejore la redacción, o directamente que **edite el documento que
+tienes delante** ("añade un párrafo sobre...", "quita la segunda sección") — lo hace sobre la
+marcha, sin que tengas que copiar/pegar tú el resultado. Cerrar lo que tengas abierto hace que esa
+pestaña desaparezca sola.
 
 ---
 
@@ -316,7 +344,7 @@ Dentro de cada contexto puedes tener distintos tipos de elemento. Todos comparte
 contexto (siempre visible y editable) y quedan indexados para el chat y la búsqueda.
 
 **Fecha y orden.** Cada elemento muestra su fecha (pasa el ratón por encima para ver creación y
-última modificación completas). En la pestaña Elementos, el icono junto al buscador cambia el
+última modificación completas). En Elementos, el icono junto al buscador cambia el
 orden entre última modificación, fecha de creación o título.
 
 ### Documento
@@ -363,14 +391,14 @@ y el contexto directamente de lo que escribes.
 - **Repetición**: diaria, semanal, mensual o personalizada (cada N días/semanas/meses/años).
 
 **Tareas sin fecha — seguimiento.** No hay un tipo aparte para "lo que tienes en curso": es
-simplemente una tarea sin fecha. Permanece visible en la sección **"Seguimiento"** de la pestaña
-Hoy hasta que la marcas hecha o le pones fecha. Esa sección arranca colapsada con un contador,
-porque suele haber muchas.
+simplemente una tarea sin fecha. Permanece visible en la sección **"Sin fecha"** de Agenda → Planner
+hasta que la marcas hecha o le pones fecha. Esa sección arranca colapsada con un contador, porque
+suele haber muchas.
 
 ### Evento
 
-Los eventos tienen hora de inicio y de fin. Aparecen en el Planificador y en la Agenda del día
-correspondiente. Si tienes Google Calendar conectado, sincronizan automáticamente en ambas
+Los eventos tienen hora de inicio y de fin. Aparecen en el Planificador y en el timeline de Día del
+día correspondiente. Si tienes Google Calendar conectado, sincronizan automáticamente en ambas
 direcciones.
 
 **Cómo crear un evento:** con el botón **+Evento** de la cabecera del chat, o pidiéndoselo a la IA
@@ -392,7 +420,7 @@ amarillo sobre la página) y **recortar cualquier región como imagen** con la h
 de la barra de herramientas. Cada PDF muestra una miniatura de su primera página.
 
 **Quitar sin borrar:** puedes quitar un archivo de una conversación sin eliminarlo — sigue guardado
-y buscable desde la pestaña Elementos.
+y buscable desde Elementos.
 
 ### Nota de voz (Grabadora)
 
@@ -415,7 +443,7 @@ la dejaste.
 
 Un agente es una automatización con instrucción propia, fuentes y horario propio, que cuelga de
 cualquier contexto (no de una raíz única). Se crea pidiéndoselo a la IA por chat ("quiero un
-informe diario de X") o con **+ Nuevo agente** en la pestaña Elementos (filtra por 🤖 Agentes).
+informe diario de X") o con **+ Nuevo agente** en Elementos (filtra por 🤖 Agentes).
 
 **Empiezan desactivados.** Tienes que revisar el prompt generado y activarlo tú mismo antes de que
 corra. El resultado de cada ejecución es un documento real, colgado del contexto del agente.
@@ -452,8 +480,8 @@ agente te avisa explícitamente cuando le pasa esto a uno de los tuyos.
 ### Prompt
 
 Un prompt es una plantilla de instrucciones reutilizable, con variables, que cuelga de cualquier
-contexto igual que una nota o una tarea. Se crea pidiéndoselo a la IA, con **+ Nuevo prompt** en la
-pestaña Elementos (filtra por ⚡ Prompts), o desde el propio menú del composer del chat.
+contexto igual que una nota o una tarea. Se crea pidiéndoselo a la IA, con **+ Nuevo prompt** en
+Elementos (filtra por ⚡ Prompts), o desde el propio menú del composer del chat.
 
 **Cómo se usa:** el botón **⚡ Prompt** junto al campo de escritura lista tus plantillas guardadas;
 elegir una resuelve sus variables (fecha, contexto actual, etc.) y la envía directamente.
@@ -465,28 +493,30 @@ diario con el mismo formato cada vez.
 
 ## 7. El Planificador
 
-El Planificador es la vista de calendario de Fromly. Ábrelo con el botón **Planificador** de la
-cabecera del chat — ocupa la columna derecha, que se queda fija en la pestaña **Hoy** para que
-puedas arrastrar tareas directamente al calendario mientras planificas.
+El Planificador es la vista de calendario completa de Fromly. Ábrelo desde **Agenda**, en la
+pestaña **Planner** de la columna derecha — ocupa el espacio central, con la columna de HOY siempre
+centrada en pantalla para que la encuentres sin buscarla; la derecha, mientras tanto, muestra solo
+tus tareas atrasadas, sin fecha y contextos en seguimiento (lo que el propio calendario no cubre).
 
-### Cuatro vistas: Día · Semana · Mes · Año
+### Tres vistas: Semana · Mes · Año
 
-- **Día**: timeline de horas con tus tareas y eventos con hora concreta; los bloques indican su
-  hora de inicio y se pueden redimensionar para ajustar la duración.
-- **Semana**: varios días en columnas. Arriba, una franja "todo el día" para las tareas con fecha
-  pero sin hora.
+- **Semana**: varios días en columnas, con timeline horario. Arriba, una franja "todo el día" para
+  las tareas con fecha pero sin hora. La columna de hoy se distingue con un fondo propio.
 - **Mes**: la cuadrícula del mes, con las tareas y eventos de cada día.
 - **Año**: los 12 meses en una grid. Los días con contenido llevan un punto; clic en cualquier día
-  abre su vista Día.
+  te lleva a él.
+
+El timeline de UN día concreto, hora a hora, vive en la otra pestaña de Agenda — **Día** (ver
+sección 5) — no dentro del Planner.
 
 **Tareas vs eventos de un vistazo:** las tareas se muestran sin fondo (borde fino con un toque de
 color); los eventos de Google se muestran con su color de fondo.
 
 ### Asignar hora a una tarea
 
-Arrastra cualquier tarea de la pestaña **Hoy** al timeline del Planificador para darle hora — la
-tarea sigue en su contexto, solo gana un chip con la hora asignada. También puedes hacer clic en
-una hora vacía para crear una tarea nueva directamente ahí.
+Arrastra cualquier tarea (desde Agenda → Planner, o desde Elementos) al timeline del Planificador
+para darle hora — la tarea sigue en su contexto, solo gana un chip con la hora asignada. También
+puedes hacer clic en una hora vacía para crear una tarea nueva directamente ahí.
 
 ### Sincronización con Google Calendar al planificar
 
@@ -497,8 +527,8 @@ Si tienes Google Calendar conectado, el Planificador crea y actualiza eventos au
 - **Quitar la hora** → el evento de Google Calendar se elimina.
 
 Los eventos que ya existen en Google viven solo en Google (no se copian como notas en Fromly): se
-muestran en el Planificador y en la Agenda con su color original, y al hacer clic en uno se abre su
-editor con un botón **"➕ Crear nodo en Fromly"** — solo se crea una nota si lo pulsas tú.
+muestran en el Planificador y en el timeline de Día con su color original, y al hacer clic en uno
+se abre su editor con un botón **"➕ Crear nodo en Fromly"** — solo se crea una nota si lo pulsas tú.
 
 ---
 
@@ -511,8 +541,8 @@ necesitas hacerlo una vez.
 
 ### Cómo funciona
 
-- Tus eventos de Google Calendar aparecen en el Planificador y en la Agenda con el color de cada
-  calendario.
+- Tus eventos de Google Calendar aparecen en el Planificador y en el timeline de Día con el color
+  de cada calendario.
 - Crear un evento en Fromly lo crea también en Google Calendar.
 - Editar o eliminar un evento funciona en ambas direcciones.
 - La sincronización tiene en cuenta tu zona horaria local.
@@ -554,9 +584,9 @@ Lo que puedes dar por seguro hoy en iPhone:
 - **Google Calendar**, si lo tienes conectado.
 
 La app de iPhone está en un proceso de paridad progresiva con la interfaz de chat de la web y Mac:
-si buscas específicamente la experiencia de tres columnas (Contextos / Chat / cinco pestañas)
-descrita al principio de este manual, confirma en la propia app qué parte ya está disponible en tu
-versión antes de asumir que coincide al cien por cien con la web.
+si buscas específicamente la experiencia de tres columnas (Agenda/Chat/Elementos + Contextos,
+centro, columna derecha) descrita al principio de este manual, confirma en la propia app qué parte
+ya está disponible en tu versión antes de asumir que coincide al cien por cien con la web.
 
 ---
 

@@ -231,11 +231,17 @@ interface Props {
    *  dos veces miércoles... todo esto no es necesario"). CAL reutiliza la
    *  vista Año que el planificador ya tiene (renderYear). */
   dayOnlyHeader?: boolean
+  /** Centra la columna de HOY en el scroll horizontal en vez de pegarla al
+   *  borde derecho (comportamiento por defecto, ver `todayScrollPos()` — v1
+   *  la quiere pegada a la derecha para arrastrar tareas sin buscarla, no
+   *  tocar ese caso). Lo usa el tab «Planner» de Agenda en v2 (Alberto, 5 ago
+   *  2026: quiere el planificador centrado, no desplazado). */
+  centerToday?: boolean
 }
 
 const ALL_VIEW_TABS: ViewMode[] = ['day', 'week', 'month', 'year']
 
-export default function PlannerPanel({ onClose, initialView, initialDays, viewTabs = ALL_VIEW_TABS, dayOnlyHeader }: Props) {
+export default function PlannerPanel({ onClose, initialView, initialDays, viewTabs = ALL_VIEW_TABS, dayOnlyHeader, centerToday }: Props) {
   const s        = useStore()
   const us       = useUserStore()
   const navigate = useNavigate()
@@ -306,7 +312,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   // su propia nota diaria — al entrar en la vista o navegar a otro día (‹/›/Hoy),
   // se abre esa nota en el espacio central, igual que ya hacían los clics en la
   // rejilla de mes/año (Alberto, 22 jul: "cada vez que se abre un día, se abre su
-  // nota diaria"). El overlay central de Semana/Mes/Año (showPlanner en V2Chat)
+  // nota diaria"). El planner Semana/Mes/Año del tab «Planner» de Agenda (V2App.tsx)
   // nunca pasa por aquí — no incluye 'day' en sus viewTabs.
   useEffect(() => {
     if (viewMode !== 'day') return
@@ -457,18 +463,24 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const headRef    = useRef<HTMLDivElement>(null)
   const scrollVRef = useRef<HTMLDivElement>(null)
 
-  // Posición de scroll que deja la columna de HOY (centerDate) pegada al borde
-  // DERECHO del viewport — no centrada. Alberto: quiere poder arrastrar tareas a
-  // «hoy» sin tener que buscarlo, siempre en el mismo sitio predecible (la derecha).
-  // Los días anteriores quedan visibles a la izquierda como contexto reciente.
-  function todayRightPos(): number {
+  // Posición de scroll para la columna de HOY (centerDate). Por defecto pegada al
+  // borde DERECHO del viewport — no centrada. Alberto: quiere poder arrastrar
+  // tareas a «hoy» sin tener que buscarlo, siempre en el mismo sitio predecible
+  // (la derecha). Los días anteriores quedan visibles a la izquierda como
+  // contexto reciente. Con `centerToday` (tab Planner de Agenda en v2, Alberto
+  // 5 ago 2026) la misma columna queda centrada en su lugar — un único punto de
+  // bifurcación del que cuelgan sus 3 consumidores (montaje, `centerNow`,
+  // `isAlreadyCentered`), sin tocarlos uno a uno.
+  function todayScrollPos(): number {
     if (!scrollHRef.current) return 0
-    return Math.max(0, (preDays + 1) * colW - (scrollHRef.current.clientWidth - AXIS_W))
+    const viewportW = scrollHRef.current.clientWidth - AXIS_W
+    if (centerToday) return Math.max(0, (preDays + 0.5) * colW - viewportW / 2)
+    return Math.max(0, (preDays + 1) * colW - viewportW)
   }
 
   useLayoutEffect(() => {
     if (viewMode === 'year' || !scrollHRef.current) return
-    scrollHRef.current.scrollLeft = todayRightPos()
+    scrollHRef.current.scrollLeft = todayScrollPos()
   }, [viewMode, centerDate.toDateString(), colW]) // eslint-disable-line
 
   useLayoutEffect(() => {
@@ -479,13 +491,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
 
   function centerNow() {
     if (!scrollHRef.current) return
-    scrollHRef.current.scrollTo({ left: todayRightPos(), behavior: 'smooth' })
+    scrollHRef.current.scrollTo({ left: todayScrollPos(), behavior: 'smooth' })
     if (scrollVRef.current) scrollVRef.current.scrollTo({ top: Math.max(0, topPx(new Date()) - 120), behavior: 'smooth' })
   }
 
   function isAlreadyCentered(): boolean {
     if (!scrollHRef.current) return true
-    return Math.abs(scrollHRef.current.scrollLeft - todayRightPos()) < colW * 0.4
+    return Math.abs(scrollHRef.current.scrollLeft - todayScrollPos()) < colW * 0.4
   }
 
   useEffect(() => {
@@ -802,7 +814,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const nowTop   = topPx(new Date())
     return (
       <div key={day.toISOString()} className="pp-col-wrap" style={{ width: colW, flexShrink: 0 }}>
-        <div className="pp-col" style={{ height: TOTAL_HOURS * hourH }}
+        <div className={`pp-col${isToday ? ' pp-col--today' : ''}`} style={{ height: TOTAL_HOURS * hourH }}
           onDragOver={e=>{ e.preventDefault(); e.currentTarget.classList.add('pp-col--drag-over')
             const rawY = e.clientY - e.currentTarget.getBoundingClientRect().top
             // Restar el offset del cursor dentro del bloque para que la línea marque el inicio real
@@ -1056,8 +1068,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
               <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
             </>
           ) : (
-            // Misma estructura que la cabecera de Agenda (V2AgendaView.tsx): título +
-            // HOY/CAL en UNA sola fila, botones al extremo derecho — antes CAL vivía
+            // Misma estructura que la cabecera de Agenda (retirada el 5 ago 2026,
+            // fusionada en este mismo destino): título + HOY/CAL en UNA sola fila,
+            // botones al extremo derecho — antes CAL vivía
             // en su propia fila encima del título (Alberto, 22 jul, tres veces: primero
             // la estructura, luego "iguala los márgenes a los de la tab Agenda", luego
             // "pon el botón de cal en la misma línea que el título del día... así

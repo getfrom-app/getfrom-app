@@ -100,6 +100,18 @@
 }
 .v2-newchat--secondary:hover { background: var(--accent-soft, rgba(108,92,231,0.08)); border-color: var(--accent); }
 
+/* Aviso de la sidebar (conversación de agente pendiente / informe nuevo) — texto
+   destacado, no un botón: franja de acento a la izquierda, sin fondo salvo al
+   hover, más compacto que .v2-newchat (Alberto, 5 ago 2026). */
+.v2-sidebar-notice {
+  margin: 0 12px 4px; padding: 5px 8px 5px 9px; width: calc(100% - 24px);
+  display: flex; align-items: center; gap: 6px; text-align: left;
+  background: transparent; border: none; border-left: 2px solid var(--accent);
+  border-radius: 4px; font: inherit; font-size: 12px; font-weight: 600;
+  color: var(--text-accent); cursor: pointer;
+}
+.v2-sidebar-notice:hover { background: var(--accent-soft); }
+
 .v2-section-label {
   padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.09em; color: var(--text-tertiary);
@@ -364,34 +376,6 @@
   border: 1px solid var(--color-error, #e0393e); background: transparent; color: var(--color-error, #e0393e);
 }
 .v2-trash-empty:hover { background: var(--color-error, #e0393e); color: #fff; }
-
-/* Planificador — overlay que envuelve el PlannerPanel real de la v1 (semana/mes/
-   año, drag&drop, GCal — Día vive aparte, en su propio tab de la columna
-   derecha). Necesita todo el ancho disponible para el timeline multi-columna,
-   por eso NO usa el .v2-modal pequeño sino un overlay grande — pero SIN tapar
-   la columna derecha (queda en su tab Agenda, Alberto: «el planificador
-   siempre se abrirá en conjunto con la columna derecha de hoy») NI el sidebar
-   de contextos (antes usaba left:0 y lo tapaba entero — visible sobre todo
-   ahora que Agenda es la tab por defecto y el planificador se ve nada más
-   abrir la app, Alberto 21 jul). `left: var(--v2-sidebar)` / `right: var(--v2-right)`
-   en vez de `inset:0`. */
-.v2-planner-overlay {
-  position: fixed; top: 0; left: var(--v2-sidebar, 260px); bottom: 0; right: var(--v2-right); z-index: 210;
-  background: var(--bg-primary);
-  display: flex; flex-direction: column;
-}
-.v2-planner-overlay .pp-root { border-left: none; flex: 1; min-height: 0; }
-.v2-planner-overlay-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
-}
-.v2-planner-overlay-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
-.v2-planner-overlay-close {
-  width: 28px; height: 28px; border-radius: var(--radius);
-  border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary);
-  font-size: 14px; cursor: pointer; display: grid; place-items: center;
-}
-.v2-planner-overlay-close:hover { background: var(--bg-hover); color: var(--text-primary); }
 
 /* ── Centro (chat) ─────────────────────────────────────────────────── */
 .v2-center-head {

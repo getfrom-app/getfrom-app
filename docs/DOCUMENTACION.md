@@ -1,7 +1,172 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-05 (Web v9.6.943)
+> Última actualización: 2026-08-05 (Web v9.6.944)
+
+---
+
+## 🗓️ Sesión 2026-08-05 (sesión 2) — Navegación v2: destinos en la sidebar, fusión Agenda+Día, tab Planner
+
+Web **v9.6.943 → v9.6.944**. Desplegado a producción (solo cliente). Log completo:
+`logs/2026-08-05-sesion2-navegacion-agenda-planner.md`.
+
+### 1. Rediseño — destinos generales en la sidebar (Chat/Agenda/Elementos/Día)
+
+Alberto señaló que la columna derecha mezclaba dos conceptos en las mismas 5 tabs fijas:
+Contexto/Chat describían "lo seleccionado"; Agenda/Elementos/Día eran vistas GLOBALES sin relación
+con el contexto activo. Validado con un mockup HTML interactivo (estructura actual vs. propuesta)
+antes de tocar código; aprobado con una corrección explícita: nada de una tab "Chat" genérica para
+Agenda/Elementos/Día — en su lugar, un destino "Chat" propio y general, fuera de contextos.
+
+Implementado con plan formal (`EnterPlanMode`), que detectó un catch real antes de escribir
+código: el centro YA renderizaba el chat general por defecto sin nada abierto — si el destino
+"Chat" abría TAMBIÉN el composer en la derecha, se duplicaba (dos cajas de texto compitiendo por la
+misma sesión). Resuelto con una rama nueva en el ternario del centro (`V2App.tsx`):
+`rightMode==='chat'` sin `centerElementId` → hueco neutro (`.v2-empty`), el composer vive solo en
+la columna derecha.
+
+- **`V2Sidebar.tsx`**: nueva sección de destinos generales, mismo estilo visual (`v2-ctx-row`) que
+  una fila de contexto, sin etiqueta de sección propia (evita colisión con la fila pseudo-contexto
+  "General" ya existente).
+- **`V2RightColumn.tsx`**: `RightMode` de 5 tabs fijas a 1-2 dinámicas — Tab 1 = contenido del
+  destino activo (Contexto→Ficha, Chat→composer embebido, Elementos/Agenda/Día→su vista de
+  siempre); Tab 2 "Chat" (solo si `elementId`) = la conversación de ese elemento
+  (`V2ElementChat`→`aiChatStore.getOrCreateElementSession`), en cualquier destino.
+  `effectiveSubTab` se calcula de forma DEFENSIVA (`rightSubTab==='chat' && elementId ? 'chat' :
+  'primary'`) — si `centerElementId` vuelve a `null` desde cualquiera de los muchos sitios que lo
+  limpian, sin que ese sitio recuerde resetear `rightSubTab`, no deja una Tab 2 fantasma.
+- **`V2Chat.tsx`**: nuevo prop `elementScoped?: boolean` que desacopla `embedded` (maquetación:
+  `.v2-right-fill` vs `.v2-col.v2-center`) de si el copy (sugerencias/saludo/título) es genérico o
+  "sobre este documento" — antes `embedded` decidía ambas cosas a la vez. El destino Chat general
+  necesita maquetación `embedded` + copy genérico (`elementScoped={false}`); el resto de usos no
+  pasa el prop nuevo, cae en `embedded` como siempre (cero cambio de comportamiento existente).
+- **`V2App.tsx`**: nuevo handler `onSelectGeneral(dest)`, hermano de `onSelectCtx`; retirado
+  `handleRightMode`. Los 9 sitios que hacían `setRightMode('detalles')` se repartieron según su
+  intención real: "muestra el chat de lo que acabo de centrar" → `setRightSubTab('chat')` sin
+  tocar `rightMode`; "vengo de iniciar una conversación general sin nada centrado" →
+  `setRightMode('chat')`. `onNewChatInCtx` es un caso aparte: se queda en `rightMode='contexto'`
+  (no es el destino Chat general, que es "sin contexto" por definición) con `rightSubTab='chat'`.
+
+Verificado en vivo contra el test account: Chat (composer solo en la derecha, centro neutro, crear
+una nota de prueba la lleva al centro con la MISMA conversación siguiendo en su Tab 2),
+Agenda/Elementos/Día (Tab 2 aparece/desaparece sola al abrir/cerrar algo), contexto real sin
+regresión (Ficha+Chat). Nota de prueba eliminada al terminar.
+
+### 2. Bug real: setState durante el render (`V2TaskDetailView.tsx`)
+
+Al abrir una tarea, React avisaba "Cannot update a component (`V2App`) while rendering a different
+component (`V2TaskDetailView`)". Root cause: `getOrCreateContainerNotes` (mutación real del store,
+`store.createNode`) se llamaba dentro de un `useMemo` — fase de render, no efecto. Cualquier
+componente suscrito al store vía `useStore()` (V2App entre ellos, `useEffect`+`store.subscribe`)
+recibía un `forceUpdate` síncrono en mitad del render de otro componente.
+
+Fix: lectura sin crear (`containerNotesNode`, ya existía) en el `useState` inicial — no pierde un
+render con las notas ya existentes — y la creación (`getOrCreateContainerNotes`) diferida a un
+`useEffect` sobre `[node.id]`. Render condicional (`{notesNode && <V2NoteBody .../>}`) para el
+instante entre montaje y efecto. Verificado con instrumentación temporal en `NodeStore.notify()`
+(capturando `new Error().stack` de cada llamada en `window.__notifyStacks`, revertida tras
+confirmar) — el warning desaparece tanto con tareas nunca abiertas como con las que ya lo
+disparaban antes del fix.
+
+Pendiente (no tocado, ya anotado en "Próxima sesión" antes de esta): `V2ConversationView.tsx`
+tiene el mismo patrón.
+
+### 3. Cabecera de tabs oculta cuando solo hay una
+
+`V2RightColumn.tsx`: la barra `.v2-right-tabs` ya no se pinta cuando `elementId` es `null` (solo
+Tab 1 disponible, nada que elegir) — reaparece en cuanto hay algo centrado y la Tab 2 "Chat" es una
+alternativa real.
+
+### 4. Rediseño (2ª parte) — fusión Agenda+Día, nuevo tab Planner
+
+Alberto: "Agenda y Día son en la práctica la misma área de trabajo" — pidió fusionarlas en un
+único destino "Agenda" (primero en la sidebar, destino por defecto al abrir la app), con un tab
+nuevo "Planner" que separa "ver mi día" de "organizar/planificar". Aclarado con 3 preguntas de
+seguimiento (contenido del tab Día tras la fusión, qué muestra la derecha en Planner, si
+Chat/Elementos cambian de orden) antes de planificar. Un agente de diseño revisó el primer borrador
+de los efectos de sincronización y encontró 3 problemas reales antes de escribir código:
+
+- **Arranque en frío (F5)**: un efecto con deps `[agendaView, rightMode]` se dispara una vez al
+  montar, pero en ese instante el store puede seguir vacío (antes de `runStartupMigrations`) — la
+  reposición del centro debe depender de `ready`, no solo de esas 2 deps.
+- **Carrera con `PlannerPanel`**: la tab "Día" (`PlannerPanel initialView="day"`) tiene su PROPIO
+  efecto interno (línea ~311-315, dispara `from:open-detail` en cada montaje/cambio de día). Al
+  desmontar/remontar entre Planner↔Día, su `centerDate` (estado LOCAL) siempre reinicia a HOY — un
+  ref "recordando el último día visto" en `V2App` quedaría neutralizado un instante después por
+  este mecanismo. Se descartó por completo (no aporta nada real).
+- **Orden del ternario del centro**: la rama `agendaView==='planner'` debe ir DENTRO del `else` de
+  `centerElementId ?`, no antes — si no, abrir una tarea desde la lista recortada de la derecha
+  (que sí fija `centerElementId` sin tocar `agendaView`) nunca se vería mientras "Planner" siga
+  activo.
+
+Diseño final:
+
+- **`V2Sidebar.tsx`**: 3 filas — Agenda (nueva, primera) → Chat → Elementos. Fila "Día" retirada
+  (vive dentro de Agenda).
+- **Centro de Agenda**: siempre la nota diaria del día activo (comportamiento de "Día" sin
+  cambios) — salvo que se le quita el icono "Hablar de esto" (`V2ElementView.tsx`,
+  `!node.isDiaryEntry`, mismo criterio que ya excluía la fila de fecha) — esa nota no tiene chat
+  propio.
+- **Columna derecha de Agenda** (`V2RightColumn.tsx`): 2 tabs FIJAS propias, independientes del
+  mecanismo genérico Tab1/Tab2 — **Día** (el `PlannerPanel key={diaResetKey} viewTabs={['day']}
+  dayOnlyHeader` de siempre, sin cambios) y **Planner** (nuevo: centro = `PlannerPanel
+  viewTabs={['week','month','year']} centerToday`, antes vivía embebido en el chat general
+  (`V2Chat.tsx`, retirado de ahí); derecha = `<DailyCockpit bare disablePlanner hideToday
+  hideFuture />`, solo atrasadas+sin fecha+seguimiento — hoy/futuras ya las cubre el planner
+  central). Un 3er tab "Chat" aparece si se abre una tarea normal desde dentro
+  (`elementId && !store.getNode(elementId)?.isDiaryEntry`) — nunca para la nota diaria.
+- **`onAgendaViewChange`** (`V2App.tsx`): handler SÍNCRONO, no un efecto reactivo — evita la
+  carrera de arriba. Re-pulsar la tab ya activa es un no-op (`if (next === agendaView) return`);
+  solo la fila "Agenda" de la sidebar (`onSelectGeneral`) fuerza el reset duro a hoy
+  (`setAgendaView('dia')` + `setCenterElementId(getTodayDiaryUnderAgenda().id)` +
+  `setDiaResetKey(k=>k+1)`).
+- **`PlannerPanel.tsx`**: nuevo prop opcional `centerToday` — centra la columna de hoy en el
+  scroll horizontal en vez de pegarla al borde derecho (comportamiento por defecto). La función
+  `todayRightPos()` (renombrada `todayScrollPos()`) es la ÚNICA fuente de verdad que consultan sus
+  3 usos (montaje, `centerNow()`, `isAlreadyCentered()`) — bastó bifurcar su fórmula interna por el
+  prop, sin tocar cada llamador. No se cambió el comportamiento por defecto: 2 rutas de v1
+  (`MainLayout.tsx:1254`/`:1336`) SÍ quieren hoy pegado a la derecha para arrastrar tareas — el
+  riesgo resultó no existir de todos modos (`App.tsx` confirma que v1/`MainLayout` está retirada de
+  las rutas de la web desde el 15 jul 2026, código muerto sin ruta que lo monte), pero el prop
+  opt-in era la forma correcta de todos modos. `renderCol(day)`: clase `pp-col--today` cuando
+  `isToday` (ya calculado, antes solo pintaba la línea "ahora") + CSS `background:
+  var(--accent-soft)` (`styles/index.css`) — el cuerpo de la columna horaria no tenía ningún fondo
+  distinto para hoy hasta ahora (solo la cabecera teñía el texto). Sin botón CAL en el header
+  multi-tab de Planner — confirmado en vivo que solo existe en el header `dayOnlyHeader` de la tab
+  Día, sin tocar.
+- **`DailyCockpit.tsx`**: nuevo prop opcional `hideFuture`, envuelve el bloque "Futuro" —
+  Atrasadas/Seguimiento/Sin fecha no dependen de Futuro, sin efectos colaterales.
+- **Limpieza de código muerto**: `V2AgendaView.tsx` eliminado (único importador era
+  `V2RightColumn.tsx`, confirmado por grep); `showPlanner` retirado de `V2Chat.tsx` (prop +
+  bloque JSX del overlay + import de `PlannerPanel`) y de sus 3 call-sites
+  (`V2App.tsx`/`V2RightColumn.tsx`/`V2ElementChat.tsx`, los 3 quedaban siempre en `false` tras el
+  cambio); función `classify()` muerta en `V2RightColumn.tsx` (nunca se llamaba, encontrada al
+  limpiar un import de tipos).
+
+Verificado en vivo: arranque directo en Agenda con la nota de hoy; tab Planner cambia
+centro+derecha, columna de hoy centrada y con fondo distinguible, sin CAL, lista recortada correcta
+(Atrasadas+Sin fecha, sin Hoy/Futuro, Seguimiento ausente por falta de datos de test); abrir una
+tarea desde ahí la centra y revela su Tab "Chat" (probado completo con respuesta de la IA); volver
+a Día reconstruye el timeline de hoy limpio; contexto real sin regresión. Google Calendar en el
+timeline de Día verificado por CÓDIGO (mismo `PlannerPanel`/mismas funciones — `fetchGcalEvents`,
+`getTimedBlocks`, `getAllDayTasks` — que Planner, sin ninguna condición que excluya `viewMode==='day'`)
+— no se pudo probar con un evento real porque la cuenta de test no tiene Google conectado
+(confirmado en Ajustes → Google: "No conectado").
+
+### 5. Sidebar — avisos como notificación de texto, hueco en blanco corregido
+
+Alberto: los avisos de "conversación pendiente"/"informe de agente nuevo" deberían ser texto
+destacado, no botones — y sobraba mucho espacio en blanco bajo Elementos. Root cause del hueco: el
+bloque de destinos generales (Agenda/Chat/Elementos) reutilizaba la clase `.v2-ctx-list` (la misma
+que la lista de Contextos de abajo), y ambas tienen `flex:1` dentro del sidebar
+(`display:flex;flex-direction:column`) — el bloque de 3 filas cortas se estiraba ocupando todo el
+espacio libre en vez de dejárselo a Contextos. Fix: `flex:'none'` inline en ese bloque concreto (la
+lista de Contextos, que sí necesita `flex:1` para scrollear con muchos contextos, no se tocó).
+Avisos: nueva clase `.v2-sidebar-notice` (franja de acento `border-left` de 2px, sin fondo salvo
+`:hover`, texto 12px/600) sustituye el estilo de botón (`.v2-newchat` con overrides inline de
+`background`/`border`) que tenían antes.
+
+Verificado: `tsc -b` limpio, 80/80 tests, `npm run build` sin errores.
 
 ---
 

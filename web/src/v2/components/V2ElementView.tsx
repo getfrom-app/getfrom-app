@@ -69,7 +69,11 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
       <div className="v2-detail-head">
         <div className="v2-detail-head-top">
           <EditableTitle nodeId={nodeId} />
-          {onOpenChat && node && (
+          {/* La nota diaria no tiene chat propio — vive dentro del destino
+              Agenda, donde ese hueco lo ocupan las tabs Día/Planner (Alberto,
+              5 ago 2026: "sobra el icono de globo de texto... y su lógica que
+              ya no aplica"). Mismo criterio que la fecha, justo debajo. */}
+          {onOpenChat && node && !node.isDiaryEntry && (
             <button className="v2-iconbtn" onClick={onOpenChat} title={t('v2.rightColumn.chatAboutThis', 'Hablar de esto')}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
             </button>

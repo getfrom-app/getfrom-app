@@ -19,6 +19,7 @@ import { uploadFile } from '../api/client'
 import { pickAndImportDriveFile } from '../utils/googleDrivePicker'
 import type { DriveImportResult } from '../api/googleDrive'
 import { useV2Recorder } from './useV2Recorder'
+import PlannerPanel from '../components/panels/PlannerPanel'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2ProfileView from './components/V2ProfileView'
@@ -94,7 +95,7 @@ export default function V2App() {
     }
   }, [ownAccent])
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
-  const [rightMode, setRightMode] = useState<RightMode>('hoy')
+  const [rightMode, setRightMode] = useState<RightMode>('agenda')
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
   // Elemento abierto en el ESPACIO CENTRAL — regla ÚNICA de dónde vive cada cosa
   // (Alberto, 30 jul: "me parece confuso que a veces los elementos se abran a la
@@ -105,27 +106,46 @@ export default function V2App() {
   // era exactamente la ambigüedad que causaba la confusión — un elemento a veces
   // en el centro, a veces «de artifact» a la derecha, sin regla predecible).
   //
-  // ⚠️ DESACOPLADO de qué tab está activa (rediseño 30 jul, segunda vuelta): clicar
-  // una tab NUNCA toca `centerElementId` (antes, ir a la tab Agenda vaciaba el
-  // centro — quitado) y abrir un elemento cualquiera NUNCA cambia `rightMode`
-  // (onOpenNode no lo toca; ver comentario en onOpenConversation). Excepciones
-  // deliberadas, confirmadas explícitamente por Alberto, no descuidos:
-  //   1. Seleccionar un CONTEXTO (onSelectCtx) SÍ navega a la tab Contexto — es
-  //      cambiar de área de trabajo, no «abrir un elemento».
-  //   2. Cuando el chat CREA un artifact, la tab SÍ salta a Chat — no es que «abrir
-  //      un elemento cambie la tab», es que EL CHAT que estaba en el centro se
-  //      traslada a la derecha porque el artifact ocupa su sitio; es el mismo chat
-  //      relocalizándose, no una tab ajena reaccionando a algo que pasó en el centro.
-  //   3. Las tabs Agenda («hoy») y Día («dia») SÍ van unidas a un centro fijo propio
-  //      (Alberto, 4 ago 2026, tras reportar que abrir una tarea desde Agenda y
-  //      volver a pulsar la tab dejaba la tarea pegada en el centro en vez de
-  //      recuperar el planner): pulsar Agenda siempre limpia `centerElementId`
-  //      (centro = planner); pulsar Día siempre abre la nota diaria de hoy como
-  //      `centerElementId`. A diferencia de las demás tabs, Agenda y Día NO son
-  //      navegación genérica — son la MISMA vista repartida entre columnas, así
-  //      que pulsarlas de nuevo debe siempre devolver a esa vista por defecto,
-  //      cierre lo que cierre en el centro. Ver `handleRightMode` más abajo.
+  // ⚠️ REDISEÑO 5 ago 2026 — Agenda/Elementos pasan de tabs de la columna
+  // derecha a DESTINOS de la sidebar (junto a los contextos), y aparece un nuevo
+  // destino «Chat» general (Alberto: "Elementos/Agenda/Día son generales, no de
+  // un contexto — mezclarlas con Contexto/Chat en la misma fila confunde qué es
+  // cada cosa"; sobre Chat: "debe haber algún chat en algún lugar fuera de
+  // contextos... que se abra en columna derecha, y que cuando cree un elemento
+  // este se abra en el lugar principal"). Regla que sigue vigente: abrir un
+  // elemento cualquiera (`onOpenNode`) NUNCA cambia `rightMode` — solo revela la
+  // Tab 2 "Chat" de la columna derecha (`rightSubTab`, ver V2RightColumn.tsx) si
+  // no estaba ya visible. Elegir un destino en la sidebar (contexto real u
+  // `onSelectGeneral`) SÍ fija `rightMode` — es cambiar de área de trabajo, no
+  // «abrir un elemento». Chat/Agenda llevan además un centro fijo propio
+  // (`onSelectGeneral` limpia o fija `centerElementId` según el destino) —
+  // pulsarlos de nuevo en la sidebar siempre devuelve a esa vista por defecto,
+  // cierre lo que cierre en el centro (mismo motivo que ya llevó a
+  // `agendaResetKey`/`diaResetKey` el 4 ago, ahora vivo aquí en vez de en
+  // V2RightColumn porque el clic ya no ocurre ahí).
+  //
+  // ⚠️ REDISEÑO 5 ago 2026 (2ª parte) — Agenda y Día se fusionan en un único
+  // destino "Agenda" (Alberto: "Agenda y Día son en la práctica la misma área
+  // de trabajo"). `agendaView` decide cuál de sus 2 tabs fijas está activa en la
+  // columna derecha (Día = timeline de siempre · Planner = calendario completo,
+  // que además cambia el CENTRO — ver `onAgendaViewChange` y el ternario del
+  // centro más abajo). V2AgendaView (Agenda vieja) se retira entera.
   const [centerElementId, setCenterElementId] = useState<string | null>(null)
+  // Cuál de las 1-2 tabs de la columna derecha está activa — 'chat' solo tiene
+  // efecto real si hay algo en `centerElementId` (V2RightColumn lo calcula de
+  // forma defensiva, `effectiveSubTab`). Se resetea a 'primary' cada vez que
+  // cambia el destino activo (contexto u `onSelectGeneral`); pasa a 'chat' cuando
+  // algo revela su propio chat (abrir un elemento con "Hablar de esto", un
+  // artifact recién creado por el chat general, etc.) — ver cada sitio abajo.
+  const [rightSubTab, setRightSubTab] = useState<'primary' | 'chat'>('primary')
+  // Cuál de las 2 tabs FIJAS del destino Agenda está activa (independiente de
+  // `rightSubTab`, que solo distingue Tab1 genérica vs Chat) — ver `onAgendaViewChange`.
+  const [agendaView, setAgendaView] = useState<'dia' | 'planner'>('dia')
+  // Bumped en cada clic en la fila Agenda de la sidebar (incluso si ya estaba
+  // activa) — fuerza un remount limpio del timeline (PlannerPanel) en
+  // V2RightColumn. Vivía en V2RightColumn.tsx hasta el 4 ago; sube aquí porque
+  // ahora el clic que lo dispara ocurre en V2Sidebar, no en la columna derecha.
+  const [diaResetKey, setDiaResetKey] = useState(0)
   // Ajustes a pantalla completa: null = modo normal; si no, la pestaña activa.
   // Sustituye al modal — nav a la izquierda (donde van los contextos), contenido
   // al centro, columna derecha vacía.
@@ -211,6 +231,18 @@ export default function V2App() {
       .catch(() => setReady(true)) // no bloquear el shell aunque falle la carga
   }, [])
 
+  // Arranque en frío: Agenda/Día es el destino por defecto (`rightMode`/`agendaView`
+  // ya nacen así), pero fijar `centerElementId` a la nota de hoy en el `useState`
+  // inicial no es seguro — el store puede seguir vacío en ese instante (antes de
+  // que `initialLoad`/`runStartupMigrations` terminen). Se difiere a que `ready`
+  // sea `true`; en cualquier otro caso (usuario ya navegó a otro sitio) no hace nada.
+  useEffect(() => {
+    if (!ready) return
+    if (rightMode === 'agenda' && agendaView === 'dia' && !centerElementId) {
+      try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
+    }
+  }, [ready]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Al elegir un contexto, la columna derecha muestra SIEMPRE su ficha completa
   // (vista de contexto: tareas + elementos + acceso a «Lo que Fromly sabe») — es
   // cambiar de área de trabajo, no «abrir un elemento», así que SÍ navega
@@ -229,6 +261,7 @@ export default function V2App() {
     setSelectedCtxId(id)
     setFocusNodeId(null)
     setRightMode('contexto')
+    setRightSubTab('primary')
     if (id) {
       setCenterElementId(getOrCreateContextKnowledgeDoc(id).id)
     } else {
@@ -237,47 +270,87 @@ export default function V2App() {
     }
   }
 
-  // Handler de las tabs de la columna derecha — excepción 3 del bloque de arriba:
-  // Agenda y Día llevan su propio centro fijo (planner / nota diaria), así que
-  // pulsarlas siempre lo restaura, a diferencia del resto de tabs (que no tocan
-  // `centerElementId`, ver `onMode={handleRightMode}` más abajo).
-  const handleRightMode = (m: RightMode) => {
-    if (m === 'hoy') {
-      setCenterElementId(null)
-    } else if (m === 'dia') {
+  // Handler de las 3 filas del bloque General de la sidebar (Agenda/Chat/
+  // Elementos) — hermano de `onSelectCtx`, para los destinos que NO son un
+  // contexto real. Siempre limpia `selectedCtxId` (estos destinos son "sin
+  // contexto" por definición — mutuamente excluyentes con la selección de un
+  // contexto real en la sidebar) y vuelve a la Tab 1 de la columna derecha.
+  const onSelectGeneral = (dest: 'agenda' | 'chat' | 'elementos') => {
+    setShowProfile(false)
+    setSelectedCtxId(null)
+    setFocusNodeId(null)
+    setRightSubTab('primary')
+    setRightMode(dest)
+    if (dest === 'agenda') {
+      // Reset duro a la vista por defecto (Día, nota de hoy) — pulsarlo de
+      // nuevo siempre vuelve aquí, cierre lo que cierre en el centro/Planner.
+      setAgendaView('dia')
       try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
-    } else if (m === 'elementos') {
-      // Un clic normal en la tab Elementos siempre debe abrir «Todos» — sin esto,
+      setDiaResetKey(k => k + 1)
+    } else if (dest === 'chat') {
+      // Retoma la conversación general que hubiera — igual que un contexto
+      // retoma su documento. Descartarla y empezar de cero sigue siendo el
+      // trabajo explícito de "+ Nueva conversación" (onNewChat), que no cambia.
+      setCenterElementId(null)
+    } else if (dest === 'elementos') {
+      // Un clic normal en la fila Elementos siempre debe abrir «Todos» — sin esto,
       // `elementsFilter` se quedaba pegado al último filtro pedido por «← Agentes»/
       // «← Prompts» (`onOpenElementsFiltered`, que sí lo pone explícitamente) y
-      // reaparecía cada vez que se volvía a esta tab por cualquier otro camino,
-      // incluso después de que el usuario hubiera elegido «Todos» a mano dentro del
-      // propio panel (auditoría, 4 ago 2026). `onOpenElementsFiltered` llama a
+      // reaparecía cada vez que se volvía aquí por cualquier otro camino, incluso
+      // después de que el usuario hubiera elegido «Todos» a mano dentro del propio
+      // panel (auditoría, 4 ago 2026). `onOpenElementsFiltered` llama a
       // `setRightMode` directamente (no a este handler), así que no compite con esto.
       setElementsFilter(null)
     }
-    setRightMode(m)
   }
 
-  // Botón «Nueva conversación» (barra izquierda) → SIEMPRE sin contexto (General).
+  // Cambia entre las 2 tabs fijas del destino Agenda (Día/Planner) — handler
+  // SÍNCRONO, no un efecto: un efecto reactivo sobre [agendaView] entraría en
+  // carrera con el propio PlannerPanel de la tab «Día», que al remontar (cambia
+  // `agendaView`→'dia'→'planner'→'dia') dispara su PROPIO efecto interno
+  // (`from:open-detail` con el día de HOY, líneas ~311-315 de PlannerPanel.tsx)
+  // y pisaría cualquier día "recordado" aquí — no hay nada que ganar guardando
+  // ese estado. Re-pulsar la tab ya activa es un no-op: solo la fila «Agenda»
+  // de la sidebar (`onSelectGeneral`) fuerza el reset duro a hoy.
+  const onAgendaViewChange = (next: 'dia' | 'planner') => {
+    if (next === agendaView) return
+    setAgendaView(next)
+    if (next === 'planner') {
+      setCenterElementId(null)
+    } else {
+      try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
+    }
+    setRightSubTab('primary')
+  }
+
+  // Botón «Nueva conversación» (barra izquierda) → SIEMPRE sin contexto (General),
+  // destino Chat de la sidebar.
   const onNewChat = () => {
     setShowProfile(false)
     setCenterElementId(null)
     setSelectedCtxId(null)
     setFocusNodeId(null)
-    setRightMode('detalles') // durante una conversación, la derecha muestra su panel
+    setRightMode('chat')
+    setRightSubTab('primary')
     aiChatStore.startNewSession()
   }
 
   // «＋» al pasar el ratón sobre un contexto → nueva conversación DENTRO de ese contexto.
   // Al escribir el 1er mensaje, send() la vincula al contexto (assignContext) → sale en
-  // su Historial y su ficha.
+  // su Historial y su ficha. No es el destino Chat GENERAL (ese es sin contexto) — se
+  // queda en `rightMode='contexto'` como `onSelectCtx`, pero con la Tab 2 "Chat" ya
+  // enfocada para enseñar la conversación recién empezada en vez de la Ficha.
   const onNewChatInCtx = (id: string | null) => {
     setShowProfile(false)
-    setCenterElementId(null)
     setSelectedCtxId(id)
     setFocusNodeId(null)
-    setRightMode('detalles')  // se está iniciando una conversación, no viendo la ficha
+    setRightMode('contexto')
+    setRightSubTab('chat')
+    if (id) {
+      setCenterElementId(getOrCreateContextKnowledgeDoc(id).id)
+    } else {
+      setCenterElementId(null)
+    }
     aiChatStore.startNewSession()
   }
 
@@ -337,7 +410,7 @@ export default function V2App() {
   // aiChatStore.getOrCreateElementSession). No hay estado propio que gestionar
   // aquí: a diferencia del botón de antes, no crea una conversación nueva y
   // aislada cada vez — reutiliza la de siempre.
-  const onOpenChatAbout = () => setRightMode('detalles')
+  const onOpenChatAbout = () => setRightSubTab('chat')
 
   const isTextFile = (f: File) => /\.(md|markdown|txt)$/i.test(f.name) || f.type === 'text/markdown' || f.type === 'text/plain'
 
@@ -388,7 +461,7 @@ export default function V2App() {
     for (const f of textFiles) {
       try { const note = createMarkdownNode(captureParentId(), await f.text(), f.name, false); if (note) lastNote = note.id } catch { /* */ }
     }
-    if (lastNote) { setCenterElementId(lastNote); setRightMode('detalles') }
+    if (lastNote) { setCenterElementId(lastNote); setRightSubTab('chat') }
 
     if (!otherFiles.length) return
 
@@ -401,9 +474,10 @@ export default function V2App() {
     }
 
     if (aiChatStore.sessionId) {
-      // Hay conversación → adjuntar a ella.
+      // Hay conversación → adjuntar a ella. Si ya hay algo centrado, su Tab 2
+      // "Chat" enseña esta conversación; si no, es el destino Chat general.
       const sid = aiChatStore.sessionId
-      setRightMode('detalles')
+      if (centerElementId) setRightSubTab('chat'); else setRightMode('chat')
       let ok = 0
       for (const f of otherFiles) { if (await uploadResourceNode(f, sid)) { ok++; toast(t('v2.attachedToConversation', '📎 {{name}} adjuntado a la conversación', { name: f.name })) } }
       if (ok > 0) {
@@ -445,7 +519,7 @@ export default function V2App() {
 
     if (aiChatStore.sessionId) {
       const sid = aiChatStore.sessionId
-      setRightMode('detalles')
+      if (centerElementId) setRightSubTab('chat'); else setRightMode('chat')
       createDriveResourceNode(result, sid)
       toast(t('v2.attachedToConversation', '📎 {{name}} adjuntado a la conversación', { name: result.name }))
       aiChatStore.addNotice(t('v2.filesIncorporatedNotice', 'He incorporado {{label}} a esta conversación. Ya puedes preguntarme sobre su contenido.', { label: `**${result.name}**` }))
@@ -567,42 +641,11 @@ export default function V2App() {
         const nodes = ids.map(id => store.getNode(id)).filter(Boolean) as ReturnType<typeof store.getNode>[]
         const artifact = nodes.find(n => !!n && (isDocNode(n) || !!n.isResource))
           || nodes.find(n => !!n && n.status == null && !n.isEvent)
-        if (artifact) { setCenterElementId(artifact.id); setRightMode('detalles') }
+        if (artifact) { setCenterElementId(artifact.id); setRightSubTab('chat') }
       } catch { /* noop */ }
     }
     prevStreaming.current = chat.isStreaming
   }, [chat.isStreaming, centerElementId])  // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Al aparecer el PRIMER mensaje de usuario de una conversación GENERAL (sin
-  // elemento en el centro), la columna derecha va sola a «Detalles» → se ve el
-  // panel de la conversación (Tareas/Elementos/Notas) sin cambiar de tab a mano.
-  // Se dispara por mensaje (no por sessionId, que puede venir persistido del
-  // reload), una sola vez por sesión, y solo desde la tab por defecto «Hoy» para
-  // no pisar una elección deliberada (Elementos/Contexto/Agenda). Si hay un
-  // elemento en el centro, su tab Detalles ya muestra el chat en curso — este
-  // efecto no tiene nada que hacer ahí.
-  const switchedFor = useRef<string | null>(null)
-  // Cualquier sesión que pase por el modo «elemento» (centerElementId puesto)
-  // queda marcada como ya gestionada por el efecto de abajo. Sin esto: al
-  // volver de un elemento con conversación ya iniciada a la tab Agenda (que
-  // limpia `centerElementId`, ver el useEffect de `rightMode==='hoy'` más
-  // arriba), la sesión "aparecía" por primera vez ante el efecto de abajo con
-  // mensajes de usuario ya puestos → lo interpretaba como "primer mensaje
-  // recién escrito" y devolvía la tab a Detalles, peleándose con el clic
-  // explícito en Agenda (bug real, encontrado probando en vivo el 30 jul).
-  useEffect(() => {
-    if (centerElementId && chat.sessionId) switchedFor.current = chat.sessionId
-  }, [centerElementId, chat.sessionId])
-
-  useEffect(() => {
-    const sid = chat.sessionId
-    if (!sid || centerElementId) return
-    if (switchedFor.current === sid || rightMode !== 'hoy') return
-    if (chat.messages.some(m => m.role === 'user')) {
-      switchedFor.current = sid
-      setRightMode('detalles')
-    }
-  }, [chat.sessionId, chat.messages.length, centerElementId])  // eslint-disable-line react-hooks/exhaustive-deps
 
   // El ElementsPanel de v1 abre nodos disparando `from:open-detail` (en vez de navegar).
   // Lo escuchamos aquí para abrir el elemento desde el buscador universal.
@@ -622,7 +665,7 @@ export default function V2App() {
   useEffect(() => {
     const h = (e: Event) => {
       const id = (e as CustomEvent).detail?.nodeId
-      if (id) { onOpenNode(id); setRightMode('detalles') }
+      if (id) { onOpenNode(id); setRightSubTab('chat') }
     }
     window.addEventListener('from:open-artifact', h as EventListener)
     return () => window.removeEventListener('from:open-artifact', h as EventListener)
@@ -753,7 +796,7 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onDriveInCtx={onDriveInCtx} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onDriveInCtx={onDriveInCtx} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
       {centerElementId ? (
         // ⚠️ `key` es OBLIGATORIO: sin él, al pasar de un elemento a otro (p.ej.
         // abrir una nota de Casa Alicante y luego la nota diaria de otro día
@@ -770,29 +813,45 @@ export default function V2App() {
         <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} onOpenChat={onOpenChatAbout} />
       ) : showProfile ? (
         <V2ProfileView onClose={() => setShowProfile(false)} />
+      ) : rightMode === 'chat' ? (
+        // Destino Chat general: el composer vive SOLO en la columna derecha (Tab
+        // 1, ver V2RightColumn) — este hueco neutro evita un segundo composer
+        // duplicado compitiendo por la misma sesión global.
+        <main className="v2-col v2-center">
+          <div className="v2-empty">
+            <h1>{t('v2.generalChatCenterTitle', 'Lo que crees aquí aparece aquí')}</h1>
+            <p>{t('v2.generalChatCenterHint', 'Escribe en el chat de la derecha — cualquier nota, tarea o documento que cree se abrirá en este espacio.')}</p>
+          </div>
+        </main>
+      ) : rightMode === 'agenda' && agendaView === 'planner' ? (
+        // Tab «Planner» de Agenda: calendario semana/mes/año navegable a pantalla
+        // completa (Alberto, 5 ago 2026: "Planner sería un lugar solamente para
+        // organizar"). `centerToday` centra la columna de hoy en vez de pegarla
+        // al borde derecho (comportamiento por defecto de PlannerPanel, que sigue
+        // intacto para v1). Sin `onClose` propio: se sale pulsando «Día» u otro
+        // destino de la sidebar, como el resto de vistas centrales.
+        <main className="v2-col v2-center">
+          <PlannerPanel initialView="week" initialDays={7} viewTabs={['week', 'month', 'year']} onClose={() => {}} centerToday />
+        </main>
       ) : (
         <V2Chat
           currentNodeId={currentNodeId}
           contextLabel={contextLabel}
           onFilesDropped={onFilesDropped}
-          // La tab Día ya NO usa este overlay: abre la nota diaria del día en el
-          // centro (ver el useEffect de viewMode==='day' en PlannerPanel.tsx),
-          // que sustituye por completo al chat — más específico que mantener
-          // aquí el planificador de semana/mes/año (Alberto, 22 jul: "en el
-          // centro una nota diaria... cada vez que se abre un día, se abre su
-          // nota diaria").
-          showPlanner={rightMode === 'hoy'}
         />
       )}
       <V2RightColumn
         mode={rightMode}
-        onMode={handleRightMode}
         selectedCtxId={selectedCtxId}
         onOpenNode={onOpenNode}
         onSelectCtx={onSelectCtx}
         elementId={centerElementId}
         onResize={setRightWidth}
-        activeSessionId={chat.sessionId}
+        rightSubTab={rightSubTab}
+        onSubTabChange={setRightSubTab}
+        agendaView={agendaView}
+        onAgendaViewChange={onAgendaViewChange}
+        diaResetKey={diaResetKey}
         onOpenConversation={onOpenConversation}
         importDragOver={importDragOver}
         elementsFilter={elementsFilter}
