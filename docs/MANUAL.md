@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 5 agosto 2026
+> Web · Mac · iPhone · fromly.app · Última actualización: 5 agosto 2026 (Web v9.6.946)
 
 ---
 
@@ -39,12 +39,36 @@ navegador si algún día quieres repasarlo.
 
 ---
 
+## Novedades (agosto 2026)
+
+- **Barra de creación**: arriba de la columna izquierda, una fila de iconos crea directamente en el
+  contexto que tengas activo — **Chat**, **Nota**, **Lienzo**, **Tarea**, **Grabar** y
+  **Adjuntar**. Sustituye a los botones «Nueva conversación» y «Nuevo elemento».
+  No hay botón de Evento porque no hace falta: una tarea con hora ya es un evento (aparece en el
+  timeline del día y se sincroniza con Google Calendar).
+- **Adjuntar**: un único sitio para meter cualquier cosa de fuera — arrastrar o elegir un archivo,
+  pegar un enlace (Fromly lo guarda como recurso y le pone título solo) o importar desde Google
+  Drive. Antes solo existía el botón de Drive.
+- **Historial de conversaciones**: en el destino **Chat**, la columna derecha tiene dos pestañas —
+  **Chat** (la conversación) e **Historial**. En Historial ves tus contextos con el número de
+  conversaciones de cada uno; al pulsar uno se abre su lista de conversaciones. Debajo, las
+  últimas conversaciones de todos, con buscador.
+- **Tarjetas de contexto en el chat vacío**: cuando no hay conversación empezada, el chat muestra
+  tus contextos en tarjetas, ordenados por uso reciente. Pulsar una abre sus conversaciones.
+- **Perfil conversacional**: al abrir **Perfil** (menú de tu nombre, abajo a la izquierda), la nota
+  del perfil ocupa el centro y a la derecha Fromly te hace una pregunta para ampliarlo. Escribe con
+  naturalidad: Fromly lo adapta, lo añade al perfil y te dice exactamente qué ha guardado. De vez
+  en cuando te propondrá él mismo ampliarlo — aparecerá como aviso en la barra izquierda.
+- **Rediseño**: líneas más suaves, mejor acabado y **cero emojis** en toda la interfaz — cada tipo
+  de elemento tiene ahora su icono propio, del mismo estilo en toda la app.
+- **Clic en «Fromly»** (arriba a la izquierda) te lleva siempre al día de hoy. **Volver** desde un
+  contexto, cuando ya estás en el primer nivel, hace lo mismo.
+
 ## Novedades (julio 2026, Fromly 2.0)
 
-- **Crear ya no está en la cabecera del chat**: el botón **＋ Nuevo elemento** de la barra izquierda
-  (bajo "Nueva conversación") y el **"+"** de cada contexto abren el mismo menú — Nota, Tarea,
-  Evento, Lienzo, 📎 Drive, 🎙 Grabar, Subcontexto — así siempre creas dentro del contexto correcto
-  sin depender de qué conversación tengas abierta.
+- **Crear ya no está en la cabecera del chat**: la barra de creación de la columna izquierda y el
+  **"+"** de cada contexto crean siempre dentro del contexto correcto, sin depender de qué
+  conversación tengas abierta.
 - **Crear documento desde una selección**: selecciona cualquier texto dentro de una nota y usa el
   botón 📄 de la barra flotante de formato — el texto seleccionado se convierte en un documento
   nuevo (título tomado de la primera frase, mismo contexto que la nota de origen) y desaparece del
@@ -182,26 +206,27 @@ aprender: escribes como piensas.
   se incorpora a la conversación y queda indexado para preguntarle por su contenido cuando quieras
   (ver «Archivos y RAG» más abajo).
 
-### Crear elementos — el botón "+" de la barra de contextos
+### Crear elementos — la barra de iconos de la columna izquierda
 
-Crear una nota, tarea, evento o lienzo no depende de tener una conversación abierta: se hace desde
-la **barra izquierda de contextos**.
+Crear una nota, tarea o lienzo no depende de tener una conversación abierta: se hace desde la
+**barra de creación**, la fila de iconos que hay arriba de la columna izquierda. Todo se crea en el
+contexto que tengas seleccionado en ese momento, o sin contexto si no hay ninguno activo.
 
-- **＋ Nuevo elemento** (bajo "Nueva conversación", arriba de todo) crea en el contexto que tengas
-  seleccionado en ese momento, o sin contexto si no hay ninguno activo.
-- El **"+"** que aparece al pasar el ratón sobre cualquier contexto de la lista crea directamente
-  dentro de ese contexto, sin necesidad de entrar en él primero.
+- **Chat** — empieza una conversación nueva.
+- **Nota** — documento de texto enriquecido.
+- **Lienzo** — lienzo de dibujo.
+- **Tarea** — tarea directa, sin pasar por el chat. Si le pones **hora**, se comporta como un
+  evento: aparece en el timeline del día y se sincroniza con Google Calendar. Por eso no hay un
+  botón de Evento aparte.
+- **Grabar** — abre la grabadora de audio (ver «Nota de voz» en la sección de tipos de elemento).
+- **Adjuntar** — abre una ventana con las tres formas de meter algo de fuera: arrastrar o elegir un
+  archivo (PDF, imagen, audio, markdown…), pegar un enlace, o importar desde Google Drive (requiere
+  Google conectado en Ajustes).
 
-Ambos abren el mismo menú:
-
-- **📝 Nota** — documento de texto enriquecido.
-- **☑️ Tarea** — tarea directa, sin pasar por el chat.
-- **📅 Evento** — evento con fecha y hora.
-- **🎨 Lienzo** — lienzo de dibujo.
-- **📎 Drive** — selector de Google Drive para adjuntar un archivo (requiere Google conectado en
-  Ajustes).
-- **🎙 Grabar** — abre la grabadora de audio (ver «Nota de voz» en la sección de tipos de elemento).
-- **🗂️ Subcontexto** — crea un proyecto nuevo colgando del contexto sobre el que abriste el menú.
+Además, el **"+"** que aparece al pasar el ratón sobre cualquier contexto de la lista crea
+directamente dentro de ese contexto sin entrar en él, y abre un menú con las mismas opciones más
+**Subcontexto** (un proyecto nuevo colgando de ese contexto). El **"+"** de la cabecera
+«CONTEXTOS», también al pasar el ratón, crea un contexto en la raíz.
 
 El **Planificador** (vista de calendario semana/mes/año) se abre desde **Agenda**, en la pestaña
 **Planner** de la columna derecha — no desde el chat.
@@ -278,6 +303,17 @@ hable, datos personales estables). Se accede desde el menú de tu cuenta ("Perfi
 Memoria de contexto, se actualiza solo a medida que hablas con Fromly — pero también puedes abrirlo
 y editarlo tú mismo como un documento normal en cualquier momento.
 
+**Ampliarlo hablando.** Al abrir el Perfil, la nota ocupa el centro y en la columna derecha Fromly
+te hace una pregunta para completarlo («¿Qué quieres añadir a tu perfil?», y variantes), con
+sugerencias sacadas de los contextos en los que has estado trabajando. Escribe con naturalidad:
+Fromly lo redacta para que encaje en el perfil, **lo añade solo** y te dice exactamente qué ha
+guardado. Después repregunta una cosa concreta para afinarlo.
+
+**Y él te lo propondrá de vez en cuando.** Cada cierto tiempo, si has ido metiendo cosas nuevas en
+Fromly, verás un aviso en la columna izquierda («Fromly quiere saber más de ti») con una
+conversación ya empezada y varias opciones de las que hablar — o escribe cualquier otra cosa. No
+interrumpe nada: entras cuando quieras, o lo ignoras.
+
 ---
 
 ## 5. Navegación — Agenda, Chat, Elementos y tus Contextos
@@ -307,6 +343,15 @@ sí no tiene chat propio.
 Abre un composer completo en la columna derecha, con el centro en blanco — lo que crees desde ahí
 (una nota, una tarea, un documento) pasa al centro en cuanto la IA lo crea, y la conversación sigue
 disponible en su propia pestaña Chat, sin perder el hilo.
+
+La columna derecha tiene aquí **dos pestañas**:
+
+- **Chat** — la conversación. Mientras no has escrito nada, en vez de un saludo vacío verás tus
+  **contextos en tarjetas**, ordenados por uso reciente y con el número de conversaciones de cada
+  uno; pulsar una abre su lista de conversaciones ahí mismo.
+- **Historial** — tus contextos en lista (pulsa uno para ver sus conversaciones) y, debajo, las
+  **últimas conversaciones** de todos ellos, con buscador. Al abrir una conversación desde aquí,
+  la columna vuelve sola a la pestaña Chat para que la veas.
 
 ### Elementos — el buscador de todo lo que tienes guardado
 

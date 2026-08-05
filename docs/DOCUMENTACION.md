@@ -1,7 +1,127 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-05 (Web v9.6.944)
+> Última actualización: 2026-08-05 (Web v9.6.946)
+
+---
+
+## Sesión 2026-08-05 (sesión 3) — Restyling, iconos propios, historial, perfil conversacional
+
+Web **v9.6.944 → v9.6.946**. Desplegado a producción (solo cliente). Log completo:
+`logs/2026-08-05-sesion3-restyling-iconos-perfil.md`.
+
+### 1. Sistema de iconos propio — fin de los emojis
+
+`landing/web/src/v2/components/Icon.tsx` pasa a ser la ÚNICA fuente de iconos de la app: ~60 SVG de
+trazo sobre rejilla 24×24, grosor 1.7, `stroke="currentColor"` (heredan tema claro/oscuro y acento
+sin una línea de CSS). Sustituyen a todos los emojis de la interfaz: sidebar, chat, composer,
+menús, filas de elemento, modales, paywall, onboarding, menú «/» y menú contextual del outliner,
+barra del editor, visor PDF, planner y columna del día. `isIconName()` permite listas mixtas (el
+menú «/» combina glifos tipográficos «H1»/«⊞»/«☰» con iconos reales).
+
+**Los emojis que viven en el DATO no se migran.** Muchos nodos los llevan escritos como prefijo
+(agentes «📈 …», sesiones «✦ …», raíces «📅 Agenda», «🧠 Contexto»). Reescribirlos rompería los
+helpers que localizan esas raíces por su nombre exacto (`isContextKnowledge`, `NON_AGENDA_ROOTS`,
+`findContextRoot`). Se ocultan AL PINTAR con `utils/displayText.ts`
+(`stripLeadingEmoji`/`displayTitle`), centralizado en `elementDisplayTitle()` (`utils/docNode.ts`),
+por el que pasa cualquier título de elemento. Los nodos NUEVOS ya nacen limpios: `createAgentUnder`,
+agentes predefinidos, `createSessionNode`, el transcript y `migrateContextNotes`.
+
+Limpiados también los 12 JSON de `src/i18n/` (43 cadenas por idioma). Se conservan los glifos
+TIPOGRÁFICOS (⌘ ⇧ → ✓ ✦ ○ ★): no son emoji y varios son atajos de teclado.
+
+Y la regla alcanza al texto que escribe la IA: bloque de estilo global en
+`aiChatStore.buildPayload` («No uses NUNCA emojis»). Verificado en vivo — sin él, el modelo
+salpicaba 🎯/✨ dentro de una interfaz que ya no tenía ninguno.
+
+### 2. Restyling — capa de tokens `--v2-*`
+
+Nombres NUEVOS que solo leen las reglas `.v2-*`, así que no se tocan los tokens de
+`styles/index.css` (compartidos con v1 y la landing). Van declarados en **`:root`**, no bajo
+`.v2-root`: los modales de la v2 se montan con `createPortal(document.body)` y allí las variables
+no existirían — bug real, el modal «Adjuntar» salía transparente.
+
+Dirección visual: escalonado de superficies tipo Drive/Claude (`--v2-surface` centro blanco,
+`--v2-surface-panel` columna derecha, `--v2-surface-sunken` sidebar), bordes casi invisibles +
+sombras cortas en vez de líneas duras, radios 6/9/13/18, una sola curva y duración de transición
+(`--v2-ease`/`--v2-fast`), scrollbars finas, composer con sombra y anillo de foco, tabs
+segmentadas, cabeceras de las 3 columnas alineadas a 52px.
+
+### 3. Historial de conversaciones y tarjetas de contexto
+
+`v2/components/V2ContextBrowser.tsx` — un solo componente en dos pieles (`variant`), porque el
+comportamiento (entrar en un contexto → ver sus conversaciones → volver) es idéntico y no debe
+divergir:
+
+- `cards` — rejilla en el estado vacío del chat, en el hueco que dejaron el saludo «Hola 👋» y las
+  4 sugerencias genéricas.
+- `list` — tab «Historial» del destino Chat: contextos + últimas conversaciones, con buscador.
+
+Datos en `v2/conversations.ts` (`listConversations`, `conversationCountsByContext`,
+`listContextCards`). El drill-down es estado LOCAL: mirar las conversaciones de un contexto NO
+cambia el contexto activo de la app. `RightSubTab` pasa a `'primary' | 'chat' | 'historial'`.
+Única excepción de navegación añadida: abrir una conversación desde el Historial devuelve la
+columna a la tab «Chat» (si no, la conversación no se vería en ningún sitio).
+
+### 4. Tres bugs reales
+
+1. **Tarea asignada a un contexto que no aparecía en su ficha.** `V2ContextView` listaba las tareas
+   con `store.children(ctxId)` (hijos directos). Asignar un contexto a algo que ya existe NO lo
+   mueve en el árbol: `assignContext` escribe una REFERENCIA (`extraData._ctxRefs`), que es lo que
+   hace el badge de contexto de cualquier fila. La tarea quedaba asignada de verdad pero invisible.
+   Ahora usa `nodesInContext()` (referencia + slug clásico + escrita dentro de la nota) unido a los
+   hijos directos, deduplicando. Los ELEMENTOS ya lo hacían bien; las tareas no.
+2. **Los puntos de contexto se teñían con el acento del contexto abierto.** `contextColor()` caía
+   en un `defaultAccentHex()` que leía el `--accent` VIVO del documento — que `V2App` sobrescribe
+   para teñir la app con el color del contexto activo. Ahora el por-defecto es un color FIJO de
+   marca (claro `#2C4356` / oscuro `#8FB4D9`).
+3. **Modales transparentes** — ver §2 (tokens bajo `.v2-root` + portal a `body`).
+
+### 5. Sidebar y creación
+
+- La marca «Fromly» es el botón de INICIO (día de hoy + nota diaria + su columna). «Volver» desde
+  el primer nivel de contextos hace lo mismo — el reset del tinte de acento sale solo al
+  deseleccionar el contexto.
+- El «+» de la cabecera «CONTEXTOS» aparece en hover, como el de cada fila.
+- **Barra de creación** (`.v2-createbar`) en lugar de los botones «Nueva conversación» / «Nuevo
+  elemento»: chat · nota · lienzo · tarea · grabar · adjuntar, todo en el contexto activo. **Sin
+  botón de EVENTO a propósito**: `NewTaskModal` usa un input `datetime-local`, así que una tarea
+  con hora YA es un evento (timeline del día + sync con Google Calendar).
+- **`V2AttachModal`** (nuevo) — «Adjuntar» sustituye al botón «Drive»: arrastrar/elegir archivo
+  (delega en `onFilesDropped`, la ruta única de importación) · pegar un enlace (crea el
+  nodo-recurso y lo completa con `unfurlUrl`) · importar desde Drive.
+- La MEMORIA de un contexto ya no enseña ni su título («Memoria») ni el selector de contexto: es un
+  documento interno que pertenece a su contexto por definición. Quitado también el globo «Hablar de
+  esto» de la cabecera de nota (la tab «Chat» ya ES la conversación de lo centrado) y el prop
+  muerto `onOpenChat`.
+- Elementos del contexto ordenados por `createdAt`, no `updatedAt` (con updatedAt la lista se
+  reordenaba sola en cada edición).
+
+### 6. Perfil conversacional + proactividad
+
+`v2/profileChat.ts` (nuevo). Una sesión de perfil es un chat normal con
+`extraData._profileChat='1'`; ese flag inyecta `PROFILE_CHAT_INSTRUCTIONS` en el turno y activa el
+aviso «He añadido esto a tu perfil».
+
+**No se reinventó la escritura del perfil**: `aiChatStore.learnFromUserMessage` ya extraía hechos
+de cada mensaje (`extractUserKnowledge`) y los guardaba (`saveUserKnowledgeToProfile`). Faltaba (a)
+un sitio donde eso sea el objetivo explícito, (b) DECIR lo guardado y (c) que Fromly sepa arrancar
+la conversación solo. El aviso es **determinista**: lista lo que el extractor guardó de verdad,
+nunca lo que el modelo diga. Fuera del chat de perfil sigue silencioso.
+
+Las instrucciones viajan dentro de `userProfile` (`buildPayload`) — único canal libre hacia el
+system prompt del servidor, así que **todo el sistema es cliente puro, sin desplegar servidor**.
+
+`aiChatStore.openAssistantSession()` es la primitiva nueva de «conversación que empieza Fromly»:
+sesión con flags propios + primer mensaje del asistente ya persistido. Los chips de apertura van en
+el NODO (`_openChips`), no en el transcript (que solo guarda rol+texto) — si no, una conversación
+proactiva abierta días después perdería sus sugerencias.
+
+**Proactividad**: `maybeOfferProfileChat()` corre al arrancar (V2App). Condiciones: ≥1 semana desde
+la última vez, ninguna propuesta sin responder y ≥5 elementos nuevos creados desde entonces. Crea
+la conversación con `_pendingReply='1'` y `open:false` — no abre nada; el aviso de la sidebar
+(`listPendingAgentConversations`) ya la pinta, con texto propio («Fromly quiere saber más de ti») e
+icono de perfil cuando es de perfil.
 
 ---
 
