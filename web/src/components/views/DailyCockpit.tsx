@@ -74,21 +74,9 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
   // Tareas con fecha en próximos días (completan «Futuro» junto a status='future').
   const upcoming = collectUpcomingTasks()
 
-  // ── Tareas de hoy/atrasadas que pertenecen a un CONTEXTO ──────────────────
-  // Se muestran bajo su contexto (sección Contextos), NO en las listas planas de
-  // Atrasadas / Para hoy. Las que no tienen contexto siguen en sus listas.
-  // ctxTasks: qué contextos tienen tareas de hoy/atrasadas (para separar «Seguimiento»,
-  // que son los contextos SIN tareas de hoy). Las tareas ya se muestran planas en «Para hacer».
-  const ctxTasks = new Map<string, { ctx: Node; overdue: Node[]; today: Node[] }>()
-  const bucket = (n: Node, kind: 'overdue' | 'today') => {
-    const c = firstContextOf(n)
-    if (!c) return
-    let e = ctxTasks.get(c.id)
-    if (!e) { e = { ctx: c, overdue: [], today: [] }; ctxTasks.set(c.id, e) }
-    e[kind].push(n)
-  }
-  for (const n of data.overdue) bucket(n, 'overdue')
-  for (const n of data.today) bucket(n, 'today')
+  // (Aquí se agrupaban las tareas de hoy/atrasadas por contexto. «Para hacer» pasó a
+  //  ser una lista plana con el contexto como chip en cada fila, así que el mapa solo
+  //  seguía vivo para excluir contextos de «Seguimiento» — ver más abajo.)
 
   // ── Animación FLIP: las filas se deslizan a su nueva posición al reordenar ──
   // (p.ej. al completar, la tarea baja al final de su grupo en vez de saltar).
@@ -181,7 +169,14 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
   // Solo los contextos EN SEGUIMIENTO explícito (botón «Seguir» en su ficha) — un
   // contexto que nace neutro (p.ej. un contenedor de documentos sin más) no debe
   // aparecer aquí solo por estar abierto (Alberto, 15 jul).
-  const seguimientoCtxs = activeCtxs.filter(c => !ctxTasks.has(c.id) && !!contextParent(c.id) && isContextFollowed(c))
+  // Ya NO se excluyen los contextos que tienen tareas de hoy/atrasadas: «Para hacer»
+  // es una lista PLANA de tareas desde hace tiempo, no pinta filas de contexto, así
+  // que ese filtro (resto del diseño anterior) hacía DESAPARECER de la columna a un
+  // contexto seguido en cuanto tenía una tarea atrasada — no salía en ningún bloque
+  // (Alberto, 5 ago 2026: "este contexto se está siguiendo, pero luego, cuando voy a
+  // agenda planner, no aparece en seguimiento"). Seguimiento = lo que el usuario
+  // sigue explícitamente, sin más condiciones.
+  const seguimientoCtxs = activeCtxs.filter(c => !!contextParent(c.id) && isContextFollowed(c))
 
   // Fila de un contexto — mismo estilo dos-líneas que TaskRow (Alberto, 5 ago 2026:
   // "seguimiento tiene contextos en lugar de tareas, pero guarda el mismo estilo con
@@ -194,7 +189,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
     const color = contextColor(c.id)
     const parent = contextParent(c.id)
     const closing = ctxClosing?.id === c.id
-    const due = ctxTasks.get(c.id)
     return (
       <div key={c.id}>
         <div className={`dc-row dc-row--cajon${closing ? ' dc-row--closing' : ''}`}
@@ -225,12 +219,8 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
             </div>
           </div>
         </div>
-        {due && (
-          <div className="dc-ctx-tasks" style={{ paddingLeft: 18 }}>
-            {due.overdue.map(t => renderTaskRow(t, { showDue: true }))}
-            {due.today.map(t => renderTaskRow(t, {}))}
-          </div>
-        )}
+        {/* Sin lista de tareas anidada bajo el contexto: esas MISMAS tareas ya
+            salen, con su chip de contexto, en la lista plana de «Para hacer». */}
       </div>
     )
   }

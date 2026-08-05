@@ -13,6 +13,7 @@ import PublishButton from '../../components/PublishButton'
 import V2DetailView from './V2DetailView'
 import { elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
+import { useActiveDocEditor } from '../../utils/docEditorStore'
 import { useState } from 'react'
 import type { ElemKind } from '../../components/panels/ElementsPanel'
 
@@ -69,6 +70,22 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
   // aparezca arriba el título de Memoria, eso es algo interno. Tampoco que
   // aparezca la opción de ponerle contexto").
   const isCtxMemory = !!node && isContextKnowledge(node.text)
+  // Clic en el hueco vacío que queda BAJO el contenido → cursor al final del
+  // documento, como cualquier editor de notas (Alberto, 5 ago 2026: "dándole
+  // clic en cualquier parte que esté por debajo del texto, el cursor tiene que
+  // colocarse detrás del texto, para poder escribir directamente"). El
+  // ProseMirror solo ocupa el alto de su propio contenido, así que ese hueco es
+  // literalmente este contenedor: `e.target === e.currentTarget` lo distingue de
+  // cualquier clic que ya cayó dentro del editor o sobre un control. Cubre el
+  // caso que `V2NoteBody.focusDocEnd` no puede ver (una TAREA, donde el editor
+  // va `inlinePage` y el hueco pertenece a esta columna, no a la nota).
+  // `mousedown` y no `click`: hay que ganarle al blur del navegador.
+  const activeDocEditor = useActiveDocEditor()
+  const focusDocEnd = (e: React.MouseEvent) => {
+    if (e.target !== e.currentTarget || !activeDocEditor) return
+    e.preventDefault()
+    activeDocEditor.chain().focus('end').run()
+  }
   return (
     <div className="v2-right-fill">
       {!isCtxMemory && (
@@ -106,7 +123,7 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
         )}
       </div>
       )}
-      <div className="v2-detail-body"><V2DetailView nodeId={nodeId} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideContext={isCtxMemory} /></div>
+      <div className="v2-detail-body" onMouseDown={focusDocEnd}><V2DetailView nodeId={nodeId} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideContext={isCtxMemory} /></div>
     </div>
   )
 }

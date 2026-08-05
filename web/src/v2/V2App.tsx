@@ -97,7 +97,7 @@ export default function V2App() {
     }
   }, [ownAccent])
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
-  const [rightMode, setRightMode] = useState<RightMode>('agenda')
+  const [rightMode, setRightMode] = useState<RightMode>('dia')
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
   // «Adjuntar» (V2AttachModal): archivo / enlace / Drive en un único sitio. Guarda
   // el contexto desde el que se abrió — lo que se adjunte nace ahí.
@@ -129,12 +129,13 @@ export default function V2App() {
   // `agendaResetKey`/`diaResetKey` el 4 ago, ahora vivo aquí en vez de en
   // V2RightColumn porque el clic ya no ocurre ahí).
   //
-  // ⚠️ REDISEÑO 5 ago 2026 (2ª parte) — Agenda y Día se fusionan en un único
-  // destino "Agenda" (Alberto: "Agenda y Día son en la práctica la misma área
-  // de trabajo"). `agendaView` decide cuál de sus 2 tabs fijas está activa en la
-  // columna derecha (Día = timeline de siempre · Planner = calendario completo,
-  // que además cambia el CENTRO — ver `onAgendaViewChange` y el ternario del
-  // centro más abajo). V2AgendaView (Agenda vieja) se retira entera.
+  // ⚠️ REDISEÑO 5 ago 2026 (5ª parte) — Día y Agenda vuelven a ser DOS destinos
+  // de la sidebar, cada uno con su par columna-derecha + centro (Alberto: "en
+  // lugar de tener solo agenda en el Sidebar, tendremos agenda y encima de
+  // agenda tendremos día"). Se retira `agendaView` (la fusión con 2 tabs
+  // internas duró unas horas de este mismo día):
+  //   · 'dia'    → derecha = timeline horario · centro = nota diaria de hoy.
+  //   · 'agenda' → derecha = atrasadas/sin fecha/seguimiento · centro = planner.
   const [centerElementId, setCenterElementId] = useState<string | null>(null)
   // Cuál de las 1-2 tabs de la columna derecha está activa — 'chat' solo tiene
   // efecto real si hay algo en `centerElementId` (V2RightColumn lo calcula de
@@ -143,10 +144,7 @@ export default function V2App() {
   // algo revela su propio chat (abrir un elemento con "Hablar de esto", un
   // artifact recién creado por el chat general, etc.) — ver cada sitio abajo.
   const [rightSubTab, setRightSubTab] = useState<RightSubTab>('primary')
-  // Cuál de las 2 tabs FIJAS del destino Agenda está activa (independiente de
-  // `rightSubTab`, que solo distingue Tab1 genérica vs Chat) — ver `onAgendaViewChange`.
-  const [agendaView, setAgendaView] = useState<'dia' | 'planner'>('dia')
-  // Bumped en cada clic en la fila Agenda de la sidebar (incluso si ya estaba
+  // Bumped en cada clic en la fila Día de la sidebar (incluso si ya estaba
   // activa) — fuerza un remount limpio del timeline (PlannerPanel) en
   // V2RightColumn. Vivía en V2RightColumn.tsx hasta el 4 ago; sube aquí porque
   // ahora el clic que lo dispara ocurre en V2Sidebar, no en la columna derecha.
@@ -251,14 +249,14 @@ export default function V2App() {
       .catch(() => setReady(true)) // no bloquear el shell aunque falle la carga
   }, [])
 
-  // Arranque en frío: Agenda/Día es el destino por defecto (`rightMode`/`agendaView`
-  // ya nacen así), pero fijar `centerElementId` a la nota de hoy en el `useState`
+  // Arranque en frío: Día es el destino por defecto (`rightMode` ya nace así),
+  // pero fijar `centerElementId` a la nota de hoy en el `useState`
   // inicial no es seguro — el store puede seguir vacío en ese instante (antes de
   // que `initialLoad`/`runStartupMigrations` terminen). Se difiere a que `ready`
   // sea `true`; en cualquier otro caso (usuario ya navegó a otro sitio) no hace nada.
   useEffect(() => {
     if (!ready) return
-    if (rightMode === 'agenda' && agendaView === 'dia' && !centerElementId) {
+    if (rightMode === 'dia' && !centerElementId) {
       try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
     }
     // Fromly ofrece ampliar el perfil por su cuenta cada cierto tiempo. NO abre
@@ -296,23 +294,27 @@ export default function V2App() {
     }
   }
 
-  // Handler de las 3 filas del bloque General de la sidebar (Agenda/Chat/
+  // Handler de las 4 filas del bloque General de la sidebar (Día/Agenda/Chat/
   // Elementos) — hermano de `onSelectCtx`, para los destinos que NO son un
   // contexto real. Siempre limpia `selectedCtxId` (estos destinos son "sin
   // contexto" por definición — mutuamente excluyentes con la selección de un
   // contexto real en la sidebar) y vuelve a la Tab 1 de la columna derecha.
-  const onSelectGeneral = (dest: 'agenda' | 'chat' | 'elementos') => {
+  const onSelectGeneral = (dest: 'dia' | 'agenda' | 'chat' | 'elementos') => {
     setShowProfile(false)
     setSelectedCtxId(null)
     setFocusNodeId(null)
     setRightSubTab('primary')
     setRightMode(dest)
-    if (dest === 'agenda') {
-      // Reset duro a la vista por defecto (Día, nota de hoy) — pulsarlo de
-      // nuevo siempre vuelve aquí, cierre lo que cierre en el centro/Planner.
-      setAgendaView('dia')
+    if (dest === 'dia') {
+      // Reset duro a HOY: nota diaria en el centro + timeline remontado (su día
+      // es estado LOCAL de PlannerPanel). Pulsarlo de nuevo siempre vuelve aquí,
+      // cierre lo que cierre en el centro.
       try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
       setDiaResetKey(k => k + 1)
+    } else if (dest === 'agenda') {
+      // El centro ES el planificador (semana/mes/año), así que no hay elemento
+      // abierto — igual que el destino Chat.
+      setCenterElementId(null)
     } else if (dest === 'chat') {
       // Retoma la conversación general que hubiera — igual que un contexto
       // retoma su documento. Descartarla y empezar de cero sigue siendo el
@@ -328,25 +330,6 @@ export default function V2App() {
       // `setRightMode` directamente (no a este handler), así que no compite con esto.
       setElementsFilter(null)
     }
-  }
-
-  // Cambia entre las 2 tabs fijas del destino Agenda (Día/Planner) — handler
-  // SÍNCRONO, no un efecto: un efecto reactivo sobre [agendaView] entraría en
-  // carrera con el propio PlannerPanel de la tab «Día», que al remontar (cambia
-  // `agendaView`→'dia'→'planner'→'dia') dispara su PROPIO efecto interno
-  // (`from:open-detail` con el día de HOY, líneas ~311-315 de PlannerPanel.tsx)
-  // y pisaría cualquier día "recordado" aquí — no hay nada que ganar guardando
-  // ese estado. Re-pulsar la tab ya activa es un no-op: solo la fila «Agenda»
-  // de la sidebar (`onSelectGeneral`) fuerza el reset duro a hoy.
-  const onAgendaViewChange = (next: 'dia' | 'planner') => {
-    if (next === agendaView) return
-    setAgendaView(next)
-    if (next === 'planner') {
-      setCenterElementId(null)
-    } else {
-      try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
-    }
-    setRightSubTab('primary')
   }
 
   // «＋» al pasar el ratón sobre un contexto → nueva conversación DENTRO de ese contexto.
@@ -622,6 +605,20 @@ export default function V2App() {
     }
     const ctx = node ? firstContextOf(node) : null
     setSelectedCtxId(ctx ? ctx.id : null)
+    // (3) Si pertenece a un contexto, la DERECHA también se va con él: ficha del
+    // contexto en la Tab 1 y la conversación del elemento en la Tab 2 (Alberto,
+    // 5 ago 2026: "desde planner le doy a una tarea, se abre la tarea y a la
+    // izquierda aparece el contexto seleccionado. Pero además debería cambiar la
+    // columna derecha y aparecer la columna de contexto y la de chat"). Es una
+    // excepción DELIBERADA a "abrir un elemento nunca cambia `rightMode`": sin
+    // ella la izquierda decía «Marina Alta» mientras la derecha seguía enseñando
+    // la agenda, tres columnas hablando de dos cosas distintas. Si el elemento no
+    // tiene contexto (una nota diaria, p.ej.) no se toca nada: el destino actual
+    // sigue siendo el correcto.
+    if (ctx) {
+      setRightMode('contexto')
+      setRightSubTab('primary')
+    }
 
     // Elemento normal: se abre en el ESPACIO CENTRAL (visor/editor según su
     // tipo), sustituyendo al chat — mismo patrón que el Perfil (Alberto, 22 jul).
@@ -845,13 +842,13 @@ export default function V2App() {
             <p>{t('v2.generalChatCenterHint', 'Escribe en el chat de la derecha — cualquier nota, tarea o documento que cree se abrirá en este espacio.')}</p>
           </div>
         </main>
-      ) : rightMode === 'agenda' && agendaView === 'planner' ? (
-        // Tab «Planner» de Agenda: calendario semana/mes/año navegable a pantalla
+      ) : rightMode === 'agenda' ? (
+        // Destino Agenda: calendario semana/mes/año navegable a pantalla
         // completa (Alberto, 5 ago 2026: "Planner sería un lugar solamente para
         // organizar"). `centerToday` centra la columna de hoy en vez de pegarla
         // al borde derecho (comportamiento por defecto de PlannerPanel, que sigue
-        // intacto para v1). Sin `onClose` propio: se sale pulsando «Día» u otro
-        // destino de la sidebar, como el resto de vistas centrales.
+        // intacto para v1). Sin `onClose` propio: se sale pulsando «Día» u otra
+        // fila de la sidebar, como el resto de vistas centrales.
         <main className="v2-col v2-center">
           <PlannerPanel initialView="week" initialDays={7} viewTabs={['week', 'month', 'year']} onClose={() => {}} centerToday />
         </main>
@@ -875,8 +872,6 @@ export default function V2App() {
         rightSubTab={rightSubTab}
         onSubTabChange={setRightSubTab}
         onNewChatInCtx={onNewChatInCtx}
-        agendaView={agendaView}
-        onAgendaViewChange={onAgendaViewChange}
         diaResetKey={diaResetKey}
         onOpenConversation={onOpenConversation}
         importDragOver={importDragOver}

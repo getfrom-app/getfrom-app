@@ -143,8 +143,9 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
   // vacío de este contenedor, nunca un clic que ya cayó dentro del editor.
   const activeDocEditor = useActiveDocEditor()
   const focusDocEnd = (e: React.MouseEvent) => {
-    if (e.target !== e.currentTarget) return
-    activeDocEditor?.chain().focus('end').run()
+    if (e.target !== e.currentTarget || !activeDocEditor) return
+    e.preventDefault() // `mousedown`: hay que ganarle al blur del navegador
+    activeDocEditor.chain().focus('end').run()
   }
   // Switch Nota/Lienzo — SOLO para el par nota-diaria+lienzo-diario (Alberto, 22
   // jul: "cada dia tendrá su nota y su lienzo... en el espacio de la nota habrá
@@ -226,7 +227,10 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
       )}
 
       <div
-        onClick={!inlinePage && asDoc && !canvas ? focusDocEnd : undefined}
+        // También en `inlinePage` (las «Notas» de una tarea): el hueco bajo el
+        // texto es el mismo gesto en los dos sitios. Lo que NO cambia es el
+        // guard `e.target === e.currentTarget` de `focusDocEnd`.
+        onMouseDown={asDoc && !canvas ? focusDocEnd : undefined}
         style={inlinePage
           ? { position: 'relative', overflow: canvas ? 'hidden' : 'visible', height: canvas ? 480 : undefined, minHeight: canvas ? 480 : undefined }
           : { flex: 1, minHeight: 0, position: 'relative', overflow: canvas ? 'hidden' : 'auto' }}>

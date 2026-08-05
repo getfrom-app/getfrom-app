@@ -11,10 +11,12 @@ experiencia, que es la única disponible en web, Mac e iPhone.
 
 Al entrar en Fromly tienes **tres columnas**:
 
-- **Izquierda — Agenda / Chat / Elementos, y tus Contextos**: arriba del todo, tres accesos
-  generales que no dependen de ningún contexto — **Agenda** (tu día, es el destino por defecto al
-  abrir la app), **Chat** (empezar una conversación nueva sin contexto) y **Elementos** (buscador
-  de todo tu contenido). Debajo, tus Áreas (siempre activas, p. ej. "Trabajo", "Personal") y
+- **Izquierda — Día / Agenda / Chat / Elementos, y tus Contextos**: arriba del todo, cuatro accesos
+  generales que no dependen de ningún contexto — **Día** (tu día de hoy: la nota diaria en el centro
+  y el timeline horario a la derecha; es el destino por defecto al abrir la app), **Agenda** (el
+  Planificador completo en el centro y, a la derecha, lo que ese calendario no cubre: atrasadas, sin
+  fecha y contextos en seguimiento), **Chat** (empezar una conversación nueva sin contexto) y
+  **Elementos** (buscador de todo tu contenido). Debajo, tus Áreas (siempre activas, p. ej. "Trabajo", "Personal") y
   Proyectos (subcontextos que se abren y se cierran), en jerarquía. Clic en cualquiera de los dos
   —destino general o contexto— para cambiar lo que ves en el centro y la derecha.
 - **Centro — el chat, o lo que tengas abierto**: tu forma principal de trabajar. Escribe lo que
@@ -25,9 +27,10 @@ Al entrar en Fromly tienes **tres columnas**:
   Planificador, ocupan este mismo espacio central.
 - **Derecha — cambia según lo que elijas a la izquierda**: normalmente 1 o 2 pestañas — la del
   destino/contexto activo (p. ej. la Ficha de un contexto, el buscador de Elementos, o el timeline
-  del día en Agenda) y, en cuanto abres algo concreto, una pestaña **Chat** con la conversación de
-  ESE elemento (siempre la misma, la retomes cuando la retomes). Agenda tiene además su propia
-  pestaña **Planner** para el calendario completo (ver sección 5 y 7).
+  del día) y, en cuanto abres algo concreto, una pestaña **Chat** con la conversación de ESE elemento
+  (siempre la misma, la retomes cuando la retomes). Al abrir una tarea o nota que pertenece a un
+  contexto, las tres columnas se van con ella: el contexto queda seleccionado a la izquierda y su
+  Ficha pasa a la derecha.
 
 **Archivos y RAG.** Cuando subes un archivo, Fromly lo indexa: puedes preguntarle sobre su
 contenido en cualquier momento, no solo justo después de subirlo. Los PDF se abren con visor real
@@ -228,8 +231,8 @@ directamente dentro de ese contexto sin entrar en él, y abre un menú con las m
 **Subcontexto** (un proyecto nuevo colgando de ese contexto). El **"+"** de la cabecera
 «CONTEXTOS», también al pasar el ratón, crea un contexto en la raíz.
 
-El **Planificador** (vista de calendario semana/mes/año) se abre desde **Agenda**, en la pestaña
-**Planner** de la columna derecha — no desde el chat.
+El **Planificador** (vista de calendario semana/mes/año) se abre desde **Agenda**, en la columna
+izquierda — no desde el chat.
 
 Junto al campo de escritura, en el propio composer, tienes además:
 
@@ -316,27 +319,28 @@ interrumpe nada: entras cuando quieras, o lo ignoras.
 
 ---
 
-## 5. Navegación — Agenda, Chat, Elementos y tus Contextos
+## 5. Navegación — Día, Agenda, Chat, Elementos y tus Contextos
 
-Arriba de tus Contextos, en la columna izquierda, tienes tres accesos generales que no dependen de
-ningún contexto concreto: **Agenda**, **Chat** y **Elementos**. Clic en cualquiera de los tres, o
-en un contexto de más abajo, cambia lo que ves en el centro y en la columna derecha.
+Arriba de tus Contextos, en la columna izquierda, tienes cuatro accesos generales que no dependen de
+ningún contexto concreto: **Día**, **Agenda**, **Chat** y **Elementos**. Clic en cualquiera de los
+cuatro, o en un contexto de más abajo, cambia lo que ves en el centro y en la columna derecha.
 
-### Agenda — tu día, y el Planificador completo
+### Día — tu día de hoy
 
-Es el destino por defecto al abrir Fromly. El centro muestra siempre la nota del día activo (hoy,
-al entrar); la columna derecha tiene 2 pestañas propias:
+Es el destino por defecto al abrir Fromly. El centro muestra la nota del día; la columna derecha, el
+timeline horario hora a hora con tus tareas y eventos con hora concreta. El botón **CAL** salta al
+calendario anual para ir a cualquier otro día. Volver a pulsar **Día** siempre te devuelve a hoy,
+pulses lo que pulses mientras tanto.
 
-- **Día** — el timeline horario de ese día, hora a hora, con tus tareas y eventos con hora
-  concreta. El botón **CAL** salta al calendario anual para ir a cualquier otro día.
-- **Planner** — pulsarla cambia el CENTRO al Planificador completo (semana/mes/año navegable, ver
-  sección 7) y la columna derecha muestra solo lo que el Planificador no cubre: tareas atrasadas,
-  sin fecha, y tus contextos en seguimiento.
+### Agenda — el Planificador completo
 
-Volver a pulsar **Agenda** en la barra izquierda siempre te devuelve a la vista por defecto (Día,
-la nota de hoy), pulses lo que pulses mientras tanto. Si abres una tarea normal desde cualquiera de
-las dos pestañas, se centra y gana su propia pestaña **Chat** (ver más abajo) — la nota del día en
-sí no tiene chat propio.
+El centro muestra el Planificador (semana/mes/año navegable, ver sección 7) y la columna derecha
+solo lo que ese calendario no cubre: tareas atrasadas, tareas sin fecha y tus contextos en
+seguimiento.
+
+Desde cualquiera de los dos destinos, abrir una tarea la centra y le da su propia pestaña **Chat**
+(ver más abajo); si esa tarea pertenece a un contexto, además queda seleccionado a la izquierda y su
+Ficha pasa a la columna derecha. La nota del día en sí no tiene chat propio.
 
 ### Chat — empezar una conversación sin contexto
 

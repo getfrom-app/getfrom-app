@@ -1,7 +1,71 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-05 (Web v9.6.946)
+> Última actualización: 2026-08-05 (Web v9.6.948)
+
+---
+
+## Sesión 2026-08-05 (sesión 5) — Duplicado de Google Calendar, Día/Agenda separados, contexto al abrir una tarea
+
+Web **v9.6.947 → v9.6.948**. Solo cliente. Log completo:
+`logs/2026-08-05-sesion5-gcal-duplicado-dia-agenda.md`.
+
+### 1. Un evento de Google, UNA ficha — causa raíz del duplicado
+
+Los eventos de Google no se materializan como nodos: el planner y la columna del día pintan a la vez
+los nodos-evento locales y los eventos crudos del pull, y deduplican por id. Ese dedup **nunca
+acertaba** para los eventos creados por Fromly:
+
+- el LISTADO (`fetchGCalEvents`, `server/src/routes/google.ts`) devuelve ids COMPUESTOS
+  `<calendarId>::<eventId>` —los necesita para saber a qué calendario escribir—,
+- pero `POST /google/calendar/events` devuelve el id PELADO de Google, que es el que se guarda en
+  `node.gcalEventId`.
+
+`"abc" !== "correo@gmail.com::abc"`, así que lo único que quedaba en pie era un heurístico por
+`título|hora de inicio`, que se rompe justo al mover un bloque (el nodo ya está en su hora nueva y
+el crudo de Google sigue en la vieja → dos fichas; y una encima de otra cuando Google propaga).
+
+**Regla nueva**: comparar siempre por `gcalIdCore(id)` (`utils/gcalNodesSync.ts`), que quita el
+prefijo del calendario y el sufijo de instancia recurrente (`_20260805T110000Z`, consecuencia de
+`singleEvents=true`). `linkedGcalIdCores()` devuelve el Set de los que ya tienen nodo vivo,
+resolviendo el link con `getGcalEventId` (columna + las dos formas de `extraData`). Aplicado en
+`PlannerPanel` (timeline y franja de todo el día) y en `DayColumn`.
+
+**Segundo fallo del mismo origen**: `PlannerPanel.syncNodeToGcal` decidía crear-o-actualizar leyendo
+solo la columna, así que arrastrar un nodo cuyo link vivía en `extraData` CREABA un segundo evento
+en Google y dejaba el anterior huérfano. Ahora usa `getGcalEventId`, igual que `removeNodeFromGcal`.
+
+Blindado en `src/__tests__/gcalIdCore.test.ts` (5 tests). No verificado contra la API de Google (la
+cuenta local no la tiene conectada).
+
+### 2. Día y Agenda vuelven a ser dos destinos de la sidebar
+
+Deshace la fusión de la sesión 2 del mismo día. **Día** (primero, destino por defecto) = timeline
+horario a la derecha + nota diaria en el centro. **Agenda** = calendario semana/mes/año en el centro
++ atrasadas/sin fecha/contextos en seguimiento a la derecha. `RightMode` gana `'dia'`; se retiran
+`agendaView`/`onAgendaViewChange` y las tabs fijas Día/Planner de `V2RightColumn` (cada destino usa
+el mecanismo genérico Tab1/Tab2). `diaResetKey` lo dispara ahora la fila «Día».
+
+### 3. Abrir un elemento con contexto lleva también la columna derecha
+
+Excepción deliberada a «abrir un elemento nunca cambia `rightMode`» (30 jul): la sidebar ya se iba
+con el contexto del elemento, así que las tres columnas hablaban de dos cosas distintas. `onOpenNode`
+fija `rightMode='contexto'` cuando el elemento tiene contexto; si no lo tiene, no toca nada.
+
+### 4. Dos arreglos de usabilidad
+
+- **Fondo de la columna de hoy**: `--accent-soft` entero (12%) se leía como un fondo oscuro sobre
+  toda la columna → velo del ~3%, y ninguno en la vista de un solo día (`.pp-root--single`).
+- **Clic bajo el texto de una nota → cursor al final**: el hueco pertenece al contenedor, no al
+  ProseMirror. Cubierto en `V2NoteBody` (también en `inlinePage`, que es el caso de las «Notas» de
+  una tarea) y en `.v2-detail-body` de `V2ElementView`.
+
+### 5. «Seguimiento» = lo que sigues, sin más condiciones
+
+`DailyCockpit` excluía de ese bloque los contextos con tareas de hoy/atrasadas — resto de cuando
+«Para hacer» agrupaba por contexto. Con la lista plana actual eso hacía desaparecer de la columna a
+un contexto seguido en cuanto tenía una tarea atrasada. Filtro actual:
+`contextParent(c) && isContextFollowed(c)`.
 
 ---
 

@@ -20,13 +20,16 @@
 // sitio que limpia `centerElementId` recuerde resetear `rightSubTab`): si
 // `rightSubTab==='chat'` pero ya no hay `elementId`, cae a `'primary'` sola.
 //
-// ⚠️ REDISEÑO 5 ago 2026 (2ª parte) — Agenda y Día se fusionan en un único destino
-// "Agenda" (Alberto: "Agenda y Día son en la práctica la misma área de trabajo").
-// Su tab bar NO usa el mecanismo genérico Tab1/Tab2 de arriba — tiene sus 2 tabs
-// FIJAS propias ("Día"/"Planner", ligadas a `agendaView`, prop nueva que vive en
-// V2App) más un 3er tab "Chat" condicional, igual que el resto de la app, PERO
-// nunca para la nota diaria en sí (`!node.isDiaryEntry` — esa nota no tiene chat
-// propio, ver V2ElementView.tsx).
+// ⚠️ REDISEÑO 5 ago 2026 (5ª parte) — Día y Agenda son DOS destinos separados de la
+// sidebar otra vez (Alberto: "es mucho más simple hacer clic en agenda y que aparezca
+// la columna derecha de planner y en el centro planificador, y hacer clic en día y que
+// aparezca la columna derecha con el timeline diario y la nota diaria en el centro").
+// Con eso, ninguno de los dos necesita tabs fijas propias: cada uno usa el mecanismo
+// genérico Tab1/Tab2 de arriba. Se retiran `agendaView`/`onAgendaViewChange` (la
+// fusión con tabs internas duró unas horas del mismo día).
+//   · `mode='dia'`    → Tab 1 = timeline horario del día · centro = nota diaria.
+//   · `mode='agenda'` → Tab 1 = atrasadas/sin fecha/seguimiento · centro = calendario.
+// La nota diaria nunca tiene Tab 2 "Chat" (`centerIsDiary`, ver V2ElementView.tsx).
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
@@ -38,7 +41,7 @@ import PlannerPanel from '../../components/panels/PlannerPanel'
 import V2ContextBrowser from './V2ContextBrowser'
 import Icon from './Icon'
 
-export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda'
+export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda' | 'dia'
 
 /** Sub-tab activa de la columna derecha.
  *  · `primary`   — el contenido del destino activo (Tab 1).
@@ -66,11 +69,7 @@ interface Props {
    *  limpia `centerElementId`). */
   rightSubTab: RightSubTab
   onSubTabChange: (t: RightSubTab) => void
-  /** Cuál de las 2 tabs FIJAS del destino Agenda está activa — independiente de
-   *  `rightSubTab` (que solo distingue Tab1 genérica vs Chat). Vive en V2App. */
-  agendaView: 'dia' | 'planner'
-  onAgendaViewChange: (v: 'dia' | 'planner') => void
-  /** Bumped por V2App en cada clic en la fila Agenda de la sidebar (incluso
+  /** Bumped por V2App en cada clic en la fila Día de la sidebar (incluso
    *  si ya estaba activa) para forzar un remount limpio del timeline — mismo
    *  mecanismo que antes vivía aquí mismo, movido arriba porque ahora el clic
    *  ocurre en V2Sidebar, no en esta columna (Alberto, 4 y 5 ago 2026). */
@@ -94,7 +93,7 @@ function fmtTimer(sec: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, agendaView, onAgendaViewChange, diaResetKey, onOpenConversation, onNewChatInCtx, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped }: Props) {
+export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, diaResetKey, onOpenConversation, onNewChatInCtx, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped }: Props) {
   useStore()
   const { t } = useTranslation()
 
@@ -120,6 +119,7 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
     chat: t('v2.rightColumn.tabChat', 'Chat'),
     elementos: t('v2.rightColumn.tabElements', 'Elementos'),
     agenda: t('v2.rightColumn.tabAgenda', 'Agenda'),
+    dia: t('v2.rightColumn.tabDay', 'Día'),
   }
 
   // Arrastrar el borde izquierdo para ensanchar/estrechar la columna derecha.
@@ -145,11 +145,6 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
     <aside className="v2-col v2-right">
       <div className="v2-resize-handle" onPointerDown={startResize} title={t('v2.rightColumn.dragToWiden', 'Arrastra para ensanchar')} />
       {importDragOver && <div className="v2-import-banner"><Icon name="import" size={15} /> {t('v2.chat.importToFromly', 'Importar a Fromly')}</div>}
-      {/* Agenda tiene sus 2 tabs FIJAS propias (Día/Planner) — no el mecanismo
-          genérico Tab1/Tab2 de abajo (esas 2 opciones existen aunque no haya
-          nada centrado, al revés que el resto de destinos). El 3er tab "Chat"
-          se suma condicional, igual que en cualquier otro destino, salvo para
-          la nota diaria en sí (`centerIsDiary`). */}
       {/* Destino Chat: 2 tabs FIJAS propias — «Chat» (la conversación: la del
           elemento centrado si lo hay, si no la general) e «Historial» (contextos
           al estilo «Proyectos» de Claude + últimas conversaciones). No usa el
@@ -166,28 +161,13 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
             onClick={() => onSubTabChange('historial')}
           >{t('v2.rightColumn.tabHistory', 'Historial')}</button>
         </div>
-      ) : mode === 'agenda' ? (
-        <div className="v2-right-tabs">
-          <button
-            className={`v2-right-tab ${effectiveSubTab === 'primary' && agendaView === 'dia' ? 'active' : ''}`}
-            onClick={() => { onAgendaViewChange('dia'); onSubTabChange('primary') }}
-          >{t('v2.rightColumn.tabDay', 'Día')}</button>
-          <button
-            className={`v2-right-tab ${effectiveSubTab === 'primary' && agendaView === 'planner' ? 'active' : ''}`}
-            onClick={() => { onAgendaViewChange('planner'); onSubTabChange('primary') }}
-          >{t('v2.rightColumn.tabPlanner', 'Planner')}</button>
-          {elementId && !centerIsDiary && (
-            <button
-              className={`v2-right-tab ${effectiveSubTab === 'chat' ? 'active' : ''}`}
-              onClick={() => onSubTabChange('chat')}
-            >{t('v2.rightColumn.tabChat', 'Chat')}</button>
-          )}
-        </div>
       ) : (
         /* Sin cabecera de tabs cuando solo hay una — no aporta nada seleccionar
            entre 1 opción (Alberto, 5 ago 2026). Reaparece en cuanto hay algo
-           abierto en el centro y la Tab 2 "Chat" es una alternativa real. */
-        elementId && (
+           abierto en el centro y la Tab 2 "Chat" es una alternativa real. La nota
+           diaria no cuenta: no tiene chat propio (`centerIsDiary`), así que el
+           destino Día se queda con una sola tab, sin cabecera. */
+        elementId && !centerIsDiary && (
           <div className="v2-right-tabs">
             <button
               className={`v2-right-tab ${effectiveSubTab === 'primary' ? 'active' : ''}`}
@@ -278,24 +258,24 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
         </div>
       )}
 
-      {/* Agenda · tab "Día": timeline horario del día activo — EXACTAMENTE el
-          contenido de siempre (antes botón TIMELINE dentro de Agenda, Alberto
-          22 jul: "así se puede ver rápidamente el día de un vistazo en modo
-          timeline"). Mismo patrón de fuga de padding que Elementos, para que
-          la rejilla llene todo el alto disponible. */}
-      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && agendaView === 'dia' && (
+      {/* Destino Día: timeline horario del día activo — EXACTAMENTE el contenido
+          de siempre (antes botón TIMELINE dentro de Agenda, Alberto 22 jul: "así
+          se puede ver rápidamente el día de un vistazo en modo timeline"). Mismo
+          patrón de fuga de padding que Elementos, para que la rejilla llene todo
+          el alto disponible. */}
+      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'dia' && (
         <div className="v2-right-fill v2-agenda-timeline">
           <PlannerPanel key={diaResetKey} initialView="day" initialDays={1} viewTabs={['day']} dayOnlyHeader onClose={() => {}} />
         </div>
       )}
 
-      {/* Agenda · tab "Planner": el centro ya muestra el calendario completo
+      {/* Destino Agenda: el centro ya muestra el calendario completo
           (V2App.tsx) — aquí solo lo que NO cubre ese calendario: atrasadas,
           sin fecha y contextos en seguimiento (hoy/futuras ya están en el
           planner central, Alberto 5 ago 2026). Reutiliza DailyCockpit tal
           cual — su menú contextual "Dejar de seguir" en Seguimiento viaja
           gratis, no hace falta reconstruir nada. */}
-      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && agendaView === 'planner' && (
+      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (
         <div className="v2-right-fill">
           <DailyCockpit bare disablePlanner hideToday hideFuture />
         </div>

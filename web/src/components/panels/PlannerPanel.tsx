@@ -30,6 +30,7 @@ import {
   deleteCalendarEvent,
   type CalendarEvent,
 } from '../../api/googleCalendar'
+import { getGcalEventId, gcalIdCore, linkedGcalIdCores } from '../../utils/gcalNodesSync'
 import { GCalEventEditor } from './DiaryRightPanel'
 import { useUserStore } from '../../store/userStore'
 import { useToast } from '../Toast'
@@ -178,13 +179,14 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
     })
   }
 
-  // GCal timed — excluir eventos creados por Fromly (ya aparecen como bloque 'task')
-  const fromGcalIds = new Set(
-    store.allActive().map(n => n.gcalEventId).filter(Boolean)
-  )
+  // GCal timed — excluir eventos creados por Fromly (ya aparecen como bloque 'task').
+  // Comparación por NÚCLEO del id (`gcalIdCore`): el listado devuelve
+  // `<calendarId>::<eventId>` y el nodo guarda el id crudo, así que en crudo esta
+  // comparación no acertaba nunca. Ver el comentario de `gcalIdCore`.
+  const fromGcalIds = linkedGcalIdCores()
   for (const ev of gcalEvents) {
     if (ev.allDay) continue
-    if (fromGcalIds.has(ev.id)) continue // deduplicar: ya hay un nodo local enlazado a este evento
+    if (fromGcalIds.has(gcalIdCore(ev.id))) continue // ya hay un nodo local enlazado a este evento
     const start = new Date(ev.start)
     if (!sameDay(start, day)) continue
     blocks.push({
@@ -341,13 +343,18 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     if (!node) return
     gcalSyncInFlight.current.add(nodeId)
     try {
-      if (node.gcalEventId) {
-        const updated = await updateCalendarEvent(node.gcalEventId, {
+      // `getGcalEventId` y no `node.gcalEventId`: el link puede vivir en
+      // extraData (así lo escriben NodeView/OutlinerNode/DayColumn). Leyendo
+      // solo la columna, arrastrar un nodo ya enlazado CREABA un segundo evento
+      // en Google y dejaba el anterior huérfano en su hora vieja.
+      const linkedGcalId = getGcalEventId(node)
+      if (linkedGcalId) {
+        const updated = await updateCalendarEvent(linkedGcalId, {
           title: node.text,
           start: start.toISOString(),
           end: end.toISOString(),
         })
-        setGcalEvents(p => p.map(x => x.id === updated.id ? updated : x))
+        setGcalEvents(p => p.map(x => gcalIdCore(x.id) === gcalIdCore(updated.id) ? { ...updated, id: x.id } : x))
       } else {
         const created = await createCalendarEvent({
           title: node.text,
@@ -367,10 +374,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   async function removeNodeFromGcal(nodeId: string) {
     if (!us.googleConnected) return
     const node = store.getNode(nodeId)
-    if (!node?.gcalEventId) return
+    const linkedGcalId = node ? getGcalEventId(node) : null
+    if (!linkedGcalId) return
     try {
-      await deleteCalendarEvent(node.gcalEventId)
-      setGcalEvents(p => p.filter(x => x.id !== node.gcalEventId))
+      await deleteCalendarEvent(linkedGcalId)
+      setGcalEvents(p => p.filter(x => gcalIdCore(x.id) !== gcalIdCore(linkedGcalId)))
       store.updateNode(nodeId, { gcalEventId: null })
     } catch (e) {
       console.error('[PlannerPanel] GCal delete error:', e)
@@ -947,9 +955,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     // (Alberto, 22 jul: "asegúrate que en todo el día aparecerán... también
     // los eventos, que no tengan hora"). Mismo criterio de dedup que
     // getTimedBlocks: si ya hay un nodo local enlazado a ese id, se omite.
-    const fromGcalIds = new Set(store.allActive().map(n => n.gcalEventId).filter(Boolean))
+    const fromGcalIds = linkedGcalIdCores()
     const gcalAllDay = gcalEvents.filter(ev =>
-      ev.allDay && !fromGcalIds.has(ev.id) && sameDay(new Date(ev.start), day))
+      ev.allDay && !fromGcalIds.has(gcalIdCore(ev.id)) && sameDay(new Date(ev.start), day))
 
     const items: AllDayItem[] = [
       ...nodes.map(node => ({ kind: 'node' as const, node })),
@@ -1053,7 +1061,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="pp-root" style={{ width: '100%' }}>
+    <div className={`pp-root${viewMode === 'day' ? ' pp-root--single' : ''}`} style={{ width: '100%' }}>
 
       {/* Header — la tab «Día» (dayOnlyHeader) replica la cabecera de Agenda: título
           grande del día + HOY/CAL, en vez de ‹/›+Hoy+resetZoom (que además duplicaba
@@ -1339,7 +1347,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
 
       {editingGcal && (
         <GCalEventEditor event={editingGcal} modal onClose={()=>setEditingGcal(null)}
-          linkedNodeId={store.allActive().find(n=>n.gcalEventId===editingGcal.id)?.id}
+          linkedNodeId={store.allActive().find(n=>gcalIdCore(getGcalEventId(n))===gcalIdCore(editingGcal.id))?.id}
           onCreateNode={()=>{
             // Crear bajo demanda un DOCUMENTO local vinculado al evento (no se crea
             // por defecto). `_doc:'1'` — es un documento, no un nodo genérico.

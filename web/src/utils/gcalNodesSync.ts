@@ -195,6 +195,41 @@ export function getGcalEventId(node: Node): string | null {
   } catch { return null }
 }
 
+/**
+ * Núcleo COMPARABLE de un id de evento de Google. Sin esto, el dedup por id
+ * fallaba SIEMPRE para los eventos creados por Fromly (bug real, 5 ago 2026:
+ * al mover un bloque en el planner quedaba la ficha cruda de Google al lado —
+ * y encima de ella cuando Google terminaba de propagar el cambio):
+ *   - El LISTADO (`fetchGCalEvents`, server/src/routes/google.ts) devuelve ids
+ *     COMPUESTOS `<calendarId>::<eventId>` para saber a qué calendario escribir.
+ *   - CREAR (`POST /google/calendar/events`) devuelve el id CRUDO de Google, y
+ *     ese es el que se guarda en `node.gcalEventId`.
+ *   → `"abc123" !== "albertolezaun@gmail.com::abc123"`, así que el nodo nunca
+ *     se reconocía como dueño de su propio evento. El único dedup que quedaba
+ *     en pie era el heurístico por título+hora, que es exactamente el que se
+ *     rompe al mover el bloque (las horas dejan de coincidir).
+ * Además, con `singleEvents=true` cada instancia de un evento recurrente llega
+ * con el id del maestro + sufijo `_20260805T110000Z`.
+ */
+export function gcalIdCore(id: string | null | undefined): string {
+  if (!id) return ''
+  const sep = id.indexOf('::')
+  const bare = sep >= 0 ? id.slice(sep + 2) : id
+  return bare.replace(/_\d{8}T\d{6}Z$/, '')
+}
+
+/** Núcleos de id de Google que YA tiene enlazados algún nodo vivo — es decir,
+ *  los eventos que Fromly pinta como nodo y que no debe volver a pintar como
+ *  ficha cruda de Google. Cubre las 3 formas de guardar el link (getGcalEventId). */
+export function linkedGcalIdCores(): Set<string> {
+  const set = new Set<string>()
+  for (const n of store.allActive()) {
+    const id = getGcalEventId(n)
+    if (id) set.add(gcalIdCore(id))
+  }
+  return set
+}
+
 /** Devuelve el color GCal del nodo evento */
 export function getGcalColor(node: Node): string | null {
   try {

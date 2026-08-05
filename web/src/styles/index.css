@@ -13096,7 +13096,13 @@ textarea:focus-visible,
 .pp-col-wrap { border-right: 1px solid var(--border); }
 .pp-col-wrap:last-child { border-right: none; }
 .pp-col { cursor: crosshair; position: relative; }
-.pp-col--today { background: var(--accent-soft); }
+/* Hoy destacado, pero MUY suave: `--accent-soft` (12%) pintaba la columna
+   entera de un gris azulado que se leía como un fondo oscuro (Alberto, 5 ago
+   2026). Un velo del ~3% basta para localizar la columna sin ensuciarla. */
+.pp-col--today { background: color-mix(in srgb, var(--accent-soft) 28%, transparent); }
+/* Vista de UN SOLO día (tab «Día» de Agenda): no hay columnas vecinas de las
+   que distinguir hoy, así que el velo solo oscurecía el timeline entero. */
+.pp-root--single .pp-col--today { background: transparent; }
 .pp-slot { position: absolute; left: 0; right: 0; pointer-events: none; height: 0; }
 .pp-slot--hr   { border-top: 1px solid var(--border); }
 .pp-slot--half { border-top: 1px dashed color-mix(in srgb, var(--border) 40%, transparent); }

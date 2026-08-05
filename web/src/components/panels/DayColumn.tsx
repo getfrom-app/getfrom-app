@@ -15,7 +15,7 @@ import type { Node } from '../../types'
 import Outliner from '../outliner/Outliner'
 import DailyCockpit from '../views/DailyCockpit'
 import { renderInline } from '../outliner/InlineRenderer'
-import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcalColor, getGcalEventId } from '../../utils/gcalNodesSync'
+import { pushEventTitleChanges, pushEventToGcal, deleteGcalEventForNode, getGcalColor, getGcalEventId, gcalIdCore, linkedGcalIdCores } from '../../utils/gcalNodesSync'
 import { trashNode } from '../../utils/papeleraHelper'
 import { getDayColumnData } from '../../utils/dayColumn'
 import { diaryDayTitle } from '../../utils/agendaHelper'
@@ -161,8 +161,13 @@ export default function DayColumn({
   const eventIds = rightColumnIds
   const eventNodes = raw.eventNodes
   // Eventos de Google que NO tienen un nodo local enlazado (esos ya salen como eventNodes).
-  const linkedGcalIds = new Set(eventNodes.map(n => getGcalEventId(n)).filter(Boolean))
-  const extraEvents = gcalEvents.filter(e => !linkedGcalIds.has(e.id))
+  // Comparación por NÚCLEO del id: el listado de Google devuelve
+  // `<calendarId>::<eventId>` y el nodo guarda el id crudo (ver `gcalIdCore`).
+  // Se mira TODO el árbol, no solo `eventNodes`: un nodo enlazado que hoy no
+  // cuenta como evento del día (p. ej. lo acabas de mover a otra hora) seguía
+  // dejando pasar su propio evento como ficha cruda.
+  const linkedGcalIds = linkedGcalIdCores()
+  const extraEvents = gcalEvents.filter(e => !linkedGcalIds.has(gcalIdCore(e.id)))
   const captureNodes = raw.captureNodes
   // Dedup: un nodo puede tener gcalEventId (→ cuenta como eventNode, sale en
   // «Eventos del día») Y status de tarea (→ cuenta también en dayTasks, sale
@@ -662,7 +667,7 @@ export default function DayColumn({
       {/* Modal de edición del evento de Google (clic en una fila de evento) */}
       {editingGcal && (
         <GCalEventEditor event={editingGcal} modal onClose={() => setEditingGcal(null)}
-          linkedNodeId={store.allActive().find(n => n.gcalEventId === editingGcal.id)?.id}
+          linkedNodeId={store.allActive().find(n => gcalIdCore(getGcalEventId(n)) === gcalIdCore(editingGcal.id))?.id}
           onCreateNode={() => {
             // Crear bajo demanda un DOCUMENTO local vinculado al evento (no por
             // defecto). `_doc:'1'` — es un documento, no un nodo genérico
