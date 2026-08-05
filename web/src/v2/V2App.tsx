@@ -31,6 +31,7 @@ import type { Tab as SettingsTab } from '../components/views/settingsNav'
 import type { ElemKind } from '../components/panels/ElementsPanel'
 import V2Onboarding from './components/V2Onboarding'
 import V2AttachModal from './components/V2AttachModal'
+import { maybeOfferProfileChat, openProfileChat } from './profileChat'
 import RightColMenu from '../components/panels/RightColMenu'
 import UnifiedCapture from '../components/modals/UnifiedCapture'
 import { ToastProvider } from '../components/Toast'
@@ -155,6 +156,21 @@ export default function V2App() {
   // al centro, columna derecha vacía.
   const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null)
   const [showProfile, setShowProfile] = useState(false)
+
+  /** «Perfil»: la nota del perfil ocupa el centro y, a la derecha, Fromly abre una
+   *  conversación cuyo único fin es ampliarlo — pregunta distinta cada vez, y lo
+   *  que el usuario cuente se incorpora al perfil solo (v2/profileChat.ts).
+   *  Es el destino Chat: así la columna derecha ya trae su propio composer y su
+   *  tab de Historial, sin inventar una superficie nueva. */
+  const onOpenProfile = () => {
+    setCenterElementId(null)
+    setSelectedCtxId(null)
+    setFocusNodeId(null)
+    setShowProfile(true)
+    setRightMode('chat')
+    setRightSubTab('primary')
+    openProfileChat()
+  }
   const [elementsFilter, setElementsFilter] = useState<ElemKind | 'all' | 'favorite' | null>(null) // filtro inicial pedido para la tab Elementos (p.ej. «← Agentes»)
   const [rightWidth, setRightWidth] = useState(() => {
     const v = Number(localStorage.getItem('v2_right_w'))
@@ -245,6 +261,12 @@ export default function V2App() {
     if (rightMode === 'agenda' && agendaView === 'dia' && !centerElementId) {
       try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
     }
+    // Fromly ofrece ampliar el perfil por su cuenta cada cierto tiempo. NO abre
+    // nada: crea la conversación con `_pendingReply`, que la sidebar ya pinta como
+    // aviso («1 conversación esperando») — el usuario entra cuando quiere. Todas
+    // las condiciones (cada cuánto, si hay material nuevo, si ya hay una sin
+    // responder) viven en `maybeOfferProfileChat`, no aquí.
+    try { maybeOfferProfileChat() } catch { /* nunca debe romper el arranque */ }
   }, [ready]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Al elegir un contexto, la columna derecha muestra SIEMPRE su ficha completa
@@ -796,7 +818,7 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onOpenAttach={onOpenAttach} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onOpenAttach={onOpenAttach} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={onOpenProfile} />
       {centerElementId ? (
         // ⚠️ `key` es OBLIGATORIO: sin él, al pasar de un elemento a otro (p.ej.
         // abrir una nota de Casa Alicante y luego la nota diaria de otro día

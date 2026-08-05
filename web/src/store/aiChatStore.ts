@@ -1248,7 +1248,12 @@ class AIChatStore {
     const profileChatBlock = this.sessionId && isProfileChatSession(store.getNode(this.sessionId))
       ? PROFILE_CHAT_INSTRUCTIONS
       : ''
-    const combinedProfile = [profileChatBlock, activePromptBlock, originAgentBlock, mentionedBlock, dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
+    // Fromly no pinta emojis en NINGUNA parte de su interfaz (rediseño 5 ago 2026,
+    // ver v2/components/Icon.tsx) — y el texto que escribe la IA se lee dentro de esa
+    // misma interfaz, así que la regla también le aplica a ella. Verificado en vivo:
+    // sin esto el modelo salpica 🎯/✨ en sus respuestas.
+    const styleBlock = 'No uses NUNCA emojis ni emoticonos en tus respuestas ni en los títulos o textos que crees. Fromly no los usa en ninguna parte.'
+    const combinedProfile = [styleBlock, profileChatBlock, activePromptBlock, originAgentBlock, mentionedBlock, dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
 
     return {
       messages: compactedMessages,

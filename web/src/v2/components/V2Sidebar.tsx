@@ -17,6 +17,7 @@ import NewTaskModal from '../../components/modals/NewTaskModal'
 import NewEventModal from '../../components/modals/NewEventModal'
 import Icon from './Icon'
 import { displayTitle } from '../../utils/displayText'
+import { isProfileChatSession } from '../profileChat'
 import type { Node } from '../../types'
 
 // Misma paleta que el menú de clic derecho de un contexto en la Pizarra (v1) —
@@ -322,13 +323,19 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
       {(() => {
         const pending = listPendingAgentConversations()
         if (pending.length === 0 || !onOpenConversation) return null
+        // Las conversaciones que Fromly inicia para ampliar el PERFIL llevan su
+        // propio texto: «1 conversación esperando» no dice de qué va, y esta no
+        // viene de ningún agente que el usuario haya configurado (v2/profileChat.ts).
+        const profileOne = pending.length === 1 && isProfileChatSession(pending[0])
         return (
           <button className="v2-sidebar-notice"
             onClick={() => onOpenConversation(pending[0].id)}
             title={pending.length > 1 ? t('v2.pendingConversationsHint', 'Hay más de una esperando respuesta') : undefined}>
-            <Icon name="conversation" size={14} /> {pending.length === 1
-              ? t('v2.pendingConversationOne', '1 conversación esperando')
-              : t('v2.pendingConversationsMany', '{{count}} conversaciones esperando', { count: pending.length })}
+            <Icon name={profileOne ? 'profile' : 'conversation'} size={14} /> {profileOne
+              ? t('v2.profileChatPending', 'Fromly quiere saber más de ti')
+              : pending.length === 1
+                ? t('v2.pendingConversationOne', '1 conversación esperando')
+                : t('v2.pendingConversationsMany', '{{count}} conversaciones esperando', { count: pending.length })}
           </button>
         )
       })()}

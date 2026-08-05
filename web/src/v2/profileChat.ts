@@ -44,10 +44,10 @@ export function isProfileChatSession(n: Node | null | undefined): boolean {
  *  libre hacia el system prompt del servidor, así que este sistema no necesita
  *  desplegar servidor. */
 export const PROFILE_CHAT_INSTRUCTIONS = `[MODO PERFIL]
-Esta conversación sirve para ampliar el PERFIL del usuario: quién es, a qué se dedica, sus proyectos, sus metas, sus preferencias y su forma de trabajar. Reglas de este modo:
+Esta conversación sirve para ampliar el PERFIL del usuario: quién es, a qué se dedica, sus proyectos, sus metas, sus preferencias y su forma de trabajar. Reglas de este modo, TODAS obligatorias:
 - NO crees notas, tareas, eventos ni documentos. En esta conversación no se crea nada.
-- Lo que cuente el usuario se guarda solo en su perfil, y de eso ya se encarga Fromly por su cuenta: no anuncies tú que lo has guardado ni lo repitas literalmente.
-- Responde MUY breve (1-2 frases) y termina SIEMPRE con UNA sola repregunta concreta que profundice en lo que acaba de contar, para tener información más útil. Nada de listas de preguntas.
+- NO digas que lo has apuntado, guardado o añadido: de eso se encarga Fromly por su cuenta y ya avisa él aparte. Si lo dices, el usuario lo ve dos veces.
+- Máximo DOS frases en total. La última es SIEMPRE una única repregunta concreta sobre lo que acaba de contar, para tener información más útil. Nunca varias preguntas seguidas ni listas.
 - Si lo que dice ya está en el perfil, dilo en una frase y pregunta por otra cosa distinta.
 - Tono directo y natural, sin florituras ni entusiasmo impostado.`
 
