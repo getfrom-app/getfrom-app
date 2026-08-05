@@ -6,20 +6,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ## Web v9.6.948 — 5 agosto 2026 · Un evento de Google, una sola ficha · Día y Agenda separados
 
-- Corregido de raíz el evento duplicado: al mover una tarea con hora en el planificador ya no queda
-  la ficha antigua de Google Calendar al lado (ni encima cuando Google se pone al día). Arrastrar
-  una tarea ya sincronizada tampoco crea un segundo evento en tu calendario.
-- **Día** y **Agenda** son ahora dos accesos separados en la columna izquierda: Día te deja la nota
-  diaria en el centro y el timeline horario a la derecha; Agenda, el Planificador completo en el
-  centro y tus atrasadas, sin fecha y contextos en seguimiento a la derecha.
-- Al abrir una tarea, las tres columnas se van con ella: su contexto queda seleccionado a la
-  izquierda y su ficha aparece a la derecha, junto a la pestaña de chat.
-- Clic en cualquier punto por debajo del texto de una nota y el cursor se coloca al final, listo
-  para escribir — también en las notas de una tarea.
-- Corregido: un contexto en seguimiento desaparecía de la columna en cuanto tenía una tarea
-  atrasada.
-- La columna del día de hoy en el planificador se destaca con un tono mucho más suave, y el timeline
-  diario deja de tener fondo gris.
+- Corregido de raíz el evento duplicado: al mover una tarea con hora en el planificador ya no queda la ficha antigua de Google Calendar al lado, ni encima cuando Google se pone al día. Arrastrar una tarea ya sincronizada tampoco crea un segundo evento en tu calendario.
+- Día y Agenda son ahora dos accesos separados en la columna izquierda: Día te deja la nota diaria en el centro y el timeline horario a la derecha; Agenda, el Planificador completo en el centro y tus atrasadas, sin fecha y contextos en seguimiento a la derecha.
+- Al abrir una tarea, las tres columnas se van con ella: su contexto queda seleccionado a la izquierda y su ficha aparece a la derecha, junto a la pestaña de chat.
+- Clic en cualquier punto por debajo del texto de una nota y el cursor se coloca al final, listo para escribir — también en las notas de una tarea.
+- Corregido: un contexto en seguimiento desaparecía de la columna en cuanto tenía una tarea atrasada.
+- La columna del día de hoy en el planificador se destaca con un tono mucho más suave, y el timeline diario deja de tener fondo gris.
 
 ---
 
