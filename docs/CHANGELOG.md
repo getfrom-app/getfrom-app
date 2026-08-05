@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.946 — 5 agosto 2026 · Rediseño, historial de conversaciones y un perfil que se amplía hablando
+
+- Rediseño completo: líneas más suaves, mejor acabado y cero emojis — cada tipo de elemento tiene ahora su icono propio, del mismo estilo en toda la app.
+- Historial de conversaciones: en el destino Chat, una pestaña nueva con tus contextos (y cuántas conversaciones tiene cada uno) más las últimas de todos, con buscador.
+- Cuando el chat está vacío ves tus contextos en tarjetas, ordenados por uso reciente; pulsa una para abrir sus conversaciones ahí mismo.
+- Nueva barra de creación en la columna izquierda: chat, nota, lienzo, tarea, grabar y adjuntar, siempre dentro del contexto que tengas activo.
+- Adjuntar, todo en un sitio: arrastra o elige un archivo, pega un enlace o importa desde Google Drive. Antes solo estaba Drive.
+- El Perfil se amplía hablando: cuéntale algo y Fromly lo añade solo, diciéndote qué ha guardado; y cada cierto tiempo te propondrá él ampliarlo.
+- Corregido: una tarea a la que le asignabas un contexto no aparecía en la ficha de ese contexto hasta recargar; ahora aparece al momento.
+- Corregido: los puntos de color de los contextos cambiaban de color según el contexto que tuvieras abierto, en vez de mostrar el suyo.
+
+---
+
 ## Web v9.6.934 — 29 julio 2026 · Tu propia clave de IA, ahora en cualquier plan de pago
 
 - Usar tu propia clave de Claude, GPT o Gemini (Ajustes → IA) ya no es exclusivo de Lifetime —
