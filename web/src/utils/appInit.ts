@@ -22,6 +22,7 @@ import { ensureHomeRootAndReparent } from './homeHelper'
 import { ensurePromptsNode } from './promptsHelper'
 import { relocateRootDiariesToAgenda, cleanupYearMonthContexts, migrateDiaryEntriesToDoc } from './agendaHelper'
 import { revertContextReferenceOnce } from './migrateContextReference'
+import { migrateEventsToTasks } from './migrateEventsToTasks'
 
 let _ranInThisSession = false
 
@@ -54,6 +55,12 @@ export async function runStartupMigrations(): Promise<void> {
   cleanupNonAgendaContexts()
   cleanupSpuriousTags()
   syncTagDefinitions()
+  // Un evento es una tarea con día y hora → los eventos antiguos (isEvent sin
+  // `status`) ganan `status: 'pending'`. Ver utils/taskNode.ts.
+  try {
+    const ev = migrateEventsToTasks()
+    if (ev > 0) console.info(`[from] eventos convertidos en tarea: ${ev}`)
+  } catch (e) { console.warn('[from] migración eventos→tareas falló:', e) }
   // Persistir ya: si el usuario recarga antes del debounce, los nodos de sistema
   // recién creados no deben recrearse en cada recarga.
   await store.sync(true)

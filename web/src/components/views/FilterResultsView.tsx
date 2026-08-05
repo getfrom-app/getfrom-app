@@ -215,9 +215,14 @@ interface SwitcherProps {
    *  organizar. Por defecto true (comportamiento previo, usado también por WFHomeView
    *  con filtros libres tipo `estado:` que sí pueden mezclar tareas). */
   allowBoardViews?: boolean
+  /** ¿Hay algo que limpiar? Sin filtro activo, «Limpiar» no hace nada y solo añade
+   *  ruido (Alberto, 5 ago 2026, sobre Elementos: "cuando no hay ningún filtro puesto,
+   *  el botón de limpiar no tiene que aparecer"). Por defecto true: en WFHomeView la
+   *  barra solo se pinta cuando ya hay un filtro aplicado. */
+  canClear?: boolean
 }
 
-export function FilterViewSwitcher({ view, onChange, count, onClear, allowBoardViews = true }: SwitcherProps) {
+export function FilterViewSwitcher({ view, onChange, count, onClear, allowBoardViews = true, canClear = true }: SwitcherProps) {
   const { t } = useTranslation()
   const allModes: { id: FilterView; title: string }[] = [
     { id: 'lista',     title: 'Árbol' },
@@ -230,7 +235,7 @@ export function FilterViewSwitcher({ view, onChange, count, onClear, allowBoardV
     <div className="filter-results-bar">
       <span className="filter-results-count">
         {count} resultado{count !== 1 ? 's' : ''}
-        {' '}· <button className="wf-filter-clear-btn" onClick={onClear}>Limpiar</button>
+        {canClear && <> · <button className="wf-filter-clear-btn" onClick={onClear}>Limpiar</button></>}
       </span>
       <div className="filter-view-switcher">
         {modes.map(m => (

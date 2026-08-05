@@ -20,6 +20,7 @@ import { pickAndImportDriveFile } from '../utils/googleDrivePicker'
 import type { DriveImportResult } from '../api/googleDrive'
 import { useV2Recorder } from './useV2Recorder'
 import PlannerPanel from '../components/panels/PlannerPanel'
+import Icon from './components/Icon'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2ProfileView from './components/V2ProfileView'
@@ -329,6 +330,12 @@ export default function V2App() {
       // panel (auditoría, 4 ago 2026). `onOpenElementsFiltered` llama a
       // `setRightMode` directamente (no a este handler), así que no compite con esto.
       setElementsFilter(null)
+      // El centro arranca VACÍO — era el único destino general que no lo tocaba, así
+      // que heredaba lo que hubiera antes (el chat general, o la nota diaria si venías
+      // de Día) y parecía aleatorio (Alberto, 5 ago 2026: "aparece el chat, nueva
+      // conversación, o la nota diaria... lo cual no tiene sentido"). En Elementos el
+      // centro es el elemento que abras de la lista; hasta entonces, hueco propio.
+      setCenterElementId(null)
     }
   }
 
@@ -840,6 +847,23 @@ export default function V2App() {
           <div className="v2-empty">
             <h1>{t('v2.generalChatCenterTitle', 'Lo que crees aquí aparece aquí')}</h1>
             <p>{t('v2.generalChatCenterHint', 'Escribe en el chat de la derecha — cualquier nota, tarea o documento que cree se abrirá en este espacio.')}</p>
+          </div>
+        </main>
+      ) : rightMode === 'elementos' ? (
+        // Destino Elementos: la lista vive en la columna derecha y el centro es el
+        // elemento que abras de ella — hasta entonces, hueco propio con las 4 formas
+        // de crear algo nuevo (sin contexto, como el destino en sí). Antes caía en el
+        // fallback `V2Chat` y aparecía un chat que no pinta nada aquí.
+        <main className="v2-col v2-center">
+          <div className="v2-empty">
+            <h1>{t('v2.elementsCenterTitle', 'Elige un elemento de la lista')}</h1>
+            <p>{t('v2.elementsCenterHint', 'Lo que abras a la derecha se verá aquí. O empieza algo nuevo:')}</p>
+            <div className="v2-empty-actions">
+              <button onClick={() => onNewNoteInCtx(null)}><Icon name="note" size={14} /> {t('v2.chat.newNote', 'Nota')}</button>
+              <button onClick={() => onNewCanvasInCtx(null)}><Icon name="canvas" size={14} /> {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
+              <button onClick={() => onOpenAttach(null)}><Icon name="attachment" size={14} /> {t('v2.attach.title', 'Adjuntar')}</button>
+              <button onClick={() => onRecordInCtx(null)}><Icon name="mic" size={14} /> {t('v2.chat.record', 'Grabar')}</button>
+            </div>
           </div>
         </main>
       ) : rightMode === 'agenda' ? (

@@ -13,16 +13,13 @@ import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { isDocNode, elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
-import { isMarkedContext, listMarkedContexts, contextColor, assignContext, firstContextOf, contextParent } from '../../utils/cajones'
+import { isMarkedContext, listMarkedContexts, contextColor, assignContext } from '../../utils/cajones'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import { openNodeDetail } from '../../utils/canvasNav'
-import { renderInline } from '../outliner/InlineRenderer'
-import RowContextChip from './RowContextChip'
-import TaskHoverActions from './TaskHoverActions'
-import TaskRow, { dueLabel, dueColor } from './TaskRow'
+import TaskRow from './TaskRow'
 import { TaskPropsPopover } from './DiaryPanelComponents'
-import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
+import { isTaskNode } from '../../utils/taskNode'
 import { createAgentUnder } from '../../utils/agentesHelper'
 import { createPromptUnder } from '../../utils/promptsHelper'
 import NewNamedItemModal from '../modals/NewNamedItemModal'
@@ -32,10 +29,16 @@ import PizarraThumbnail from '../views/PizarraThumbnail'
 import Icon, { type IconName } from '../../v2/components/Icon'
 import { displayTitle } from '../../utils/displayText'
 
-export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'cita'
+// ⚠️ Ya NO existen los tipos 'event', 'context' ni 'memory' (Alberto, 5 ago 2026):
+//   · evento    → es una TAREA con día y hora, no un tipo aparte ("los eventos son
+//                 tareas que tienen día y hora... hay que unificarlo en todo Fromly").
+//   · contexto  → es un LUGAR, no un elemento: se navega desde la sidebar, y la ficha
+//                 del contexto ya lista lo suyo. Aquí era un segundo camino redundante.
+//   · memoria   → memoria IA antigua, pieza interna de Fromly. Fuera de la vista.
+export type ElemKind = 'text' | 'canvas' | 'task' | 'link' | 'pdf' | 'image' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'cita'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
-interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; ctxId: string | null; due?: string | null; status?: string | null }
+interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; due?: string | null; status?: string | null }
 type SortBy = 'updated' | 'created' | 'title'
 
 const ed = (n: Node): Record<string, unknown> => { try { return JSON.parse(n.extraData || '{}') } catch { return {} } }
@@ -64,17 +67,15 @@ function classify(n: Node): ElemKind | null {
   if (e._docSelection != null) return 'cita'        // párrafo de otra nota asignado a este contexto
   if (e._agentDef === '1') return 'agent'           // agente (v2: puede colgar de cualquier contexto)
   if (e._promptDef === '1') return 'prompt'         // prompt (v2: puede colgar de cualquier contexto)
-  if (isMarkedContext(n)) return 'context'
-  if (n.status != null) return 'task'
-  if (n.isEvent) return 'event'
+  if (isMarkedContext(n)) return null   // contexto = lugar, no elemento (ver ElemKind)
+  if (isTaskNode(n)) return 'task'      // evento = tarea con día y hora (utils/taskNode.ts)
   const rt = e._resourceType as string | undefined
   if (rt === 'image' || e._imageUrl) return 'image'
   if (rt === 'pdf') return 'pdf'
   if (n.isResource || e._resourceUrl || e._resource) return 'link'
   if (e._v2canvas === '1') return 'canvas'          // nodo-documento en modo Lienzo (pizarra)
   if (isDocNode(n) || store.isNote(n)) return 'text'
-  // Memoria IA ANTIGUA (oculta del lienzo pero BUSCABLE aquí): línea de conocimiento con texto.
-  if (e._tagDefinition != null && (n.text || '').trim()) return 'memory'
+  // Memoria IA ANTIGUA (`_tagDefinition`): pieza interna de Fromly, nunca un elemento.
   return null
 }
 
@@ -100,8 +101,8 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
 // Icono por tipo — nombres del sistema propio (v2/components/Icon.tsx), nunca
 // emojis (rediseño 5 ago 2026).
 const KIND_ICON: Record<ElemKind, IconName> = {
-  text: 'document', canvas: 'canvas', task: 'task', event: 'event', link: 'link',
-  pdf: 'pdf', image: 'image', context: 'folder', memory: 'profile',
+  text: 'document', canvas: 'canvas', task: 'task', link: 'link',
+  pdf: 'pdf', image: 'image',
   highlight: 'highlight', agent: 'agent', conversation: 'conversation',
   prompt: 'prompt', cita: 'quote',
 }
@@ -164,94 +165,32 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
       // `displayTitle` quita cualquier emoji decorativo que el nodo lleve escrito
       // como prefijo EN EL DATO (sesiones «✦ …», agentes «📈 …», raíces del sistema).
       const title = displayTitle(elementDisplayTitle(n) || snippet.slice(0, 60), t('common.noTitle'))
-      const ctxId = firstContextOf(n)?.id ?? null
-      out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '', createdAt: n.createdAt || '', ctxId, due: n.due, status: n.status })
+      out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '', createdAt: n.createdAt || '', due: n.due, status: n.status })
     }
     return out
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.nodesVersion, t])
 
   const nq = q.trim().toLowerCase()
-  const showTaskSub = filter === 'task' || filter === 'event'
-  // Capa 1: tipo + búsqueda + sub-filtro de tareas — sin el contexto todavía, porque
-  // los chips de contexto disponibles (abajo) deben reflejar ESTE conjunto, no el ya
-  // recortado por contexto (si no, al elegir un contexto desaparecerían los demás chips).
+  const showTaskSub = filter === 'task'
+  const filtersActive = !!nq || filter !== 'all' || taskSub !== 'all'
   const byTypeAndSearch = useMemo(() => rows.filter(r => {
     if (filter === 'favorite') { if (!store.getNode(r.id)?.isFavorite) return false }
-    else if (filter === 'all') { if (r.kind === 'memory') return false } // memoria IA solo con su propio chip
-    else if (r.kind !== filter) return false
+    else if (filter !== 'all' && r.kind !== filter) return false
     if (showTaskSub && !matchesTaskSub(r, taskSub)) return false
     if (!nq) return true
     return r.title.toLowerCase().includes(nq) || r.snippet.toLowerCase().includes(nq)
   }), [rows, filter, taskSub, showTaskSub, nq])
 
-  // Sub-filtro por CONTEXTO — segundo nivel, para CUALQUIER tipo (no solo tareas).
-  // JERÁRQUICO: primero los contextos RAÍZ; clic en uno con subcontextos entre los
-  // disponibles sustituye la fila por sus hijos (con animación) para seguir
-  // filtrando, igual que el drill-down de la sidebar. Solo se construyen ramas
-  // que de verdad llevan a algo en el conjunto ya filtrado arriba (byTypeAndSearch).
-  const contextTree = useMemo(() => {
-    const leafIds = new Set<string>()
-    for (const r of byTypeAndSearch) if (r.ctxId) leafIds.add(r.ctxId)
-    const allIds = new Set<string>()
-    const childrenOf = new Map<string, Set<string>>()
-    for (const leaf of leafIds) {
-      const chain: Node[] = []
-      let cur: Node | null = store.getNode(leaf) ?? null
-      let guard = 0
-      while (cur && guard++ < 40) { chain.unshift(cur); const p = contextParent(cur.id); cur = p ?? null }
-      for (let i = 0; i < chain.length; i++) {
-        allIds.add(chain[i].id)
-        if (i > 0) {
-          const parentId = chain[i - 1].id
-          if (!childrenOf.has(parentId)) childrenOf.set(parentId, new Set())
-          childrenOf.get(parentId)!.add(chain[i].id)
-        }
-      }
-    }
-    const roots = [...allIds].filter(id => { const p = contextParent(id); return !p || !allIds.has(p.id) })
-    return { allIds, childrenOf, roots }
-  }, [byTypeAndSearch])
-
-  const [ctxFilter, setCtxFilter] = useState<string | 'all'>('all')
-  const [ctxStack, setCtxStack] = useState<Node[]>([]) // ruta de drill-down (contextos padre)
-  const ctxParent = ctxStack.length ? ctxStack[ctxStack.length - 1] : null
-  const availableContexts = useMemo(() => {
-    const ids = ctxParent ? [...(contextTree.childrenOf.get(ctxParent.id) ?? [])] : contextTree.roots
-    return ids.map(id => store.getNode(id)).filter((n): n is Node => !!n && !!(n.text || '').trim())
-      .sort((a, b) => a.text.localeCompare(b.text))
-  }, [contextTree, ctxParent])
-  useEffect(() => {
-    if (ctxFilter !== 'all' && !contextTree.allIds.has(ctxFilter)) { setCtxFilter('all'); setCtxStack([]) }
-  }, [contextTree, ctxFilter])
-
-  // Elige un contexto del sub-filtro: filtra por él (Y sus descendientes) y, si
-  // tiene subcontextos entre los disponibles, entra en él para seguir refinando.
-  const enterCtxFilter = (c: Node) => {
-    setCtxFilter(c.id)
-    if ((contextTree.childrenOf.get(c.id)?.size ?? 0) > 0) setCtxStack(prev => [...prev, c])
-  }
-  const backCtxFilter = () => setCtxStack(prev => prev.slice(0, -1))
-  const clearCtxFilter = () => { setCtxFilter('all'); setCtxStack([]) }
-
-  // ¿El contexto de la fila es `filterId` o uno de sus descendientes? Al elegir un
-  // contexto RAÍZ (o cualquiera con hijos) en el sub-filtro, deben verse también
-  // los elementos que cuelgan de sus subcontextos, no solo los asignados a él.
-  function ctxMatchesFilter(rowCtxId: string | null, filterId: string): boolean {
-    if (!rowCtxId) return false
-    let cur: Node | null = store.getNode(rowCtxId) ?? null
-    let guard = 0
-    while (cur && guard++ < 40) {
-      if (cur.id === filterId) return true
-      const p = contextParent(cur.id)
-      cur = p ?? null
-    }
-    return false
-  }
-
+  // ⚠️ RETIRADO el sub-filtro por CONTEXTO (fila de chips jerárquica con drill-down),
+  // 5 ago 2026: era un SEGUNDO camino a lo que ya hace la sidebar → ficha del contexto
+  // (Alberto: "para buscar los elementos de un contexto vamos al contexto directamente,
+  // lo cual ya está implementado; este sería un segundo camino innecesario"). Con él se
+  // van `contextTree`/`ctxFilter`/`ctxStack` y ~60 líneas de drill-down. Si algún día
+  // hace falta "los PDF DE La Isla", el sitio correcto es un filtro por tipo DENTRO de
+  // la ficha del contexto, no devolver la fila aquí.
   const filtered = useMemo(() => {
-    const out = ctxFilter === 'all' ? byTypeAndSearch : byTypeAndSearch.filter(r => ctxMatchesFilter(r.ctxId, ctxFilter))
-    const sorted = [...out]
+    const sorted = [...byTypeAndSearch]
     // Sin fecha (createdAt/updatedAt vacío) SIEMPRE al final, sea cual sea la
     // dirección — antes un '' se colaba como "más reciente" en algunos casos
     // (Alberto, 15 jul: "Locución CREO Laura Martínez..." salía primero sin ser
@@ -270,7 +209,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
       return b.updatedAt.localeCompare(a.updatedAt)
     })
     return sorted
-  }, [byTypeAndSearch, ctxFilter, sortBy])
+  }, [byTypeAndSearch, sortBy])
 
   const counts = useMemo(() => rows.reduce((acc, r) => { acc[r.kind] = (acc[r.kind] || 0) + 1; return acc }, {} as Record<ElemKind, number>), [rows])
   const favCount = useMemo(() => { void s.nodesVersion; return rows.filter(r => store.getNode(r.id)?.isFavorite).length }, [rows, s.nodesVersion])
@@ -298,17 +237,14 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     { key: 'text',    label: t('elements.texts') },
     { key: 'canvas',  label: t('elements.canvases', 'Lienzos') },
     { key: 'task',    label: t('elements.tasks') },
-    { key: 'event',   label: t('elements.events') },
     { key: 'link',    label: t('elements.links') },
     { key: 'pdf',     label: t('elements.pdfs') },
     { key: 'highlight', label: t('elements.highlights', 'Subrayados') },
     { key: 'cita',    label: t('elements.citas', 'Citas') },
     { key: 'image',   label: t('elements.images') },
-    { key: 'context', label: t('elements.contexts') },
     { key: 'agent',   label: t('elements.agents', 'Agentes') },
     { key: 'prompt',  label: t('elements.prompts', 'Prompts') },
     { key: 'conversation', label: t('elements.conversations', 'Conversaciones') },
-    { key: 'memory',  label: t('elements.memory', 'Memoria') },
   ]
   const SUB_CHIPS: { key: TaskSub; label: string }[] = [
     { key: 'all',    label: t('elements.subAll', 'Todas') },
@@ -397,7 +333,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   }
   // Salir de selección si cambia el filtro/búsqueda — evita seleccionar a ciegas
   // sobre filas que ya no se ven.
-  useEffect(() => { if (selectMode) exitSelectMode() }, [filter, ctxFilter, taskSub, nq]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (selectMode) exitSelectMode() }, [filter, taskSub, nq]) // eslint-disable-line react-hooks/exhaustive-deps
   function moveToContext(id: string, ctxId: string) {
     // Mover a otro contexto: asignación lógica (_ctxRefs) + si NO está fijado con pin, lo
     // reparentamos para que fluya dentro de la caja del contexto en el lienzo.
@@ -447,13 +383,19 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             </>
           )}
         </div>
-        {/* Filtro por tipo — texto limpio en una fila, con scroll horizontal, subrayado activo. */}
+        {/* Filtro por tipo — en VARIAS LÍNEAS (`.el-filterbar` envuelve desde el 5 ago
+            2026), no en scroll horizontal: "que aparezcan en varias líneas para que se
+            vean todos de una pasada" (Alberto). Para que eso no se convierta en un muro
+            de 15 chips, los tipos SIN elementos no se pintan — salvo el activo (si no,
+            al quedarte sin resultados desaparecería el chip que acabas de pulsar) y
+            «Todos»/«Favoritos», que son la salida siempre disponible. */}
         <div className="el-filterbar">
           {CHIPS.map(c => {
             const active = filter === c.key
-            const n = c.key === 'all' ? (rows.length - (counts.memory || 0)) : c.key === 'favorite' ? favCount : (counts[c.key as ElemKind] || 0)
+            const n = c.key === 'all' ? rows.length : c.key === 'favorite' ? favCount : (counts[c.key as ElemKind] || 0)
+            if (n === 0 && !active && c.key !== 'all' && c.key !== 'favorite') return null
             return (
-              <button key={c.key} onClick={() => { setFilter(c.key); if (c.key !== 'task' && c.key !== 'event') setTaskSub('all') }}
+              <button key={c.key} onClick={() => { setFilter(c.key); if (c.key !== 'task') setTaskSub('all') }}
                 style={{
                   flex: '0 0 auto', border: 'none', background: 'transparent', cursor: 'pointer', padding: '3px 0',
                   fontSize: 12.5, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
@@ -497,54 +439,16 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             })}
           </div>
         )}
-        {/* Sub-filtro por CONTEXTO — segundo nivel, para cualquier tipo (no solo tareas).
-            Jerárquico: raíces primero; clic en uno con subcontextos sustituye la fila
-            por sus hijos (key=ctxParent.id remonta el div → animación de entrada). */}
-        {(availableContexts.length > 0 || ctxStack.length > 0) && (
-          <div className="el-filterbar el-filterbar--ctx" style={{ marginTop: 4 }} key={ctxParent?.id ?? 'root'}>
-            <button onClick={clearCtxFilter}
-              style={{
-                flex: '0 0 auto', border: 'none', background: 'transparent', cursor: 'pointer', padding: '2px 0',
-                fontSize: 11.5, fontWeight: ctxFilter === 'all' ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
-                color: ctxFilter === 'all' ? 'var(--accent)' : 'var(--text-tertiary,#999)',
-              }}>
-              {t('elements.allContexts', 'Todos los contextos')}
-            </button>
-            {ctxParent && (
-              <button onClick={backCtxFilter}
-                style={{
-                  flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', cursor: 'pointer', padding: '2px 0',
-                  fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap', fontFamily: 'inherit', color: 'var(--text-primary)',
-                }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: contextColor(ctxParent.id), flexShrink: 0 }} />
-                ‹ {ctxParent.text}
-              </button>
-            )}
-            {availableContexts.map(c => {
-              const active = ctxFilter === c.id
-              const hasKids = (contextTree.childrenOf.get(c.id)?.size ?? 0) > 0
-              return (
-                <button key={c.id} onClick={() => enterCtxFilter(c)}
-                  style={{
-                    flex: '0 0 auto', display: 'flex', alignItems: 'center', gap: 4, border: 'none', background: 'transparent', cursor: 'pointer', padding: '2px 0',
-                    fontSize: 11.5, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
-                    color: active ? 'var(--accent)' : 'var(--text-tertiary,#999)',
-                  }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: contextColor(c.id), flexShrink: 0 }} />
-                  {c.text}{hasKids ? ' ›' : ''}
-                </button>
-              )
-            })}
-          </div>
-        )}
         {/* Selector de vista — lista (por defecto) / tabla / kanban / calendario. Reutiliza
-            los componentes de la v1 (FilterResultsView) tal cual, sobre los ids ya filtrados. */}
+            los componentes de la v1 (FilterResultsView) tal cual, sobre los ids ya filtrados.
+            «Limpiar» solo aparece si de verdad hay algo que limpiar (`filtersActive`). */}
         <FilterViewSwitcher
           view={view}
           onChange={changeView}
           count={filtered.length}
-          onClear={() => { setQ(''); setFilter('all'); setTaskSub('all'); setCtxFilter('all'); setCtxStack([]) }}
+          onClear={() => { setQ(''); setFilter('all'); setTaskSub('all') }}
           allowBoardViews={filter === 'task'}
+          canClear={filtersActive}
         />
         {/* Barra de acciones en bloque — visible solo en modo selección. */}
         {selectMode && (
@@ -625,6 +529,10 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
               // Tarea → TaskRow ÚNICO compartido con toda la app (Hoy, Contexto, otros
               // días): mismo checkbox, texto, chips de hora/día/repetición, contexto y
               // acciones de hover en TODAS partes, no una copia distinta por pestaña.
+              // Los EVENTOS entran por aquí desde el 5 ago 2026 (son tareas con día y
+              // hora): tenían una copia propia de la fila justo debajo, que ya solo se
+              // diferenciaba en no pintar el chip de repetición. TaskRow lo cubre —
+              // el chip de hora sale solo cuando el `due` lleva hora (timeLabel).
               if (r.kind === 'task' && !isRenaming) {
                 const n = store.getNode(r.id)
                 if (n) inner = (
@@ -633,46 +541,6 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                     onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)}
                     style={{ position: 'static', width: '100%', boxSizing: 'border-box' }}
                   />
-                )
-              } else if (r.kind === 'event' && !isRenaming) {
-                // Evento: pieza propia (sin checkbox de tarea real / chips de repetición).
-                // Dos líneas + título sin truncar, mismo patrón que TaskRow (Alberto, 4 ago
-                // 2026: "aquí en elementos pasa lo mismo, se truncan... usar dos líneas").
-                const n = store.getNode(r.id)
-                const evDue = n ? dueLabel(n, i18n.language) : ''
-                if (n) inner = (
-                  <div
-                    className={`dc-row ${n.status === 'done' ? 'dc-row--done' : ''}`}
-                    data-node-id={n.id}
-                    onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openMenu(r.id, e.clientX, e.clientY) }}
-                    style={{ width: '100%', boxSizing: 'border-box' }}
-                  >
-                    <button
-                      className={`dc-check ${n.status === 'done' ? 'dc-check--done' : ''}`}
-                      onClick={(e) => { e.stopPropagation(); toggleTaskDone(n) }}
-                    >{n.status === 'done' ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
-                    <div className="dc-row-main">
-                      <div className="dc-row-l1">
-                        <span className="dc-text dc-text--wrap" onClick={() => openNodeDetail(n.id)}>{n.text ? renderInline(n.text) : t('tip.task', 'Tarea')}</span>
-                      </div>
-                      <div className="dc-row-l2">
-                        {/* Fecha/recurrencia — mismo badge que TaskRow (con fecha, clicable;
-                            sin fecha, «+»). Único sitio para abrir el popover desde que se quitó
-                            el botón de calendario de TaskHoverActions (Alberto, 5 ago 2026). */}
-                        {evDue ? (
-                          <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(n) }}
-                            title={t('dailyCockpit.editDateRecurrence')}
-                            onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>{evDue}</span>
-                        ) : n.status !== 'done' && (
-                          <span className="dc-due dc-due--empty" title={t('dailyCockpit.editDateRecurrence')}
-                            onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>+</span>
-                        )}
-                        <span style={{ flex: 1 }} />
-                        <TaskHoverActions node={n} onOpenDate={(nn) => setPropsNodeId(id => id === nn.id ? null : nn.id)} />
-                        <RowContextChip node={n} />
-                      </div>
-                    </div>
-                  </div>
                 )
               } else {
                 // Resto de tipos (nota, PDF, enlace, conversación…): título en una línea con

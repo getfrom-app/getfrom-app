@@ -4,6 +4,26 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## iOS v2.13.141 — 5 agosto 2026 · Un evento es una tarea con día y hora
+
+- Los eventos dejan de ser un tipo aparte: son tareas que tienen día y hora. Aparecen con el resto de tus tareas en la ficha de su contexto y en el buscador, y se pueden completar con su checkbox. El filtro "Evento" desaparece porque "Tarea" ya los incluye.
+- Corregido de raíz: una tarea recurrente que marcabas como hecha no volvía a aparecer nunca. Ahora, al completarla, se crea la siguiente instancia en el día que le toca — igual que en la web.
+- El planificador ya no pinta dos veces el mismo evento cuando lo has creado en Fromly y está sincronizado con Google Calendar.
+- Ajustes → IA: puedes añadir tu clave de DeepSeek (con el aviso de que sus servidores están en China) y elegir qué modelo usar cuando tienes clave propia.
+
+---
+
+## Web v9.6.949 — 5 agosto 2026 · Elementos, más limpio
+
+- La página de Elementos ya no abre un chat ni la nota diaria en el centro: te dice que elijas un elemento de la lista y te ofrece crear nota, lienzo, adjuntar o grabar.
+- Los filtros por tipo se ven todos de una pasada, en varias líneas en vez de un carrusel horizontal, y los tipos de los que no tienes nada no ocupan sitio.
+- "Limpiar" solo aparece cuando de verdad hay un filtro puesto.
+- Fuera los tipos "Evento" (una tarea con día y hora ya es un evento), "Contextos" (se navegan desde la barra lateral) y "Memoria" (es una pieza interna de Fromly).
+- Quitado el filtro por contexto de la lista: para ver lo de un contexto, entra en el contexto.
+- Los eventos ya cuentan como tareas en toda la app: salen en la lista de tareas de su contexto, en el buscador con `tarea` y se pueden completar desde el planificador.
+
+---
+
 ## Web v9.6.948 — 5 agosto 2026 · Un evento de Google, una sola ficha · Día y Agenda separados
 
 - Corregido de raíz el evento duplicado: al mover una tarea con hora en el planificador ya no queda la ficha antigua de Google Calendar al lado, ni encima cuando Google se pone al día. Arrastrar una tarea ya sincronizada tampoco crea un segundo evento en tu calendario.

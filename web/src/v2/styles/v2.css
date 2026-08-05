@@ -573,6 +573,14 @@
 .v2-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
 .v2-empty h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.022em; margin: 0 0 8px; }
 .v2-empty p { color: var(--text-secondary); max-width: 420px; margin: 0; line-height: 1.6; font-size: 13.5px; }
+/* Acciones del hueco central del destino Elementos — crear sin pasar por la sidebar. */
+.v2-empty-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+.v2-empty-actions button {
+  display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--bg-elevated); color: var(--text);
+  font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.v2-empty-actions button:hover { background: var(--bg-hover); }
 
 /* Estado vacío del CHAT — ya no es un saludo centrado: es el navegador de
    contextos (V2ContextBrowser). Se ancla ARRIBA, no al centro vertical, para que

@@ -18,6 +18,7 @@
 
 import type { Node } from '../types'
 import { normalizeText } from './normalize'
+import { isTaskNode } from './taskNode'
 import { structuralId } from './deterministicId'
 
 interface FilterResult {
@@ -117,9 +118,10 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
     case 'dated':    return !!node.due
 
     // Estado de tarea — ES + EN
+    // `tarea` incluye los eventos: son tareas con día y hora (utils/taskNode.ts).
     case 'tarea':
     case 'task':
-    case 'tipo:tarea':  return node.status !== null && node.status !== undefined
+    case 'tipo:tarea':  return isTaskNode(node)
     case 'pendiente':
     case 'pending':     return node.status === 'pending'
     case 'hecho':
@@ -137,7 +139,9 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
     // Tipo de nodo — ES + EN
     case 'nota':
     case 'note':
-    case 'tipo:nota':   return node.status === null && !node.isEvent && !node.isResource
+    case 'tipo:nota':   return !isTaskNode(node) && !node.isResource
+    // `evento` se mantiene como ATAJO (filtra las tareas con hora), no como tipo
+    // propio: ya no hay dos tipos, hay tareas con día y hora (utils/taskNode.ts).
     case 'evento':
     case 'event':
     case 'tipo:evento': return !!node.isEvent

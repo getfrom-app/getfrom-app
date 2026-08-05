@@ -176,7 +176,9 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
     const node = store.createNode({ text, parentId: diary?.id || null, isTask: parsed.isTask, due: taskDue })
     if (parsed.isEvent) {
       const eventDue = parsed.due ?? new Date(new Date().setHours(0, 0, 0, 0)).toISOString()
-      store.updateNode(node.id, { isEvent: true, due: eventDue })
+      // `status` además de `isEvent`: un evento es una tarea con día y hora
+      // (utils/taskNode.ts) — sin él no contaba como tarea en ningún listado.
+      store.updateNode(node.id, { isEvent: true, due: eventDue, status: 'pending' })
     }
     if (parsed.isFavorite) store.updateNode(node.id, { isFavorite: true })
     const label = parsed.isEvent ? t('cmdpalette.event') : parsed.isTask ? t('cmdpalette.task') : t('cmdpalette.note')

@@ -1,7 +1,43 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-05 (Web v9.6.948)
+> Última actualización: 2026-08-05 (Web v9.6.949 · iOS v2.13 build 141)
+
+---
+
+## Sesión 2026-08-05 (sesión 6) — Elementos limpio, «un evento es una tarea», paridad iOS
+
+Web **v9.6.948 → v9.6.949** (solo cliente) · iOS **v2.12 (140) → v2.13 (141)**, subida a App Store
+Connect. Log completo: `logs/2026-08-05-sesion6-elementos-evento-tarea-ios.md`.
+
+### 1. INVARIANTE NUEVO — un evento es una tarea con día y hora
+
+`status` dice que es una tarea; `isEvent` dice que va al timeline y a Google Calendar. Dos
+propiedades del mismo tipo, no dos tipos. Ver la sección «Tarea y evento son LO MISMO» de `FROM.md`
+para la regla completa (predicado único por plataforma, migraciones, y la excepción deliberada del
+cockpit de Hoy, que sigue excluyendo `isEvent` para no duplicar con el bloque de eventos del día).
+
+- Web: `utils/taskNode.ts` (`isTaskNode`/`hasTimeOfDay`) + `utils/migrateEventsToTasks.ts`.
+- iOS: `Node.isTaskLike`/`hasTimeOfDay` + migración de datos **v19**.
+- Las vías de creación de las dos plataformas ponen ya `status` al crear un evento.
+
+### 2. Página de Elementos
+
+Centro vacío propio en el destino Elementos (era el único destino general que no tocaba
+`centerElementId`, así que heredaba el chat o la nota diaria); «Limpiar» solo con filtro activo
+(`canClear` en `FilterViewSwitcher`); chips en varias líneas, sin los tipos vacíos y sin Evento/
+Contextos/Memoria; retirado el filtro por contexto (duplicaba sidebar → ficha del contexto).
+
+### 3. iOS — además de la unificación
+
+- **Recurrencia**: `toggleCockpitDone` no creaba la siguiente instancia y `toggleComplete` avanzaba
+  el `due` del mismo nodo (modelo descartado en FROM.md) — una tarea recurrente completada en el
+  iPhone se perdía. Ahora ambas vías marcan done, estampan `_doneAt` y llaman a
+  `NodeService.spawnRecurrence`.
+- **Google Calendar**: `IOSGCalPlannerView` pintaba el evento crudo y el nodo enlazado a la vez.
+  Nuevo `visibleGoogleEvents` + `gcalIdCore` + `Node.linkedGcalEventId` (puerto del fix de la web).
+- **Ajustes → IA**: clave BYOK de DeepSeek (con el aviso de servidores en China) y selector de
+  modelo (`availableModels`/`aiPreferredModel`, que iOS no leía ni enviaba).
 
 ---
 

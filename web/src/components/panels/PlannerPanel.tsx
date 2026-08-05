@@ -759,11 +759,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const gridH = TOTAL_HOURS * hourH
     const blockTop = Math.max(0, Math.min(topPx(b.start), gridH - slotH / 2))
     const blockH = Math.max(slotH / 2, Math.min(heightPx(b.start.getTime(), b.end.getTime()), gridH - blockTop))
-    // Checkbox SOLO en tareas (nodo con status), nunca en eventos — así se
-    // distinguen a golpe de vista en el planificador y en la tab Día (Alberto,
-    // 22 jul: "las tareas deberán llevar checkbox, los eventos no"). Reutiliza
-    // toggleTaskDone (mismo que DayColumn) para no romper el paso a "Atrasadas"
-    // al día siguiente si la tarea no se completa.
+    // Checkbox en todo nodo de Fromly con `status` — que desde el 5 ago 2026 son
+    // también los eventos (un evento es una tarea con día y hora, utils/taskNode.ts).
+    // Antes se excluían a propósito para distinguirlos de un vistazo (Alberto, 22
+    // jul: "las tareas deberán llevar checkbox, los eventos no"); lo que sigue
+    // distinguiéndose es lo que NO es un nodo: el evento crudo de Google (`isGcal`),
+    // que no se puede completar en Fromly. Reutiliza toggleTaskDone (mismo que
+    // DayColumn) para no romper el paso a «Atrasadas» al día siguiente.
     const checkable = !isGcal && !!blockNode && blockNode.status != null
     const done = checkable && blockNode!.status === 'done'
     return (
@@ -983,11 +985,10 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     if (!nodeId) return
     const n = store.getNode(nodeId); if (!n) return
     const had = !!n.due
-    // Los eventos no llevan `status` (el resto de la app decide "es tarea" por
-    // status != null) — forzar 'pending' aquí los convertiría en tarea a medias.
-    store.updateNode(nodeId, n.isEvent
-      ? { due: toMidnight(day), dueEnd: null }
-      : { due: toMidnight(day), dueEnd: null, status: n.status ?? 'pending' })
+    // Evento o tarea, da igual: los dos llevan `status` desde el 5 ago 2026 (un
+    // evento es una tarea con día y hora — utils/taskNode.ts). Soltar en «todo el
+    // día» quita la hora, no el hecho de ser tarea.
+    store.updateNode(nodeId, { due: toMidnight(day), dueEnd: null, status: n.status ?? 'pending' })
     if (had) bumpReschedule(nodeId)
   }
 
@@ -1196,9 +1197,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                       const n = it.node
                       const chipCtx = firstContextOf(n)
                       const chipAccent = chipCtx ? contextColor(chipCtx.id) : plannerBase
-                      // Checkbox SOLO en tareas (n.status != null) — un evento sin hora
-                      // también puede llegar aquí (isEvent) y no debe llevarlo (Alberto,
-                      // 22 jul: "las tareas deberán llevar checkbox, los eventos no").
+                      // Checkbox en cualquier nodo con `status` — incluidos los eventos
+                      // de todo el día desde la unificación del 5 ago 2026 (ver el
+                      // comentario de `checkable` en renderBlock).
                       const chipCheckable = n.status != null
                       const chipDone = chipCheckable && n.status === 'done'
                       return (

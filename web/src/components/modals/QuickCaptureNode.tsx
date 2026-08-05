@@ -317,7 +317,10 @@ export default function QuickCaptureNode({ onClose }: Props) {
         const d = new Date(dp.parsed.date)
         d.setHours(h, m, 0, 0)
         updates.due = d.toISOString()
+        // Con hora → evento, y por tanto también tarea: un evento es una tarea con
+        // día y hora (utils/taskNode.ts).
         updates.isEvent = true
+        updates.status = 'pending'
       } else {
         updates.due = dp.parsed.date.toISOString()
         if (isTask) updates.status = 'pending'
@@ -327,8 +330,8 @@ export default function QuickCaptureNode({ onClose }: Props) {
       }
       store.updateNode(node.id, updates)
     } else if (isEvent) {
-      // Evento sin fecha explícita — marcar como evento (fecha se asignará después)
-      store.updateNode(node.id, { isEvent: true })
+      // Evento sin fecha explícita — la fecha se asigna después; nace ya como tarea.
+      store.updateNode(node.id, { isEvent: true, status: 'pending' })
     } else if (isTask) {
       store.updateNode(node.id, { status: 'pending' })
     }
@@ -339,7 +342,8 @@ export default function QuickCaptureNode({ onClose }: Props) {
 
     store.sync(true).catch(() => {})
 
-    const label = isEvent ? 'Evento' : isTask ? 'Tarea' : 'Nota'
+    // Sin etiqueta «Evento»: un evento es una tarea con día y hora (utils/taskNode.ts).
+    const label = (isEvent || isTask) ? 'Tarea' : 'Nota'
     showToast(`✓ ${label} creada`)
     onClose()
   }

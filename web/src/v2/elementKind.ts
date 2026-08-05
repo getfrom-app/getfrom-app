@@ -5,6 +5,7 @@
 import { parseExtraData } from '../utils/papeleraHelper'
 import { isDocNode } from '../utils/docNode'
 import { isContextKnowledge } from '../utils/knowledgeNodes'
+import { isTaskNode } from '../utils/taskNode'
 import type { IconName } from './components/Icon'
 import type { Node } from '../types'
 
@@ -57,8 +58,9 @@ export function classifyElement(n: Node): { kind: ElKind; icon: IconName; label:
   // «?» al pasar el ratón). Mismo patrón que el subrayado de PDF, pero la fuente
   // es un documento propio, no un PDF — su propio tipo para no confundirlos.
   if (e._docSelection != null) return { kind: 'cita', icon: 'quote', label: 'Cita' }
-  if (n.status != null || (n.types || []).includes('tarea')) return null   // tarea
-  if (n.isEvent || (n.types || []).includes('evento')) return null         // evento
+  // Tarea (los eventos son tareas con día y hora — utils/taskNode.ts): tienen su
+  // propia lista con checkbox y fecha, no se listan como «elemento».
+  if (isTaskNode(n) || (n.types || []).includes('evento')) return null
 
   const rt = (e._resourceType as string) || (n.resourceType || '')
   if (rt === 'image' || e._imageUrl) return { kind: 'image', icon: 'image', label: 'Imagen' }

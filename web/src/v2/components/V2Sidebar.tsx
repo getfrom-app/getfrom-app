@@ -14,7 +14,6 @@ import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
 import NewContextModal from '../../components/modals/NewContextModal'
 import NewTaskModal from '../../components/modals/NewTaskModal'
-import NewEventModal from '../../components/modals/NewEventModal'
 import Icon from './Icon'
 import { displayTitle } from '../../utils/displayText'
 import { isProfileChatSession } from '../profileChat'
@@ -48,7 +47,7 @@ interface Props {
   onNewChatInCtx: (id: string | null) => void
   // Botones de creación por contexto — nota/lienzo (Alberto, 22 jul: "botones de
   // creación de elementos en el sidebar"). Tarea/evento se crean aquí mismo con
-  // NewTaskModal/NewEventModal (ya aceptan parentId), sin necesidad de subir a V2App.
+  // NewTaskModal (ya acepta parentId), sin necesidad de subir a V2App.
   onNewNoteInCtx: (id: string | null) => void
   onNewCanvasInCtx: (id: string | null) => void
   // «Adjuntar» EN UN CONTEXTO CONCRETO — abre V2AttachModal (archivo / enlace /
@@ -119,7 +118,6 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   // contexto, que se añadirá a la raíz de contextos") además de «Subcontexto».
   const [addMenu, setAddMenu] = useState<{ id: string | null; x: number; y: number; isGlobal?: boolean } | null>(null)
   const [newTaskCtx, setNewTaskCtx] = useState<{ id: string | null } | null>(null)
-  const [newEventCtx, setNewEventCtx] = useState<{ id: string | null } | null>(null)
   // «＋ Subcontexto»/«＋ Contexto» desde el menú «＋» (Alberto, 22 jul: "el + de
   // los chips de contexto debe añadir además nuevo subcontexto... crea un
   // subcontexto bajo el contexto seleccionado, y se abre"). Distinto del botón
@@ -468,8 +466,12 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
           <div onPointerDown={() => setAddMenu(null)} onContextMenu={(e) => { e.preventDefault(); setAddMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
           <div className="v2-ctx-menu" style={{ position: 'fixed', top: addMenu.y, left: addMenu.x, zIndex: 2000 }}>
             <button className="v2-ctx-menu-item" onClick={() => { onNewNoteInCtx(addMenu.id); setAddMenu(null) }}><Icon name="note" size={14} /> {t('v2.chat.newNote', 'Nota')}</button>
+            {/* Sin entrada «Evento»: `NewTaskModal` usa un input `datetime-local`, así
+                que una tarea con hora YA es un evento (timeline + Google Calendar). Era
+                el mismo formulario con otro nombre — mismo motivo por el que la barra de
+                creación de arriba nunca lo tuvo (Alberto, 5 ago 2026: "los eventos son
+                tareas que tienen día y hora... hay que unificarlo en todo Fromly"). */}
             <button className="v2-ctx-menu-item" onClick={() => { setNewTaskCtx({ id: addMenu.id }); setAddMenu(null) }}><Icon name="task" size={14} /> {t('v2.chat.newTaskShort', 'Tarea')}</button>
-            <button className="v2-ctx-menu-item" onClick={() => { setNewEventCtx({ id: addMenu.id }); setAddMenu(null) }}><Icon name="event" size={14} /> {t('v2.chat.newEventShort', 'Evento')}</button>
             <button className="v2-ctx-menu-item" onClick={() => { onNewCanvasInCtx(addMenu.id); setAddMenu(null) }}><Icon name="canvas" size={14} /> {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
             <button className="v2-ctx-menu-item" onClick={() => { onOpenAttach(addMenu.id); setAddMenu(null) }}><Icon name="attachment" size={14} /> {t('v2.attach.title', 'Adjuntar')}</button>
             <button className="v2-ctx-menu-item" onClick={() => { onRecordInCtx(addMenu.id); setAddMenu(null) }}><Icon name="mic" size={14} /> {t('v2.chat.record', 'Grabar')}</button>
@@ -485,7 +487,6 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         </>
       )}
       {newTaskCtx && <NewTaskModal parentId={newTaskCtx.id} onClose={() => setNewTaskCtx(null)} />}
-      {newEventCtx && <NewEventModal parentId={newEventCtx.id} onClose={() => setNewEventCtx(null)} />}
 
       {/* Menú de clic derecho de un contexto: renombrar / color / mover / eliminar. */}
       {ctxMenu && store.getNode(ctxMenu.id) && (

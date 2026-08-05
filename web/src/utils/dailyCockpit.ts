@@ -75,7 +75,12 @@ export function spawnRecurrence(node: Node): void {
       types: node.types,
     })
     store.updateNode(newNode.id, {
-      ...(node.isEvent ? { isEvent: true } : { status: 'pending' }),
+      // La instancia siguiente hereda `isEvent`, pero SIEMPRE lleva `status` — un
+      // evento es una tarea con día y hora (utils/taskNode.ts). Antes el evento
+      // recurrente renacía sin status y volvía a quedarse fuera de todo lo que
+      // filtra por tarea.
+      status: 'pending',
+      ...(node.isEvent ? { isEvent: true } : {}),
       ...(newDue ? { due: newDue } : {}),
       recurrence: node.recurrence ?? undefined,
       extraData: JSON.stringify({ ...ed, _recurrence: rec }),

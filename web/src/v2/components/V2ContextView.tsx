@@ -15,6 +15,7 @@ import {
 import { htmlToMarkdown } from '../../utils/htmlMarkdown'
 import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
+import { isTaskNode } from '../../utils/taskNode'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
 import ContextPicker from '../../components/panels/ContextPicker'
@@ -114,7 +115,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
   // que no pertenecen a ninguno.
   const tasks = useMemo(() => {
     void store.nodesVersion
-    const isTask = (n: Node) => !n.deletedAt && (n.status != null || (n.types || []).includes('tarea'))
+    // Los EVENTOS entran aquí desde el 5 ago 2026 (son tareas con día y hora,
+    // utils/taskNode.ts) — antes se quedaban fuera de la lista de tareas de su
+    // propio contexto. No se duplican con la lista de Elementos de abajo:
+    // `classifyElement` devuelve null para cualquier tarea/evento.
+    const isTask = (n: Node) => !n.deletedAt && isTaskNode(n)
     if (ctxId === null) return store.allActive().filter(n => isTask(n) && !firstContextOf(n))
     const seen = new Set<string>()
     const out: Node[] = []

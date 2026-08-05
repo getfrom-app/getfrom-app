@@ -113,7 +113,9 @@ export default function NewEventModal({ onClose, parentId, defaultDateStr, onCre
       parentId: parent,
       due: dueISO,
     })
-    store.updateNode(node.id, { isEvent: true })
+    // `status: 'pending'` además de `isEvent`: un evento ES una tarea con día y hora
+    // (ver utils/taskNode.ts) — sin status no contaba como tarea en ningún sitio.
+    store.updateNode(node.id, { isEvent: true, status: 'pending' })
     if (hasTime && endDate) store.updateNode(node.id, { dueEnd: new Date(endDate).toISOString() })
     if (body) store.updateNode(node.id, { body })
     if (onCreated) onCreated(node.id)
