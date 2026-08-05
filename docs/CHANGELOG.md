@@ -4,6 +4,18 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.951 — 5 agosto 2026 · Claude guarda sin interrumpir, y los archivos se guardan como archivos
+
+Fromly deja de anunciarse en mitad de tus conversaciones con Claude y pasa a guardar de fondo.
+
+- **Guardado discreto**: Claude ya no abre hablando de Fromly ni pide permiso a cada paso. Guarda mientras responde y te lo resume en una línea al final del mensaje. Si en ese turno no había nada que guardar, no dice nada.
+- **Sin configuración manual**: las instrucciones se las da Fromly a Claude al conectar. Ya no hay que copiar ningún bloque en el perfil de Claude — si lo pegaste en su día, bórralo.
+- **Un PDF se guarda como PDF**: los archivos que adjuntes o que Claude genere se guardan enteros, con miniatura y descarga, no solo su descripción. Suben directos al almacenamiento, así que el tamaño ya no es un problema.
+- **Extensión para Claude Desktop**: nuevo instalador `fromly.mcpb`, descargable desde la web.
+- **Corregido cómo se conecta**: la app decía que bastaba con buscar "Fromly" en el directorio de conectores de Claude. No es así, y lo lamentamos. Se conecta pegando la URL del servidor en Claude → Ajustes → Conectores, o instalando la extensión. La extensión está en revisión para entrar en el directorio.
+
+---
+
 ## iOS v2.13.142 — 5 agosto 2026 · Un evento es una tarea con día y hora
 
 - Los eventos dejan de ser un tipo aparte: son tareas que tienen día y hora. Aparecen con el resto de tus tareas en la ficha de su contexto y en el buscador, y se pueden completar con su checkbox. El filtro "Evento" desaparece porque "Tarea" ya los incluye.
