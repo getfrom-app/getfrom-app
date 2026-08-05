@@ -1611,6 +1611,9 @@ Esta sección describe el estado completo de la aplicación Fromly tal como est�
 - **Spotlight macOS:** nodos indexados en el índice del sistema operativo.
 - **Brave Search API:** usada por los agentes para búsquedas web con fallback automático para URLs en IA inline.
 - **Cloudflare R2:** almacenamiento de archivos binarios adjuntos a nodos (presigned URLs, nunca pasan por Railway).
+- **Claude (MCP):** servidor MCP propio en `/mcp` con 15 herramientas. Se conecta como **conector personalizado** (pegando la URL en Claude → Ajustes → Conectores, con OAuth propio, sin copiar tokens) o instalando la extensión de escritorio `fromly.mcpb`. **Fromly NO está en el directorio de conectores de Claude** — buscarlo ahí no lo encuentra; el directorio de servidores remotos exige organización Team/Enterprise. La extensión de escritorio se envió a revisión el 5 ago 2026.
+  - El comportamiento (qué guarda y cuándo) lo entrega el servidor en el handshake (campo `instructions` del `initialize`), no el usuario pegando un bloque en su perfil de Claude. Es discreto por diseño: guarda de fondo y avisa en una línea al final del mensaje.
+  - Archivos: `from_create_upload_url` + `from_finalize_upload` suben PDFs e imágenes directamente a R2 con URL prefirmada, sin que los bytes pasen por la conversación (un PDF de 1 MB en base64 son ~350k tokens). `from_upload_file` sigue disponible para archivos pequeños.
 
 ---
 

@@ -1068,6 +1068,11 @@ Fromly ya funciona **100% sobre el registro de operaciones**, en todos los dispo
 
 ## Web v9.6.152 — 5 junio 2026 · Fromly disponible en el directorio oficial de conectores de Claude
 
+> **Corrección (5 agosto 2026):** esta entrada nunca fue cierta. El envío al directorio se
+> hizo, pero no llegó a aprobarse, y Fromly no aparece al buscarlo en Claude. La forma real
+> de conectarlo es como conector personalizado, pegando la URL del servidor. Se ha enviado
+> la extensión de escritorio al directorio y esta entrada se actualizará si se aprueba.
+
 Fromly ya está en el directorio oficial de conectores de Anthropic. Ahora puedes conectar Claude con tu vault desde cualquier dispositivo sin instalar nada ni copiar tokens.
 
 - **Directorio de Claude**: busca "Fromly" en Claude → Ajustes → Conectores, pulsa Conectar e inicia sesión con tu cuenta. Funciona en claude.ai, Claude Desktop, iPhone y Android.
