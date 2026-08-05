@@ -62,10 +62,10 @@ export default function PaywallModal({ reason, onClose }: Props) {
   let secondaryLabel = t('paywall.notNow')
 
   if (reason === 'node_limit') {
-    // Límite de nodos — siempre free
+    // Límite de elementos — siempre free
     icon          = 'layers'
     title         = 'Has alcanzado el límite del plan gratuito'
-    subtitle      = 'Con el plan gratuito puedes tener hasta 1.000 nodos. Suscríbete para tener nodos ilimitados y acceso completo a la IA.'
+    subtitle      = 'Con el plan gratuito puedes tener hasta 1.000 elementos. Suscríbete para tener elementos ilimitados y la IA de Fromly.'
     primaryLabel  = 'Ver planes'
     primaryAction = () => { onClose(); navigate('/pricing') }
 

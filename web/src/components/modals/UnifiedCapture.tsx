@@ -809,10 +809,10 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     const qLow = q.toLowerCase().trim()
     const cmdMatch = (kws: string[]) => qLow.length >= 2 && kws.some(kw => kw.startsWith(qLow) || qLow.startsWith(kw))
     if (cmdMatch(['colapsar', 'collapse', 'plegar', 'contraer'])) {
-      results.unshift({ id: 'wf-collapse-all', label: t('cmdpalette.collapseAll'), sublabel: currentNodeId ? 'Colapsa todos los hijos del nodo actual' : 'Colapsa todos los nodos raíz', type: 'wf-action', taskStatus: null, score: 200, action: () => { store.collapseAll(currentNodeId); onClose(); showToast('Todo colapsado', 'success') } })
+      results.unshift({ id: 'wf-collapse-all', label: t('cmdpalette.collapseAll'), sublabel: currentNodeId ? 'Colapsa todos los hijos del elemento actual' : 'Colapsa todos los elementos raíz', type: 'wf-action', taskStatus: null, score: 200, action: () => { store.collapseAll(currentNodeId); onClose(); showToast('Todo colapsado', 'success') } })
     }
     if (cmdMatch(['expandir', 'expand', 'desplegar'])) {
-      results.unshift({ id: 'wf-expand-all', label: t('cmdpalette.expandAll'), sublabel: currentNodeId ? 'Expande todos los hijos del nodo actual' : 'Expande todos los nodos raíz', type: 'wf-action', taskStatus: null, score: 200, action: () => { store.expandAll(currentNodeId); onClose(); showToast('Todo expandido', 'success') } })
+      results.unshift({ id: 'wf-expand-all', label: t('cmdpalette.expandAll'), sublabel: currentNodeId ? 'Expande todos los hijos del elemento actual' : 'Expande todos los elementos raíz', type: 'wf-action', taskStatus: null, score: 200, action: () => { store.expandAll(currentNodeId); onClose(); showToast('Todo expandido', 'success') } })
     }
 
     // Item "Crear" siempre al final cuando hay texto

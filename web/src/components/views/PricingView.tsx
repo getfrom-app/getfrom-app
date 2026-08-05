@@ -115,7 +115,7 @@ export default function PricingView() {
           <span className="pcard-name">Pro</span>
           <div className="pcard-hero pcard-hero--pro">
             <span className="pcard-hero-num">∞</span>
-            <span className="pcard-hero-label">{t('pricing.nodesUnlimited', 'nodos ilimitados')}</span>
+            <span className="pcard-hero-label">{t('pricing.nodesUnlimited', 'elementos ilimitados')}</span>
           </div>
           <p className="pcard-note">{t('pricing.proNodesNote', 'Sin límites, nunca')}</p>
           <ul className="pcard-feats">

@@ -41,9 +41,9 @@ const TRANSLATIONS = {
     "index.step1_title": "Empieza en tu plataforma",
     "index.step1_body":  "Entra desde el navegador en fromly.app/app, instala la app en Mac o descárgala en iPhone. Sin configuración compleja, sin iCloud obligatorio.",
     "index.step2_title": "Crea tu workspace",
-    "index.step2_body":  "Nombra tu primer workspace y empieza a añadir nodos. Fromly sincroniza automáticamente con todos tus dispositivos.",
+    "index.step2_body":  "Nombra tu primer contexto y empieza a añadir elementos. Fromly sincroniza automáticamente con todos tus dispositivos.",
     "index.step3_title": "Empieza a trabajar",
-    "index.step3_body":  "Crea nodos, organiza proyectos, programa tareas. La IA ya conoce tu contexto desde el minuto uno.",
+    "index.step3_body":  "Crea elementos, organiza proyectos, programa tareas. La IA ya conoce tu contexto desde el minuto uno.",
 
     "index.pricing_teaser_title": "Simple y justo",
     "index.pricing_teaser_body":  "Gratis para siempre hasta 1.000 elementos (notas, tareas, chats...). Pro desde €7/mes (o €49/año) con IA completa, elementos ilimitados y la opción de usar tu propia clave de Claude, GPT o Gemini. O paga una vez, €149, y ten todo Pro para siempre con Lifetime.",
@@ -197,9 +197,9 @@ const TRANSLATIONS = {
     "index.step1_title": "Start on your platform",
     "index.step1_body":  "Open the browser at fromly.app/app, install the app on Mac or download it on iPhone. No complex setup, no mandatory iCloud.",
     "index.step2_title": "Create your workspace",
-    "index.step2_body":  "Name your first workspace and start adding nodes. Fromly syncs automatically with all your devices.",
+    "index.step2_body":  "Name your first context and start adding elements. Fromly syncs automatically with all your devices.",
     "index.step3_title": "Start working",
-    "index.step3_body":  "Create nodes, organize projects, schedule tasks. AI already knows your context from minute one.",
+    "index.step3_body":  "Create elements, organize projects, schedule tasks. AI already knows your context from minute one.",
 
     "index.pricing_teaser_title": "Simple and fair",
     "index.pricing_teaser_body":  "Free forever up to 1,000 elements (notes, tasks, chats...). Pro from €7/month (or €49/year) with full AI, unlimited elements and the option to use your own Claude, GPT or Gemini key. Or pay once, €149, and get all of Pro forever with Lifetime.",

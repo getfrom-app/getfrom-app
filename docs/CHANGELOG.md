@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.952 — 5 agosto 2026 · Se acabaron los «nodos»
+
+- En toda la app, los correos y la web ya no se habla de «nodos»: son **elementos**, que es como se llaman en la app desde el rediseño.
+- El correo de bienvenida decía que el plan gratis incluye 5 chats de IA y 1 agente: ahora dice lo que de verdad ofrece — 1.000 elementos en Mac, iPhone y web — y te invita a Pro para la IA, adjuntar archivos y publicar notas.
+- Lo mismo en el correo de cancelación (9 idiomas), en las secuencias de bienvenida (8 idiomas), en los tips de Telegram y en los términos: mismo mensaje en todas partes.
+- El botón del correo de bienvenida deja de ser morado y usa el azul de Fromly, como el resto de correos.
+
+---
+
 ## Web v9.6.951 — 5 agosto 2026 · Claude guarda sin interrumpir, y los archivos se guardan como archivos
 
 Fromly deja de anunciarse en mitad de tus conversaciones con Claude y pasa a guardar de fondo.

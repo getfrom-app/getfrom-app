@@ -280,7 +280,7 @@ export default function WFHomeView({ filterText, contextFilterId }: Props) {
 
       {/* ── Filtro por contexto — raíces flotantes con breadcrumb (Workflowy-style) ── */}
       {contextMatchIds && matchCount === 0 && (
-        <div className="wf-filter-empty">Sin nodos con este contexto</div>
+        <div className="wf-filter-empty">Sin elementos con este contexto</div>
       )}
       {contextMatchIds && matchCount > 0 && (
         <FilteredList

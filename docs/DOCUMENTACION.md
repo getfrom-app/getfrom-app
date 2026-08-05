@@ -1,7 +1,26 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-05 (Web v9.6.949 · iOS v2.13 build 141)
+> Última actualización: 2026-08-05 (Web v9.6.952 · iOS v2.13 build 142)
+
+---
+
+## Sesión 2026-08-05 (sesión 6b) — «Nodo» es palabra interna: elemento de cara al usuario
+
+Web **v9.6.951 → v9.6.952**. Barrido de terminología y de lo que promete el plan gratis, a
+raíz del correo de bienvenida de una cuenta de prueba real ("sigue hablando de nodos").
+
+- **Regla nueva en `FROM.md`**: «nodo» solo existe en el código (`Node`, `nodeId`,
+  `from_create_node`, tabla `nodes`). De cara al usuario es **elemento** en todos los
+  idiomas.
+- Corregidos: correos transaccionales (9 idiomas), secuencias de nurturing (8 idiomas),
+  landing ES/EN, términos, tips de Telegram, `PaywallModal` y los strings es/en de la app
+  web, strings de iOS en 12 idiomas, y el manual.
+- **Plan gratis, mensaje único**: 1.000 elementos · Mac, iPhone y web · sin IA, sin
+  adjuntos y sin publicar notas. El servidor mantiene `FREE_CHAT_LIMIT` (5 chats/mes):
+  decisión explícita de prometer menos de lo que se da.
+- Pendiente: los strings de la app web en los otros 10 idiomas (declinaciones y género
+  hacen inseguro el reemplazo automático).
 
 ---
 

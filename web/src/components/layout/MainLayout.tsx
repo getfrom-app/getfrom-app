@@ -433,7 +433,7 @@ export default function MainLayout() {
     import('../../utils/gcalNodesSync').then(async ({ cleanupGcalMaterializedNodes }) => {
       const n = await cleanupGcalMaterializedNodes()
       localStorage.setItem('cleaned-gcal-materialized-v1', '1')
-      if (n > 0) window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${n} evento(s) de Google ya no son nodos locales (movidos a Papelera)`, type: 'info' } }))
+      if (n > 0) window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${n} evento(s) de Google ya no son elementos locales (movidos a Papelera)`, type: 'info' } }))
     })
   }, [s.nodesVersion])
   const magicHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)

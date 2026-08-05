@@ -168,7 +168,7 @@ export default function MoveNodeModal({ node, nodeIds, onClose }: Props) {
         </div>
         <div className="move-node-info">
           {nodeIds && nodeIds.length > 1
-            ? <>{t('modal.moving')} <strong>{nodeIds.length} nodos</strong></>
+            ? <>{t('modal.moving')} <strong>{nodeIds.length} elementos</strong></>
             : <>{t('modal.moving')} <strong>{node.text || t('common.noTitle')}</strong></>
           }
         </div>

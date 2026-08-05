@@ -577,7 +577,7 @@ Si tienes Google Calendar conectado, el Planificador crea y actualiza eventos au
 
 Los eventos que ya existen en Google viven solo en Google (no se copian como notas en Fromly): se
 muestran en el Planificador y en el timeline de Día con su color original, y al hacer clic en uno
-se abre su editor con un botón **"➕ Crear nodo en Fromly"** — solo se crea una nota si lo pulsas tú.
+se abre su editor con un botón **"➕ Crear elemento en Fromly"** — solo se crea una nota si lo pulsas tú.
 
 ---
 

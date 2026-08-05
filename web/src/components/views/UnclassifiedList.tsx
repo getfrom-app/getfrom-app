@@ -25,7 +25,7 @@ export default function UnclassifiedList({ onNavigate: _onNavigate }: Props) {
     <FilteredList
       matchIds={unclassifiedIds}
       label={t('autoCtx.unclassifiedFilter')}
-      emptyText={t('autoCtx.unclassifiedEmpty', 'Todos los nodos tienen contexto asignado')}
+      emptyText={t('autoCtx.unclassifiedEmpty', 'Todos los elementos tienen contexto asignado')}
       enableAutoClassify={true}
     />
   )
