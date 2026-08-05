@@ -1527,7 +1527,7 @@
   "account.gcalViewDocs": "Ver documentación →",
   "account.mcpConnectHint": "Conecta Claude con tu vault. Instala la extensión y genera tu token.",
   "account.mcpMoreInfo": "Más info →",
-  "account.mcpDownloadDxt": "↓ Descargar From.dxt",
+  "account.mcpDownloadDxt": "↓ Descargar para Claude Desktop",
   "account.mcpAccountPrefix": "Cuenta:",
   "account.mcpTokenStepLabel": "Token de API — pégalo en Claude Desktop al instalar la extensión",
   "account.mcpCopied": "✓ Copiado",
@@ -1536,12 +1536,6 @@
   "account.mcpRegenerate": "Regenerar token",
   "account.mcpGenerating": "Generando...",
   "account.mcpGenerateToken": "Generar token de API",
-  "account.mcpStep2Title": "Activa el guardado automático",
-  "account.mcpStep2TextBefore": "Copia el siguiente bloque y pégalo en",
-  "account.mcpStep2Path": "Claude Desktop → Ajustes → Perfil → Instrucciones personalizadas",
-  "account.mcpStep2TextAfter": "Hazlo una vez y Claude guardará tus conversaciones en Fromly automáticamente.",
-  "account.mcpInstructionsCopied": "✓ Copiado — pégalo en Claude Desktop → Ajustes → Perfil",
-  "account.mcpCopyInstructions": "Copiar instrucciones",
   "magicChat.itemSingular": "elemento",
   "magicChat.itemPlural": "elementos",
   "magicChat.audioLabel": "Audio",
@@ -2375,5 +2369,9 @@
   "ai.modelAuto": "Automático (recomendado)",
   "ai.modelErrorSaving": "No se pudo guardar el modelo",
   "ai.ownKeyBillingHint": "Con tu propia clave, las peticiones van directas a tu proveedor y no consumen tokens de Fromly.",
-  "ai.deepseekWarning": "DeepSeek procesa las peticiones en servidores en China. El contenido de tus notas saldría de la UE. Fromly nunca usa DeepSeek por su cuenta: solo si pegas tu propia clave aquí."
+  "ai.deepseekWarning": "DeepSeek procesa las peticiones en servidores en China. El contenido de tus notas saldría de la UE. Fromly nunca usa DeepSeek por su cuenta: solo si pegas tu propia clave aquí.",
+  "account.mcpAutoTitle": "Guardado automático, ya activado",
+  "account.mcpAutoText": "Fromly le entrega sus instrucciones a Claude al conectarse: guarda de fondo y te lo resume en una línea al final. Si en su día pegaste el bloque antiguo en",
+  "account.mcpAutoLegacyPath": "Claude → Ajustes → Perfil → Instrucciones personalizadas",
+  "account.mcpAutoLegacyAfter": ", bórralo: duplica el comportamiento y hace que Claude hable de Fromly nada más empezar."
 }

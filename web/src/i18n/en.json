@@ -1527,7 +1527,7 @@
   "account.gcalViewDocs": "View documentation →",
   "account.mcpConnectHint": "Connect Claude with your vault. Install the extension and generate your token.",
   "account.mcpMoreInfo": "More info →",
-  "account.mcpDownloadDxt": "↓ Download From.dxt",
+  "account.mcpDownloadDxt": "↓ Download for Claude Desktop",
   "account.mcpAccountPrefix": "Account:",
   "account.mcpTokenStepLabel": "API token — paste it into Claude Desktop when installing the extension",
   "account.mcpCopied": "✓ Copied",
@@ -1536,12 +1536,6 @@
   "account.mcpRegenerate": "Regenerate token",
   "account.mcpGenerating": "Generating...",
   "account.mcpGenerateToken": "Generate API token",
-  "account.mcpStep2Title": "Enable automatic saving",
-  "account.mcpStep2TextBefore": "Copy the following block and paste it into",
-  "account.mcpStep2Path": "Claude Desktop → Settings → Profile → Custom instructions",
-  "account.mcpStep2TextAfter": "Do it once and Claude will save your conversations to Fromly automatically.",
-  "account.mcpInstructionsCopied": "✓ Copied — paste it into Claude Desktop → Settings → Profile",
-  "account.mcpCopyInstructions": "Copy instructions",
   "magicChat.itemSingular": "item",
   "magicChat.itemPlural": "items",
   "magicChat.audioLabel": "Audio",
@@ -2374,5 +2368,9 @@
   "ai.modelAuto": "Automatic (recommended)",
   "ai.modelErrorSaving": "Could not save the model",
   "ai.ownKeyBillingHint": "With your own key, requests go straight to your provider and don't use Fromly tokens.",
-  "ai.deepseekWarning": "DeepSeek processes requests on servers in China. Your note content would leave the EU. Fromly never uses DeepSeek on its own: only if you paste your own key here."
+  "ai.deepseekWarning": "DeepSeek processes requests on servers in China. Your note content would leave the EU. Fromly never uses DeepSeek on its own: only if you paste your own key here.",
+  "account.mcpAutoTitle": "Automatic saving, already on",
+  "account.mcpAutoText": "Fromly hands Claude its instructions when it connects: it saves in the background and sums it up in one line at the end. If you once pasted the old block into",
+  "account.mcpAutoLegacyPath": "Claude → Settings → Profile → Custom instructions",
+  "account.mcpAutoLegacyAfter": ", delete it: it duplicates the behaviour and makes Claude bring up Fromly right at the start."
 }

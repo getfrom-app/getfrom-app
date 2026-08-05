@@ -4,12 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## iOS v2.13.141 — 5 agosto 2026 · Un evento es una tarea con día y hora
+## iOS v2.13.142 — 5 agosto 2026 · Un evento es una tarea con día y hora
 
 - Los eventos dejan de ser un tipo aparte: son tareas que tienen día y hora. Aparecen con el resto de tus tareas en la ficha de su contexto y en el buscador, y se pueden completar con su checkbox. El filtro "Evento" desaparece porque "Tarea" ya los incluye.
 - Corregido de raíz: una tarea recurrente que marcabas como hecha no volvía a aparecer nunca. Ahora, al completarla, se crea la siguiente instancia en el día que le toca — igual que en la web.
 - El planificador ya no pinta dos veces el mismo evento cuando lo has creado en Fromly y está sincronizado con Google Calendar.
 - Ajustes → IA: puedes añadir tu clave de DeepSeek (con el aviso de que sus servidores están en China) y elegir qué modelo usar cuando tienes clave propia.
+- Las tareas se leen enteras: el título ocupa su propia línea (hasta dos) y la fecha, el día y el contexto bajan a la línea de abajo. Antes el título se cortaba con "…" en cuanto la tarea tenía contexto.
+- El aviso de plan gratis pasa a ser una banda fina con márgenes: antes su fondo se extendía por detrás de la barra de navegación y se comía media pantalla.
 
 ---
 

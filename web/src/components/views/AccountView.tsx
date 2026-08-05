@@ -96,33 +96,8 @@ export default function AccountView() {
   // Claude API token (MCP)
   const [mcpToken, setMcpToken] = useState<string | null>(null)
   const [mcpCopied, setMcpCopied] = useState(false)
-  const [mcpPromptCopied, setMcpPromptCopied] = useState(false)
   const [generatingMcp, setGeneratingMcp] = useState(false)
   const [mcpLoaded, setMcpLoaded] = useState(false)
-
-  const CLAUDE_CUSTOM_INSTRUCTIONS = `Tienes acceso a Fromly, mi segundo cerebro, vía MCP. Úsalo de forma proactiva y automática.
-
-ARQUITECTURA DE FROM (crítico):
-Fromly es un árbol de nodos. No existe body. Todo el contenido son nodos hijos.
-HEADINGS Y BULLETS AL MISMO NIVEL — nunca anidar bullets bajo un heading.
-Correcto: [{heading:2,text:"Sección"},{text:"bullet 1"},{text:"bullet 2"},{heading:2,text:"Otra sección"}]
-Incorrecto: [{heading:2,text:"Sección",children:[{text:"bullet 1"}]}]
-
-INICIO DE CONVERSACIÓN:
-- Si menciono un área (La Isla, inversión, piloto, coding, Fromly...), llama a from_get_context("nombre-kebab").
-- Llama a from_get_today_note() y guarda el ID.
-- Busca sesión existente: from_search("Sesión " + fecha). Si existe, guarda su ID y transcriptId.
-
-DURANTE LA CONVERSACIÓN (automático):
-- Análisis o documento → from_create_tree con lista FLAT de headings y bullets + transcript.
-- Tarea → from_create_node(isTask:true, parentId=ID_DIARIO).
-- No pidas permiso. Confírmame en una línea qué guardaste.
-
-AL TERMINAR ("fin"):
-- PRIMERA VEZ: from_create_tree(text="Sesión FECHA — TEMA", parentId=ID_DIARIO, children=[{heading:2,text:"Resumen"},{text:"punto 1"},{text:"punto 2"},{heading:2,text:"Decisiones"},{text:"..."}], transcript="conversación íntegra").
-- CONTINUACIÓN: from_update_session(sessionId=ID_SESION, transcriptId=ID_TRANSCRIPCION, appendTranscript="texto nuevo", newChildren=[{heading:2,text:"Actualización FECHA"},{text:"..."}]).
-- Si hay info nueva del área → from_update_context(contexto, info).
-- Confirma: "Guardado en Fromly (cuenta: X) — [título sesión]".`
 
   useEffect(() => {
     userStore.fetchMe()
@@ -350,12 +325,6 @@ AL TERMINAR ("fin"):
     navigator.clipboard.writeText(mcpToken).catch(() => {})
     setMcpCopied(true)
     setTimeout(() => setMcpCopied(false), 2000)
-  }
-
-  function copyClaudePrompt() {
-    navigator.clipboard.writeText(CLAUDE_CUSTOM_INSTRUCTIONS).catch(() => {})
-    setMcpPromptCopied(true)
-    setTimeout(() => setMcpPromptCopied(false), 3000)
   }
 
   const { user } = us
@@ -937,7 +906,7 @@ AL TERMINAR ("fin"):
                   </div>
                 </div>
                 <a
-                  href="https://fromly.app/From.dxt"
+                  href="https://fromly.app/fromly.mcpb"
                   download
                   className="btn-secondary"
                   style={{ flexShrink: 0, fontSize: 12, padding: '6px 12px' }}
@@ -977,28 +946,21 @@ AL TERMINAR ("fin"):
                 )}
               </div>
 
-              {/* Paso 2: Custom Instructions — solo si hay token */}
+              {/* Antes había aquí un paso 2 con un bloque de instrucciones para pegar a mano en
+                  el perfil de Claude. Ya no hace falta: el servidor las entrega en el handshake
+                  (campo `instructions` del initialize), así que llegan siempre actualizadas y solo
+                  afectan a las conversaciones donde Fromly está conectado. Quien pegara el bloque
+                  antiguo tiene que borrarlo — de ahí el aviso. */}
               {mcpToken && (
                 <div style={{ width: '100%', background: 'rgba(62,92,118,0.06)', border: '1px solid rgba(62,92,118,0.2)', borderRadius: 10, padding: '14px 16px' }}>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span style={{ background: 'var(--accent)', color: 'white', borderRadius: '50%', width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, flexShrink: 0 }}>2</span>
-                    {t('account.mcpStep2Title')}
+                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)', marginBottom: 6 }}>
+                    {t('account.mcpAutoTitle')}
                   </div>
-                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55, margin: '0 0 10px' }}>
-                    {t('account.mcpStep2TextBefore')} <strong style={{ color: 'var(--text)' }}>{t('account.mcpStep2Path')}</strong>. {t('account.mcpStep2TextAfter')}
+                  <p style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.55, margin: 0 }}>
+                    {t('account.mcpAutoText')}{' '}
+                    <strong style={{ color: 'var(--text)' }}>{t('account.mcpAutoLegacyPath')}</strong>
+                    {t('account.mcpAutoLegacyAfter')}
                   </p>
-                  <div style={{ position: 'relative' }}>
-                    <pre style={{ margin: 0, padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11, lineHeight: 1.6, color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-word', maxHeight: 120, overflow: 'hidden', maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)' }}>
-                      {CLAUDE_CUSTOM_INSTRUCTIONS}
-                    </pre>
-                    <button
-                      onClick={copyClaudePrompt}
-                      className="btn-primary"
-                      style={{ marginTop: 8, fontSize: 13, width: '100%', justifyContent: 'center' }}
-                    >
-                      {mcpPromptCopied ? t('account.mcpInstructionsCopied') : t('account.mcpCopyInstructions')}
-                    </button>
-                  </div>
                 </div>
               )}
 
