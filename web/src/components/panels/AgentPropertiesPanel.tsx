@@ -16,6 +16,7 @@ import { userStore } from '../../store/userStore'
 import { firstContextOf } from '../../utils/cajones'
 import { markdownToHtml } from '../../utils/importMarkdown'
 import AgentScheduleModal from '../modals/AgentScheduleModal'
+import Icon from '../../v2/components/Icon'
 
 /** Etiqueta legible de un schedule "daily:HH:MM" / "weekly:D:HH:MM", para el botón. */
 function scheduleButtonLabel(schedule: string, expiresAt: string, isEn: boolean): string {
@@ -143,7 +144,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
         const parentId = ctx ? ctx.id : getTodayDiaryUnderAgenda().id
         const session = store.createNode({ text: `✦ ${node!.text}`, parentId, extraData: { _aiSession: '1', _originAgentId: nodeId } })
         store.updateNode(session.id, { isCollapsed: true, isChat: true })
-        const transcript = store.createNode({ text: '💬 Conversación', parentId: session.id, extraData: { _aiTranscript: '1' } })
+        const transcript = store.createNode({ text: 'Conversación', parentId: session.id, extraData: { _aiTranscript: '1' } })
         store.updateNode(transcript.id, { isCollapsed: true })
         store.createNode({ text: `Magic: ${userMessage}`, parentId: transcript.id, extraData: { _aiMsgRole: 'assistant', _aiMsgContent: userMessage } })
         try {
@@ -288,7 +289,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
             onClick={() => setScheduleModalOpen(true)}
             style={{ width: '100%', textAlign: 'left', fontSize: 12.5, padding: '8px 9px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontFamily: 'inherit', cursor: 'pointer' }}
           >
-            📅 {scheduleButtonLabel(data.schedule, data.scheduleExpiresAt, isEn)}
+            <Icon name="clock" size={13} /> {scheduleButtonLabel(data.schedule, data.scheduleExpiresAt, isEn)}
           </button>
           {nextRun && (
             <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 8 }}>

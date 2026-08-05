@@ -42,6 +42,7 @@ import ContextPicker from '../panels/ContextPicker'
 import { ParagraphId, dedupePids } from '../../utils/tiptapParagraphId'
 import { CiteDecorations, citeDecoKey } from '../../utils/tiptapCiteDecorations'
 import { TabIndent } from '../../utils/tiptapTabIndent'
+import Icon from '../../v2/components/Icon'
 
 // ¿El texto pegado parece MARKDOWN? (encabezados, listas, code fence, cita, enlaces,
 // negritas). Basta un marcador claro para tratarlo como markdown y renderizarlo.
@@ -749,7 +750,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     // su columna/agenda. El sync es idempotente, así que adelantar la llamada es seguro.
     syncTasksToNodes()
     const dl = pred.date?.parsed?.label
-    const msg = dl ? `☐ ${t('outliner.taskLower', 'tarea')} · 📅 ${dl}${pred.date?.timeStr ? ` ${pred.date.timeStr}` : ''}` : `☐ ${t('outliner.taskLower', 'tarea')}`
+    const msg = dl ? `${t('outliner.taskLower', 'tarea')} · ${dl}${pred.date?.timeStr ? ` ${pred.date.timeStr}` : ''}` : t('outliner.taskLower', 'tarea')
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: msg, type: 'success' } }))
   }
 
@@ -966,12 +967,12 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
                 <button className="ft-btn" title="Tachado" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleStrike().run() }}><s style={{ fontSize: 13 }}>S</s></button>
                 <div className="ft-sep" />
                 <button className="ft-btn" title="Código" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleCode().run() }}><span style={{ fontFamily: 'monospace', fontSize: 10 }}>{'<>'}</span></button>
-                <button className="ft-btn" title="Enlace" onMouseDown={e => { e.preventDefault(); const prev = editor.getAttributes('link').href; const url = window.prompt('URL', prev || 'https://'); if (url === null) return; if (url === '') editor.chain().focus().unsetLink().run(); else editor.chain().focus().setLink({ href: url }).run() }}><span style={{ fontSize: 12 }}>🔗</span></button>
+                <button className="ft-btn" title="Enlace" onMouseDown={e => { e.preventDefault(); const prev = editor.getAttributes('link').href; const url = window.prompt('URL', prev || 'https://'); if (url === null) return; if (url === '') editor.chain().focus().unsetLink().run(); else editor.chain().focus().setLink({ href: url }).run() }}><Icon name="link" size={13} /></button>
                 <div className="ft-sep" />
-                <button className="ft-btn" title="Tarea (casilla)" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleTaskList().run() }}><span style={{ fontSize: 12 }}>☑</span></button>
+                <button className="ft-btn" title="Tarea (casilla)" onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleTaskList().run() }}><Icon name="task" size={13} /></button>
                 <button className="ft-btn" title="Color" onMouseDown={e => { e.preventDefault(); setShowColors(true) }}><span style={{ fontWeight: 700, fontSize: 13, borderBottom: '2.5px solid #ef4444', lineHeight: 1 }}>A</span></button>
                 <div className="ft-sep" />
-                <button className="ft-btn" title={t('v2.createDocFromSelection', 'Crear documento con esta selección')} onMouseDown={e => { e.preventDefault(); createDocFromSelection() }}><span style={{ fontSize: 12 }}>📄</span></button>
+                <button className="ft-btn" title={t('v2.createDocFromSelection', 'Crear documento con esta selección')} onMouseDown={e => { e.preventDefault(); createDocFromSelection() }}><Icon name="document" size={13} /></button>
               </>
             ) : (
               <div className="ft-color-panel">

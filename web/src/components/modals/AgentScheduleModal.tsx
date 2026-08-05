@@ -6,6 +6,7 @@
 import { createPortal } from 'react-dom'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import Icon from '../../v2/components/Icon'
 
 type Freq = 'none' | 'daily' | 'weekly'
 
@@ -55,7 +56,7 @@ export default function AgentScheduleModal({ schedule, expiresAt, onClose, onSav
     <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <span className="modal-icon">📅</span>
+          <span className="modal-icon"><Icon name="clock" size={18} /></span>
           <h2>{t('agents.scheduleTitle', 'Programación')}</h2>
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>

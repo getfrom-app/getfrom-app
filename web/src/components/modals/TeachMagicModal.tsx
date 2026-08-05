@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { useRecordingStore } from '../../store/recordingStore'
 import { teachMagic, applyTeachResult } from '../../api/teachMagic'
+import Icon from '../../v2/components/Icon'
 
 interface Props {
   nodeId: string
@@ -117,7 +118,7 @@ export default function TeachMagicModal({ nodeId, onClose }: Props) {
                 border: isRecording ? 'none' : '1px solid var(--border)',
                 animation: isRecording ? 'pulse 1.2s ease-in-out infinite' : 'none',
               }}
-            >{isRecording ? '⏹' : '🎤'}</button>
+            ><Icon name={isRecording ? 'stop' : 'mic'} size={14} /></button>
           )}
         </div>
 

@@ -32,6 +32,7 @@ import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, buildClassifyContexts, CONFIDENCE_THRESHOLD, type ClassifyResult } from '../../api/autoClassify'
 import { saveUserKnowledgeToProfile } from '../../api/userKnowledge'
+import Icon from '../../v2/components/Icon'
 
 // Deduplicación de extracción de conocimiento entre desmonte/remonte del componente.
 // Set a nivel de módulo: persiste mientras el JS bundle esté cargado (toda la sesión).
@@ -2130,7 +2131,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       if (contentRef.current) contentRef.current.textContent = cleanText
       const d = new Date(due)
       const label = d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' })
-      setDateAssignedMsg(`📅 ${label}`)
+      setDateAssignedMsg(label)
       setTimeout(() => setDateAssignedMsg(null), 1500)
       return true
     }
@@ -2609,7 +2610,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // Sync a GCal si hay hora (falla silenciosamente si GCal no está conectado)
     if (timeStr) scheduleGCalSync()
     const label = parsed.label + (timeStr ? ` · ${timeStr}` : '')
-    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 Fecha: ${label}`, type: 'success' } }))
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `Fecha: ${label}`, type: 'success' } }))
   }
 
   function acceptCtxCompletion() {
@@ -3012,19 +3013,19 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     if (action === 'move-today') {
       const today = new Date(); today.setHours(0,0,0,0)
       store.updateNode(node.id, { due: today.toISOString(), status: node.status ?? 'pending' })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 ${t('outliner.dateToast', { date: t('outliner.dateToday') })}`, type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${t('outliner.dateToast', { date: t('outliner.dateToday') })}`, type: 'success' } }))
       return
     } else if (action === 'move-tomorrow') {
       const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0)
       store.updateNode(node.id, { due: d.toISOString(), status: node.status ?? 'pending' })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 ${t('outliner.dateToast', { date: t('outliner.dateTomorrow') })}`, type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${t('outliner.dateToast', { date: t('outliner.dateTomorrow') })}`, type: 'success' } }))
       return
     } else if (action === 'move-next-week') {
       const d = new Date()
       const dow = d.getDay()
       d.setDate(d.getDate() + (dow === 0 ? 1 : 8 - dow)); d.setHours(0,0,0,0)
       store.updateNode(node.id, { due: d.toISOString(), status: node.status ?? 'pending' })
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 ${t('outliner.dateToast', { date: t('outliner.dateNextWeek') })}`, type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${t('outliner.dateToast', { date: t('outliner.dateNextWeek') })}`, type: 'success' } }))
       return
     } else if (action === 'move-to' && payload.moveToDate) {
       const d = new Date(payload.moveToDate); d.setHours(0,0,0,0)
@@ -3032,7 +3033,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const updates: Record<string, unknown> = { due: d.toISOString(), status: node.status ?? 'pending' }
       if (payload.moveToRecurrence) updates.recurrence = recurrenceToString(payload.moveToRecurrence)
       store.updateNode(node.id, updates)
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `📅 ${t('outliner.dateToast', { date: label })}`, type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${t('outliner.dateToast', { date: label })}`, type: 'success' } }))
       return
     } else if (action === 'expand-all') {
       const getAllDescEx = (id: string): string[] => {
@@ -3544,7 +3545,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 aria-label={t('aria.openImage')}
                 title={t('tip.openImage')}
               >
-                <span style={{ fontSize: 12 }}>🖼</span>
+                <Icon name="image" size={13} />
               </button>
             ) : node.isResource ? (
               // Archivo genérico: icono adjunto, click abre el nodo
@@ -3554,7 +3555,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 tabIndex={-1}
                 title={t('tip.openFile')}
               >
-                <span style={{ fontSize: 12 }}>📎</span>
+                <Icon name="attachment" size={13} />
               </button>
             ) : isNota ? (
               // Nota hija: icono de página, click navega
@@ -3565,7 +3566,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 aria-label={t('aria.openNote')}
                 title={t('tip.openThisNote')}
               >
-                <span style={{ fontSize: 12 }}>📄</span>
+                <Icon name="note" size={13} />
               </button>
             ) : isBullet ? (
               // Lista: nav-dot igual que texto normal (visible/invisible según hijos)
@@ -3981,7 +3982,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   title={t('outliner.recBadgeTitle', { rec: txt })}
                   onContextMenu={removeRecurrence}
                 >
-                  🔁 {txt}
+                  <Icon name="repeat" size={11} /> {txt}
                   <button
                     className="node-badge-remove"
                     onClick={removeRecurrence}
@@ -4025,7 +4026,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   tabIndex={-1}
                   title={t('tip.eventProperties')}
                 >
-                  {evtBadgeLabel ? `📅 ${evtBadgeLabel}` : 'sin fecha'}
+                  {evtBadgeLabel ? <><Icon name="calendar" size={11} /> {evtBadgeLabel}</> : 'sin fecha'}
                 </button>
                 {showEventProp && createPortal(
                   <div
@@ -4325,7 +4326,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
             {whiteboardPrediction && isEditing && !ctxCompletion && (
               <span className="from-ghost" style={{ color: '#3182ce' }}>
-                <span className="from-ghost-text">🖊 pizarra</span>
+                <span className="from-ghost-text"><Icon name="canvas" size={11} /> pizarra</span>
                 <span className="from-ghost-sep">·</span>
                 <span className="from-ghost-key">↵</span>
               </span>
@@ -4449,7 +4450,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                 onMouseDown={e => { e.preventDefault(); applyPickerSelection(item) }}
               >
                 <span className="inline-picker-icon">
-                  {item.group === 'context' ? '@' : item.isNote ? '📄' : '¶'}
+                  {item.group === 'context' ? '@' : item.isNote ? <Icon name="note" size={12} /> : '¶'}
                 </span>
                 <span className="inline-picker-content">
                   <span className="inline-picker-label">{item.label}</span>

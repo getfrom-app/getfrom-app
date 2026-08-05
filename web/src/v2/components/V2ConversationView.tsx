@@ -18,6 +18,7 @@ import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
 import { fmtDate } from '../../utils/formatDate'
 import type { Node } from '../../types'
+import Icon, { type IconName } from './Icon'
 
 interface Props {
   sessionId: string
@@ -46,7 +47,7 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
 
   // Elementos incluidos en la conversación (documentos, notas, PDF, imágenes, audios, enlaces).
   const elements = useMemo(() => {
-    const out: { node: Node; icon: string; kind: string }[] = []
+    const out: { node: Node; icon: IconName; kind: string }[] = []
     for (const n of store.children(sessionId)) {
       const c = classifyElement(n)
       if (c) out.push({ node: n, icon: c.icon, kind: c.kind })
@@ -130,7 +131,7 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
                   ? <img className="v2-thumb-img" src={url} alt={n.text || ''} />
                   : (url || key)
                     ? <div className="v2-thumb-pdf"><PdfCanvasPreview url={url} resourceKey={key} width={220} /></div>
-                    : <div className="v2-thumb-icon">📄</div>}
+                    : <div className="v2-thumb-icon"><Icon name="pdf" size={22} /></div>}
                 <div className="v2-thumb-name">{n.text || t('v2.file', 'Archivo')}</div>
               </div>
             )
@@ -146,7 +147,7 @@ export default function V2ConversationView({ sessionId, onOpenNode, onSelectCtx 
       {/* Notas — EL MISMO editor completo que cualquier nota (toggle Nota/Lienzo, favorito,
           exportar, publicar…) para esta conversación, al final de todo. */}
       <div style={{ marginTop: 22, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('v2.context.notes', 'Notas')}</div>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('v2.context.notes', 'Notas')}</div>
         {/* Espacio de anotación libre de ESTA conversación, no una nota independiente
             — sin cabecera de acciones propia (favorito/exportar/eliminar), igual que
             «Lo que Fromly sabe» en la ficha del contexto (Alberto, 15 jul). */}

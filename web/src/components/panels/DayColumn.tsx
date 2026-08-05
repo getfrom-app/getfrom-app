@@ -30,6 +30,7 @@ import { firstContextOf, contextColor } from '../../utils/cajones'
 import { TaskPropsPopover, GCalEventEditor } from './DiaryPanelComponents'
 import NewEventModal from '../modals/NewEventModal'
 import NewTaskModal from '../modals/NewTaskModal'
+import Icon from '../../v2/components/Icon'
 
 // Icono de papelera (botón de eliminar al hover en cualquier fila de la columna).
 const TrashIcon = (
@@ -316,7 +317,7 @@ export default function DayColumn({
           onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: task.id, x: e.clientX, y: e.clientY } })) }}>
           <button className={`dc-check ${done ? 'dc-check--done' : ''}`}
             onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
-            title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
+            title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
           <div className="dc-row-main">
             <div className="dc-row-l1">
               <span className="dc-text dc-text--wrap" onClick={() => openNodeDetail(task.id)} style={{ cursor: 'pointer' }}>
@@ -332,7 +333,7 @@ export default function DayColumn({
                   no hay otro sitio donde clicar para abrir el popover. */}
               <button className="dc-due dc-due--empty" style={{ cursor: 'pointer' }}
                 title={t('dailyCockpit.editDateRecurrence')}
-                onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === task.id ? null : task.id) }}>📅</button>
+                onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === task.id ? null : task.id) }}><Icon name="calendar" size={13} /></button>
               <TaskHoverActions node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
               <RowContextChip node={task} />
             </div>
@@ -347,7 +348,7 @@ export default function DayColumn({
         onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: task.id, x: e.clientX, y: e.clientY } })) }}>
         <button className={`dc-check ${done ? 'dc-check--done' : ''}`}
           onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
-          title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
+          title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
         {/* Clicable: mismo fin que el badge de fecha de TaskRow — antes solo se podía
             editar fecha/recurrencia vía el botón de calendario de TaskHoverActions,
             quitado el 5 ago 2026. */}
@@ -419,7 +420,7 @@ export default function DayColumn({
                 </span>
               </div>
               <div className="dc-row-l2">
-                {rec && <span className="dc-rec" title={rec}>🔁 {rec}</span>}
+                {rec && <span className="dc-rec" title={rec}><Icon name="repeat" size={12} /> {rec}</span>}
                 <span style={{ flex: 1 }} />
                 {actions}
                 <RowContextChip node={ev} />
@@ -441,7 +442,7 @@ export default function DayColumn({
             onClick={e => { e.stopPropagation(); setEditEv(id => id === ev.id ? null : ev.id) }}
             title={t('tip.editTimeAndRepeat')}
           >
-            {timeStr}{rec && <span className="dc-ev-rec">🔁 {rec}</span>}
+            {timeStr}{rec && <span className="dc-ev-rec"><Icon name="repeat" size={11} /> {rec}</span>}
           </button>
           <span className="dc-text" onClick={() => openNodeDetail(ev.id)} style={{ cursor: 'pointer' }}>
             {ev.text ? renderInline(ev.text) : t('search.chipEvent')}

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import Icon from '../../v2/components/Icon'
 
 interface Props { parentId: string }
 
@@ -265,7 +266,7 @@ export default function NodeKanbanView({ parentId }: Props) {
                     <span className="node-kanban-card-title">{node.text || t('common.noTitle')}</span>
                     {node.due && (
                       <span className="node-kanban-card-due">
-                        📅 {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                        <Icon name="calendar" size={11} /> {new Date(node.due).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                       </span>
                     )}
                     {(node.types || []).filter(t => !NODE_BUILTIN_TYPES.has(t)).map(t => (

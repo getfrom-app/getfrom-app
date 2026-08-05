@@ -11,6 +11,7 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useActiveDocEditor, getDocImageInsert } from '../../utils/docEditorStore'
+import Icon from '../../v2/components/Icon'
 
 const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5', '#868e96']
 
@@ -67,10 +68,10 @@ export default function DocInspector({ compact, bar }: { compact?: boolean; bar?
             <button className="ft-btn" title={t('tip.orderedList')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleOrderedList().run() }}><span style={{ fontSize: 11 }}>1.</span></button>
             <button className="ft-btn" title={t('format.quote')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleBlockquote().run() }}><span style={{ fontSize: 13 }}>❝</span></button>
             <button className="ft-btn" title={t('tip.codeBlock')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleCodeBlock().run() }}><span style={{ fontFamily: 'monospace', fontSize: 10 }}>{'<>'}</span></button>
-            <button className="ft-btn" title={t('tip.newTask')} onMouseDown={e => { e.preventDefault(); insertTask() }}><span style={{ fontSize: 13 }}>☑</span></button>
+            <button className="ft-btn" title={t('tip.newTask')} onMouseDown={e => { e.preventDefault(); insertTask() }}><Icon name="task" size={13} /></button>
             <div className="ft-sep" />
-            <button className="ft-btn" title={t('format.link')} onMouseDown={e => { e.preventDefault(); setLink() }}><span style={{ fontSize: 12 }}>🔗</span></button>
-            <button className="ft-btn" title={t('tip.image')} onMouseDown={e => { e.preventDefault(); fileRef.current?.click() }}><span style={{ fontSize: 12 }}>🖼</span></button>
+            <button className="ft-btn" title={t('format.link')} onMouseDown={e => { e.preventDefault(); setLink() }}><Icon name="link" size={13} /></button>
+            <button className="ft-btn" title={t('tip.image')} onMouseDown={e => { e.preventDefault(); fileRef.current?.click() }}><Icon name="image" size={13} /></button>
             <button className="ft-btn" title={t('tip.color')} onMouseDown={e => { e.preventDefault(); setBarMode('colors') }}><span style={{ fontWeight: 700, fontSize: 13, borderBottom: '2.5px solid #ef4444', lineHeight: 1 }}>A</span></button>
             <div className="ft-sep" />
             <button className="ft-btn" title={t('tip.undo')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().undo().run() }}><span style={{ fontSize: 13 }}>↶</span></button>
@@ -170,13 +171,13 @@ export default function DocInspector({ compact, bar }: { compact?: boolean; bar?
         <Cell title={t('tip.orderedList')} on={editor.isActive('orderedList')} act={() => editor.chain().focus().toggleOrderedList().run()}>1.</Cell>
         <Cell title={t('format.quote')} on={editor.isActive('blockquote')} act={() => editor.chain().focus().toggleBlockquote().run()}>❝</Cell>
         <Cell title={t('tip.codeBlock')} on={editor.isActive('codeBlock')} act={() => editor.chain().focus().toggleCodeBlock().run()}>{'</>'}</Cell>
-        <Cell title={t('tip.newTask')} act={insertTask} wide>☑ {t('tip.newTask')}</Cell>
+        <Cell title={t('tip.newTask')} act={insertTask} wide><Icon name="task" size={13} /> {t('tip.newTask')}</Cell>
       </div>
 
       <Label>{t('tip.insert')}</Label>
       <div style={grid}>
-        <Cell title={t('format.link')} on={editor.isActive('link')} act={setLink} wide>🔗 {t('format.link')}</Cell>
-        <Cell title={t('tip.image')} act={() => fileRef.current?.click()} wide>🖼 {t('tip.image')}</Cell>
+        <Cell title={t('format.link')} on={editor.isActive('link')} act={setLink} wide><Icon name="link" size={13} /> {t('format.link')}</Cell>
+        <Cell title={t('tip.image')} act={() => fileRef.current?.click()} wide><Icon name="image" size={13} /> {t('tip.image')}</Cell>
       </div>
 
       <Label>{t('tip.editing')}</Label>

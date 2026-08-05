@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
+import Icon from '../../v2/components/Icon'
 
 interface Props { parentId: string }
 
@@ -180,7 +181,7 @@ function ReminderEditor({ existing, colName, onSave, onClear, onClose }: {
       </div>
 
       <div className="reminder-editor-actions">
-        {existing && <button className="reminder-editor-clear" onClick={onClear}>🗑 {t('common.delete')}</button>}
+        {existing && <button className="reminder-editor-clear" onClick={onClear}><Icon name="trash" size={13} /> {t('common.delete')}</button>}
         <button className="reminder-editor-cancel" onClick={onClose}>{t('common.cancel')}</button>
         <button className="reminder-editor-save" onClick={commit} disabled={!date}>{t('common.save')}</button>
       </div>
@@ -964,7 +965,7 @@ export default function NodeTableView({ parentId }: Props) {
                 </button>
               ))}
               <div className="node-ctx-sep" />
-              <button className="node-ctx-item node-ctx-item--danger" onClick={() => handleDeleteCol(col.id)}>🗑 {t('table.deleteColumn')}</button>
+              <button className="node-ctx-item node-ctx-item--danger" onClick={() => handleDeleteCol(col.id)}><Icon name="trash" size={13} /> {t('table.deleteColumn')}</button>
             </div>
           </>
         ), document.body)
@@ -980,7 +981,7 @@ export default function NodeTableView({ parentId }: Props) {
             <button className="node-ctx-item" onClick={() => { navigate(`/node/${rowMenu.id}`); setRowMenu(null) }}>↗ {t('context.openNote')}</button>
             <button className="node-ctx-item" onClick={() => duplicateRow(rowMenu.id)}>⧉ {t('table.duplicateRow')}</button>
             <div className="node-ctx-sep" />
-            <button className="node-ctx-item node-ctx-item--danger" onClick={() => deleteRow(rowMenu.id)}>🗑 {t('table.deleteRow')}</button>
+            <button className="node-ctx-item node-ctx-item--danger" onClick={() => deleteRow(rowMenu.id)}><Icon name="trash" size={13} /> {t('table.deleteRow')}</button>
           </div>
         </>
       ), document.body)}

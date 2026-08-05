@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import type { Node } from '../types'
 import { publishNodePublicly, unpublishNodePublicly } from '../utils/nodeExport'
 import { userStore } from '../store/userStore'
+import Icon from '../v2/components/Icon'
 
 export default function PublishButton({ node }: { node: Node }) {
   const { t } = useTranslation()
@@ -78,8 +79,8 @@ export default function PublishButton({ node }: { node: Node }) {
             background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, padding: 5,
             boxShadow: '0 8px 28px rgba(0,0,0,0.16)',
           }}>
-            <button onClick={doPublish} style={shareMenuItem}>🌐 {t('node.publishAndCopy')}</button>
-            <button onClick={copyInternal} style={shareMenuItem}>🔗 {t('node.copyInternalLink')}</button>
+            <button onClick={doPublish} style={shareMenuItem}><Icon name="external" size={13} /> {t('node.publishAndCopy')}</button>
+            <button onClick={copyInternal} style={shareMenuItem}><Icon name="link" size={13} /> {t('node.copyInternalLink')}</button>
           </div>
         </>
       )}

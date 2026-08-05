@@ -8,6 +8,7 @@
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import { parseExtraData } from '../../utils/papeleraHelper'
+import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import PublishButton from '../../components/PublishButton'
 import V2DetailView from './V2DetailView'
 import { elementDisplayTitle } from '../../utils/docNode'
@@ -45,15 +46,11 @@ function EditableTitle({ nodeId }: { nodeId: string }) {
   )
 }
 
-export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElementsFiltered, onOpenChat }: {
+export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElementsFiltered }: {
   nodeId: string
   onClose: () => void
   onSelectCtx: (id: string) => void
   onOpenElementsFiltered?: (kind: ElemKind) => void
-  /** Abre la tab Detalles (columna derecha) — que YA es el chat de este elemento,
-   *  siempre (V2RightColumn.tsx). Solo un atajo/afordancia junto al título; no
-   *  crea ni gestiona nada aquí. */
-  onOpenChat?: () => void
 }) {
   useStore()
   const { t, i18n } = useTranslation()
@@ -64,20 +61,25 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
   // está arriba). Nota/tarea NO: ya tienen su propia barra con más acciones propias.
   const ed = node ? parseExtraData(node.extraData) : {}
   const isResourceLike = !!node && (node.isResource || !!node.resourceType || Array.isArray(ed._audios))
+  // La MEMORIA de un contexto («Lo que Fromly sabe») es un documento interno: se
+  // abre sola al entrar en el contexto, y el contexto ya está escrito arriba de la
+  // columna derecha. Enseñar su título («Memoria») y un selector de contexto era
+  // ruido — y peor, sugería que se le podía cambiar el contexto, cuando por
+  // definición pertenece al suyo (Alberto, 5 ago 2026: "no tiene sentido que
+  // aparezca arriba el título de Memoria, eso es algo interno. Tampoco que
+  // aparezca la opción de ponerle contexto").
+  const isCtxMemory = !!node && isContextKnowledge(node.text)
   return (
     <div className="v2-right-fill">
+      {!isCtxMemory && (
       <div className="v2-detail-head">
         <div className="v2-detail-head-top">
           <EditableTitle nodeId={nodeId} />
-          {/* La nota diaria no tiene chat propio — vive dentro del destino
-              Agenda, donde ese hueco lo ocupan las tabs Día/Planner (Alberto,
-              5 ago 2026: "sobra el icono de globo de texto... y su lógica que
-              ya no aplica"). Mismo criterio que la fecha, justo debajo. */}
-          {onOpenChat && node && !node.isDiaryEntry && (
-            <button className="v2-iconbtn" onClick={onOpenChat} title={t('v2.rightColumn.chatAboutThis', 'Hablar de esto')}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-            </button>
-          )}
+          {/* El globo «Hablar de esto» se QUITÓ del todo (Alberto, 5 ago 2026:
+              "hay que quitar el globo de texto pequeño de la cabecera de la nota,
+              que era un botón que iba al chat pero que ya no es necesario") — la
+              tab «Chat» de la columna derecha ya ES siempre la conversación de lo
+              que hay en el centro, así que el atajo solo repetía un clic. */}
           {isResourceLike && node && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <PublishButton node={node} />
@@ -103,7 +105,8 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
           </div>
         )}
       </div>
-      <div className="v2-detail-body"><V2DetailView nodeId={nodeId} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} /></div>
+      )}
+      <div className="v2-detail-body"><V2DetailView nodeId={nodeId} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideContext={isCtxMemory} /></div>
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { markMovedIntoNote } from '../../utils/dayColumn'
 import type { Node } from '../../types'
+import Icon from '../../v2/components/Icon'
 
 interface Props {
   node: Node
@@ -24,12 +25,12 @@ function getAncestorPath(nodeId: string): string {
 }
 
 function getNodeIcon(n: Node): string {
-  if (n.isDiaryEntry) return '📓'
-  if (n.isEvent) return '📅'
+  if (n.isDiaryEntry) return 'calendar'
+  if (n.isEvent) return 'event'
   if (n.status === 'pending') return '○'
   if (n.status === 'done') return '✓'
   if (n.isFavorite) return '★'
-  return '📄'
+  return 'document'
 }
 
 export default function MoveNodeModal({ node, nodeIds, onClose }: Props) {
@@ -112,7 +113,7 @@ export default function MoveNodeModal({ node, nodeIds, onClose }: Props) {
     return {
       id: n.id,
       text,
-      icon: isToday ? '📅' : getNodeIcon(n),
+      icon: isToday ? 'calendar' : getNodeIcon(n),
       path: n.isDiaryEntry ? '' : getAncestorPath(n.id),
       isToday,
     }

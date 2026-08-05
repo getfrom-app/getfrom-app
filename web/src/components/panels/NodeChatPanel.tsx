@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { aiInlineStream } from '../../api/client'
 import type { Node } from '../../types'
+import Icon from '../../v2/components/Icon'
 
 interface Message {
   id: string
@@ -148,7 +149,7 @@ export default function NodeChatPanel({ node, onClose }: Props) {
         <div className="node-chat-header-actions">
           {hasAssistantMessages && (
             <>
-              <button className="node-chat-action-btn" onClick={copyLastResponse} title={t('ai.copyLastResponse')}>📋</button>
+              <button className="node-chat-action-btn" onClick={copyLastResponse} title={t('ai.copyLastResponse')}><Icon name="copy" size={13} /></button>
               <button className="node-chat-action-btn" onClick={insertIntoBody} title={t('ai.insertInNoteLabel')}>{t('ai.insertInNote')}</button>
             </>
           )}

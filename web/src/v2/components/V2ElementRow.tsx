@@ -6,11 +6,14 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { firstContextOf, contextColor } from '../../utils/cajones'
 import { fmtDateFull } from '../../utils/formatDate'
+import Icon, { type IconName } from './Icon'
+import { displayTitle } from '../../utils/displayText'
 import type { Node } from '../../types'
 
 interface Props {
   node: Node
-  icon: string
+  /** Nombre de icono del sistema propio (components/Icon.tsx) — nunca un emoji. */
+  icon: IconName
   onOpen: (id: string) => void
   child?: boolean          // fila indentada (elemento dentro de una conversación)
   extraMeta?: string       // texto extra a la derecha del chip (p.ej. la fecha en Historial)
@@ -24,7 +27,9 @@ interface Props {
 export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext, onDetach }: Props) {
   const { t, i18n } = useTranslation()
   const ctx = hideContext ? null : firstContextOf(node)
-  const title = (node.text || '').replace(/^(?:✦|💬)\s*/u, '').trim() || t('v2.elementRow.untitled', 'Sin título')
+  // `displayTitle` quita el emoji decorativo escrito en el propio dato («✦ …»,
+  // «💬 …», «🤖 …») — la UI ya pone el icono del sistema a la izquierda.
+  const title = displayTitle(node.text, t('v2.elementRow.untitled', 'Sin título'))
   const del = (e: React.MouseEvent) => {
     e.stopPropagation(); e.preventDefault()
     const deletedIds = store.deleteNode(node.id)
@@ -48,7 +53,7 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
         window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: node.id, x: e.clientX, y: e.clientY } }))
       }}
     >
-      <span className="v2-el-icon">{icon}</span>
+      <span className="v2-el-icon"><Icon name={icon} size={16} /></span>
       <span className="v2-el-main">
         <span className="v2-el-title">{title}</span>
         {(ctx || extraMeta) && (
@@ -65,11 +70,11 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
       {/* Quitar de la conversación (no borra, solo desengancha) + Eliminar — al hover. */}
       {onDetach && (
         <button className="v2-el-del" title={t('v2.elementRow.detach', 'Quitar de esta conversación')} onClick={e => { e.stopPropagation(); e.preventDefault(); onDetach(node.id) }}>
-          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l8 8M14 6l-8 8"/><rect x="2" y="14" width="16" height="4" rx="1"/></svg>
+          <Icon name="close" size={14} />
         </button>
       )}
       <button className="v2-el-del" title={t('tip.delete', 'Eliminar')} onClick={del}>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+        <Icon name="trash" size={14} />
       </button>
     </div>
   )

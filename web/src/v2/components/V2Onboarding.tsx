@@ -11,6 +11,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import Icon, { type IconName } from './Icon'
 
 const STORAGE_KEY = 'from_onboarding_v2_done'
 const TOTAL_STEPS = 6 // pasos 0–5
@@ -109,12 +110,12 @@ function AccentLine() {
   return <div style={{ height: 1, margin: '0 20px', background: 'rgba(62,92,118,0.12)' }} />
 }
 
-function StepHeader({ emoji, onClose }: { emoji: string; onClose: () => void }) {
+function StepHeader({ icon, onClose }: { icon: IconName; onClose: () => void }) {
   return (
     <>
       <div style={{ height: 4, background: 'linear-gradient(90deg, #3E5C76, #8FB4D9)' }} />
       <div style={{ padding: '16px 20px 4px', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: 28 }}>{emoji}</div>
+        <div style={{ color: 'var(--accent)' }}><Icon name={icon} size={26} strokeWidth={1.5} /></div>
         <CloseBtn onClose={onClose} />
       </div>
     </>
@@ -134,7 +135,7 @@ function StepWelcome({ onNext, onClose }: { onNext: () => void; onClose: () => v
       </div>
       <AccentLine />
       <div style={{ padding: '16px 20px 20px' }}>
-        <div style={{ fontSize: 28, marginBottom: 10 }}>✦</div>
+        <div style={{ marginBottom: 10, color: 'var(--accent)' }}><Icon name="sparkle" size={28} strokeWidth={1.5} /></div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>{t('v2Onboarding.welcomeText')}</div>
         <PrimaryBtn label={t('v2Onboarding.next')} onClick={onNext} />
         <ProgressDots active={0} />
@@ -149,7 +150,7 @@ function StepContexts({ onNext, onClose }: { onNext: () => void; onClose: () => 
   const { t } = useTranslation()
   return (
     <>
-      <StepHeader emoji="📂" onClose={onClose} />
+      <StepHeader icon="folder" onClose={onClose} />
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>{t('v2Onboarding.contextsTitle')}</div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>{t('v2Onboarding.contextsText')}</div>
@@ -166,7 +167,7 @@ function StepChat({ onNext, onClose }: { onNext: () => void; onClose: () => void
   const { t } = useTranslation()
   return (
     <>
-      <StepHeader emoji="💬" onClose={onClose} />
+      <StepHeader icon="chat" onClose={onClose} />
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>{t('v2Onboarding.chatTitle')}</div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 12 }}>
@@ -185,7 +186,7 @@ function StepRightColumn({ onNext, onClose }: { onNext: () => void; onClose: () 
   const { t } = useTranslation()
   return (
     <>
-      <StepHeader emoji="🗂️" onClose={onClose} />
+      <StepHeader icon="layers" onClose={onClose} />
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>{t('v2Onboarding.rightTitle')}</div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>{t('v2Onboarding.rightText')}</div>
@@ -202,7 +203,7 @@ function StepFiles({ onNext, onClose }: { onNext: () => void; onClose: () => voi
   const { t } = useTranslation()
   return (
     <>
-      <StepHeader emoji="📎" onClose={onClose} />
+      <StepHeader icon="attachment" onClose={onClose} />
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>{t('v2Onboarding.filesTitle')}</div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6, marginBottom: 16 }}>{t('v2Onboarding.filesText')}</div>
@@ -220,7 +221,7 @@ function StepDone({ onClose }: { onClose: () => void }) {
   return (
     <div style={{ padding: '24px 20px 20px' }}>
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
+        <div style={{ marginBottom: 12, color: 'var(--accent)' }}><Icon name="check" size={34} strokeWidth={1.6} /></div>
         <div style={{ fontSize: 17, fontWeight: 700, color: '#1a1a1a', marginBottom: 8 }}>{t('v2Onboarding.doneTitle')}</div>
         <div style={{ fontSize: 13, color: '#555', lineHeight: 1.6 }}>{t('v2Onboarding.doneText')}</div>
       </div>

@@ -24,6 +24,8 @@ import V2ElementRow from './V2ElementRow'
 import { isAgentNode, getAgentData } from '../../utils/agentesHelper'
 import { isPromptNode } from '../../utils/promptsHelper'
 import { fmtDate, fmtRelative } from '../../utils/formatDate'
+import Icon, { type IconName } from './Icon'
+import { displayTitle } from '../../utils/displayText'
 import type { Node } from '../../types'
 
 interface Props {
@@ -97,13 +99,31 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
     return store.getNode(doc.id)!
   }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // TAREAS del contexto (hijas directas con estado/tipo tarea), estilo Hoy.
-  // En General (ctxId null) no hay hijos directos que recorrer — en su lugar,
-  // todas las tareas activas que no cuelgan de ningún contexto (firstContextOf null).
+  // TAREAS del contexto, estilo Hoy.
+  // ⚠️ BUG REAL (Alberto, 5 ago 2026: "hay una tarea que no tenía contexto, le he
+  // puesto el contexto y al entrar al contexto no aparece"): esto miraba SOLO
+  // `store.children(ctxId)` — los hijos directos en el árbol. Asignar un contexto a
+  // una tarea que ya existe NO la mueve de sitio: `assignContext` escribe una
+  // REFERENCIA (`extraData._ctxRefs`, ver FROM.md «Contextos y proyectos»), que es
+  // justo lo que hace el badge de contexto de la fila. Resultado: la tarea quedaba
+  // asignada de verdad pero invisible aquí. Ahora se usa la MISMA fuente que la
+  // lista de Elementos de más abajo — `nodesInContext`, que resuelve las 3 vías
+  // (referencia por id, slug clásico en `types[]`, y escrita dentro de la nota del
+  // contexto) — unida a los hijos directos, deduplicando por id.
+  // En General (ctxId null) no hay contexto que consultar: son las tareas activas
+  // que no pertenecen a ninguno.
   const tasks = useMemo(() => {
+    void store.nodesVersion
     const isTask = (n: Node) => !n.deletedAt && (n.status != null || (n.types || []).includes('tarea'))
     if (ctxId === null) return store.allActive().filter(n => isTask(n) && !firstContextOf(n))
-    return store.children(ctxId).filter(isTask)
+    const seen = new Set<string>()
+    const out: Node[] = []
+    for (const n of [...store.children(ctxId), ...nodesInContext(ctxId)]) {
+      if (seen.has(n.id) || !isTask(n) || isInPapelera(n.id)) continue
+      seen.add(n.id)
+      out.push(n)
+    }
+    return out
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ELEMENTOS del contexto: TODO lo que cuelga de él — documentos, PDF, imágenes,
@@ -115,7 +135,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
   // llenar la columna) y las tareas tienen su propia lista arriba (con due/checkbox).
   const elements = useMemo(() => {
     void store.nodesVersion
-    const out: { node: Node; icon: string; kind: string; isConversation?: boolean }[] = []
+    const out: { node: Node; icon: IconName; kind: string; isConversation?: boolean }[] = []
     const seen = new Set<string>()
     const consider = (n: Node) => {
       if (seen.has(n.id) || n.deletedAt) return
@@ -127,14 +147,10 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
       // Defensa extra: un nodo movido a la papelera por una vía que no reparenta (además
       // del caso normal, ya cubierto porque deja de ser hijo directo) nunca debe listarse.
       if (isInPapelera(n.id)) return
-      if (isAgentNode(n)) { seen.add(n.id); out.push({ node: n, icon: getAgentData(n.id)?.icon || '🤖', kind: 'agent' }); return }
-      if (isPromptNode(n)) {
-        seen.add(n.id)
-        let icon = '⚡'
-        try { icon = JSON.parse(n.extraData || '{}')._promptIcon || '⚡' } catch { /* ignore */ }
-        out.push({ node: n, icon, kind: 'prompt' })
-        return
-      }
+      // El emoji guardado en `_agentIcon`/`_promptIcon` es un DATO del usuario; la
+      // UI ya no lo pinta — cada tipo tiene su icono del sistema, siempre el mismo.
+      if (isAgentNode(n)) { seen.add(n.id); out.push({ node: n, icon: 'agent', kind: 'agent' }); return }
+      if (isPromptNode(n)) { seen.add(n.id); out.push({ node: n, icon: 'prompt', kind: 'prompt' }); return }
       const c = classifyElement(n)
       if (!c || c.kind === 'note') return
       seen.add(n.id)
@@ -150,7 +166,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
         if (ed._aiSession === '1') {
           if (isInPapelera(n.id)) continue
           seen.add(n.id)
-          out.push({ node: n, icon: '💬', kind: 'conversation', isConversation: true })
+          out.push({ node: n, icon: 'conversation', kind: 'conversation', isConversation: true })
           continue
         }
         consider(n)
@@ -175,27 +191,30 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
         if (isInPapelera(n.id)) continue
         if (firstContextOf(n)?.id !== ctxId) continue
         seen.add(n.id)
-        out.push({ node: n, icon: '💬', kind: 'conversation', isConversation: true })
+        out.push({ node: n, icon: 'conversation', kind: 'conversation', isConversation: true })
       }
     }
-    return out.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
+    // Por fecha de CREACIÓN, no de modificación (Alberto, 5 ago 2026): con
+    // `updatedAt` la lista se reordenaba sola cada vez que se tocaba cualquier
+    // elemento — imposible acordarse de dónde estaba nada.
+    return out.sort((a, b) => (b.node.createdAt || '').localeCompare(a.node.createdAt || ''))
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filtro por tipo de la lista de Elementos — mismo estilo que la tab Elementos
   // (ElementsPanel): chips en una fila con subrayado activo, solo los tipos que
   // realmente aparecen en este contexto (con su recuento).
   const [elFilter, setElFilter] = useState<string>('all')
-  const ELKIND_ORDER: { key: string; label: string; icon: string }[] = [
-    { key: 'document',     icon: '📝', label: t('elements.texts', 'Textos') },
-    { key: 'pdf',          icon: '📄', label: t('elements.pdfs', 'PDFs') },
-    { key: 'image',        icon: '🖼', label: t('elements.images', 'Imágenes') },
-    { key: 'link',         icon: '🔗', label: t('elements.links', 'Enlaces') },
-    { key: 'audio',        icon: '🎙', label: t('elements.audios', 'Audios') },
-    { key: 'highlight',    icon: '🖍️', label: t('elements.highlights', 'Subrayados') },
-    { key: 'cita',         icon: '🔖', label: t('elements.citas', 'Citas') },
-    { key: 'agent',        icon: '🤖', label: t('elements.agents', 'Agentes') },
-    { key: 'prompt',       icon: '⚡', label: t('elements.prompts', 'Prompts') },
-    { key: 'conversation', icon: '💬', label: t('elements.conversations', 'Conversaciones') },
+  const ELKIND_ORDER: { key: string; label: string }[] = [
+    { key: 'document',     label: t('elements.texts', 'Textos') },
+    { key: 'pdf',          label: t('elements.pdfs', 'PDFs') },
+    { key: 'image',        label: t('elements.images', 'Imágenes') },
+    { key: 'link',         label: t('elements.links', 'Enlaces') },
+    { key: 'audio',        label: t('elements.audios', 'Audios') },
+    { key: 'highlight',    label: t('elements.highlights', 'Subrayados') },
+    { key: 'cita',         label: t('elements.citas', 'Citas') },
+    { key: 'agent',        label: t('elements.agents', 'Agentes') },
+    { key: 'prompt',       label: t('elements.prompts', 'Prompts') },
+    { key: 'conversation', label: t('elements.conversations', 'Conversaciones') },
   ]
   const elCounts = useMemo(() => {
     const acc: Record<string, number> = {}
@@ -223,7 +242,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           el chip del padre). Alberto: "como título en la parte superior del tab pon el
           nombre del contexto". */}
       <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8, lineHeight: 1.3 }}>
-        {isGeneral ? t('v2.general', 'General') : node!.text}
+        {isGeneral ? t('v2.general', 'General') : displayTitle(node!.text)}
       </div>
 
       {/* Contexto PADRE — chip navegable + cambiar/quitar (mismo patrón que el resto).
@@ -232,12 +251,12 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
         {parent ? (
           <span className="v2-chip" style={{ ['--chip' as string]: contextColor(parent.id), cursor: 'default' }}>
-            <span style={{ cursor: 'pointer' }} onClick={() => onSelectCtx(parent.id)}>{parent.text}</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => onSelectCtx(parent.id)}>{displayTitle(parent.text)}</span>
           </span>
         ) : null}
         <div className="v2-ctxpick-wrap" ref={parentPickWrap}>
           <button className="v2-ctx-edit-btn" onClick={() => setParentPickerOpen(o => !o)} title={parent ? t('v2.context.changeParent', 'Cambiar contexto padre') : t('v2.context.addParent', 'Añadir contexto padre')}>
-            <svg width="11" height="11" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2.5a1.5 1.5 0 0 1 2 2L6 15l-3 1 1-3L14.5 2.5z"/></svg>
+            <Icon name="pencil" size={12} />
           </button>
           {parentPickerOpen && (
             <div className="v2-ctxpick-pop">
@@ -312,7 +331,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>{t('v2.context.elements', 'Elementos')} ({elements.length})</div>
           {elKindChips.length > 1 && (
             <div className="el-filterbar" style={{ marginBottom: 4 }}>
-              {[{ key: 'all', icon: '', label: t('elements.all', 'Todos') }, ...elKindChips].map(c => {
+              {[{ key: 'all', label: t('elements.all', 'Todos') }, ...elKindChips].map(c => {
                 const active = elFilter === c.key
                 const n = c.key === 'all' ? elements.length : elCounts[c.key]
                 return (
@@ -323,7 +342,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
                       color: active ? 'var(--accent,#3E5C76)' : 'var(--text-tertiary,#999)',
                       borderBottom: '2px solid ' + (active ? 'var(--accent,#3E5C76)' : 'transparent'),
                     }}>
-                    {c.icon ? c.icon + ' ' : ''}{c.label} <span style={{ opacity: 0.55, fontWeight: 400 }}>{n}</span>
+                    {c.label} <span style={{ opacity: 0.55, fontWeight: 400 }}>{n}</span>
                   </button>
                 )
               })}
@@ -338,7 +357,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
                 icon={icon}
                 onOpen={id => (isConversation && onOpenConversation ? onOpenConversation(id) : onOpenNode(id))}
                 hideContext
-                extraMeta={agentData ? (agentData.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')) : fmtDate(n.updatedAt, i18n.language)}
+                extraMeta={agentData ? (agentData.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')) : fmtDate(n.createdAt, i18n.language)}
               />
             )
           })}

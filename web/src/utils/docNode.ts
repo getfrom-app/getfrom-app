@@ -8,6 +8,7 @@
 // nodo (sin copia ni sincronización). El lienzo y el documento comparten `body`.
 
 import type { Node } from '../types'
+import { displayTitle } from './displayText'
 
 export const DOC = '_doc'
 export const CTEXT = '_ctext'
@@ -68,8 +69,13 @@ export function isV2Canvas(node: Node | null | undefined): boolean {
 // llamador decide el fallback final ("Sin título"/"Elemento"/vacío para rellenar).
 export function elementDisplayTitle(node: Node | null | undefined): string {
   if (!node) return ''
-  const own = (node.text || '').trim()
+  // `displayTitle` quita el emoji decorativo que muchos nodos llevan escrito como
+  // prefijo EN EL DATO (agentes «📈 …», sesiones «✦ …», raíces del sistema).
+  // Fromly ya no pinta emojis en ningún sitio (ver v2/components/Icon.tsx) y este
+  // es el punto por el que pasa CUALQUIER título de elemento, así que basta
+  // limpiarlo aquí en vez de en cada superficie. El dato queda intacto.
+  const own = displayTitle(node.text)
   if (own) return own
   if (isV2Canvas(node)) return ''
-  return firstLineTitle(node.body)
+  return displayTitle(firstLineTitle(node.body))
 }

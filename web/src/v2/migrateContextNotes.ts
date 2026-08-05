@@ -36,7 +36,7 @@ export function migrateContextNotesToDoc(ctxId: string): string | null {
   if (notes.length === 0) return null
   const ctx = store.getNode(ctxId)
   const body = notes.map(n => nodeAsRichHtml(n)).join('\n') || '<p></p>'
-  const doc = store.createNode({ text: `📄 ${ctx?.text || 'Notas'}`, parentId: ctxId, extraData: { _doc: '1' } })
+  const doc = store.createNode({ text: ctx?.text || 'Notas', parentId: ctxId, extraData: { _doc: '1' } })
   store.updateNode(doc.id, { body })
   for (const n of notes) trashNode(n.id) // reversible (papelera)
   return doc.id

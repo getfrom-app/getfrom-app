@@ -9,19 +9,21 @@ import type { Editor } from '@tiptap/react'
 import { store, useStore } from '../../store/nodeStore'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import type { Node } from '../../types'
+import Icon, { type IconName } from '../../v2/components/Icon'
+import { displayTitle } from '../../utils/displayText'
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
-function iconFor(n: Node): string {
+function iconFor(n: Node): IconName {
   const e = parseExtraData(n.extraData)
   const rt = (e._resourceType as string) || (n.resourceType || '')
-  if (rt === 'image' || e._imageUrl) return '🖼'
-  if (rt === 'pdf') return '📄'
-  if (n.isResource || e._resourceUrl != null || rt) return '🔗'
-  if (n.status != null || (n.types || []).includes('tarea')) return '☑️'
-  if (n.isEvent || (n.types || []).includes('evento')) return '📅'
-  if (e._ctx === '1') return '📁'
-  return '📝'
+  if (rt === 'image' || e._imageUrl) return 'image'
+  if (rt === 'pdf') return 'pdf'
+  if (n.isResource || e._resourceUrl != null || rt) return 'link'
+  if (n.status != null || (n.types || []).includes('tarea')) return 'task'
+  if (n.isEvent || (n.types || []).includes('evento')) return 'event'
+  if (e._ctx === '1') return 'folder'
+  return 'document'
 }
 
 // Elementos mencionables: notas, documentos, tareas, eventos, recursos, contextos.
@@ -32,7 +34,7 @@ function mentionable(n: Node): boolean {
   if (e._aiTranscript === '1' || e._aiMsgRole || e._absorbedBy != null || e._tagDefinition != null) return false
   return true
 }
-const cleanTitle = (t: string) => (t || '').replace(/^[✦💬🧠]\s*/u, '').trim()
+const cleanTitle = (t: string) => displayTitle(t)
 
 export default function DocMention({ editor, selfId }: { editor: Editor; selfId: string }) {
   useStore()
@@ -105,7 +107,7 @@ export default function DocMention({ editor, selfId }: { editor: Editor; selfId:
       {matches.map((n, i) => (
         <button key={n.id} className={`doc-mention-item${i === sel ? ' active' : ''}`}
           onMouseEnter={() => setSel(i)} onMouseDown={e => { e.preventDefault(); pick(n) }}>
-          <span className="doc-mention-icon">{iconFor(n)}</span>
+          <span className="doc-mention-icon"><Icon name={iconFor(n)} size={13} /></span>
           <span className="doc-mention-title">{cleanTitle(n.text)}</span>
         </button>
       ))}

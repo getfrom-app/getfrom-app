@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { listTemplates, getPlantillasRoot, ensurePlantillasNode } from '../../utils/tagsHelper'
 import NodeConfigModal from '../../components/modals/NodeConfigModal'
+import Icon from './Icon'
 
 interface Props {
   onClose: () => void
@@ -39,8 +40,8 @@ export default function V2TemplatesModal({ onClose }: Props) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="v2-templates-modal" onClick={e => e.stopPropagation()}>
         <div className="v2-templates-head">
-          <span className="v2-templates-title">📋 {t('v2.templates.manageTitle', 'Gestionar plantillas')}</span>
-          <button className="v2-iconbtn" title={t('common.close', 'Cerrar')} onClick={onClose}>✕</button>
+          <span className="v2-templates-title">{t('v2.templates.manageTitle', 'Gestionar plantillas')}</span>
+          <button className="v2-iconbtn" title={t('common.close', 'Cerrar')} onClick={onClose}><Icon name="close" /></button>
         </div>
 
         <div className="v2-templates-body">
@@ -53,7 +54,7 @@ export default function V2TemplatesModal({ onClose }: Props) {
                   <button className="v2-templates-item-name" onClick={() => setEditingId(tpl.id)}>
                     {(tpl.text || t('common.noTitle', 'Sin título'))}
                   </button>
-                  <button className="v2-templates-item-del" title={t('common.delete', 'Eliminar')} onClick={() => removeTemplate(tpl.id, tpl.text || '')}>🗑</button>
+                  <button className="v2-templates-item-del" title={t('common.delete', 'Eliminar')} onClick={() => removeTemplate(tpl.id, tpl.text || '')}><Icon name="trash" size={14} /></button>
                 </li>
               ))}
             </ul>

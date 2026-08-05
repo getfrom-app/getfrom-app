@@ -12,6 +12,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
+import Icon from '../../v2/components/Icon'
 
 // ── Re-export de tipos para reutilización ─────────────────────────────────
 export interface PathAnnotation {
@@ -197,7 +198,7 @@ export default function WhiteboardViewer({ nodeId, annotations, onAnnotationsCha
             <button key={t} className={`pdf-tb-btn${tool === t ? ' pdf-tb-btn--active' : ''}`}
               onClick={() => setTool(t)}
               title={t === 'pen' ? 'Bolígrafo' : t === 'highlight' ? 'Resaltador' : t === 'text' ? 'Texto' : 'Borrador'}>
-              {t === 'pen' ? '✏️' : t === 'highlight' ? '🖍' : t === 'text' ? 'T' : '⌫'}
+              {t === 'pen' ? <Icon name="pencil" size={14} /> : t === 'highlight' ? <Icon name="highlight" size={14} /> : t === 'text' ? 'T' : '⌫'}
             </button>
           ))}
         </div>
@@ -224,7 +225,7 @@ export default function WhiteboardViewer({ nodeId, annotations, onAnnotationsCha
         )}
         {annotations.length > 0 && (
           <button className="pdf-tb-btn" onClick={() => commit([])} title="Limpiar pizarra"
-            style={{ color: 'var(--red)' }}>🗑</button>
+            style={{ color: 'var(--red)' }}><Icon name="trash" size={14} /></button>
         )}
       </div>
 

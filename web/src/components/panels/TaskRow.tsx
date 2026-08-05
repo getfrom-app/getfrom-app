@@ -14,6 +14,7 @@ import { openNodeDetail } from '../../utils/canvasNav'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
+import Icon from '../../v2/components/Icon'
 
 // Exportadas: las reutiliza V2TaskDetailView (chips de fecha/hora/repetición en el
 // detalle de una tarea/evento abierta en la columna derecha) — mismo cálculo, una
@@ -101,7 +102,7 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
         className={`dc-check ${done ? 'dc-check--done' : ''}`}
         onClick={e => { e.stopPropagation(); toggleTaskDone(node) }}
         title={t('daily.markDone')} aria-label={t('daily.markDone')}
-      >{done ? '✓' : ''}</button>
+      >{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
       {/* Dos líneas (Alberto, 4 ago 2026: "las tareas de la tab agenda se deben leer
           completas" — con checkbox + título + fecha + chip de contexto compitiendo en
           una sola línea, el título llegaba a encogerse casi a 0px en filas con chip).
@@ -133,7 +134,7 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
               onClick={e => { e.stopPropagation(); onOpenDate(node) }}>+</span>
           )}
           {time && <span className="dc-time">{time}</span>}
-          {rec && <span className="dc-rec" title={rec}>🔁 {rec}</span>}
+          {rec && <span className="dc-rec" title={rec}><Icon name="repeat" size={12} /> {rec}</span>}
           <span style={{ flex: 1 }} />
           <TaskHoverActions node={node} onOpenDate={onOpenDate} />
           <RowContextChip node={node} />

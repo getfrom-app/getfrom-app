@@ -14,6 +14,7 @@ import { getOrCreateProfileDoc } from '../../api/userKnowledge'
 import DocEditor from '../../components/views/DocEditor'
 import DocEditorBoundary from '../../components/DocEditorBoundary'
 import DocInspector from '../../components/views/DocInspector'
+import Icon from './Icon'
 
 interface Props {
   onClose: () => void
@@ -27,7 +28,7 @@ export default function V2ProfileView({ onClose }: Props) {
     <main className="v2-col v2-center">
       <div className="v2-center-head">
         <button className="v2-iconbtn" onClick={onClose} title={t('v2.rightColumn.back', 'Volver')}>‹</button>
-        <span className="v2-center-title">🧠 {t('v2.profile.title', 'Perfil')}</span>
+        <span className="v2-center-title"><Icon name="profile" size={15} className="v2-title-icon" />{t('v2.profile.title', 'Perfil')}</span>
       </div>
       <div style={{ maxWidth: 720, width: '100%', margin: '0 auto', padding: '18px 24px', overflowY: 'auto', flex: 1 }}>
         <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginTop: 0, marginBottom: 18 }}>

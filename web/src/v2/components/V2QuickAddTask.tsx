@@ -13,7 +13,7 @@ export default function V2QuickAddTask({ parentId }: { parentId: string }) {
     if (!trimmed) return
     const n = store.createNode({ text: trimmed, parentId, isTask: true })
     store.updateNode(n.id, { status: 'pending' })
-    showToast('✓ ' + t('ai.actionTaskCreated', 'Tarea creada'))
+    showToast(t('ai.actionTaskCreated', 'Tarea creada'))
     setText('')
   }
   return (

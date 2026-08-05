@@ -12,6 +12,7 @@ import {
   getDailyTemplate, setDailyTemplate,
   getTemplateRecurrence, setTemplateRecurrence, type TemplateRecurrence,
 } from '../../utils/tagsHelper'
+import Icon from '../../v2/components/Icon'
 
 const weekdayKeys = ['template.sunday', 'template.monday', 'template.tuesday', 'template.wednesday', 'template.thursday', 'template.friday', 'template.saturday'] as const
 const weekdays = () => weekdayKeys.map(k => i18n.t(k))
@@ -138,7 +139,7 @@ function RecurrenceModal({ initial, onClose, onSave }: {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onMouseDown={onClose}>
       <div style={{ background: 'var(--bg-primary)', borderRadius: 14, padding: '24px 24px 20px', width: 420, maxWidth: '90vw', boxShadow: '0 24px 80px rgba(0,0,0,.22)', display: 'flex', flexDirection: 'column', gap: 16 }} onMouseDown={e => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)' }}>🔁 {t('template.recurringTitle')}</span>
+          <span style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-primary)', display: 'inline-flex', alignItems: 'center', gap: 6 }}><Icon name="repeat" size={15} /> {t('template.recurringTitle')}</span>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: 'var(--text-tertiary)', lineHeight: 1 }}>×</button>
         </div>
 

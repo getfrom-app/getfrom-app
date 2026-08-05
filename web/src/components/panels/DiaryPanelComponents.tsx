@@ -15,6 +15,7 @@ import { pushEventToGcal } from '../../utils/gcalNodesSync'
 import ContextChip from './ContextChip'
 import ContextPicker from './ContextPicker'
 import { firstContextOf, setNodeContext } from '../../utils/cajones'
+import Icon from '../../v2/components/Icon'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -188,7 +189,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
           }}
           title={t('tip.moveTaskToToday')}
         >
-          📓 {t('tip.toToday')}
+          <Icon name="today" size={13} /> {t('tip.toToday')}
         </button>
       </div>
 
@@ -369,7 +370,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
               onClose()
               onDeleted?.()
             }}
-          >🗑 {t('common.delete')}</button>
+          ><Icon name="trash" size={13} /> {t('common.delete')}</button>
         </>
       )}
 
@@ -495,7 +496,7 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, l
       onMouseDown={e => e.stopPropagation()}
       onClick={e => e.stopPropagation()}
     >
-      <div className="gcal-editor-title">📅 {t('gcal.editTitle')}</div>
+      <div className="gcal-editor-title">{t('gcal.editTitle')}</div>
       <input className="gcal-editor-name" value={title} onChange={e => setTitle(e.target.value)}
         placeholder={t('ph.eventTitle')}
         autoFocus
@@ -551,7 +552,7 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, l
         </button>
       ) : null}
       <div className="gcal-editor-actions">
-        <button className="gcal-editor-delete" onClick={remove} disabled={saving} title={t('gcal.deleteFromGoogle')}>🗑 {t('common.delete')}</button>
+        <button className="gcal-editor-delete" onClick={remove} disabled={saving} title={t('gcal.deleteFromGoogle')}><Icon name="trash" size={13} /> {t('common.delete')}</button>
         <button className="gcal-editor-cancel" onClick={onClose}>{t('common.cancel')}</button>
         <button className="gcal-editor-save" onClick={save} disabled={saving || !title || !startDate}>
           {saving ? '↻' : t('common.save')}
@@ -662,7 +663,7 @@ function MovePicker({ nodeId, onPicked, onCancel }: { nodeId: string; onPicked: 
             onClick={() => pick(n.id)}
             onMouseEnter={() => setActiveIdx(i)}
           >
-            <span className="tpp-move-item-icon">📄</span>
+            <span className="tpp-move-item-icon"><Icon name="note" size={13} /></span>
             <span className="tpp-move-item-text">{n.text || t('common.noTitle')}</span>
           </button>
         ))}

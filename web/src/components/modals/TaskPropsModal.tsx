@@ -6,6 +6,7 @@
 import { createPortal } from 'react-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
+import Icon from '../../v2/components/Icon'
 
 const REC_UNITS: [string, string][] = [['daily', 'taskPropsModal.recDays'], ['weekly', 'taskPropsModal.recWeeks'], ['monthly', 'taskPropsModal.recMonths'], ['yearly', 'taskPropsModal.recYears']]
 const PRIORITIES: [string, string][] = [['high', 'priority.high'], ['medium', 'priority.medium'], ['low', 'priority.low']]
@@ -72,7 +73,7 @@ export function TaskPropsBody({ nodeId }: { nodeId: string }) {
           <input type="date" style={input} value={dateStr} onChange={e => setDateTime(e.target.value, timeStr)} />
           <input type="time" style={{ ...input, opacity: dateStr ? 1 : 0.5 }} value={timeStr} disabled={!dateStr}
             onChange={e => setDateTime(dateStr, e.target.value)} placeholder="HH:MM" />
-          {node.due && <button style={{ ...chip(false), color: 'var(--danger,#e03131)' }} title={t('common.removeDate')} onClick={() => store.updateNode(nodeId, { due: null })}>✕</button>}
+          {node.due && <button style={{ ...chip(false), color: 'var(--danger,#e03131)' }} title={t('common.removeDate')} onClick={() => store.updateNode(nodeId, { due: null })}><Icon name="close" size={12} /></button>}
         </div>
 
         {/* Recurrencia */}
@@ -108,7 +109,7 @@ export default function TaskPropsModal({ nodeId, onClose }: { nodeId: string; on
   return createPortal(
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal modal--small" onClick={e => e.stopPropagation()} style={{ minWidth: 320, maxWidth: 380 }}>
-        <h3 className="modal-title" style={{ marginBottom: 2 }}>⚙ {t('taskPropsModal.title')}</h3>
+        <h3 className="modal-title" style={{ marginBottom: 2 }}>{t('taskPropsModal.title')}</h3>
         <TaskPropsBody nodeId={nodeId} />
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 18 }}>
           <button className="btn-primary" onClick={onClose}>{t('taskPropsModal.done')}</button>

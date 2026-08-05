@@ -29,6 +29,7 @@ import { structuralId } from './deterministicId'
 import i18n from '../i18n/config'
 
 const CONTEXT_DEFAULT_COLOR = '#2C4356'
+const CONTEXT_DEFAULT_COLOR_DARK = '#8FB4D9'
 
 function ed(n: Node | null | undefined): Record<string, unknown> {
   if (!n) return {}
@@ -104,24 +105,29 @@ export function contextParent(nodeId: string): Node | null {
   return null
 }
 
-/** Color por defecto = el acento del tema elegido por el usuario en Ajustes. */
-function defaultAccentHex(): string {
-  try {
-    const v = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
-    if (v) return v
-  } catch { /* sin DOM */ }
-  return CONTEXT_DEFAULT_COLOR
-}
-
-/** Color del contexto: su `_tagColor` PROPIO manda (se puede fijar por contexto desde el
- *  menú de clic derecho); si no tiene, lo HEREDA del contexto padre; si es raíz sin color,
- *  usa el acento por defecto de Ajustes. */
+/** Color del contexto: su `_tagColor` PROPIO manda (se fija desde el menú de clic
+ *  derecho de la sidebar); si no tiene, lo HEREDA del contexto padre; si es raíz sin
+ *  color, un color FIJO de marca.
+ *
+ *  ⚠️ NO usar aquí el `--accent` vivo del documento (era lo que hacía antes, vía un
+ *  `defaultAccentHex()` que lo leía con `getComputedStyle`). Bug real (Alberto,
+ *  5 ago 2026: "los dots de los contextos cambian de color según el color de acento
+ *  y esto no es correcto"): al entrar en un contexto CON color propio, `V2App`
+ *  sobrescribe `--accent` en el `documentElement` para teñir toda la app (ver el
+ *  efecto `ownAccent`) → todos los contextos SIN color propio pasaban a pintarse de
+ *  ese mismo color, como si lo tuvieran asignado. El punto de un contexto debe decir
+ *  "este es MI color", no "este es el color de lo que estás mirando ahora". */
 export function contextColor(nodeId: string): string {
   const own = ed(store.getNode(nodeId))._tagColor
   if (typeof own === 'string' && own) return own
   const p = contextParent(nodeId)
   if (p) return contextColor(p.id)
-  return defaultAccentHex()
+  // Tema oscuro: el azul acero base (#2C4356) queda casi invisible sobre el fondo,
+  // así que el por-defecto es su versión clara — el mismo par que usa la marca.
+  try {
+    if (document.documentElement.getAttribute('data-theme') === 'dark') return CONTEXT_DEFAULT_COLOR_DARK
+  } catch { /* sin DOM */ }
+  return CONTEXT_DEFAULT_COLOR
 }
 
 /** Marca de última actividad (para ordenar). Usa `_ctxUsedAt` o el updatedAt. */

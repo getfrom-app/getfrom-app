@@ -24,6 +24,7 @@ import { addPredictionWord, guessWordType } from '../../store/predictionStore'
 import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { learningsStore, buildLearningText } from '../../store/learningsStore'
 import { copyNodeAsMarkdown, copyNodeAsRich, exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
+import Icon from '../../v2/components/Icon'
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -351,11 +352,11 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         {showConvert && (
           <div className="context-menu-submenu-inline">
             <button className="context-menu-item context-menu-item--sub" onClick={run(toggleTask)}>
-              <span className="context-menu-icon">{isTask ? '○' : '☑'}</span>
+              <span className="context-menu-icon">{isTask ? '○' : <Icon name="task" size={13} />}</span>
               {isTask ? t('context.removeTask') : t('search.chipTask')}
             </button>
             <button className="context-menu-item context-menu-item--sub" onClick={run(toggleEvent)}>
-              <span className="context-menu-icon">📅</span>
+              <span className="context-menu-icon"><Icon name="event" size={13} /></span>
               {isEvent ? t('context.removeEvent') : t('search.chipEvent')}
             </button>
             <div className="context-menu-separator" style={{ margin: '3px 8px' }} />
@@ -499,12 +500,12 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
               <span className="context-menu-icon">◇</span> HTML
             </button>
             <button className="context-menu-item context-menu-item--sub" onClick={run(exportPdf)}>
-              <span className="context-menu-icon">📄</span> PDF
+              <span className="context-menu-icon"><Icon name="pdf" size={13} /></span> PDF
             </button>
           </div>
         )}
         <button className="context-menu-item" onClick={run(copyInternalLink)}>
-          <span className="context-menu-icon">🔗</span> {t('context.copyInternalLink')}
+          <span className="context-menu-icon"><Icon name="link" size={13} /></span> {t('context.copyInternalLink')}
         </button>
         {/* Publicar / despublicar / copiar enlace público viven en el icono 🌐 de la
             cabecera (NodeView), no duplicados aquí. */}
@@ -532,7 +533,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           className={`context-menu-item${showTemplates ? ' active' : ''}`}
           onClick={e => { e.preventDefault(); e.stopPropagation(); setShowTemplates(v => !v) }}
         >
-          <span className="context-menu-icon">📋</span> {t('templates.myTemplates')}
+          <span className="context-menu-icon"><Icon name="template" size={13} /></span> {t('templates.myTemplates')}
           <span className="context-menu-shortcut">{showTemplates ? '▾' : '›'}</span>
         </button>
         {showTemplates && (
@@ -543,7 +544,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
               </div>
             ) : templates.map(tmpl => (
               <button key={tmpl.id} className="context-menu-item context-menu-item--sub" onClick={run(() => applyTemplate(tmpl))}>
-                <span className="context-menu-icon">📄</span> {tmpl.text || t('common.noTitle')}
+                <span className="context-menu-icon"><Icon name="document" size={13} /></span> {tmpl.text || t('common.noTitle')}
               </button>
             ))}
           </div>
@@ -555,11 +556,11 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         const guess = guessWordType(selectedText)
         const isTask = guess.type === 'task'
         const primaryLabel = isTask ? t('teachWord.taskVerb') : t('teachWord.eventWord')
-        const primaryIcon = isTask ? '☐' : '📅'
+        const primaryIcon = isTask ? '☐' : '◇'
         const primaryType: 'task' | 'event' = isTask ? 'task' : 'event'
         const altType: 'task' | 'event' = isTask ? 'event' : 'task'
         const altLabel = isTask ? t('teachWord.eventLower') : t('teachWord.taskLower')
-        const altIcon = isTask ? '📅' : '☐'
+        const altIcon = isTask ? '◇' : '☐'
 
         const doAdd = (type: 'task' | 'event') => {
           const added = addPredictionWord(type, selectedText)
@@ -657,7 +658,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
                     message: added ? t('teach.applied') : t('teachMagic.alreadyKnew'), type: added ? 'success' : 'info'
                   }}))
                 })}>
-                <span className="context-menu-icon">📅</span> {t('teachMagic.shouldBeEvent')}
+                <span className="context-menu-icon"><Icon name="event" size={13} /></span> {t('teachMagic.shouldBeEvent')}
               </button>
             )}
             {(node.types || []).length > 0 && (
@@ -714,7 +715,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
           </>
         ) : (
           <button className="context-menu-item context-menu-item--danger" onClick={run(deleteNode)}>
-            <span className="context-menu-icon">🗑</span> {t('sidebar.trash')}
+            <span className="context-menu-icon"><Icon name="trash" size={13} /></span> {t('sidebar.trash')}
           </button>
         )}
       </div>

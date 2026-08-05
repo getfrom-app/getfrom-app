@@ -29,6 +29,8 @@ import NewNamedItemModal from '../modals/NewNamedItemModal'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
 import type { FilterView } from '../views/FilterResultsView'
 import PizarraThumbnail from '../views/PizarraThumbnail'
+import Icon, { type IconName } from '../../v2/components/Icon'
+import { displayTitle } from '../../utils/displayText'
 
 export type ElemKind = 'text' | 'canvas' | 'task' | 'event' | 'link' | 'pdf' | 'image' | 'context' | 'memory' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'cita'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
@@ -95,7 +97,14 @@ function matchesTaskSub(r: ElemRow, sub: TaskSub): boolean {
   return true
 }
 
-const KIND_ICON: Record<ElemKind, string> = { text: '📝', canvas: '🎨', task: '☑️', event: '📅', link: '🔗', pdf: '📄', image: '🖼', context: '📁', memory: '🧠', highlight: '🖍️', agent: '🤖', conversation: '💬', prompt: '⚡', cita: '🔖' }
+// Icono por tipo — nombres del sistema propio (v2/components/Icon.tsx), nunca
+// emojis (rediseño 5 ago 2026).
+const KIND_ICON: Record<ElemKind, IconName> = {
+  text: 'document', canvas: 'canvas', task: 'task', event: 'event', link: 'link',
+  pdf: 'pdf', image: 'image', context: 'folder', memory: 'profile',
+  highlight: 'highlight', agent: 'agent', conversation: 'conversation',
+  prompt: 'prompt', cita: 'quote',
+}
 const ROW_H = 46
 // Fila de TAREA (TaskRow) es más alta desde que pasó a dos líneas (Alberto, 4 ago
 // 2026: "las tareas de la tab agenda se deben leer completas") — el resto de tipos
@@ -152,7 +161,9 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
       const snippet = (n.body || '').trimStart().startsWith('```from-pizarra') ? '' : stripHtml(n.body)
       // Quita el prefijo decorativo (✦ sesión / 💬 transcripción) para no duplicar
       // icono: la fila ya muestra el icono de tipo (KIND_ICON) a la izquierda.
-      const title = (elementDisplayTitle(n) || snippet.slice(0, 60) || t('common.noTitle')).replace(/^(?:✦|💬)\s*/u, '')
+      // `displayTitle` quita cualquier emoji decorativo que el nodo lleve escrito
+      // como prefijo EN EL DATO (sesiones «✦ …», agentes «📈 …», raíces del sistema).
+      const title = displayTitle(elementDisplayTitle(n) || snippet.slice(0, 60), t('common.noTitle'))
       const ctxId = firstContextOf(n)?.id ?? null
       out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '', createdAt: n.createdAt || '', ctxId, due: n.due, status: n.status })
     }
@@ -283,20 +294,20 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
 
   const CHIPS: { key: ElemKind | 'all' | 'favorite'; label: string }[] = [
     { key: 'all',      label: t('elements.all') },
-    { key: 'favorite', label: '★ ' + t('elements.favorites', 'Favoritos') },
+    { key: 'favorite', label: t('elements.favorites', 'Favoritos') },
     { key: 'text',    label: t('elements.texts') },
-    { key: 'canvas',  label: '🎨 ' + t('elements.canvases', 'Lienzos') },
+    { key: 'canvas',  label: t('elements.canvases', 'Lienzos') },
     { key: 'task',    label: t('elements.tasks') },
     { key: 'event',   label: t('elements.events') },
     { key: 'link',    label: t('elements.links') },
     { key: 'pdf',     label: t('elements.pdfs') },
-    { key: 'highlight', label: '🖍️ ' + t('elements.highlights', 'Subrayados') },
-    { key: 'cita',    label: '🔖 ' + t('elements.citas', 'Citas') },
+    { key: 'highlight', label: t('elements.highlights', 'Subrayados') },
+    { key: 'cita',    label: t('elements.citas', 'Citas') },
     { key: 'image',   label: t('elements.images') },
     { key: 'context', label: t('elements.contexts') },
-    { key: 'agent',   label: '🤖 ' + t('elements.agents', 'Agentes') },
-    { key: 'prompt',  label: '⚡ ' + t('elements.prompts', 'Prompts') },
-    { key: 'conversation', label: '💬 ' + t('elements.conversations', 'Conversaciones') },
+    { key: 'agent',   label: t('elements.agents', 'Agentes') },
+    { key: 'prompt',  label: t('elements.prompts', 'Prompts') },
+    { key: 'conversation', label: t('elements.conversations', 'Conversaciones') },
     { key: 'memory',  label: t('elements.memory', 'Memoria') },
   ]
   const SUB_CHIPS: { key: TaskSub; label: string }[] = [
@@ -639,7 +650,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                     <button
                       className={`dc-check ${n.status === 'done' ? 'dc-check--done' : ''}`}
                       onClick={(e) => { e.stopPropagation(); toggleTaskDone(n) }}
-                    >{n.status === 'done' ? '✓' : ''}</button>
+                    >{n.status === 'done' ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
                     <div className="dc-row-main">
                       <div className="dc-row-l1">
                         <span className="dc-text dc-text--wrap" onClick={() => openNodeDetail(n.id)}>{n.text ? renderInline(n.text) : t('tip.task', 'Tarea')}</span>
@@ -680,7 +691,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                     onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); openMenu(r.id, e.clientX, e.clientY) }}
                     style={{ width: '100%', display: 'flex', alignItems: 'flex-start', gap: 8, padding: '4px 4px 4px 6px', cursor: 'pointer', boxSizing: 'border-box' }}
                   >
-                    <span style={{ fontSize: 15, flexShrink: 0, lineHeight: '20px' }}>{KIND_ICON[r.kind]}</span>
+                    <span style={{ flexShrink: 0, lineHeight: '20px', display: 'flex', alignItems: 'center', color: 'var(--text-tertiary)' }}><Icon name={KIND_ICON[r.kind]} size={15} /></span>
                     <div style={{ minWidth: 0, flex: 1 }} title={`${t('v2.rightColumn.created', 'Creado')}: ${fmtDateFull(r.createdAt, i18n.language)}\n${t('v2.rightColumn.updated', 'Modificado')}: ${fmtDateFull(r.updatedAt, i18n.language)}`}>
                       {isRenaming ? (
                         <input
@@ -789,7 +800,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
         <NewNamedItemModal
           onClose={() => setNewNamedModal(null)}
           onSubmit={name => (newNamedModal === 'agent' ? createNewAgent(name) : createNewPrompt(name))}
-          icon={newNamedModal === 'agent' ? '🤖' : '⚡'}
+          icon={newNamedModal === 'agent' ? 'agent' : 'prompt'}
           title={newNamedModal === 'agent' ? t('elements.newAgent', 'Nuevo agente') : t('elements.newPrompt', 'Nuevo prompt')}
           placeholder={newNamedModal === 'agent' ? t('elements.newAgentPrompt', 'Nombre del agente:') : t('elements.newPromptPrompt', 'Nombre del prompt:')}
         />

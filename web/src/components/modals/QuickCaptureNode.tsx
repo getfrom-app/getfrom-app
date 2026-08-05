@@ -447,7 +447,7 @@ export default function QuickCaptureNode({ onClose }: Props) {
         {/* Input principal */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ color: (taskPrediction || forceType === 'task') ? 'var(--accent)' : forceType === 'event' ? '#3b82f6' : 'var(--text-tertiary)', fontSize: 14, flexShrink: 0 }}>
-            {forceType === 'event' ? '📅' : (taskPrediction || forceType === 'task') ? '☐' : '•'}
+            {forceType === 'event' ? '◇' : (taskPrediction || forceType === 'task') ? '☐' : '•'}
           </span>
           <div
             ref={inputRef}

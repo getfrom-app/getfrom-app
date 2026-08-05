@@ -5,12 +5,14 @@
 import { createPortal } from 'react-dom'
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import Icon, { type IconName } from '../../v2/components/Icon'
 
 interface Props {
   onClose: () => void
   onSubmit: (name: string) => void
   title: string
-  icon: string
+  /** Nombre de icono del sistema propio (v2/components/Icon.tsx). */
+  icon: IconName
   placeholder: string
   /** Texto del botón de confirmar — por defecto el mismo `title`. */
   submitLabel?: string
@@ -41,9 +43,9 @@ export default function NewNamedItemModal({ onClose, onSubmit, title, icon, plac
     <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <span className="modal-icon">{icon}</span>
+          <span className="modal-icon"><Icon name={icon} size={18} /></span>
           <h2>{title}</h2>
-          <button className="modal-close-btn" onClick={onClose}>×</button>
+          <button className="modal-close-btn" onClick={onClose}><Icon name="close" size={15} /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-field">

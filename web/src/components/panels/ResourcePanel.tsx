@@ -3,17 +3,22 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { unfurlUrl, type UnfurlMeta } from '../../api/unfurl'
+import Icon from '../../v2/components/Icon'
 
 export type ResourceType = string  // ahora libre — usuario puede definir nuevos
-export type ResourceTypeDef = { key: string; icon: string; label: string }
+// `icon` sigue en el tipo por COMPATIBILIDAD: los tipos personalizados que el
+// usuario ya creó viven en localStorage con su emoji. Ya no se pinta ni se pide
+// al crear uno nuevo (rediseño 5 ago 2026: Fromly no muestra emojis) — los tipos
+// se distinguen por su etiqueta, que es lo que de verdad se lee.
+export type ResourceTypeDef = { key: string; icon?: string; label: string }
 
 // Tipos built-in (no se pueden borrar)
 const BUILTIN_TYPES: ResourceTypeDef[] = [
-  { key: 'url',      icon: '🔗', label: 'Enlace' },
-  { key: 'youtube',  icon: '▶️', label: 'Vídeo' },
-  { key: 'book',     icon: '📚', label: 'Libro' },
-  { key: 'podcast',  icon: '🎙', label: 'Podcast' },
-  { key: 'document', icon: '📄', label: 'Documento' },
+  { key: 'url',      label: 'Enlace' },
+  { key: 'youtube',  label: 'Vídeo' },
+  { key: 'book',     label: 'Libro' },
+  { key: 'podcast',  label: 'Podcast' },
+  { key: 'document', label: 'Documento' },
 ]
 
 const CUSTOM_TYPES_KEY = 'from_custom_resource_types'
@@ -63,7 +68,6 @@ export default function ResourcePanel({ node }: Props) {
   const [customTypes, setCustomTypes] = useState<ResourceTypeDef[]>(() => loadCustomTypes())
   const [addingType, setAddingType] = useState(false)
   const [newTypeLabel, setNewTypeLabel] = useState('')
-  const [newTypeIcon, setNewTypeIcon] = useState('📌')
 
   useEffect(() => {
     function refresh() { setCustomTypes(loadCustomTypes()) }
@@ -104,13 +108,12 @@ export default function ResourcePanel({ node }: Props) {
       setAddingType(false); setNewTypeLabel('')
       return
     }
-    const updated = [...customTypes, { key, icon: newTypeIcon || '📌', label }]
+    const updated = [...customTypes, { key, label }]
     saveCustomTypes(updated)
     setCustomTypes(updated)
     setResourceField(node, { _resourceType: key })
     setAddingType(false)
     setNewTypeLabel('')
-    setNewTypeIcon('📌')
   }
 
   function deleteCustomType(key: string, e: React.MouseEvent) {
@@ -141,7 +144,7 @@ export default function ResourcePanel({ node }: Props) {
                 onContextMenu={isCustom ? e => deleteCustomType(t.key, e) : undefined}
                 title={isCustom ? 'Clic derecho para eliminar' : t.label}
               >
-                {t.icon} {t.label}
+                {t.label}
               </button>
             )
           })}
@@ -156,13 +159,6 @@ export default function ResourcePanel({ node }: Props) {
         {addingType && (
           <div className="resource-type-add-row">
             <input
-              className="resource-type-icon-input"
-              maxLength={2}
-              placeholder="📌"
-              value={newTypeIcon}
-              onChange={e => setNewTypeIcon(e.target.value)}
-            />
-            <input
               className="resource-type-label-input"
               placeholder={t('panel.typePlaceholder')}
               value={newTypeLabel}
@@ -173,7 +169,7 @@ export default function ResourcePanel({ node }: Props) {
                 if (e.key === 'Escape') { setAddingType(false); setNewTypeLabel('') }
               }}
             />
-            <button className="resource-type-add-confirm" onClick={addCustomType}>✓</button>
+            <button className="resource-type-add-confirm" onClick={addCustomType}><Icon name="check" size={13} strokeWidth={2.2} /></button>
           </div>
         )}
       </div>
@@ -213,8 +209,8 @@ export default function ResourcePanel({ node }: Props) {
           )}
           <div className="resource-meta-info">
             <div className="resource-meta-title">{meta.title}</div>
-            {meta.channel && <div className="resource-meta-sub">📺 {meta.channel}</div>}
-            {!meta.channel && meta.domain && <div className="resource-meta-sub">🌐 {meta.domain}</div>}
+            {meta.channel && <div className="resource-meta-sub">{meta.channel}</div>}
+            {!meta.channel && meta.domain && <div className="resource-meta-sub">{meta.domain}</div>}
             {meta.description && <div className="resource-meta-desc">{meta.description.slice(0, 100)}{meta.description.length > 100 ? '…' : ''}</div>}
             {url && (
               <a href={url} target="_blank" rel="noopener noreferrer" className="resource-meta-link" onClick={e => e.stopPropagation()}>

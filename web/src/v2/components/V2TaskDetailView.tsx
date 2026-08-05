@@ -15,6 +15,7 @@ import { containerNotesNode, getOrCreateContainerNotes } from '../../utils/cajon
 import { timeLabel, dueLabel, dueColor, recLabel } from '../../components/panels/TaskRow'
 import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
 import { V2NoteBody, V2NoteContext } from './V2DetailView'
+import Icon from './Icon'
 
 interface Props {
   node: Node
@@ -51,14 +52,14 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
             className={`dc-check ${done ? 'dc-check--done' : ''}`}
             onClick={() => toggleTaskDone(node)}
             title={t('daily.markDone')} aria-label={t('daily.markDone')}
-          >{done ? '✓' : ''}</button>
+          >{done ? <Icon name="check" size={12} strokeWidth={2.4} /> : null}</button>
         )}
         <button className="v2-el-ctxchip" style={{ cursor: 'pointer', border: 'none', background: 'var(--bg-hover)' }}
           onClick={() => setShowProps(v => !v)} title={t('dailyCockpit.editDateRecurrence')}>
-          📅 {due || t('modal.dueDate')}
+          <Icon name="calendar" size={13} /> {due || t('modal.dueDate')}
         </button>
         {time && <span className="dc-time">{time}</span>}
-        {rec && <span className="dc-rec">🔁 {rec}</span>}
+        {rec && <span className="dc-rec"><Icon name="repeat" size={13} /> {rec}</span>}
         <button
           title={t('tip.delete', 'Eliminar')}
           onClick={() => { trashNode(node.id); window.dispatchEvent(new Event('from:close-detail')) }}
@@ -77,7 +78,7 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
 
       {/* Notas — EL MISMO editor completo que cualquier nota, NO es el título de la tarea. */}
       <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('v2.context.notes', 'Notas')}</div>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('v2.context.notes', 'Notas')}</div>
         {notesNode && <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />}
       </div>
 

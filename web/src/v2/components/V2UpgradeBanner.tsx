@@ -9,6 +9,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUserStore } from '../../store/userStore'
 import { openUpgradeCheckout } from '../../utils/upgradeCheckout'
+import Icon from './Icon'
 
 const DISMISS_KEY = 'from_v2_upgrade_banner_dismissed_until'
 const DISMISS_DAYS = 7
@@ -39,7 +40,7 @@ export default function V2UpgradeBanner() {
   return (
     <div className="v2-upgrade-banner" role="status">
       <span className="v2-upgrade-banner-text">
-        ✨ {t('v2.upgradeBanner.message', 'Plan gratis · 1.000 elementos · Sin IA')}
+        <Icon name="sparkle" size={14} /> {t('v2.upgradeBanner.message', 'Plan gratis · 1.000 elementos · Sin IA')}
       </span>
       <button className="v2-upgrade-banner-cta" onClick={handleUpgrade} disabled={loading}>
         {loading ? '…' : t('v2.upgradeBanner.cta', 'Pasar a Pro')}

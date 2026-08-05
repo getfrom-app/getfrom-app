@@ -33,6 +33,8 @@ import { isAgentNode } from '../../utils/agentesHelper'
 import { isPromptNode } from '../../utils/promptsHelper'
 import { useRef, useEffect } from 'react'
 import type { Node } from '../../types'
+import Icon from './Icon'
+import { displayTitle } from '../../utils/displayText'
 
 const toast = (message: string, type: 'success' | 'warning' = 'success', action?: { label: string; onClick: () => void }) =>
   window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type, action } }))
@@ -56,8 +58,8 @@ function V2Backlinks({ nodeId }: { nodeId: string }) {
       <div className="v2-section-label" style={{ padding: '0 0 6px' }}>{t('v2.linkedFromCount', 'Enlazado desde ({{count}})', { count: links.length })}</div>
       {links.map(n => (
         <div className="v2-el-row" key={n.id} onClick={() => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: n.id } }))}>
-          <span className="v2-el-icon">📝</span>
-          <span className="v2-el-main"><span className="v2-el-title">{(n.text || '').replace(/^[✦💬]\s*/u, '') || t('v2.untitled', 'Sin título')}</span></span>
+          <span className="v2-el-icon"><Icon name="note" size={16} /></span>
+          <span className="v2-el-main"><span className="v2-el-title">{displayTitle(n.text, t('v2.untitled', 'Sin título'))}</span></span>
         </div>
       ))}
     </div>
@@ -298,7 +300,7 @@ function V2CitationView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: s
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div className="v2-note-toolbar">
-        <span className="v2-section-label" style={{ padding: 0 }}>🔖 {t('v2.citation', 'Cita')}</span>
+        <span className="v2-section-label" style={{ padding: 0 }}><Icon name="quote" size={13} /> {t('v2.citation', 'Cita')}</span>
         {source && (
           <button className="v2-head-action" style={{ marginLeft: 'auto' }} onClick={goToSource}>
             {t('v2.citation.goToSource', 'Ir a la nota')} — {source.text || t('common.noTitle')} ›
@@ -312,7 +314,10 @@ function V2CitationView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: s
   )
 }
 
-export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFiltered }: { nodeId: string; onSelectCtx: (id: string) => void; onOpenElementsFiltered?: (kind: 'agent' | 'prompt') => void }) {
+export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFiltered, hideContext }: { nodeId: string; onSelectCtx: (id: string) => void; onOpenElementsFiltered?: (kind: 'agent' | 'prompt') => void
+  /** Oculta el selector de contexto del editor. Lo usa la MEMORIA de un contexto:
+   *  pertenece a ese contexto por definición, no se le puede cambiar (V2ElementView). */
+  hideContext?: boolean }) {
   useStore()
   const { t } = useTranslation()
   const node = store.getNode(nodeId)
@@ -355,5 +360,5 @@ export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFilter
   if (node.status != null || node.isEvent) return <V2TaskDetailView node={node} onSelectCtx={onSelectCtx} />
   // CITA de un párrafo de otra nota — vista propia con «Ir a la nota» (ver arriba).
   if (ed._docSelection != null) return <V2CitationView node={node} onSelectCtx={onSelectCtx} />
-  return <V2NoteBody node={node} onSelectCtx={onSelectCtx} />
+  return <V2NoteBody node={node} onSelectCtx={onSelectCtx} hideContext={hideContext} />
 }

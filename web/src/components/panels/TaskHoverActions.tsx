@@ -1,6 +1,6 @@
 // TaskHoverActions — acciones de hover comunes a CUALQUIER fila de tarea, esté
 // donde esté (columna del día, contextos, etc.). Mismo set en todos los sitios:
-//   🎯 al foco de hoy (toggle)  ·  → mover a Futuro  ·  🗑 borrar.
+//   «Hoy» (programar para hoy)  ·  → mover a Futuro  ·  papelera.
 // Se ocultan y aparecen en hover por el contenedor `.dc-actions` (la fila debe
 // ser `.dc-row`). Para tareas completadas solo se muestra borrar.
 // ⚠️ El botón de "poner/cambiar fecha" que vivía aquí se quitó (Alberto, 5 ago
@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next'
 import { scheduleTask } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
 import { store } from '../../store/nodeStore'
+import Icon from '../../v2/components/Icon'
 
 export default function TaskHoverActions({ node, onOpenDate }: {
   node: Node
@@ -37,16 +38,12 @@ export default function TaskHoverActions({ node, onOpenDate }: {
       {!done && node.status !== 'future' && (
         <button className="dc-action" title={t('taskHover.moveToFuture', 'Mover a Futuro')}
           onClick={e => { e.stopPropagation(); store.updateNode(node.id, { status: 'future' }) }}>
-          <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 10h11M11 5.5l4.5 4.5-4.5 4.5" />
-          </svg>
+          <Icon name="arrow-right" size={13} />
         </button>
       )}
       <button className="dc-action dc-action--del" title={t('common.delete')}
         onClick={e => { e.stopPropagation(); trashNode(node.id) }}>
-        <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M4 6h12M8 6V4h4v2M6 6l1 10h6l1-10" />
-        </svg>
+        <Icon name="trash" size={13} />
       </button>
     </span>
   )

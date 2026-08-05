@@ -469,7 +469,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
             </svg>
           ) : (
             <span className="cmdpalette-search-icon" style={{ fontSize: 14, display: 'flex', alignItems: 'center' }}>
-              {view === 'filtros' ? '◈' : '🧠'}
+              {view === 'filtros' ? '◈' : '◆'}
             </span>
           )}
           <input
@@ -488,7 +488,7 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
             {parsed.isTask && <span className="cmdpalette-chip">{t('cmdpalette.chipTask')}</span>}
             {parsed.isEvent && <span className="cmdpalette-chip">{t('cmdpalette.chipEvent')}</span>}
                         {parsed.isFavorite && <span className="cmdpalette-chip">{t('cmdpalette.chipFavorite')}</span>}
-            {parsed.dateLabel && <span className="cmdpalette-chip cmdpalette-chip--date">📅 {parsed.dateLabel}</span>}
+            {parsed.dateLabel && <span className="cmdpalette-chip cmdpalette-chip--date">{parsed.dateLabel}</span>}
           </div>
         )}
 
@@ -521,11 +521,11 @@ export default function CommandPalette({ onClose, onSelectContext }: Props) {
                       <span className="cmdpalette-create-icon">+</span>
                     ) : item.type === 'wf-action' ? (
                       <span className="cmdpalette-create-icon">
-                        {item.id.startsWith('ctx-') ? '🧠'
+                        {item.id.startsWith('ctx-') ? '◆'
                           : item.id.startsWith('filtro-') ? '◈'
                           : item.id === 'cat-filtros' ? '◈'
-                          : item.id === 'cat-contextos' ? '🧠'
-                          : item.id.startsWith('quick-') ? '📅'
+                          : item.id === 'cat-contextos' ? '◆'
+                          : item.id.startsWith('quick-') ? '▸'
                           : '⌘'}
                       </span>
                     ) : null}

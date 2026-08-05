@@ -10,6 +10,7 @@ import { useRecordingStore } from '../../store/recordingStore'
 import { processRecording, type ProcessingResult } from '../../utils/recordingProcessor'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
+import Icon from '../../v2/components/Icon'
 
 function formatTime(s: number) {
   const m = Math.floor(s / 60)
@@ -91,7 +92,7 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
   if (micPerm === 'denied') {
     return (
       <div className="rec-bar rec-bar--warning">
-        <span style={{ fontSize: 14 }}>🎙</span>
+        <Icon name="mic" size={14} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--warning)' }}>{t('recording.micBlocked')}</div>
           <div style={{ fontSize: 10, color: 'var(--text-tertiary)', lineHeight: 1.3, marginTop: 1 }}>
@@ -163,7 +164,7 @@ export default function WebRecordingBar({ expanded }: { expanded?: boolean }) {
               fontSize: 10, color: 'var(--text-tertiary)', marginTop: 1,
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
-              🎙 {result.title}
+              <Icon name="audio" size={13} /> {result.title}
               {result.hasTasks ? ` · ${t('rec.withTasks')}` : ''}
             </div>
           </div>

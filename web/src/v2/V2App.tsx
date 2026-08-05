@@ -24,12 +24,13 @@ import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2ProfileView from './components/V2ProfileView'
 import V2ElementView from './components/V2ElementView'
-import V2RightColumn, { RightMode } from './components/V2RightColumn'
+import V2RightColumn, { RightMode, type RightSubTab } from './components/V2RightColumn'
 import V2SettingsNav from './components/V2SettingsNav'
 import { SettingsPaneContent } from '../components/views/SettingsView'
 import type { Tab as SettingsTab } from '../components/views/settingsNav'
 import type { ElemKind } from '../components/panels/ElementsPanel'
 import V2Onboarding from './components/V2Onboarding'
+import V2AttachModal from './components/V2AttachModal'
 import RightColMenu from '../components/panels/RightColMenu'
 import UnifiedCapture from '../components/modals/UnifiedCapture'
 import { ToastProvider } from '../components/Toast'
@@ -97,6 +98,9 @@ export default function V2App() {
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
   const [rightMode, setRightMode] = useState<RightMode>('agenda')
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
+  // «Adjuntar» (V2AttachModal): archivo / enlace / Drive en un único sitio. Guarda
+  // el contexto desde el que se abrió — lo que se adjunte nace ahí.
+  const [attachCtx, setAttachCtx] = useState<{ id: string | null } | null>(null)
   // Elemento abierto en el ESPACIO CENTRAL — regla ÚNICA de dónde vive cada cosa
   // (Alberto, 30 jul: "me parece confuso que a veces los elementos se abran a la
   // derecha, a veces al centro"). Si hay un elemento, es el centro; si no, el
@@ -137,7 +141,7 @@ export default function V2App() {
   // cambia el destino activo (contexto u `onSelectGeneral`); pasa a 'chat' cuando
   // algo revela su propio chat (abrir un elemento con "Hablar de esto", un
   // artifact recién creado por el chat general, etc.) — ver cada sitio abajo.
-  const [rightSubTab, setRightSubTab] = useState<'primary' | 'chat'>('primary')
+  const [rightSubTab, setRightSubTab] = useState<RightSubTab>('primary')
   // Cuál de las 2 tabs FIJAS del destino Agenda está activa (independiente de
   // `rightSubTab`, que solo distingue Tab1 genérica vs Chat) — ver `onAgendaViewChange`.
   const [agendaView, setAgendaView] = useState<'dia' | 'planner'>('dia')
@@ -290,7 +294,7 @@ export default function V2App() {
     } else if (dest === 'chat') {
       // Retoma la conversación general que hubiera — igual que un contexto
       // retoma su documento. Descartarla y empezar de cero sigue siendo el
-      // trabajo explícito de "+ Nueva conversación" (onNewChat), que no cambia.
+      // trabajo explícito de empezar una nueva (onNewChat / icono de chat).
       setCenterElementId(null)
     } else if (dest === 'elementos') {
       // Un clic normal en la fila Elementos siempre debe abrir «Todos» — sin esto,
@@ -321,18 +325,6 @@ export default function V2App() {
       try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
     }
     setRightSubTab('primary')
-  }
-
-  // Botón «Nueva conversación» (barra izquierda) → SIEMPRE sin contexto (General),
-  // destino Chat de la sidebar.
-  const onNewChat = () => {
-    setShowProfile(false)
-    setCenterElementId(null)
-    setSelectedCtxId(null)
-    setFocusNodeId(null)
-    setRightMode('chat')
-    setRightSubTab('primary')
-    aiChatStore.startNewSession()
   }
 
   // «＋» al pasar el ratón sobre un contexto → nueva conversación DENTRO de ese contexto.
@@ -392,6 +384,12 @@ export default function V2App() {
     setSelectedCtxId(sessionCtx?.id ?? null)
     setFocusNodeId(null)
     setCenterElementId(null)
+    // Excepción a "abrir un elemento nunca cambia la tab activa": si venimos del
+    // tab «Historial» (destino Chat), la conversación que acabamos de abrir se
+    // pinta justo en la tab que estamos dejando atrás — sin esto el Historial se
+    // queda en pantalla y la conversación no se ve en ningún sitio. Solo afecta
+    // a ese sub-tab; el resto de la navegación se mantiene intacta.
+    setRightSubTab(prev => (prev === 'historial' ? 'primary' : prev))
   }
 
   // «← Agentes»/«← Prompts» desde el detalle: cierra el detalle y abre la tab
@@ -402,15 +400,6 @@ export default function V2App() {
     setElementsFilter(kind)
     setRightMode('elementos')
   }
-
-  // «Hablar de esto» (botón en la cabecera de un documento/tarea/PDF/imagen
-  // abierto en el CENTRO, V2ElementView): el elemento YA es el centro — solo
-  // hace falta enseñar la tab Detalles, que SIEMPRE muestra el chat asociado a
-  // lo que hay en el centro (V2RightColumn → V2ElementChat →
-  // aiChatStore.getOrCreateElementSession). No hay estado propio que gestionar
-  // aquí: a diferencia del botón de antes, no crea una conversación nueva y
-  // aislada cada vez — reutiliza la de siempre.
-  const onOpenChatAbout = () => setRightSubTab('chat')
 
   const isTextFile = (f: File) => /\.(md|markdown|txt)$/i.test(f.name) || f.type === 'text/markdown' || f.type === 'text/plain'
 
@@ -438,7 +427,7 @@ export default function V2App() {
         try { const note = createMarkdownNode(parentId, await f.text(), f.name, false); if (note) lastId = note.id } catch { /* */ }
       } else {
         const id = await uploadResourceNode(f, parentId)
-        if (id) { lastId = id; toast(t('v2.importedToFromly', '📥 {{name}} importado a Fromly', { name: f.name })) }
+        if (id) { lastId = id; toast(t('v2.importedToFromly', '{{name}} importado a Fromly', { name: f.name })) }
       }
     }
     return lastId
@@ -479,7 +468,7 @@ export default function V2App() {
       const sid = aiChatStore.sessionId
       if (centerElementId) setRightSubTab('chat'); else setRightMode('chat')
       let ok = 0
-      for (const f of otherFiles) { if (await uploadResourceNode(f, sid)) { ok++; toast(t('v2.attachedToConversation', '📎 {{name}} adjuntado a la conversación', { name: f.name })) } }
+      for (const f of otherFiles) { if (await uploadResourceNode(f, sid)) { ok++; toast(t('v2.attachedToConversation', '{{name}} adjuntado a la conversación', { name: f.name })) } }
       if (ok > 0) {
         const label = ok === 1 ? `**${otherFiles[0].name}**` : t('v2.filesCount', '{{count}} archivos', { count: ok })
         aiChatStore.addNotice(t('v2.filesIncorporatedNotice', 'He incorporado {{label}} a esta conversación. Ya puedes preguntarme sobre su contenido.', { label }))
@@ -521,12 +510,12 @@ export default function V2App() {
       const sid = aiChatStore.sessionId
       if (centerElementId) setRightSubTab('chat'); else setRightMode('chat')
       createDriveResourceNode(result, sid)
-      toast(t('v2.attachedToConversation', '📎 {{name}} adjuntado a la conversación', { name: result.name }))
+      toast(t('v2.attachedToConversation', '{{name}} adjuntado a la conversación', { name: result.name }))
       aiChatStore.addNotice(t('v2.filesIncorporatedNotice', 'He incorporado {{label}} a esta conversación. Ya puedes preguntarme sobre su contenido.', { label: `**${result.name}**` }))
     } else {
       const id = createDriveResourceNode(result, captureParentId())
       setCenterElementId(id)
-      toast(t('v2.importedToFromly', '📥 {{name}} importado a Fromly', { name: result.name }))
+      toast(t('v2.importedToFromly', '{{name}} importado a Fromly', { name: result.name }))
     }
   }
 
@@ -562,6 +551,17 @@ export default function V2App() {
     setSelectedCtxId(ctxId)
     aiChatStore.startNewSession()
     onOpenDrivePicker()
+  }
+
+  /** Abre «Adjuntar» (archivo / enlace / Drive). Sustituye al botón «Drive» suelto
+   *  de la sidebar — Drive es ahora una de las tres vías, no la única. */
+  const onOpenAttach = (ctxId: string | null) => {
+    setShowProfile(false)
+    setSelectedCtxId(ctxId)
+    // Igual que `onDriveInCtx`: cerrar la conversación activa ANTES, o lo adjuntado
+    // acabaría dentro de un chat ajeno en vez de en el contexto elegido.
+    aiChatStore.startNewSession()
+    setAttachCtx({ id: ctxId })
   }
   const onRecordInCtx = (ctxId: string | null) => {
     setShowProfile(false)
@@ -796,7 +796,7 @@ export default function V2App() {
   return (
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChat={onNewChat} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onDriveInCtx={onDriveInCtx} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onOpenAttach={onOpenAttach} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={() => { setCenterElementId(null); setShowProfile(true) }} />
       {centerElementId ? (
         // ⚠️ `key` es OBLIGATORIO: sin él, al pasar de un elemento a otro (p.ej.
         // abrir una nota de Casa Alicante y luego la nota diaria de otro día
@@ -810,7 +810,7 @@ export default function V2App() {
         // tab día... ese texto de esa tarea se ha copiado en la nota diaria").
         // Con `key={centerElementId}` React desmonta y monta desde cero, sin
         // ventana de solape posible.
-        <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} onOpenChat={onOpenChatAbout} />
+        <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
       ) : showProfile ? (
         <V2ProfileView onClose={() => setShowProfile(false)} />
       ) : rightMode === 'chat' ? (
@@ -838,6 +838,9 @@ export default function V2App() {
           currentNodeId={currentNodeId}
           contextLabel={contextLabel}
           onFilesDropped={onFilesDropped}
+          onOpenConversation={onOpenConversation}
+          onNewChatInCtx={onNewChatInCtx}
+          onSelectCtx={onSelectCtx}
         />
       )}
       <V2RightColumn
@@ -849,6 +852,7 @@ export default function V2App() {
         onResize={setRightWidth}
         rightSubTab={rightSubTab}
         onSubTabChange={setRightSubTab}
+        onNewChatInCtx={onNewChatInCtx}
         agendaView={agendaView}
         onAgendaViewChange={onAgendaViewChange}
         diaResetKey={diaResetKey}
@@ -864,6 +868,15 @@ export default function V2App() {
         <UnifiedCapture
           onClose={() => setShowCapture(false)}
           onSelectContext={id => { onSelectCtx(id); setShowCapture(false) }}
+        />
+      )}
+      {attachCtx && (
+        <V2AttachModal
+          onClose={() => setAttachCtx(null)}
+          onFiles={onFilesDropped}
+          onOpenDrive={() => onDriveInCtx(attachCtx.id)}
+          parentId={attachCtx.id ?? captureParentId()}
+          onOpenNode={id => setCenterElementId(id)}
         />
       )}
       <V2Onboarding />

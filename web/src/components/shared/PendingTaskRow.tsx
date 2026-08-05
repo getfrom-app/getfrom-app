@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { renderInline } from '../outliner/InlineRenderer'
 import type { Node } from '../../types'
+import Icon from '../../v2/components/Icon'
 
 // Estado global de drag (módulo) — compartido con CalendarSidePanel y agenda.
 let _pendingTaskDragId: string | null = null
@@ -100,7 +101,7 @@ export default function PendingTaskRow({ task, variant, indented, parentNote, on
       onClick={onClick}
     >
       {isEvent ? (
-        <span className="diary-agenda-event-icon">📅</span>
+        <span className="diary-agenda-event-icon"><Icon name="event" size={13} /></span>
       ) : leaving ? (
         <span className="diary-agenda-checkbox diary-agenda-checkbox--done cal-panel-check-pulse">✓</span>
       ) : (

@@ -574,7 +574,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     setAssignedCtx([])
     setPendingCajones([])
     lockedForceTypeRef.current = null
-    showToast(`✓ ${labelForType(result.type)} creado`)
+    showToast(`${labelForType(result.type)} creado`)
     // Captura rápida: NO navegar dentro del nodo creado — molesto cuando solo
     // quieres soltar una tarea y seguir donde estabas. Se queda donde está.
     onClose()
@@ -954,8 +954,8 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       return `${ctxSuggestion.cajonId ? '# ' : ''}${typed}${ctxSuggestion.ghost}`
     }
     if (newCajonName) return `# Crear «${newCajonName}»`
-    if (taskPrediction && datePrediction) return `☐ ${datePrediction.parsed.label}${datePrediction.timeStr ? ' · ' + datePrediction.timeStr : ''}`
-    if (taskPrediction) return '☐ tarea'
+    if (taskPrediction && datePrediction) return `${datePrediction.parsed.label}${datePrediction.timeStr ? ' · ' + datePrediction.timeStr : ''}`
+    if (taskPrediction) return 'tarea'
     if (datePrediction) return datePrediction.parsed.label + (datePrediction.timeStr ? ' · ' + datePrediction.timeStr : '')
     return null
   })()
@@ -968,11 +968,11 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     if (item.type === 'create') return '+'
     if (item.taskStatus === 'pending') return '☐'
     if (item.taskStatus === 'done') return '✓'
-    if (item.id.startsWith('ctx-')) return '🧠'
+    if (item.id.startsWith('ctx-')) return '◆'
     if (item.id.startsWith('filtro-')) return '◈'
     if (item.id === 'cat-filtros') return '◈'
-    if (item.id === 'cat-contextos') return '🧠'
-    if (item.id.startsWith('quick-')) return '📅'
+    if (item.id === 'cat-contextos') return '◆'
+    if (item.id.startsWith('quick-')) return '▸'
     if (item.id.startsWith('wf-')) return '⌘'
     return '•'
   }
@@ -1048,7 +1048,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
             color: (taskPrediction || forceType === 'task') ? 'var(--accent)' : forceType === 'event' ? '#3b82f6' : 'var(--text-tertiary)',
             fontSize: 14, flexShrink: 0,
           }}>
-            {forceType === 'event' ? '📅' : (taskPrediction || forceType === 'task') ? '☐' : '•'}
+            {forceType === 'event' ? '◇' : (taskPrediction || forceType === 'task') ? '☐' : '•'}
           </span>
           <div
             ref={inputRef}

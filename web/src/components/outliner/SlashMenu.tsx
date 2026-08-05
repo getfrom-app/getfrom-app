@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { parseNaturalDate, getSuggestion } from '../../utils/naturalDate'
 import type { RecurrenceConfig } from '../../utils/naturalDate'
+import Icon, { isIconName } from '../../v2/components/Icon'
 
 export type SlashAction =
   | 'text' | 'task' | 'expand' | 'event' | 'note' | 'nota' | 'bullet'
@@ -41,28 +42,28 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Texto', label: 'Cita',       icon: '"',   prefix: '> ',    description: 'Bloque de cita',         action: 'text' },
   { group: 'Texto', label: 'Código',     icon: '</>',  prefix: '` ',   description: 'Texto monoespaciado',    action: 'text' },
   { group: 'Texto', label: 'Separador',  icon: '—',   prefix: '---',   description: 'Línea divisoria',        action: 'text' },
-  { group: 'Texto', label: 'Log',        icon: '🕐',  prefix: '',      description: 'Entrada con fecha y hora (registro)', action: 'log' },
+  { group: 'Texto', label: 'Log',        icon: 'clock',  prefix: '',      description: 'Entrada con fecha y hora (registro)', action: 'log' },
   // ── Objetos ─────────────────────────────────────────────────────────────
-  { group: 'Objetos', label: 'Documento', icon: '📝', prefix: '',      description: 'Documento de texto rico (editor)', action: 'document' },
-  { group: 'Objetos', label: 'Pizarra',  icon: '🖊',  prefix: '',      description: 'Pizarra digital para dibujar', action: 'whiteboard' },
-  { group: 'Objetos', label: 'Nota',     icon: '📄',  prefix: '',      description: 'Sub-nota / página hija', action: 'nota' },
-  { group: 'Objetos', label: 'Tarea',    icon: '☑',   prefix: '',      description: 'Convertir en tarea',     action: 'task' },
-  { group: 'Objetos', label: 'Evento',   icon: '📅',   prefix: '',      description: 'Evento con fecha/hora',   action: 'event' },
-  { group: 'Objetos', label: 'Recurso',  icon: '🔗',   prefix: '',      description: 'Enlace / video / artículo', action: 'resource' },
+  { group: 'Objetos', label: 'Documento', icon: 'document', prefix: '',      description: 'Documento de texto rico (editor)', action: 'document' },
+  { group: 'Objetos', label: 'Pizarra',  icon: 'canvas',  prefix: '',      description: 'Pizarra digital para dibujar', action: 'whiteboard' },
+  { group: 'Objetos', label: 'Nota',     icon: 'note',  prefix: '',      description: 'Sub-nota / página hija', action: 'nota' },
+  { group: 'Objetos', label: 'Tarea',    icon: 'task',   prefix: '',      description: 'Convertir en tarea',     action: 'task' },
+  { group: 'Objetos', label: 'Evento',   icon: 'event',   prefix: '',      description: 'Evento con fecha/hora',   action: 'event' },
+  { group: 'Objetos', label: 'Recurso',  icon: 'link',   prefix: '',      description: 'Enlace / video / artículo', action: 'resource' },
   { group: 'Objetos', label: 'Ampliar',  icon: '↑',   prefix: '',      description: 'Convierte la tarea en una nota que la contiene', action: 'expand' },
   // ── IA (paridad Mac) ────────────────────────────────────────────────────
-  { group: 'IA',      label: 'Agente',   icon: '🤖',  prefix: '',      description: 'Agente que ejecuta tareas con IA', action: 'agent' },
-  { group: 'IA',      label: 'Prompt',   icon: '✨',  prefix: '',      description: 'Plantilla de prompt reutilizable', action: 'prompt' },
+  { group: 'IA',      label: 'Agente',   icon: 'agent',  prefix: '',      description: 'Agente que ejecuta tareas con IA', action: 'agent' },
+  { group: 'IA',      label: 'Prompt',   icon: 'prompt',  prefix: '',      description: 'Plantilla de prompt reutilizable', action: 'prompt' },
   // ── Vistas (inline blocks) ──────────────────────────────────────────────
   { group: 'Vistas',  label: 'Lista',      icon: '☰', prefix: '', description: 'Vista lista inline con hijos',  action: 'view-list' },
   { group: 'Vistas',  label: 'Tabla',      icon: '⊞', prefix: '', description: 'Vista tabla inline con hijos', action: 'view-table' },
   { group: 'Vistas',  label: 'Kanban',     icon: '⫴', prefix: '', description: 'Tablero kanban inline',         action: 'view-kanban' },
-  { group: 'Vistas',  label: 'Calendario', icon: '📅', prefix: '', description: 'Calendario inline',             action: 'view-calendar' },
+  { group: 'Vistas',  label: 'Calendario', icon: 'calendar', prefix: '', description: 'Calendario inline',             action: 'view-calendar' },
   // ── Fecha ─────────────────────────────────────────────────────────────────
-  { group: 'Fecha', label: 'Fecha…', icon: '📅', prefix: 'mover a ', description: 'Poner fecha: viernes · 29 mayo · en 3 días…', action: 'move-to-prompt' },
-  { group: 'Fecha', label: 'Fecha: hoy', icon: '☀️', prefix: '', description: 'Asignar fecha de hoy', action: 'move-today' },
-  { group: 'Fecha', label: 'Fecha: mañana', icon: '📆', prefix: '', description: 'Asignar fecha de mañana', action: 'move-tomorrow' },
-  { group: 'Fecha', label: 'Fecha: próx. semana', icon: '📋', prefix: '', description: 'Asignar fecha al inicio de la próxima semana', action: 'move-next-week' },
+  { group: 'Fecha', label: 'Fecha…', icon: 'calendar', prefix: 'mover a ', description: 'Poner fecha: viernes · 29 mayo · en 3 días…', action: 'move-to-prompt' },
+  { group: 'Fecha', label: 'Fecha: hoy', icon: 'today', prefix: '', description: 'Asignar fecha de hoy', action: 'move-today' },
+  { group: 'Fecha', label: 'Fecha: mañana', icon: 'arrow-right', prefix: '', description: 'Asignar fecha de mañana', action: 'move-tomorrow' },
+  { group: 'Fecha', label: 'Fecha: próx. semana', icon: 'calendar', prefix: '', description: 'Asignar fecha al inicio de la próxima semana', action: 'move-next-week' },
   // ── Árbol ─────────────────────────────────────────────────────────────────
   { group: 'Árbol', label: 'Expandir todo', icon: '▿', prefix: '', description: 'Expandir todos los hijos', action: 'expand-all' },
   { group: 'Árbol', label: 'Colapsar todo', icon: '▸', prefix: '', description: 'Colapsar todos los hijos', action: 'collapse-all' },
@@ -70,15 +71,15 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Árbol', label: 'Duplicar', icon: '⧉', prefix: '', description: 'Duplicar este nodo y sus hijos', action: 'duplicate' },
   { group: 'Árbol', label: 'Espejo',   icon: '⬡', prefix: '', description: 'Insertar un espejo de otra nota aquí', action: 'mirror' },
   // ── IA ────────────────────────────────────────────────────────────────────
-  { group: 'IA', label: 'Resumir', icon: '📝', prefix: '', description: 'Resumir el contenido con IA', action: 'ai-summarize' },
+  { group: 'IA', label: 'Resumir', icon: 'sparkle', prefix: '', description: 'Resumir el contenido con IA', action: 'ai-summarize' },
   { group: 'IA', label: 'Encontrar tareas', icon: '✓', prefix: '', description: 'Extraer tareas del contenido', action: 'ai-find-tasks' },
-  { group: 'IA', label: 'Crear esquema', icon: '📋', prefix: '', description: 'Generar un outline del contenido', action: 'ai-draft-outline' },
-  { group: 'IA', label: 'Corregir gramática', icon: '✏️', prefix: '', description: 'Corregir errores gramaticales', action: 'ai-fix-grammar' },
+  { group: 'IA', label: 'Crear esquema', icon: 'note', prefix: '', description: 'Generar un outline del contenido', action: 'ai-draft-outline' },
+  { group: 'IA', label: 'Corregir gramática', icon: 'pencil', prefix: '', description: 'Corregir errores gramaticales', action: 'ai-fix-grammar' },
   { group: 'IA', label: 'Hacer más corto', icon: '↔', prefix: '', description: 'Resumir a versión más concisa', action: 'ai-make-shorter' },
   // ── Gestión ───────────────────────────────────────────────────────────────
   // Añadir a atajos eliminado — usar Favorito desde ··· más opciones
-  { group: 'Gestión', label: 'Añadir fecha', icon: '🗓', prefix: '', description: 'Asignar fecha de vencimiento', action: 'add-date' },
-  { group: 'Gestión', label: 'Eliminar', icon: '🗑', prefix: '', description: 'Eliminar este nodo', action: 'delete' },
+  { group: 'Gestión', label: 'Añadir fecha', icon: 'calendar', prefix: '', description: 'Asignar fecha de vencimiento', action: 'add-date' },
+  { group: 'Gestión', label: 'Eliminar', icon: 'trash', prefix: '', description: 'Eliminar este nodo', action: 'delete' },
 ]
 
 export interface SlashSelectPayload {
@@ -191,7 +192,7 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
       <div ref={menuRef} className="slash-menu slash-menu--move" style={{ position: 'fixed', top: pos.top, left: pos.left, zIndex: 1000, minWidth: 220 }}>
         {/* Campo con texto tapiz predictivo */}
         <div className="slash-menu-move-field">
-          <span className="slash-menu-move-icon">📅</span>
+          <span className="slash-menu-move-icon"><Icon name="calendar" size={13} /></span>
           <span className="slash-menu-move-typed">{moveDateQuery || ''}</span>
           {suggestion && <span className="slash-menu-move-ghost">{suggestion}</span>}
           {!moveDateQuery && <span className="slash-menu-move-placeholder">escribe una fecha…</span>}
@@ -254,7 +255,9 @@ export default function SlashMenu({ anchorEl, query, onSelect, onClose }: Props)
                     onSelect({ prefix: opt.prefix, action: opt.action, recurrence: opt.recurrence })
                   }}
                 >
-                  <span className="slash-menu-icon">{opt.icon}</span>
+                  {/* `icon` mezcla glifos tipográficos («H1», «⊞», «☰») con nombres
+                      del sistema de iconos — se pinta lo que corresponda a cada uno. */}
+                  <span className="slash-menu-icon">{typeof opt.icon === 'string' && isIconName(opt.icon) ? <Icon name={opt.icon} size={14} /> : opt.icon}</span>
                   <div className="slash-menu-text">
                     <span className="slash-menu-label">{opt.label}</span>
                     <span className="slash-menu-desc">{opt.description}</span>

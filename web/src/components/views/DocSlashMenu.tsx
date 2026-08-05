@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import Icon, { isIconName } from '../../v2/components/Icon'
 
 export type DocSlashAction = 'view-table' | 'view-kanban' | 'view-calendar'
 
@@ -33,7 +34,7 @@ export default function DocSlashMenu({ anchorEl, query, onSelect, onClose }: Pro
   const OPTIONS: DocSlashOption[] = [
     { action: 'view-table', label: t('docSlash.table', 'Tabla'), icon: '⊞', description: t('docSlash.tableDesc', 'Vista tabla inline con hijos') },
     { action: 'view-kanban', label: t('docSlash.kanban', 'Kanban'), icon: '⫴', description: t('docSlash.kanbanDesc', 'Tablero kanban inline') },
-    { action: 'view-calendar', label: t('docSlash.calendar', 'Calendario'), icon: '📅', description: t('docSlash.calendarDesc', 'Calendario inline') },
+    { action: 'view-calendar', label: t('docSlash.calendar', 'Calendario'), icon: 'calendar', description: t('docSlash.calendarDesc', 'Calendario inline') },
   ]
 
   const filtered = OPTIONS.filter(opt =>
@@ -107,7 +108,9 @@ export default function DocSlashMenu({ anchorEl, query, onSelect, onClose }: Pro
           onMouseEnter={() => setActiveIdx(idx)}
           onMouseDown={e => { e.preventDefault(); onSelect(opt.action, opt.label) }}
         >
-          <span className="slash-menu-icon">{opt.icon}</span>
+          {/* Igual que el menú «/» del outliner: glifos tipográficos («⊞», «⫴»)
+              conviven con nombres del sistema de iconos. */}
+          <span className="slash-menu-icon">{isIconName(opt.icon) ? <Icon name={opt.icon} size={14} /> : opt.icon}</span>
           <div className="slash-menu-text">
             <span className="slash-menu-label">{opt.label}</span>
             <span className="slash-menu-desc">{opt.description}</span>

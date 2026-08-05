@@ -6,6 +6,7 @@ import { useUserStore } from '../../store/userStore'
 import { getCheckoutUrl } from '../../api/client'
 import { openUpgradeCheckout } from '../../utils/upgradeCheckout'
 import { openExternalUrl } from '../../utils/openExternal'
+import Icon, { type IconName } from '../../v2/components/Icon'
 
 const LS_BILLING = 'https://app.lemonsqueezy.com/billing'
 
@@ -53,7 +54,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
   }
 
   // ── Contenido según el escenario ────────────────────────────────────────
-  let icon     = '✨'
+  let icon: IconName = 'sparkle'
   let title    = ''
   let subtitle = ''
   let primaryLabel = ''
@@ -62,35 +63,35 @@ export default function PaywallModal({ reason, onClose }: Props) {
 
   if (reason === 'node_limit') {
     // Límite de nodos — siempre free
-    icon          = '📦'
+    icon          = 'layers'
     title         = 'Has alcanzado el límite del plan gratuito'
     subtitle      = 'Con el plan gratuito puedes tener hasta 1.000 nodos. Suscríbete para tener nodos ilimitados y acceso completo a la IA.'
     primaryLabel  = 'Ver planes'
     primaryAction = () => { onClose(); navigate('/pricing') }
 
   } else if (reason === 'file_limit') {
-    icon          = '📎'
+    icon          = 'attachment'
     title         = 'Adjuntar archivos requiere Fromly Pro'
     subtitle      = 'Sube imágenes, PDFs y documentos sin límite con cualquier plan Pro.'
     primaryLabel  = loading ? '…' : 'Suscribirme ahora'
     primaryAction = openSubscriptionCheckout
 
   } else if (reason === 'publish_limit') {
-    icon          = '🔗'
+    icon          = 'link'
     title         = 'Publicar notas requiere Fromly Pro'
     subtitle      = 'Comparte cualquier nota con una URL pública — disponible en los planes Pro.'
     primaryLabel  = loading ? '…' : 'Suscribirme ahora'
     primaryAction = openSubscriptionCheckout
 
   } else if (reason === 'agent_limit') {
-    icon          = '🤖'
+    icon          = 'agent'
     title         = 'Ya tienes 1 agente activo'
     subtitle      = 'El plan gratis permite tener 1 agente activo a la vez, para que puedas probarlo. Pásate a Pro para activar todos los que quieras.'
     primaryLabel  = loading ? '…' : 'Suscribirme ahora'
     primaryAction = openSubscriptionCheckout
 
   } else if (reason === 'free_chat_limit') {
-    icon          = '💬'
+    icon          = 'conversation'
     title         = 'Has usado tus 5 chats gratis de este mes'
     subtitle      = 'El plan gratis incluye 5 conversaciones nuevas de IA al mes. Con Pro tienes IA sin límite.'
     primaryLabel  = loading ? '…' : 'Suscribirme ahora'
@@ -98,7 +99,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
 
   } else if (isPremium) {
     // Suscriptor sin tokens
-    icon          = '⚡'
+    icon          = 'prompt'
     title         = 'Te has quedado sin tokens de IA'
     subtitle      = 'Has consumido todos tus tokens del mes. Puedes comprar tokens adicionales o esperar a la renovación de tu suscripción.'
     primaryLabel  = loading ? '…' : 'Comprar más tokens'
@@ -107,7 +108,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
 
   } else {
     // Free sin IA
-    icon          = '✨'
+    icon          = 'sparkle'
     title         = 'La IA de Fromly requiere suscripción'
     subtitle      = 'Suscríbete para usar el asistente de IA sin límites: crea notas, tareas y eventos con tu voz, y deja que Fromly organice todo por ti.'
     primaryLabel  = loading ? '…' : 'Suscribirme ahora'
@@ -143,7 +144,7 @@ export default function PaywallModal({ reason, onClose }: Props) {
         }}
       >
         {/* Icono */}
-        <div style={{ fontSize: 40, lineHeight: 1 }}>{icon}</div>
+        <div style={{ lineHeight: 1, color: 'var(--accent)' }}><Icon name={icon} size={32} strokeWidth={1.5} /></div>
 
         {/* Título */}
         <div>

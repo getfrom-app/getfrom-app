@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { fetchFileContent } from '../../api/client'
+import Icon from '../../v2/components/Icon'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type PdfDoc = any
@@ -114,7 +115,7 @@ export default function PdfCanvasPreview({ url, width, scale = 1, title, allPage
   if (state === 'fail') {
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 18px' }}>
-        <span style={{ fontSize: 30, lineHeight: 1 }}>📄</span>
+        <Icon name="pdf" size={28} strokeWidth={1.4} />
         <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--text,#222)', wordBreak: 'break-word' }}>{title || t('pdf.document')}</span>
       </div>
     )

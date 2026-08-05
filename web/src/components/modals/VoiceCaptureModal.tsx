@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useRecordingStore } from '../../store/recordingStore'
 import { store } from '../../store/nodeStore'
+import Icon from '../../v2/components/Icon'
 
 interface Props {
   onClose: () => void
@@ -40,7 +41,7 @@ export default function VoiceCaptureModal({ onClose }: Props) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card voice-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <span className="modal-icon">🎙</span>
+          <span className="modal-icon"><Icon name="mic" size={18} /></span>
           <h2>{t('voice.recordingTitle')}</h2>
           {/* Closing modal does NOT stop recording */}
           <button className="modal-close-btn" onClick={onClose}>×</button>
@@ -70,7 +71,7 @@ export default function VoiceCaptureModal({ onClose }: Props) {
           ) : r.phase === 'done' ? (
             <div className="voice-mic-idle">✓</div>
           ) : (
-            <div className="voice-mic-idle">🎙</div>
+            <div className="voice-mic-idle"><Icon name="mic" size={30} strokeWidth={1.5} /></div>
           )}
         </div>
 

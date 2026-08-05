@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 import { useToast } from '../Toast'
+import Icon from '../../v2/components/Icon'
 
 interface Props {
   onClose: () => void
@@ -20,10 +21,12 @@ interface Props {
 }
 
 const EVENT_TYPES = [
-  { id: 'meeting', label: 'Reunión', icon: '🤝' },
-  { id: 'personal', label: 'Personal', icon: '👤' },
-  { id: 'work', label: 'Trabajo', icon: '💼' },
-  { id: 'reminder', label: 'Recordatorio', icon: '🔔' },
+  // Sin icono: los 4 tipos se distinguen por su etiqueta y su color; meterles un
+  // emoji cada uno era justo lo que le daba aire de app barata (5 ago 2026).
+  { id: 'meeting', label: 'Reunión' },
+  { id: 'personal', label: 'Personal' },
+  { id: 'work', label: 'Trabajo' },
+  { id: 'reminder', label: 'Recordatorio' },
 ]
 
 const DURATION_OPTIONS = [
@@ -115,7 +118,7 @@ export default function NewEventModal({ onClose, parentId, defaultDateStr, onCre
     if (body) store.updateNode(node.id, { body })
     if (onCreated) onCreated(node.id)
     else navigate(`/node/${node.id}`)
-    showToast('✓ ' + t('ai.actionEventCreated', 'Evento creado'))
+    showToast(t('ai.actionEventCreated', 'Evento creado'))
     onClose()
   }
 
@@ -127,7 +130,7 @@ export default function NewEventModal({ onClose, parentId, defaultDateStr, onCre
     <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
       <div className="modal-card new-event-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <span className="modal-icon">📅</span>
+          <span className="modal-icon"><Icon name="event" size={18} /></span>
           <h2>{t('modal.newEvent')}</h2>
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>
@@ -156,7 +159,7 @@ export default function NewEventModal({ onClose, parentId, defaultDateStr, onCre
                   className={`event-chip ${eventType === t.id ? 'event-chip--active' : ''}`}
                   onClick={() => setEventType(prev => prev === t.id ? '' : t.id)}
                 >
-                  {t.icon} {t.label}
+                  {t.label}
                 </button>
               ))}
             </div>

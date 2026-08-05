@@ -23,6 +23,7 @@ import DocInspector from '../../components/views/DocInspector'
 import AgentPropertiesPanel from '../../components/panels/AgentPropertiesPanel'
 import { V2NoteContext } from './V2DetailView'
 import { isMentionable } from '../elementKind'
+import Icon from './Icon'
 
 interface Props {
   node: Node
@@ -121,7 +122,7 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
   return (
     <div style={{ padding: '4px 18px 18px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0' }}>
-        <span style={{ fontSize: 20 }}>{data?.icon || '🤖'}</span>
+        <Icon name="agent" size={20} />
         <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
           color: data?.enabled ? '#22c55e' : 'var(--text-tertiary)',
           background: data?.enabled ? 'rgba(34,197,94,0.10)' : 'var(--bg-secondary)' }}>
@@ -156,7 +157,7 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
           viñetas de outliner. Esto es SOLO la pregunta/tarea de apertura — el
           formato de respuesta va en el bloque de abajo. */}
       <div style={{ marginTop: 10 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('agents.promptLabel', 'Instrucción del agente')}</div>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('agents.promptLabel', 'Instrucción del agente')}</div>
         <div className="v2-note-formatbar"><DocInspector bar /></div>
         <DocEditorBoundary compact>
           <DocEditor node={docNode} compact registerActive autofocus={false} />
@@ -168,7 +169,7 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
           en aiChatStore.ts) para que Fromly sepa cómo estructurar su respuesta tras
           la primera pregunta de un agente conversacional. */}
       <div style={{ marginTop: 18 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>💬 {t('agents.responseFormatLabel', 'Cómo debe responder')}</div>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('agents.responseFormatLabel', 'Cómo debe responder')}</div>
         <textarea
           value={systemPrompt}
           placeholder={t('agents.responseFormatPlaceholder', 'Formato y estilo de la respuesta que debe dar el agente (p. ej. secciones, tono, longitud)…')}
@@ -191,7 +192,7 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
           digo que debe tener en cuenta la nota de morning fórmula podrá leerla y
           la tendrá en cuenta... el agente conoce mis metas, objetivos, ética"). */}
       <div style={{ marginTop: 18 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📎 {t('agents.referencedElementsLabel', 'Elementos a tener en cuenta')}</div>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('agents.referencedElementsLabel', 'Elementos a tener en cuenta')}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
           {referencedIds.map(id => {
             const n = store.getNode(id)
@@ -229,7 +230,7 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
           onClick={() => setShowProps(v => !v)}
           style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: showProps ? 8 : 0 }}
         >
-          <span className="v2-section-label" style={{ padding: 0 }}>⚙️ {t('agents.propertiesLabel', 'Propiedades')}</span>
+          <span className="v2-section-label" style={{ padding: 0 }}>{t('agents.propertiesLabel', 'Propiedades')}</span>
           <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }}>{showProps ? '▾' : '▸'}</span>
         </button>
         {showProps && (

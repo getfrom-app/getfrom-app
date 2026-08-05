@@ -315,20 +315,20 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
               {canClose && (
                 <button className="dc-ctxmenu-item" style={ctxMenuItem}
                   onClick={() => { if (closed) { setContextClosed(ctxMenu.id, false); setCtxMenu(null) } else { setCtxClosing({ id: ctxMenu.id, action: 'close' }); setCtxMenu(null) } }}>
-                  {closed ? '↻ Reabrir contexto' : '✓ Cerrar contexto'}
+                  {closed ? t('dailyCockpit.reopenContext', 'Reabrir contexto') : t('dailyCockpit.closeContext', 'Cerrar contexto')}
                 </button>
               )}
               <button className="dc-ctxmenu-item" style={ctxMenuItem}
                 onClick={() => { setContextFollowed(ctxMenu.id, false); setCtxMenu(null) }}>
-                ✕ Dejar de seguir
+                {t('v2.context.unfollow', 'Dejar de seguir')}
               </button>
               <button className="dc-ctxmenu-item" style={ctxMenuItem}
                 onClick={() => { convertToTask(ctxMenu.id); setCtxMenu(null) }}>
-                ☑ Convertir en tarea
+                {t('rightColMenu.convertToTask', 'Convertir en tarea')}
               </button>
               <button className="dc-ctxmenu-item" style={{ ...ctxMenuItem, color: 'var(--danger,#e03131)' }}
                 onClick={() => { setCtxClosing({ id: ctxMenu.id, action: 'delete' }); setCtxMenu(null) }}>
-                🗑 Eliminar
+                {t('common.delete', 'Eliminar')}
               </button>
             </div>
           </>

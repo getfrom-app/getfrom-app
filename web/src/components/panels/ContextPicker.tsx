@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { listContextsForParent, isContextClosed, createContext, contextColor, contextParent } from '../../utils/cajones'
 import type { Node } from '../../types'
 import { useTranslation } from 'react-i18next'
+import Icon from '../../v2/components/Icon'
 
 const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 
@@ -77,7 +78,7 @@ export default function ContextPicker({ currentId, onPick, autoFocus = true, exc
                   onMouseEnter={() => setActiveIdx(idx)} onClick={() => pick(c)}>
                   <span className="ctx-pick-dot" style={{ background: contextColor(c.id) }} />
                   <span className="ctx-pick-name">{c.text || 'Contexto'}</span>
-                  {currentId === c.id && <span className="ctx-pick-check">✓</span>}
+                  {currentId === c.id && <span className="ctx-pick-check"><Icon name="check" size={12} strokeWidth={2.4} /></span>}
                 </button>
               )
             })}

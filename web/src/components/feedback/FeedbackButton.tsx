@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { sendFeedback } from '../../api/client'
 import { WEB_VERSION } from '../layout/StatusBar'
+import Icon from '../../v2/components/Icon'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 
@@ -74,7 +75,7 @@ export default function FeedbackButton() {
         onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 18px rgba(62,92,118,0.25)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
         onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.10)'; e.currentTarget.style.transform = 'translateY(0)' }}
       >
-        <span style={{ fontSize: 14 }}>💬</span>
+        <Icon name="chat" size={14} />
         <span>{t('feedback.buttonLabel')}</span>
         <span style={{
           fontSize: 10, fontWeight: 700, letterSpacing: 0.4,
@@ -113,7 +114,7 @@ export default function FeedbackButton() {
 
             {status === 'sent' ? (
               <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-                <div style={{ fontSize: 36, marginBottom: 10 }}>🙌</div>
+                <div style={{ marginBottom: 10, color: 'var(--accent)' }}><Icon name="check" size={30} strokeWidth={1.6} /></div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a' }}>
                   {t('feedback.thanksTitle')}
                 </div>

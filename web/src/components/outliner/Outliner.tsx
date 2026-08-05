@@ -9,6 +9,7 @@ import { VirtualOutlinerList, isVirtualizedOutliner, VIRTUALIZE_THRESHOLD } from
 import { flattenVisibleTree } from './flattenTree'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import { useTranslation } from 'react-i18next'
+import Icon from '../../v2/components/Icon'
 
 // ── Helpers para drag-to-select ──────────────────────────────────────────────
 function getNodeIdFromEl(el: Element | null): string | null {
@@ -864,7 +865,7 @@ export default function Outliner({ parentId, autoFocusEmpty, placeholder, classN
     <>
       {localFilterOpen && filterText === undefined && !disableLocalFilter && (
         <div className="outliner-filter-bar">
-          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>🔍</span>
+          <Icon name="search" size={13} style={{ color: 'var(--text-secondary)' }} />
           <input
             ref={localFilterRef}
             className="outliner-filter-input"

@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { useToast } from '../Toast'
+import Icon from '../../v2/components/Icon'
 
 // Fecha de hoy a medianoche LOCAL, formato datetime-local ("YYYY-MM-DDT00:00")
 // — medianoche es la convención de la app para "tarea de todo el día" (sin
@@ -51,7 +52,7 @@ export default function NewTaskModal({ onClose, parentId, defaultDueToday }: Pro
       due: due ? new Date(due).toISOString() : null,
     })
     if (priority) store.updateNode(node.id, { priority: priority as 'high' | 'medium' | 'low' })
-    showToast('✓ Tarea creada')
+    showToast(t('ai.actionTaskCreated', 'Tarea creada'))
     onClose()
   }
 
@@ -63,7 +64,7 @@ export default function NewTaskModal({ onClose, parentId, defaultDueToday }: Pro
     <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
       <div className="modal-card new-task-modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <span className="modal-icon">✓</span>
+          <span className="modal-icon"><Icon name="task" size={18} /></span>
           <h2>{t('modal.newTask')}</h2>
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>

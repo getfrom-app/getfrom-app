@@ -35,8 +35,19 @@ import V2ContextView from './V2ContextView'
 import V2Chat from './V2Chat'
 import V2ElementChat from './V2ElementChat'
 import PlannerPanel from '../../components/panels/PlannerPanel'
+import V2ContextBrowser from './V2ContextBrowser'
+import Icon from './Icon'
 
 export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda'
+
+/** Sub-tab activa de la columna derecha.
+ *  · `primary`   — el contenido del destino activo (Tab 1).
+ *  · `chat`      — la conversación del elemento abierto en el centro (Tab 2).
+ *  · `historial` — SOLO en el destino Chat: contextos + últimas conversaciones,
+ *    el patrón «historial» de cualquier IA (Alberto, 5 ago 2026: "la vista de
+ *    chat tiene que tener además el historial con los últimos chats... una tab
+ *    sería la de chat y otra la de historial"). */
+export type RightSubTab = 'primary' | 'chat' | 'historial'
 
 interface Props {
   /** Destino activo (elegido en la sidebar) — decide el contenido de la Tab 1. */
@@ -53,8 +64,8 @@ interface Props {
    *  `elementId` existe (ver `effectiveSubTab` más abajo, calculado en este
    *  componente para no depender de que V2App lo resetee en cada sitio que
    *  limpia `centerElementId`). */
-  rightSubTab: 'primary' | 'chat'
-  onSubTabChange: (t: 'primary' | 'chat') => void
+  rightSubTab: RightSubTab
+  onSubTabChange: (t: RightSubTab) => void
   /** Cuál de las 2 tabs FIJAS del destino Agenda está activa — independiente de
    *  `rightSubTab` (que solo distingue Tab1 genérica vs Chat). Vive en V2App. */
   agendaView: 'dia' | 'planner'
@@ -65,6 +76,8 @@ interface Props {
    *  ocurre en V2Sidebar, no en esta columna (Alberto, 4 y 5 ago 2026). */
   diaResetKey: number
   onOpenConversation: (id: string) => void
+  /** Empezar una conversación nueva dentro de un contexto, desde el Historial. */
+  onNewChatInCtx: (id: string | null) => void
   /** Filtro inicial pedido para la tab Elementos (p.ej. «← Agentes» → 'agent'). */
   elementsFilter?: ElemKind | 'all' | 'favorite' | null
   /** Cierra el detalle y abre la tab Elementos filtrada por ese tipo. */
@@ -81,7 +94,7 @@ function fmtTimer(sec: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, agendaView, onAgendaViewChange, diaResetKey, onOpenConversation, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped }: Props) {
+export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, agendaView, onAgendaViewChange, diaResetKey, onOpenConversation, onNewChatInCtx, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped }: Props) {
   useStore()
   const { t } = useTranslation()
 
@@ -89,7 +102,12 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
   // `centerElementId` volvió a null desde CUALQUIER sitio sin que ese sitio se
   // acordara de resetear `rightSubTab`, esto lo corrige solo en vez de dejar la
   // Tab 2 "fantasma" (activa pero sin contenido que mostrar).
-  const effectiveSubTab: 'primary' | 'chat' = rightSubTab === 'chat' && elementId ? 'chat' : 'primary'
+  //  · 'chat' sin nada centrado → no hay conversación que enseñar.
+  //  · 'historial' fuera del destino Chat → esa tab ni siquiera existe ahí.
+  const effectiveSubTab: RightSubTab =
+    rightSubTab === 'chat' ? (elementId ? 'chat' : 'primary')
+    : rightSubTab === 'historial' ? (mode === 'chat' ? 'historial' : 'primary')
+    : 'primary'
 
   // La nota diaria no tiene chat propio (ver V2ElementView.tsx) — si es lo que hay
   // centrado, el 3er tab "Chat" de Agenda no debe aparecer aunque `elementId`
@@ -126,13 +144,29 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
   return (
     <aside className="v2-col v2-right">
       <div className="v2-resize-handle" onPointerDown={startResize} title={t('v2.rightColumn.dragToWiden', 'Arrastra para ensanchar')} />
-      {importDragOver && <div className="v2-import-banner">📥 {t('v2.chat.importToFromly', 'Importar a Fromly')}</div>}
+      {importDragOver && <div className="v2-import-banner"><Icon name="import" size={15} /> {t('v2.chat.importToFromly', 'Importar a Fromly')}</div>}
       {/* Agenda tiene sus 2 tabs FIJAS propias (Día/Planner) — no el mecanismo
           genérico Tab1/Tab2 de abajo (esas 2 opciones existen aunque no haya
           nada centrado, al revés que el resto de destinos). El 3er tab "Chat"
           se suma condicional, igual que en cualquier otro destino, salvo para
           la nota diaria en sí (`centerIsDiary`). */}
-      {mode === 'agenda' ? (
+      {/* Destino Chat: 2 tabs FIJAS propias — «Chat» (la conversación: la del
+          elemento centrado si lo hay, si no la general) e «Historial» (contextos
+          al estilo «Proyectos» de Claude + últimas conversaciones). No usa el
+          mecanismo genérico Tab1/Tab2 de más abajo: aquí la Tab 1 YA es un chat,
+          así que una segunda tab «Chat» sería la misma etiqueta dos veces. */}
+      {mode === 'chat' ? (
+        <div className="v2-right-tabs">
+          <button
+            className={`v2-right-tab ${effectiveSubTab !== 'historial' ? 'active' : ''}`}
+            onClick={() => onSubTabChange('primary')}
+          >{t('v2.rightColumn.tabChat', 'Chat')}</button>
+          <button
+            className={`v2-right-tab ${effectiveSubTab === 'historial' ? 'active' : ''}`}
+            onClick={() => onSubTabChange('historial')}
+          >{t('v2.rightColumn.tabHistory', 'Historial')}</button>
+        </div>
+      ) : mode === 'agenda' ? (
         <div className="v2-right-tabs">
           <button
             className={`v2-right-tab ${effectiveSubTab === 'primary' && agendaView === 'dia' ? 'active' : ''}`}
@@ -187,7 +221,7 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
               </div>
             )}
             {recorder.recording && (
-              <button className="v2-recording-stop" onClick={recorder.stop}>⏹ {t('v2.chat.stopAndSave', 'Detener y guardar')}</button>
+              <button className="v2-recording-stop" onClick={recorder.stop}><Icon name="stop" size={14} /> {t('v2.chat.stopAndSave', 'Detener y guardar')}</button>
             )}
           </div>
         </div>
@@ -198,7 +232,7 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
           mientras está activa: nunca en paralelo con la Tab 1 (V2ElementChat
           cambia la sesión GLOBAL activa en un efecto de layout — montarla oculta
           por CSS le robaría la sesión al chat general de la Tab 1 sin avisar). */}
-      {!isRecordingActive && effectiveSubTab === 'chat' && elementId && !centerIsDiary && (
+      {!isRecordingActive && (effectiveSubTab === 'chat' || (mode === 'chat' && effectiveSubTab === 'primary')) && elementId && !centerIsDiary && (
         // key={elementId}: mismo motivo que el visor central en V2App.tsx —
         // sin desmontar entre nodos distintos, el chat de uno se solapa con
         // el del otro durante la ventana de un render.
@@ -210,14 +244,31 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
           fuera de contextos... que se abra en columna derecha"). El centro se
           queda neutro mientras tanto (ver V2App.tsx) — crear algo lo lleva ahí,
           la MISMA conversación sigue disponible luego en la Tab 2 de lo creado. */}
-      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'chat' && (
+      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'chat' && !elementId && (
         <V2Chat
           embedded
           elementScoped={false}
           currentNodeId={null}
           contextLabel={t('v2.general', 'General')}
           onFilesDropped={onFilesDropped}
+          onOpenConversation={onOpenConversation}
+          onNewChatInCtx={onNewChatInCtx}
+          onSelectCtx={onSelectCtx}
         />
+      )}
+
+      {/* Destino Chat · tab «Historial»: contextos (tarjeta → sus conversaciones)
+          + las últimas conversaciones de todos ellos. Mismo componente que las
+          tarjetas del estado vacío del chat, en su variante de lista. */}
+      {!isRecordingActive && effectiveSubTab === 'historial' && mode === 'chat' && (
+        <div className="v2-right-body">
+          <V2ContextBrowser
+            variant="list"
+            onOpenConversation={onOpenConversation}
+            onNewChatInCtx={onNewChatInCtx}
+            onSelectCtx={onSelectCtx}
+          />
+        </div>
       )}
 
       {/* Elementos: el buscador universal REAL de la v1 (filtros por tipo, virtualizado). */}

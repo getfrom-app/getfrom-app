@@ -15,6 +15,8 @@ import V2Trash from './V2Trash'
 import NewContextModal from '../../components/modals/NewContextModal'
 import NewTaskModal from '../../components/modals/NewTaskModal'
 import NewEventModal from '../../components/modals/NewEventModal'
+import Icon from './Icon'
+import { displayTitle } from '../../utils/displayText'
 import type { Node } from '../../types'
 
 // Misma paleta que el menú de clic derecho de un contexto en la Pizarra (v1) —
@@ -40,7 +42,6 @@ interface Props {
   // resalta la fila activa (null = ninguno, p.ej. hay un contexto real elegido).
   onSelectGeneral: (dest: 'agenda' | 'chat' | 'elementos') => void
   activeGeneralDest: 'agenda' | 'chat' | 'elementos' | null
-  onNewChat: () => void
   // id=null desde el menú GLOBAL (bajo "Nueva conversación") crea sin contexto
   // (General) — Alberto, 22 jul: "todos ellos se deben poder crear desde aquí".
   onNewChatInCtx: (id: string | null) => void
@@ -49,12 +50,9 @@ interface Props {
   // NewTaskModal/NewEventModal (ya aceptan parentId), sin necesidad de subir a V2App.
   onNewNoteInCtx: (id: string | null) => void
   onNewCanvasInCtx: (id: string | null) => void
-  // Adjuntar desde Drive / grabar audio EN UN CONTEXTO CONCRETO — antes solo
-  // existían como botones en la cabecera del chat, ahora redundantes con este
-  // menú (Alberto, 22 jul: "todos los botones superiores ahora se pueden
-  // quitar porque ya están incorporados en el sidebar. si alguno falta,
-  // añádelo también").
-  onDriveInCtx: (id: string | null) => void
+  // «Adjuntar» EN UN CONTEXTO CONCRETO — abre V2AttachModal (archivo / enlace /
+  // Drive). Sustituye al antiguo `onDriveInCtx`, que solo cubría Drive.
+  onOpenAttach: (id: string | null) => void
   onRecordInCtx: (id: string | null) => void
   // Mismo handler que el chat (V2App.onFilesDropped): con conversación activa se
   // adjunta ahí, si no se importa al contexto/día activo. Soltar en la sidebar ya
@@ -87,7 +85,7 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral, activeGeneralDest, onNewChat, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onDriveInCtx, onRecordInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenNode, onOpenProfile }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral, activeGeneralDest, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onOpenAttach, onRecordInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenNode, onOpenProfile }: Props) {
   useStore()
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -228,7 +226,20 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
     onSelectCtx(c.id)
     if (subContextsOf(c.id).length > 0) setStack(prev => [...prev, c]) // zoom-in solo si tiene subcontextos
   }
-  const back = () => setStack(prev => prev.slice(0, -1))
+  // Volver un nivel. Si el nivel al que se vuelve es la RAÍZ, no es solo "subir":
+  // es SALIR de los contextos (Alberto, 5 ago 2026: "cuando vuelve a la raíz debería
+  // poner otra vez los colores por defecto en la web y abrir la nota diaria, ese es
+  // el inicio de todo"). Los "colores por defecto" salen solos al deseleccionar el
+  // contexto: el tinte de acento de toda la app depende de `selectedCtxId`
+  // (efecto `ownAccent` en V2App.tsx), no de la sidebar.
+  const back = () => {
+    if (stack.length <= 1) { setStack([]); goHome(); return }
+    setStack(prev => prev.slice(0, -1))
+  }
+
+  /** Inicio de la app: día de hoy, su nota en el centro y su columna derecha. Es
+   *  exactamente el reset duro del destino Agenda — no se duplica aquí. */
+  const goHome = () => onSelectGeneral('agenda')
 
   return (
     <aside
@@ -237,16 +248,42 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
       onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as HTMLElement)) { setDragOver(false); onDragStateChange?.(false) } }}
       onDrop={dropFiles}
     >
+      {/* La marca es el BOTÓN DE INICIO (Alberto, 5 ago 2026: "pon el nombre de
+          Fromly de arriba a la izquierda clicable para que vaya a la vista de día
+          con la nota diaria y su columna derecha") — mismo destino que la fila
+          «Agenda», que ya hace ese reset duro (`onSelectGeneral` en V2App). */}
       <div className="v2-sidebar-head">
-        <span className="v2-brand">Fromly <span className="v2-brand-badge">2.0</span></span>
+        <button className="v2-brand" onClick={goHome} title={t('v2.goHome', 'Ir al día de hoy')}>
+          Fromly <span className="v2-brand-badge">2.0</span>
+        </button>
       </div>
-      <button className="v2-newchat" onClick={onNewChat}>＋ {t('v2.newConversation', 'Nueva conversación')}</button>
-      {/* Botón global de creación — antes solo existía por-contexto (Alberto, 22
-          jul: "los botones de nuevo... estuvieran junto a nueva conversación en
-          el sidebar... debajo se puede poner nuevo elemento y que despliegue
-          para seleccionar"). Usa el contexto actualmente seleccionado como
-          destino (null = General, sin contexto). */}
-      <button className="v2-newchat v2-newchat--secondary" onClick={(e) => openAddMenu(e, selectedCtxId, true)}>＋ {t('v2.newElement', 'Nuevo elemento')}</button>
+
+      {/* Barra de creación — sustituye a los botones «Nueva conversación» y «Nuevo
+          elemento» (Alberto, 5 ago 2026: "vamos a quitarlos y a poner una línea en
+          su lugar con iconos para crear elementos nuevos: chat, nota, lienzo,
+          tarea, grabar y adjuntar"). Todo se crea en el CONTEXTO ACTIVO
+          (`selectedCtxId`; null = General / día de hoy), igual que hacía el menú
+          «＋ Nuevo elemento» global que había antes.
+          · No hay botón de EVENTO a propósito: `NewTaskModal` usa un input
+            `datetime-local`, así que una tarea con hora YA es un evento a todos
+            los efectos (aparece en el timeline del día y se sincroniza con Google
+            Calendar). Un segundo botón sería el mismo formulario con otro nombre.
+          · «Adjuntar» abre `V2AttachModal` (archivo / enlace / Drive) — antes era
+            un botón «Drive» que solo cubría una de las tres vías. */}
+      <div className="v2-createbar">
+        {([
+          { key: 'chat',   icon: 'chat',       label: t('v2.create.chat', 'Chat'),       run: () => onNewChatInCtx(selectedCtxId) },
+          { key: 'note',   icon: 'note',       label: t('v2.chat.newNote', 'Nota'),      run: () => onNewNoteInCtx(selectedCtxId) },
+          { key: 'canvas', icon: 'canvas',     label: t('v2.chat.newCanvasShort', 'Lienzo'), run: () => onNewCanvasInCtx(selectedCtxId) },
+          { key: 'task',   icon: 'task',       label: t('v2.chat.newTaskShort', 'Tarea'), run: () => setNewTaskCtx({ id: selectedCtxId }) },
+          { key: 'rec',    icon: 'mic',        label: t('v2.chat.record', 'Grabar'),     run: () => onRecordInCtx(selectedCtxId) },
+          { key: 'attach', icon: 'attachment', label: t('v2.attach.title', 'Adjuntar'),  run: () => onOpenAttach(selectedCtxId) },
+        ] as const).map(b => (
+          <button key={b.key} className="v2-createbtn" title={b.label} aria-label={b.label} onClick={b.run}>
+            <Icon name={b.icon} size={17} />
+          </button>
+        ))}
+      </div>
 
       {/* Destinos globales (rediseño 5 ago 2026, fusión Agenda+Día el mismo día) —
           Agenda/Chat/Elementos, al mismo nivel que un contexto, sin etiqueta de
@@ -262,13 +299,16 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
           entre "Elementos" y "Contextos" (Alberto, 5 ago 2026). */}
       <div className="v2-ctx-list" style={{ marginBottom: 8, flex: 'none' }}>
         <div className={`v2-ctx-row ${activeGeneralDest === 'agenda' ? 'active' : ''}`} onClick={() => onSelectGeneral('agenda')}>
-          <span className="v2-el-title">📅 {t('v2.rightColumn.tabAgenda', 'Agenda')}</span>
+          <Icon name="calendar" size={16} className="v2-ctx-glyph" />
+          <span className="v2-el-title">{t('v2.rightColumn.tabAgenda', 'Agenda')}</span>
         </div>
         <div className={`v2-ctx-row ${activeGeneralDest === 'chat' ? 'active' : ''}`} onClick={() => onSelectGeneral('chat')}>
-          <span className="v2-el-title">💬 {t('v2.rightColumn.tabChat', 'Chat')}</span>
+          <Icon name="chat" size={16} className="v2-ctx-glyph" />
+          <span className="v2-el-title">{t('v2.rightColumn.tabChat', 'Chat')}</span>
         </div>
         <div className={`v2-ctx-row ${activeGeneralDest === 'elementos' ? 'active' : ''}`} onClick={() => onSelectGeneral('elementos')}>
-          <span className="v2-el-title">📁 {t('v2.rightColumn.tabElements', 'Elementos')}</span>
+          <Icon name="layers" size={16} className="v2-ctx-glyph" />
+          <span className="v2-el-title">{t('v2.rightColumn.tabElements', 'Elementos')}</span>
         </div>
       </div>
 
@@ -286,7 +326,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
           <button className="v2-sidebar-notice"
             onClick={() => onOpenConversation(pending[0].id)}
             title={pending.length > 1 ? t('v2.pendingConversationsHint', 'Hay más de una esperando respuesta') : undefined}>
-            💬 {pending.length === 1
+            <Icon name="conversation" size={14} /> {pending.length === 1
               ? t('v2.pendingConversationOne', '1 conversación esperando')
               : t('v2.pendingConversationsMany', '{{count}} conversaciones esperando', { count: pending.length })}
           </button>
@@ -301,7 +341,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
           <button className="v2-sidebar-notice"
             onClick={() => onOpenNode(mostRecent.id)}
             title={unseen.length > 1 ? t('v2.unseenAgentResultsHint', 'Hay más informes nuevos en sus contextos') : undefined}>
-            📄 {unseen.length === 1
+            <Icon name="report" size={14} /> {unseen.length === 1
               ? t('v2.unseenAgentResultOne', '1 informe de agente nuevo')
               : t('v2.unseenAgentResultsMany', '{{count}} informes de agente nuevos', { count: unseen.length })}
           </button>
@@ -312,16 +352,18 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
           El «+» crea un contexto con el padre correcto ya preseleccionado (ninguno en
           raíz, el contexto actual si hemos entrado en uno) — editable en el modal. */}
       {currentParent ? (
-        <div className="v2-section-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="v2-section-label v2-section-label--hoverable" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={back}>
-            <span style={{ fontSize: 14 }}>‹</span> {t('v2.back', 'Volver')}
+            <Icon name="chevron-left" size={13} /> {t('v2.back', 'Volver')}
           </span>
-          <button className="v2-ctx-add" title={t('v2.newContext', 'Nuevo contexto')} onClick={() => setShowNewContext(true)}>＋</button>
+          <button className="v2-ctx-add" title={t('v2.newContext', 'Nuevo contexto')} onClick={() => setShowNewContext(true)}><Icon name="plus" size={14} /></button>
         </div>
       ) : (
-        <div className="v2-section-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        /* El «+» aparece al pasar el ratón, igual que el de cada fila de contexto
+           (Alberto, 5 ago 2026) — en reposo la cabecera es solo una etiqueta. */
+        <div className="v2-section-label v2-section-label--hoverable" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {t('v2.contexts', 'Contextos')}
-          <button className="v2-ctx-add" title={t('v2.newContext', 'Nuevo contexto')} onClick={() => setShowNewContext(true)}>＋</button>
+          <button className="v2-ctx-add" title={t('v2.newContext', 'Nuevo contexto')} onClick={() => setShowNewContext(true)}><Icon name="plus" size={14} /></button>
         </div>
       )}
 
@@ -345,13 +387,13 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
                 onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); else if (e.key === 'Escape') { setRenaming(null); setRenameVal('') } }}
               />
             ) : (
-              <span className="v2-el-title" style={{ fontWeight: 600 }}>{currentParent.text || t('v2.context', 'Contexto')}</span>
+              <span className="v2-el-title" style={{ fontWeight: 600 }}>{displayTitle(currentParent.text, t('v2.context', 'Contexto'))}</span>
             )}
             <button
               className="v2-ctx-add"
               title={t('v2.newElementInThisContext', 'Crear elemento en este contexto')}
               onClick={(e) => openAddMenu(e, currentParent.id)}
-            >＋</button>
+            ><Icon name="plus" size={14} /></button>
           </div>
         ) : (
           <div
@@ -386,14 +428,14 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
                   onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); else if (e.key === 'Escape') { setRenaming(null); setRenameVal('') } }}
                 />
               ) : (
-                <span className="v2-el-title">{c.text || t('v2.untitled', 'Sin título')}</span>
+                <span className="v2-el-title">{displayTitle(c.text, t('v2.untitled', 'Sin título'))}</span>
               )}
               <button
                 className="v2-ctx-add"
                 title={t('v2.newElementInThisContext', 'Crear elemento en este contexto')}
                 onClick={(e) => openAddMenu(e, c.id)}
-              >＋</button>
-              {hasSubs && <span className="v2-ctx-count">›</span>}
+              ><Icon name="plus" size={14} /></button>
+              {hasSubs && <Icon name="chevron-right" size={13} className="v2-ctx-count" />}
             </div>
           )
         })}
@@ -410,19 +452,19 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         <>
           <div onPointerDown={() => setAddMenu(null)} onContextMenu={(e) => { e.preventDefault(); setAddMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
           <div className="v2-ctx-menu" style={{ position: 'fixed', top: addMenu.y, left: addMenu.x, zIndex: 2000 }}>
-            <button className="v2-ctx-menu-item" onClick={() => { onNewNoteInCtx(addMenu.id); setAddMenu(null) }}>📝 {t('v2.chat.newNote', 'Nota')}</button>
-            <button className="v2-ctx-menu-item" onClick={() => { setNewTaskCtx({ id: addMenu.id }); setAddMenu(null) }}>☑️ {t('v2.chat.newTaskShort', 'Tarea')}</button>
-            <button className="v2-ctx-menu-item" onClick={() => { setNewEventCtx({ id: addMenu.id }); setAddMenu(null) }}>📅 {t('v2.chat.newEventShort', 'Evento')}</button>
-            <button className="v2-ctx-menu-item" onClick={() => { onNewCanvasInCtx(addMenu.id); setAddMenu(null) }}>🎨 {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
-            <button className="v2-ctx-menu-item" onClick={() => { onDriveInCtx(addMenu.id); setAddMenu(null) }}>📎 {t('v2.chat.driveShort', 'Drive')}</button>
-            <button className="v2-ctx-menu-item" onClick={() => { onRecordInCtx(addMenu.id); setAddMenu(null) }}>🎙 {t('v2.chat.record', 'Grabar')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { onNewNoteInCtx(addMenu.id); setAddMenu(null) }}><Icon name="note" size={14} /> {t('v2.chat.newNote', 'Nota')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { setNewTaskCtx({ id: addMenu.id }); setAddMenu(null) }}><Icon name="task" size={14} /> {t('v2.chat.newTaskShort', 'Tarea')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { setNewEventCtx({ id: addMenu.id }); setAddMenu(null) }}><Icon name="event" size={14} /> {t('v2.chat.newEventShort', 'Evento')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { onNewCanvasInCtx(addMenu.id); setAddMenu(null) }}><Icon name="canvas" size={14} /> {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { onOpenAttach(addMenu.id); setAddMenu(null) }}><Icon name="attachment" size={14} /> {t('v2.attach.title', 'Adjuntar')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { onRecordInCtx(addMenu.id); setAddMenu(null) }}><Icon name="mic" size={14} /> {t('v2.chat.record', 'Grabar')}</button>
             <div className="v2-ctx-menu-sep" />
-            <button className="v2-ctx-menu-item" onClick={() => { onNewChatInCtx(addMenu.id); setAddMenu(null) }}>💬 {t('v2.newConversationInThisContext', 'Nueva conversación')}</button>
-            <button className="v2-ctx-menu-item" onClick={() => { setNewSubCtxParent({ id: addMenu.id }); setAddMenu(null) }}>🗂️ {t('v2.newSubcontext', 'Subcontexto')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { onNewChatInCtx(addMenu.id); setAddMenu(null) }}><Icon name="conversation" size={14} /> {t('v2.newConversationInThisContext', 'Nueva conversación')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => { setNewSubCtxParent({ id: addMenu.id }); setAddMenu(null) }}><Icon name="context" size={14} /> {t('v2.newSubcontext', 'Subcontexto')}</button>
             {/* Solo en el menú GLOBAL: raíz sin importar el contexto activo — el
                 «Subcontexto» de arriba ya cubre crear bajo el contexto seleccionado. */}
             {addMenu.isGlobal && (
-              <button className="v2-ctx-menu-item" onClick={() => { setNewSubCtxParent({ id: null }); setAddMenu(null) }}>📁 {t('v2.newContext', 'Nuevo contexto')}</button>
+              <button className="v2-ctx-menu-item" onClick={() => { setNewSubCtxParent({ id: null }); setAddMenu(null) }}><Icon name="folder" size={14} /> {t('v2.newContext', 'Nuevo contexto')}</button>
             )}
           </div>
         </>
@@ -451,13 +493,13 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
               </>
             ) : (
               <>
-                <button className="v2-ctx-menu-item" onClick={() => setMoveSubmenu(false)}>‹ {t('v2.back', 'Volver')}</button>
+                <button className="v2-ctx-menu-item" onClick={() => setMoveSubmenu(false)}><Icon name="chevron-left" size={13} /> {t('v2.back', 'Volver')}</button>
                 <div className="v2-ctx-menu-sep" />
                 {moveTargets(ctxMenu.id).length === 0 ? (
                   <div className="v2-ctx-menu-label">{t('v2.ctxMenu.noTargets', 'No hay otro contexto disponible')}</div>
                 ) : moveTargets(ctxMenu.id).map(target => (
                   <button key={target.id} className="v2-ctx-menu-item" onClick={() => { reparentContext(ctxMenu.id, target.id); setCtxMenu(null) }}>
-                    {target.text || t('v2.untitled', 'Sin título')}
+                    {displayTitle(target.text, t('v2.untitled', 'Sin título'))}
                   </button>
                 ))}
               </>
@@ -469,9 +511,9 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
       <div className="v2-sidebar-foot" ref={userWrap}>
         {userMenu && (
           <div className="v2-usermenu">
-            <button className="v2-usermenu-item" onClick={() => { onOpenProfile(); setUserMenu(false) }}>🧠 {t('v2.profile.title', 'Perfil')}</button>
-            <button className="v2-usermenu-item" onClick={() => { onOpenSettings(); setUserMenu(false) }}>⚙︎ {t('v2.settings', 'Ajustes')}</button>
-            <button className="v2-usermenu-item" onClick={() => { setShowTrash(true); setUserMenu(false) }}>🗑 {t('v2.trash', 'Papelera')}</button>
+            <button className="v2-usermenu-item" onClick={() => { onOpenProfile(); setUserMenu(false) }}><Icon name="profile" size={15} /> {t('v2.profile.title', 'Perfil')}</button>
+            <button className="v2-usermenu-item" onClick={() => { onOpenSettings(); setUserMenu(false) }}><Icon name="settings" size={15} /> {t('v2.settings', 'Ajustes')}</button>
+            <button className="v2-usermenu-item" onClick={() => { setShowTrash(true); setUserMenu(false) }}><Icon name="trash" size={15} /> {t('v2.trash', 'Papelera')}</button>
             <div className="v2-usermenu-sep" />
             <div className="v2-usermenu-label">{t('v2.theme', 'Tema')}</div>
             <div className="v2-theme-seg">
@@ -480,7 +522,8 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
                   key={tk}
                   className={`v2-theme-opt ${theme === tk ? 'active' : ''}`}
                   onClick={() => setTheme(tk)}
-                >{tk === 'light' ? `☀︎ ${t('v2.themeLight', 'Claro')}` : tk === 'dark' ? `☾ ${t('v2.themeDark', 'Oscuro')}` : `⚙ ${t('v2.themeAuto', 'Auto')}`}</button>
+                ><Icon name={tk === 'light' ? 'sun' : tk === 'dark' ? 'moon' : 'auto'} size={13} />
+                  {tk === 'light' ? t('v2.themeLight', 'Claro') : tk === 'dark' ? t('v2.themeDark', 'Oscuro') : t('v2.themeAuto', 'Auto')}</button>
               ))}
             </div>
             <div className="v2-usermenu-sep" />
@@ -510,7 +553,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
               )}
             </span>
           </span>
-          <span className="v2-userchip-caret">⌄</span>
+          <Icon name="chevron-down" size={13} className="v2-userchip-caret" />
         </button>
       </div>
       {showTrash && <V2Trash onClose={() => setShowTrash(false)} />}

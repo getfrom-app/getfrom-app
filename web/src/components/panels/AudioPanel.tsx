@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { getAudioUrl } from '../../api/client'
+import Icon from '../../v2/components/Icon'
 
 interface AudioItem { audioKey: string; transcript: string; durationSec: number }
 
@@ -55,7 +56,7 @@ function AudioItemView({ item, index, total }: { item: AudioItem; index: number;
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-tertiary)', letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 8 }}>
-        🎙 {total > 1 ? t('audioPanel.audioN', { index: index + 1, total }) : t('audioPanel.audio')}{fmtDur(item.durationSec)}
+        <Icon name="audio" size={13} /> {total > 1 ? t('audioPanel.audioN', { index: index + 1, total }) : t('audioPanel.audio')}{fmtDur(item.durationSec)}
       </div>
       {error && <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{t('audioPanel.loadError')}</div>}
       {!error && !url && <div style={{ fontSize: 13, color: 'var(--text-tertiary)' }}>{t('audioPanel.loading')}</div>}

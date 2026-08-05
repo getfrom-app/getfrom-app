@@ -6,6 +6,8 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { getPapeleraNode, restoreNode, emptyTrash } from '../../utils/papeleraHelper'
+import Icon from './Icon'
+import { displayTitle } from '../../utils/displayText'
 
 export default function V2Trash({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
@@ -22,7 +24,7 @@ export default function V2Trash({ onClose }: { onClose: () => void }) {
     }
   }
 
-  const title = (txt: string) => (txt || t('v2.untitled', 'Sin título')).replace(/^[✦💬]\s*/u, '')
+  const title = (txt: string) => displayTitle(txt, t('v2.untitled', 'Sin título'))
 
   return createPortal((
     <div className="v2-modal-overlay" onMouseDown={onClose}>
@@ -37,7 +39,7 @@ export default function V2Trash({ onClose }: { onClose: () => void }) {
           ) : (
             items.map(n => (
               <div className="v2-el-row" key={n.id} style={{ cursor: 'default' }}>
-                <span className="v2-el-icon">🗑</span>
+                <span className="v2-el-icon"><Icon name="trash" size={15} /></span>
                 <span className="v2-el-main"><span className="v2-el-title">{title(n.text)}</span></span>
                 <button className="v2-trash-restore" onClick={() => restore(n.id)}>{t('v2.trash.restore', 'Restaurar')}</button>
               </div>

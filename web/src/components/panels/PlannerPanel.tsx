@@ -33,6 +33,7 @@ import {
 import { GCalEventEditor } from './DiaryRightPanel'
 import { useUserStore } from '../../store/userStore'
 import { useToast } from '../Toast'
+import Icon from '../../v2/components/Icon'
 
 // ── Geometría fija ────────────────────────────────────────────────────────
 const HOUR_START      = 6
@@ -638,7 +639,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       })
       store.updateNode(newNode.id, { dueEnd: end.toISOString() })
       syncNodeToGcal(newNode.id, start, end)
-      showToast('✓ ' + t('ai.actionTaskCreated', 'Tarea creada'))
+      showToast(t('ai.actionTaskCreated', 'Tarea creada'))
     }
     setNewBlock(null)
   }
@@ -654,7 +655,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
         due:      toMidnight(day),   // medianoche = todo el día (sin hora)
         isTask:   true,
       })
-      showToast('✓ ' + t('ai.actionTaskCreated', 'Tarea creada'))
+      showToast(t('ai.actionTaskCreated', 'Tarea creada'))
     }
     // keepOpen: encadenar varias tareas el mismo día sin reabrir
     if (keepOpen) setNewAllDay({ day, text: '' })
@@ -797,7 +798,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
         {checkable && (
           <button className={`pp-block-check ${done ? 'pp-block-check--done' : ''}`}
             onClick={e => { e.stopPropagation(); toggleTaskDone(blockNode!) }}
-            title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? '✓' : ''}</button>
+            title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
         )}
         {/* Bloques muy cortos (reuniones de 15-30min entre otras) no tienen alto para
             mostrar hora + título sin cortarse — se prioriza el título (Alberto, 21 jul). */}
@@ -1113,7 +1114,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
 
       {gcalError && (
         <div style={{ padding: '4px 10px', fontSize: 11, color: 'var(--warning)', background: 'rgba(239,68,68,0.06)', flexShrink: 0 }}>
-          ⚠️ {gcalError} — <button onClick={() => navigate('/settings?tab=google')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 11 }}>{t('tip.reconnect')}</button>
+          {gcalError} — <button onClick={() => navigate('/settings?tab=google')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent)', fontSize: 11 }}>{t('tip.reconnect')}</button>
         </div>
       )}
 
@@ -1203,7 +1204,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                         {chipCheckable && (
                           <button className={`pp-allday-check ${chipDone ? 'pp-allday-check--done' : ''}`}
                             onClick={e=>{ e.stopPropagation(); toggleTaskDone(n) }}
-                            title={t('daily.markDone')} aria-label={t('daily.markDone')}>{chipDone ? '✓' : ''}</button>
+                            title={t('daily.markDone')} aria-label={t('daily.markDone')}>{chipDone ? <Icon name="check" size={10} strokeWidth={2.6} /> : null}</button>
                         )}
                         {n.text || t('common.noTitle')}
                       </div>
@@ -1267,7 +1268,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                 }
                 window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: newNode.id } }))
                 setCtxMenu(null)
-              }}>📄 {t('tip.createDocument', 'Crear documento')}</button>
+              }}><Icon name="document" size={13} /> {t('tip.createDocument', 'Crear documento')}</button>
             )}
             {ctxMenu.b.kind !== 'gcal' && ctxMenu.b.nodeId && (
               <button onClick={()=>{ window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: ctxMenu.b.nodeId! } })); setCtxMenu(null) }}>

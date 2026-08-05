@@ -22,6 +22,7 @@ import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 import { assignContext, isRootContext, isMarkedContext, firstContextOf, appendContextFacts, readContextKnowledge } from '../utils/cajones'
 import { resolvePrompt } from '../utils/promptsHelper'
 import { extractUserKnowledge } from '../api/autoClassify'
+import { isProfileChatSession, PROFILE_CHAT_INSTRUCTIONS } from '../v2/profileChat'
 import { aiLangBase, aiLangBCP47 } from '../utils/aiLang'
 import { saveUserKnowledgeToProfile, readProfileLines } from '../api/userKnowledge'
 import { getAgentData, getAgentReferencedElements, readElementContent } from '../utils/agentesHelper'
@@ -372,8 +373,8 @@ class AIChatStore {
 
   /** Añade un aviso (mensaje de Magic) al chat sin llamar a la IA. Efímero: informa de
    * algo que acaba de pasar (p. ej. «he incorporado este PDF»). */
-  addNotice(content: string) {
-    this.messages.push({ id: crypto.randomUUID(), role: 'assistant', content, actions: [] })
+  addNotice(content: string, chips?: string[]) {
+    this.messages.push({ id: crypto.randomUUID(), role: 'assistant', content, actions: [], chips })
     this.notify()
   }
 
@@ -398,6 +399,17 @@ class AIChatStore {
     this.boundNodeKey = nodeId
     this.loadMessagesFromNode(nodeId)   // recargar la conversación (incl. audios) en el chat
 
+    // Chips de apertura de una conversación iniciada por Fromly: se devuelven al
+    // primer mensaje mientras el usuario no haya contestado (una vez responde, las
+    // sugerencias ya no vienen a cuento).
+    if (this.messages.length === 1 && this.messages[0].role === 'assistant') {
+      try {
+        const raw = JSON.parse(node.extraData || '{}')._openChips
+        const chips = raw ? JSON.parse(raw) : null
+        if (Array.isArray(chips) && chips.length) this.messages[0] = { ...this.messages[0], chips }
+      } catch { /* sin chips guardados */ }
+    }
+
     // Si la sesión tiene mensajes individuales legacy (_aiRole), los migramos al transcript
     // y los eliminamos para no duplicar contenido
     const legacyMessages = store.children(nodeId).filter(c => {
@@ -409,7 +421,7 @@ class AIChatStore {
       })
       if (!transcriptNode) {
         // Crear transcript y migrar mensajes legacy como nodos hijos
-        const t = store.createNode({ text: '💬 Conversación', parentId: nodeId, extraData: { _aiTranscript: '1' } })
+        const t = store.createNode({ text: 'Conversación', parentId: nodeId, extraData: { _aiTranscript: '1' } })
         store.setCollapsedLocal(t.id, true)
         for (const m of legacyMessages) {
           const ed = JSON.parse(m.extraData || '{}')
@@ -714,6 +726,18 @@ class AIChatStore {
       const knowledge = await extractUserKnowledge(trimmed, existingProfile || undefined, contextName, today)
       if (!knowledge) return
       await saveUserKnowledgeToProfile(knowledge.people, knowledge.facts, knowledge.obsolete)
+      // En el CHAT DE PERFIL, lo que se guarda se dice en voz alta (Alberto, 5 ago
+      // 2026: "la IA lo adaptará para que encaje en el perfil y lo añadirá
+      // directamente, avisando al usuario de que lo ha hecho"). Determinista: es lo
+      // que el extractor guardó de verdad, no lo que el modelo diga que guardó.
+      // Fuera del chat de perfil se mantiene silencioso — ahí el aprendizaje es un
+      // efecto secundario de conversar, no el objetivo, y avisar sería ruido.
+      if (this.sessionId && isProfileChatSession(store.getNode(this.sessionId))) {
+        const added = [...knowledge.facts, ...knowledge.people].filter(Boolean)
+        if (added.length) {
+          this.addNotice(`He añadido esto a tu perfil:\n\n${added.map(f => `· ${f}`).join('\n')}`)
+        }
+      }
       // Enrutado: hechos específicos del tema → memoria del contexto activo.
       if (ctxNode && knowledge.contextFacts?.length) {
         try { appendContextFacts(ctxNode.id, knowledge.contextFacts) } catch { /* noop */ }
@@ -1215,7 +1239,16 @@ class AIChatStore {
     }
 
     // Combinar con el perfil de usuario
-    const combinedProfile = [activePromptBlock, originAgentBlock, mentionedBlock, dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
+    // CHAT DE PERFIL (v2/profileChat.ts): la conversación no sirve para crear cosas,
+    // sino para que el usuario cuente algo sobre sí mismo y Fromly lo incorpore al
+    // perfil. Las instrucciones van en `userProfile` (el único canal libre hacia el
+    // system prompt del servidor) — así no hace falta un endpoint nuevo ni desplegar
+    // servidor para esta funcionalidad. Lo que se GUARDA no lo decide el modelo: lo
+    // extrae `learnFromUserMessage` y se avisa de ello de forma determinista.
+    const profileChatBlock = this.sessionId && isProfileChatSession(store.getNode(this.sessionId))
+      ? PROFILE_CHAT_INSTRUCTIONS
+      : ''
+    const combinedProfile = [profileChatBlock, activePromptBlock, originAgentBlock, mentionedBlock, dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
 
     return {
       messages: compactedMessages,
@@ -1235,24 +1268,66 @@ class AIChatStore {
   }
 
   /** Crea el nodo de sesión en el diario de hoy, colapsado, con ✦ y su transcript hijo. */
-  private createSessionNode(seed: string): string {
+  /** `extra`: flags adicionales del nodo de sesión (p.ej. `_profileChat`) y, si se
+   *  pasa `title`, un título fijo en vez del auto-título por IA. */
+  private createSessionNode(seed: string, extra?: Record<string, string>, title?: string): string {
     const today = getTodayDiaryUnderAgenda()
+    const auto: Record<string, string> = title ? {} : { _aiAutoTitle: '1' }
     const sessionNode = store.createNode({
-      text: `✦ ${seed.slice(0, 60)}`,
+      // Sin el `✦` delante: Fromly ya no escribe emojis en los datos (ver
+      // utils/displayText.ts). Las sesiones antiguas que lo llevan se limpian al pintar.
+      text: title || seed.slice(0, 60),
       parentId: today.id,
-      extraData: { _aiSession: '1', _aiSessionSeed: seed.slice(0, 80), _aiAutoTitle: '1' },
+      extraData: { _aiSession: '1', _aiSessionSeed: seed.slice(0, 80), ...auto, ...(extra || {}) },
     })
     store.setCollapsedLocal(sessionNode.id, true)
 
     // Nodo contenedor del transcript — sus hijos son los mensajes individuales
     const transcript = store.createNode({
-      text: '💬 Conversación',
+      text: 'Conversación',
       parentId: sessionNode.id,
       extraData: { _aiTranscript: '1' },
     })
     store.setCollapsedLocal(transcript.id, true)
 
     return sessionNode.id
+  }
+
+  /** Crea una conversación que EMPIEZA Fromly (no el usuario): la sesión nace con
+   *  flags propios y con el primer mensaje del asistente ya escrito y persistido.
+   *  Base de los chats de perfil (v2/profileChat.ts) — y de cualquier otra cosa que
+   *  Fromly quiera iniciar por su cuenta en el futuro.
+   *
+   *  `open: false` deja la conversación creada pero SIN cargarla: es el modo
+   *  proactivo (aparece como aviso en la sidebar y el usuario decide cuándo entrar).
+   *  Devuelve el id de la sesión. */
+  openAssistantSession(opts: {
+    title: string
+    greeting: string
+    chips?: string[]
+    flags?: Record<string, string>
+    open?: boolean
+  }): string {
+    // Los chips van en el NODO de sesión, no en el mensaje: el transcript solo
+    // guarda rol + texto, así que una conversación creada en modo proactivo
+    // (`open: false`) perdería sus sugerencias al abrirla días después. Se
+    // recuperan en `loadSession`.
+    const flags = { ...(opts.flags || {}) }
+    if (opts.chips?.length) flags._openChips = JSON.stringify(opts.chips)
+    const sid = this.createSessionNode(opts.greeting, flags, opts.title)
+    this.appendToTranscript(sid, 'assistant', opts.greeting)
+    if (opts.open !== false) {
+      this.sessionId = sid
+      this.boundNodeKey = sid
+      this.messages = [{ id: crypto.randomUUID(), role: 'assistant', content: opts.greeting, actions: [], chips: opts.chips }]
+      this.actionStatus = null
+      this.lastError = null
+      this.isStreaming = false
+      this.pendingActions = null
+      this._pendingContext = null
+      this.notify()
+    }
+    return sid
   }
 
   /** ENLACES INLINE: si el mensaje del usuario contiene URLs, cada una se guarda como

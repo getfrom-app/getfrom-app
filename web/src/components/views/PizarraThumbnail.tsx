@@ -5,6 +5,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { parsePizarra } from './PizarraView'
+import Icon from '../../v2/components/Icon'
 
 interface Props {
   body: string | null | undefined
@@ -89,7 +90,7 @@ export default function PizarraThumbnail({ body, width = 140, height = 100 }: Pr
         </svg>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, color: 'var(--text-tertiary,#999)' }}>
-          <span style={{ fontSize: 22 }}>🎨</span>
+          <Icon name="canvas" size={22} strokeWidth={1.4} />
           <span style={{ fontSize: 10.5 }}>{t('elements.emptyCanvas', 'Lienzo vacío')}</span>
         </div>
       )}

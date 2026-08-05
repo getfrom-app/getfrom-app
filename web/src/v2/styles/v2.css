@@ -5,6 +5,85 @@
    Todo bajo .v2-root para no colisionar con la v1.
    ══════════════════════════════════════════════════════════════════════ */
 
+/* ── Capa de tokens propia de la v2 (restyling 5 ago 2026) ─────────────────
+   Alberto: "Fromly Web tiene un diseño un poquito rudo, antiguo... si te fijas
+   en Google Drive, en Claude o en DeepSeek, las líneas son más suaves, todo
+   está mejor acabado... más moderno, elegante, minimalista, sin ser excesivo".
+
+   Por qué tokens PROPIOS y no tocar los de styles/index.css: esas variables las
+   comparten la v1, la landing y los paneles antiguos. Redefinir ahí --radius o
+   --bg-* cambiaría superficies que no estamos rediseñando. Estos son nombres
+   NUEVOS (--v2-*) que solo leen las reglas .v2-*, así que declararlos en :root no
+   toca nada de v1.
+
+   ⚠️ Van en `:root`, NO en `.v2-root` (que es donde estaban al principio): los
+   modales de la v2 se montan con `createPortal(document.body)` — quedan FUERA del
+   árbol de `.v2-root` y allí las variables no existían. Bug real encontrado al
+   probar «Adjuntar» en vivo: el modal salía transparente, sin fondo ni sombra,
+   porque `--v2-elevated` y compañía resolvían a vacío.
+
+   Las 3 columnas dejan de ser "gris / blanco / blanco" y pasan al escalonado de
+   Drive/Claude: barra lateral hundida, centro = papel blanco (donde se trabaja),
+   columna derecha un punto por debajo del centro. Bordes casi invisibles + una
+   sombra muy corta hacen el trabajo que antes hacían las líneas duras.
+   ──────────────────────────────────────────────────────────────────────── */
+:root {
+  --v2-surface:        #ffffff;              /* centro: el lienzo de trabajo */
+  --v2-surface-panel:  #fafaf9;              /* columna derecha */
+  --v2-surface-sunken: #f6f6f4;              /* barra lateral */
+  --v2-elevated:       #ffffff;              /* menús, popovers, modales */
+
+  --v2-line:           rgba(0,0,0,0.06);     /* separación por defecto */
+  --v2-line-strong:    rgba(0,0,0,0.11);     /* campos, botones con borde */
+  --v2-hover:          rgba(0,0,0,0.042);
+  --v2-active:         rgba(0,0,0,0.072);
+
+  --v2-r-sm: 6px;
+  --v2-r:    9px;
+  --v2-r-lg: 13px;
+  --v2-r-xl: 18px;
+
+  --v2-shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --v2-shadow:    0 1px 3px rgba(0,0,0,0.06), 0 6px 16px -8px rgba(0,0,0,0.10);
+  --v2-shadow-lg: 0 2px 6px rgba(0,0,0,0.05), 0 18px 44px -12px rgba(0,0,0,0.20);
+
+  /* Una sola curva y una sola duración para toda la app — las transiciones
+     inconsistentes son la mitad de la sensación de "hecho a trozos". */
+  --v2-ease: cubic-bezier(0.2, 0.6, 0.3, 1);
+  --v2-fast: 130ms var(--v2-ease);
+}
+
+[data-theme="dark"] {
+  --v2-surface:        #1e1e1d;
+  --v2-surface-panel:  #1a1a19;
+  --v2-surface-sunken: #171716;
+  --v2-elevated:       #262625;
+
+  --v2-line:           rgba(255,255,255,0.07);
+  --v2-line-strong:    rgba(255,255,255,0.13);
+  --v2-hover:          rgba(255,255,255,0.055);
+  --v2-active:         rgba(255,255,255,0.09);
+
+  --v2-shadow-sm: 0 1px 2px rgba(0,0,0,0.4);
+  --v2-shadow:    0 1px 3px rgba(0,0,0,0.45), 0 6px 16px -8px rgba(0,0,0,0.6);
+  --v2-shadow-lg: 0 2px 6px rgba(0,0,0,0.5), 0 18px 44px -12px rgba(0,0,0,0.7);
+}
+
+/* Barras de scroll finas y discretas en toda la v2 — las nativas de Windows/
+   Linux son gruesas y grises y rompen por completo el acabado. */
+.v2-root *::-webkit-scrollbar { width: 10px; height: 10px; }
+.v2-root *::-webkit-scrollbar-track { background: transparent; }
+.v2-root *::-webkit-scrollbar-thumb {
+  background: var(--v2-active); border-radius: 99px;
+  border: 3px solid transparent; background-clip: content-box;
+}
+.v2-root *::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); background-clip: content-box; }
+
+/* Los iconos del sistema (components/Icon.tsx) se alinean SIEMPRE con el texto
+   que acompañan y no se encogen en un flex apretado. */
+.v2-root svg { flex: 0 0 auto; }
+.v2-root button > svg, .v2-root a > svg { vertical-align: -0.15em; }
+
 .v2-root {
   position: fixed;
   inset: 0;
@@ -69,53 +148,74 @@
   flex-direction: column;
   overflow: hidden;
 }
-.v2-sidebar { background: var(--bg-tertiary); border-right: 1px solid var(--border); }
-.v2-center  { background: var(--bg-primary); }
-.v2-right   { background: var(--bg-secondary); border-left: 1px solid var(--border); position: relative; }
-/* Tirador para redimensionar la columna derecha (arrastrar el borde izquierdo). */
+.v2-sidebar { background: var(--v2-surface-sunken); border-right: 1px solid var(--v2-line); }
+.v2-center  { background: var(--v2-surface); }
+.v2-right   { background: var(--v2-surface-panel); border-left: 1px solid var(--v2-line); position: relative; }
+/* Tirador para redimensionar la columna derecha (arrastrar el borde izquierdo).
+   Franja de acento FINA al pasar el ratón (antes se pintaba entero de color: un
+   bloque de 7px teñido cada vez que el cursor cruzaba la columna). */
 .v2-resize-handle { position: absolute; left: -3px; top: 0; bottom: 0; width: 7px; cursor: col-resize; z-index: 30; }
-.v2-resize-handle:hover { background: var(--accent-soft); }
+.v2-resize-handle::after {
+  content: ''; position: absolute; left: 3px; top: 0; bottom: 0; width: 1px;
+  background: var(--accent); opacity: 0; transition: opacity var(--v2-fast);
+}
+.v2-resize-handle:hover::after { opacity: 0.7; }
 
 /* ── Sidebar (contextos = proyectos) ───────────────────────────────── */
 .v2-sidebar-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 14px 10px; gap: 8px;
+  padding: 16px 16px 12px; gap: 8px;
 }
-.v2-brand { font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; gap: 8px; }
+.v2-brand {
+  font-size: 15px; font-weight: 650; letter-spacing: -0.022em;
+  display: flex; align-items: center; gap: 7px;
+  background: none; border: none; padding: 3px 5px; margin: -3px -5px;
+  font-family: inherit; color: var(--text-primary); cursor: pointer;
+  border-radius: var(--v2-r-sm); transition: background var(--v2-fast);
+}
+.v2-brand:hover { background: var(--v2-hover); }
 .v2-brand-badge {
-  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--accent); background: var(--accent-soft);
-  padding: 2px 6px; border-radius: 4px;
+  padding: 2px 6px; border-radius: var(--v2-r-sm);
 }
 .v2-newchat {
-  margin: 0 12px 12px; padding: 9px 12px;
-  display: flex; align-items: center; gap: 8px; justify-content: center;
-  background: var(--accent); color: #fff; border: none; border-radius: var(--radius);
-  font-size: 13px; font-weight: 600; cursor: pointer; width: calc(100% - 24px);
+  margin: 0 12px 8px; padding: 9px 12px;
+  display: flex; align-items: center; gap: 7px; justify-content: center;
+  background: var(--accent); color: #fff; border: 1px solid transparent; border-radius: var(--v2-r);
+  font-size: 13px; font-weight: 600; letter-spacing: -0.005em; cursor: pointer; width: calc(100% - 24px);
+  box-shadow: var(--v2-shadow-sm);
+  transition: background var(--v2-fast), box-shadow var(--v2-fast), transform var(--v2-fast);
 }
-.v2-newchat:hover { background: var(--accent-hover); }
+.v2-newchat:hover { background: var(--accent-hover); box-shadow: var(--v2-shadow); }
+.v2-newchat:active { transform: translateY(0.5px); box-shadow: none; }
+/* Secundario: sin el borde discontinuo de antes (leía como "provisional"). Es un
+   botón normal, plano, que solo se dibuja al pasar por encima. */
 .v2-newchat--secondary {
-  margin-top: -6px; background: transparent; color: var(--accent);
-  border: 1px dashed var(--border, #ddd);
+  margin-top: 0; margin-bottom: 12px; background: transparent; color: var(--text-secondary);
+  border-color: transparent; box-shadow: none; font-weight: 550;
 }
-.v2-newchat--secondary:hover { background: var(--accent-soft, rgba(108,92,231,0.08)); border-color: var(--accent); }
+.v2-newchat--secondary:hover {
+  background: var(--v2-hover); color: var(--text-primary);
+  border-color: transparent; box-shadow: none;
+}
 
 /* Aviso de la sidebar (conversación de agente pendiente / informe nuevo) — texto
    destacado, no un botón: franja de acento a la izquierda, sin fondo salvo al
    hover, más compacto que .v2-newchat (Alberto, 5 ago 2026). */
 .v2-sidebar-notice {
-  margin: 0 12px 4px; padding: 5px 8px 5px 9px; width: calc(100% - 24px);
-  display: flex; align-items: center; gap: 6px; text-align: left;
+  margin: 0 12px 4px; padding: 6px 9px 6px 10px; width: calc(100% - 24px);
+  display: flex; align-items: center; gap: 7px; text-align: left;
   background: transparent; border: none; border-left: 2px solid var(--accent);
-  border-radius: 4px; font: inherit; font-size: 12px; font-weight: 600;
-  color: var(--text-accent); cursor: pointer;
+  border-radius: var(--v2-r-sm); font: inherit; font-size: 12px; font-weight: 600;
+  color: var(--text-accent); cursor: pointer; transition: background var(--v2-fast);
 }
 .v2-sidebar-notice:hover { background: var(--accent-soft); }
 
 .v2-section-label {
-  padding: 6px 16px; font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.09em; color: var(--text-tertiary);
-  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px 5px; font-size: 10.5px; font-weight: 650; text-transform: uppercase;
+  letter-spacing: 0.075em; color: var(--text-tertiary);
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
 }
 /* Acción discreta «archivar» a la derecha de un section-label. */
 .v2-ctx-archive-link {
@@ -129,15 +229,16 @@
    línea de «Tareas», sin relación visual con el resto de acciones del contexto). */
 .v2-ctx-archive-btn-inline {
   display: inline-flex; align-items: center; justify-content: center;
-  height: 20px; padding: 0 8px; border-radius: 3px; font-family: inherit;
-  border: 1px solid var(--border); background: transparent; color: var(--text-tertiary); cursor: pointer;
+  height: 21px; padding: 0 9px; border-radius: var(--v2-r-sm); font-family: inherit;
+  border: 1px solid var(--v2-line-strong); background: transparent; color: var(--text-tertiary); cursor: pointer;
   font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+  transition: border-color var(--v2-fast), color var(--v2-fast);
 }
 .v2-ctx-archive-btn-inline:hover { border-color: var(--accent); color: var(--text-accent); }
 .v2-ctx-list { flex: 1; overflow-y: auto; padding-bottom: 12px; }
 /* Título de panel (Historial / Contexto) — mismo estilo que «ELEMENTOS» del resto de tabs. */
 .v2-panel-title {
-  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.075em;
   color: var(--text-tertiary); padding: 2px 0 10px;
 }
 /* Tab Agenda/Día: fila de botones (CAL/HOY) + título grande del día elegido —
@@ -161,11 +262,11 @@
 .v2-agenda-day-header { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 2px 0 20px; }
 .v2-agenda-day-header .v2-agenda-day-title { margin: 0; }
 .v2-agenda-day-header .v2-agenda-toolbar { margin-bottom: 0; flex-shrink: 0; }
-.v2-el-active > .v2-el-row { background: var(--accent-soft); }
+.v2-el-active > .v2-el-row { background: var(--v2-active); }
 /* Cabecera de nota: fila única con el toggle a la izquierda y las acciones a la derecha. */
 .v2-note-toolbar {
   display: flex; align-items: center; gap: 6px; padding: 8px 12px;
-  border-bottom: 1px solid var(--border); flex: 0 0 auto;
+  border-bottom: 1px solid var(--v2-line); flex: 0 0 auto;
 }
 /* Switch Nota/Lienzo del par nota-diaria+lienzo-diario, en la cabecera de la nota. */
 .v2-day-switch {
@@ -180,40 +281,50 @@
 /* Desplegable «Vistas» (Tabla / Kanban / Calendario). */
 .v2-view-more {
   position: absolute; top: calc(100% + 4px); left: 0; z-index: 60; min-width: 150px;
-  background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.18); padding: 5px;
+  background: var(--v2-elevated); border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-lg); box-shadow: var(--v2-shadow-lg); padding: 5px;
 }
 .v2-view-more button {
-  display: block; width: 100%; text-align: left; padding: 7px 10px; border-radius: 7px;
-  font-size: 12.5px; color: var(--text-primary); background: transparent; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  padding: 7px 10px; border-radius: var(--v2-r-sm);
+  font-size: 13px; color: var(--text-primary); background: transparent; border: none; cursor: pointer;
+  transition: background var(--v2-fast);
 }
-.v2-view-more button:hover { background: var(--bg-hover); }
+.v2-view-more button:hover { background: var(--v2-hover); }
 /* Desplegable «＋ Documento» (en blanco + plantillas). */
 .v2-doc-menu {
   position: absolute; top: calc(100% + 4px); left: 0; z-index: 60; min-width: 200px; max-height: 320px; overflow-y: auto;
-  background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.18); padding: 5px;
+  background: var(--v2-elevated); border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-lg); box-shadow: var(--v2-shadow-lg); padding: 5px;
 }
 .v2-doc-menu > button {
-  display: block; width: 100%; text-align: left; padding: 7px 10px; border-radius: 7px;
-  font-size: 12.5px; color: var(--text-primary); background: transparent; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  padding: 7px 10px; border-radius: var(--v2-r-sm);
+  font-size: 13px; color: var(--text-primary); background: transparent; border: none; cursor: pointer;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background var(--v2-fast);
 }
-.v2-doc-menu > button:hover { background: var(--bg-hover); }
-.v2-doc-menu-sep { height: 1px; background: var(--border); margin: 5px 2px; }
+.v2-doc-menu > button svg { color: var(--text-tertiary); }
+.v2-doc-menu > button:hover { background: var(--v2-hover); }
+.v2-doc-menu-sep { height: 1px; background: var(--v2-line); margin: 5px 2px; }
 /* Menú de clic derecho de un contexto (sidebar): renombrar / color / mover / eliminar. */
 .v2-ctx-menu {
   min-width: 200px; background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border);
   border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.18); padding: 6px;
 }
 .v2-ctx-menu-item {
-  display: block; width: 100%; text-align: left; padding: 7px 10px; border-radius: 7px;
-  font-size: 12.5px; color: var(--text-primary); background: transparent; border: none; cursor: pointer;
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  padding: 7px 10px; border-radius: var(--v2-r-sm);
+  font-size: 13px; color: var(--text-primary); background: transparent; border: none; cursor: pointer;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background var(--v2-fast);
 }
-.v2-ctx-menu-item:hover { background: var(--bg-hover); }
+.v2-ctx-menu-item svg { color: var(--text-tertiary); }
+.v2-ctx-menu-item:hover { background: var(--v2-hover); }
+.v2-ctx-menu-item:hover svg { color: var(--text-secondary); }
 .v2-ctx-menu-item--danger { color: var(--color-error, #e0393e); }
-.v2-ctx-menu-sep { height: 1px; background: var(--border); margin: 5px 2px; }
+.v2-ctx-menu-item--danger svg { color: currentColor; }
+.v2-ctx-menu-sep { height: 1px; background: var(--v2-line); margin: 5px 2px; }
 .v2-ctx-menu-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); padding: 6px 10px 3px; }
 .v2-ctx-menu-swatches { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 8px 8px; }
 .v2-ctx-swatch { width: 20px; height: 20px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.12); cursor: pointer; padding: 0; }
@@ -227,8 +338,8 @@
 /* Modal «Gestionar plantillas» (crear/editar/eliminar) — mismo lenguaje visual que el resto de modales v2. */
 .v2-templates-modal {
   position: relative; z-index: 1; width: 420px; max-width: 92vw; max-height: 80vh;
-  background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border);
-  border-radius: 14px; box-shadow: 0 24px 80px rgba(0,0,0,0.28); display: flex; flex-direction: column; overflow: hidden;
+  background: var(--v2-elevated); border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-xl); box-shadow: var(--v2-shadow-lg); display: flex; flex-direction: column; overflow: hidden;
 }
 .v2-templates-head {
   display: flex; align-items: center; gap: 8px; padding: 14px 16px; border-bottom: 1px solid var(--border);
@@ -272,11 +383,11 @@
 .v2-convert-banner button:hover { background: var(--accent); color: #fff; }
 .v2-doc-toolbar {
   display: flex; flex-wrap: wrap; align-items: center; gap: 2px;
-  padding: 5px 10px; border-bottom: 1px solid var(--border); background: var(--bg-secondary, transparent);
+  padding: 6px 10px; border-bottom: 1px solid var(--v2-line); background: transparent;
 }
 .v2-doc-toolbar .ft-btn { color: var(--text-secondary); }
-.v2-doc-toolbar .ft-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-.v2-doc-toolbar .ft-sep { background: var(--border); }
+.v2-doc-toolbar .ft-btn:hover { background: var(--v2-hover); color: var(--text-primary); }
+.v2-doc-toolbar .ft-sep { background: var(--v2-line); }
 /* Título de detalle editable (fila 1). */
 .v2-detail-title:hover { text-decoration: underline dotted var(--text-tertiary); text-underline-offset: 3px; }
 .v2-detail-title-input {
@@ -285,44 +396,51 @@
   background: var(--bg, #fff); color: var(--text-primary);
 }
 .v2-ctx-row {
-  display: flex; align-items: center; gap: 8px;
-  padding: 7px 14px; cursor: pointer; font-size: 13px; color: var(--text-secondary);
-  border-radius: var(--radius); margin: 1px 8px; user-select: none;
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px; cursor: pointer; font-size: 13.5px; color: var(--text-secondary);
+  border-radius: var(--v2-r); margin: 1px 8px; user-select: none;
+  transition: background var(--v2-fast), color var(--v2-fast);
 }
-.v2-ctx-row:hover { background: var(--bg-hover); color: var(--text-primary); }
-.v2-ctx-row.active { background: var(--accent-soft); color: var(--text-accent); font-weight: 600; }
-.v2-ctx-row .v2-ctx-dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--accent); }
-.v2-ctx-row.child { padding-left: 30px; font-size: 12.5px; }
-.v2-ctx-count { margin-left: auto; font-size: 11px; color: var(--text-tertiary); }
+.v2-ctx-row:hover { background: var(--v2-hover); color: var(--text-primary); }
+.v2-ctx-row.active { background: var(--v2-active); color: var(--text-primary); font-weight: 600; }
+.v2-ctx-row .v2-ctx-dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; background: var(--accent); margin: 0 1px; }
+/* Icono de un destino general (Agenda/Chat/Elementos) — tenue en reposo, del
+   color del texto cuando la fila está activa o con el ratón encima. */
+.v2-ctx-glyph { color: var(--text-tertiary); transition: color var(--v2-fast); }
+.v2-ctx-row:hover .v2-ctx-glyph, .v2-ctx-row.active .v2-ctx-glyph { color: currentColor; }
+.v2-ctx-row.child { padding-left: 26px; font-size: 13px; }
+.v2-ctx-count { margin-left: auto; font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; }
 /* «＋» de nueva conversación en un contexto — solo al pasar el ratón por la fila. */
 .v2-ctx-add {
   margin-left: auto; display: none; flex: 0 0 auto;
   align-items: center; justify-content: center;
-  width: 20px; height: 20px; padding: 0; border: none; border-radius: 5px;
+  width: 22px; height: 22px; padding: 0; border: none; border-radius: var(--v2-r-sm);
   background: transparent; color: var(--text-tertiary); cursor: pointer;
-  font-size: 15px; line-height: 1;
+  line-height: 1; transition: background var(--v2-fast), color var(--v2-fast);
 }
 .v2-ctx-row:hover .v2-ctx-add { display: inline-flex; }
 .v2-ctx-add + .v2-ctx-count { margin-left: 4px; }
-.v2-ctx-add:hover { background: var(--accent-soft); color: var(--text-accent); }
+.v2-ctx-add:hover { background: var(--v2-active); color: var(--text-primary); }
 
 /* Conversaciones dentro del contexto */
 .v2-conv-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 6px 14px 6px 30px; margin: 0 8px; border-radius: var(--radius);
-  cursor: pointer; font-size: 12.5px; color: var(--text-secondary);
+  padding: 6px 10px 6px 26px; margin: 0 8px; border-radius: var(--v2-r);
+  cursor: pointer; font-size: 13px; color: var(--text-secondary);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: background var(--v2-fast), color var(--v2-fast);
 }
-.v2-conv-row:hover { background: var(--bg-hover); }
-.v2-conv-row.active { background: var(--bg-active); color: var(--text-primary); }
+.v2-conv-row:hover { background: var(--v2-hover); color: var(--text-primary); }
+.v2-conv-row.active { background: var(--v2-active); color: var(--text-primary); }
 
-.v2-sidebar-foot { border-top: 1px solid var(--border); padding: 8px; position: relative; }
+.v2-sidebar-foot { border-top: 1px solid var(--v2-line); padding: 8px; position: relative; }
 .v2-userchip {
-  display: flex; align-items: center; gap: 8px; width: 100%; font-size: 12.5px;
+  display: flex; align-items: center; gap: 9px; width: 100%; font-size: 12.5px;
   color: var(--text-secondary); background: transparent; border: none; cursor: pointer;
-  padding: 6px; border-radius: var(--radius); text-align: left;
+  padding: 7px; border-radius: var(--v2-r); text-align: left;
+  transition: background var(--v2-fast);
 }
-.v2-userchip:hover { background: var(--bg-hover); }
+.v2-userchip:hover { background: var(--v2-hover); }
 .v2-userchip .v2-el-main { min-width: 0; flex: 1; }
 .v2-userchip .v2-el-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .v2-userchip-caret { flex: 0 0 auto; color: var(--text-tertiary); font-size: 12px; }
@@ -335,31 +453,36 @@
 /* Menú de usuario (estilo Claude) — se abre HACIA ARRIBA sobre el chip. */
 .v2-usermenu {
   position: absolute; bottom: calc(100% + 4px); left: 8px; right: 8px; z-index: 60;
-  background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border);
-  border-radius: 12px; box-shadow: 0 10px 34px rgba(0,0,0,0.22); padding: 6px;
+  background: var(--v2-elevated); border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-lg); box-shadow: var(--v2-shadow-lg); padding: 6px;
 }
 .v2-usermenu-item {
-  display: block; width: 100%; text-align: left; padding: 8px 10px; border-radius: 8px;
+  display: flex; align-items: center; gap: 9px; width: 100%; text-align: left;
+  padding: 8px 10px; border-radius: var(--v2-r-sm);
   font-size: 13px; color: var(--text-primary); background: transparent; border: none; cursor: pointer;
-  text-decoration: none;
+  text-decoration: none; transition: background var(--v2-fast);
 }
-.v2-usermenu-item:hover { background: var(--bg-hover); }
+.v2-usermenu-item svg { color: var(--text-tertiary); }
+.v2-usermenu-item:hover { background: var(--v2-hover); }
+.v2-usermenu-item:hover svg { color: var(--text-secondary); }
 .v2-usermenu-item--danger { color: var(--color-error, #e0393e); }
-.v2-usermenu-sep { height: 1px; background: var(--border); margin: 6px 4px; }
+.v2-usermenu-sep { height: 1px; background: var(--v2-line); margin: 6px 4px; }
 .v2-usermenu-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-tertiary); padding: 2px 10px 4px; }
 .v2-theme-seg { display: flex; gap: 4px; padding: 0 6px 4px; }
 .v2-theme-opt {
-  flex: 1; padding: 6px 4px; border-radius: 8px; font-size: 11.5px; cursor: pointer;
-  border: 1px solid var(--border); background: transparent; color: var(--text-secondary);
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  padding: 7px 4px; border-radius: var(--v2-r-sm); font-size: 11.5px; cursor: pointer;
+  border: 1px solid var(--v2-line-strong); background: transparent; color: var(--text-secondary);
+  transition: background var(--v2-fast), color var(--v2-fast), border-color var(--v2-fast);
 }
-.v2-theme-opt:hover { background: var(--bg-hover); }
+.v2-theme-opt:hover { background: var(--v2-hover); color: var(--text-primary); }
 .v2-theme-opt.active { background: var(--accent-soft); color: var(--text-accent); border-color: var(--accent); }
 /* Modal genérico de v2 (papelera, etc.). */
 .v2-modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.35); display: grid; place-items: center; }
 .v2-modal {
   width: min(560px, 92vw); max-height: 80vh; display: flex; flex-direction: column;
-  background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border);
-  border-radius: 14px; box-shadow: 0 18px 60px rgba(0,0,0,0.28); overflow: hidden;
+  background: var(--v2-elevated); border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-xl); box-shadow: var(--v2-shadow-lg); overflow: hidden;
 }
 .v2-modal-head { display: flex; align-items: center; padding: 14px 16px; border-bottom: 1px solid var(--border); }
 .v2-modal-title { font-size: 14px; font-weight: 700; color: var(--text-primary); flex: 1; }
@@ -379,42 +502,60 @@
 
 /* ── Centro (chat) ─────────────────────────────────────────────────── */
 .v2-center-head {
-  height: 48px; flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
-  padding: 0 16px; border-bottom: 1px solid var(--border);
+  height: 52px; flex: 0 0 auto; display: flex; align-items: center; gap: 10px;
+  padding: 0 18px; border-bottom: 1px solid var(--v2-line);
 }
-.v2-center-title { font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.v2-center-title {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-weight: 600; font-size: 14px; letter-spacing: -0.01em;
+  /* `min-width:0` + `flex:0 1 auto`: sin el min-width, un flex-item nunca baja de
+     su tamaño de contenido y el título largo se cortaba a hueso contra el borde
+     de la columna, sin llegar a pintar el «…». */
+  flex: 0 1 auto; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Icono a la izquierda de un título de panel — un punto más tenue que el texto. */
+.v2-title-icon { color: var(--text-tertiary); }
 .v2-center-ctx { color: var(--text-tertiary); font-weight: 500; }
 .v2-center-sub { color: var(--text-tertiary); font-size: 12px; }
 .v2-iconbtn {
-  background: transparent; border: none; color: var(--text-secondary);
-  width: 32px; height: 32px; border-radius: var(--radius); cursor: pointer;
-  display: grid; place-items: center; font-size: 15px;
+  background: transparent; border: none; color: var(--text-tertiary);
+  width: 30px; height: 30px; border-radius: var(--v2-r-sm); cursor: pointer;
+  display: grid; place-items: center;
+  transition: background var(--v2-fast), color var(--v2-fast);
 }
-.v2-iconbtn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.v2-iconbtn:hover { background: var(--v2-hover); color: var(--text-primary); }
 
 .v2-head-action {
-  display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-family: inherit;
-  padding: 6px 10px; border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-family: inherit;
+  padding: 6px 11px; border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r-sm);
+  background: transparent; color: var(--text-secondary); cursor: pointer; white-space: nowrap;
+  transition: background var(--v2-fast), color var(--v2-fast), border-color var(--v2-fast);
 }
-.v2-head-action:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-focus); }
+.v2-head-action:hover:not(:disabled) { background: var(--v2-hover); color: var(--text-primary); }
 .v2-head-action:disabled { opacity: 0.6; cursor: default; }
 .v2-head-action.recording { background: var(--danger); color: #fff; border-color: var(--danger); }
 
-.v2-chat-scroll { flex: 1; overflow-y: auto; padding: 24px 0; }
+.v2-chat-scroll { flex: 1; overflow-y: auto; padding: 26px 0; }
 .v2-chat-inner { max-width: 720px; margin: 0 auto; padding: 0 20px; }
 
-.v2-msg { display: flex; gap: 12px; margin-bottom: 22px; }
-.v2-msg-avatar { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 6px; display: grid; place-items: center; font-size: 13px; font-weight: 700; }
-.v2-msg.user .v2-msg-avatar { background: var(--bg-active); color: var(--text-secondary); }
+.v2-msg { display: flex; gap: 13px; margin-bottom: 24px; }
+.v2-msg-avatar {
+  flex: 0 0 auto; width: 27px; height: 27px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 11px; font-weight: 650;
+}
+.v2-msg.user .v2-msg-avatar { background: var(--v2-active); color: var(--text-secondary); }
 .v2-msg.assistant .v2-msg-avatar { background: var(--accent); color: #fff; }
-.v2-msg-body { flex: 1; min-width: 0; padding-top: 3px; line-height: 1.6; }
+.v2-msg-body { flex: 1; min-width: 0; padding-top: 3px; line-height: 1.65; }
 .v2-msg-body p { margin: 0 0 8px; }
 .v2-msg-body .chat-table { border-collapse: collapse; margin: 0 0 10px; font-size: 13px; max-width: 100%; display: block; overflow-x: auto; }
 .v2-msg-body .chat-table th, .v2-msg-body .chat-table td { border: 1px solid var(--border); padding: 5px 9px; text-align: left; line-height: 1.4; }
 .v2-msg-body .chat-table th { background: var(--bg-secondary); font-weight: 600; white-space: nowrap; }
 .v2-msg-body .chat-table tbody tr:nth-child(even) { background: var(--bg-secondary); }
-.v2-msg-body .chat-code-block { background: var(--bg-secondary); border-radius: 8px; padding: 10px 12px; margin: 0 0 8px; overflow-x: auto; font-size: 12.5px; }
+.v2-msg-body .chat-code-block {
+  background: var(--v2-surface-sunken); border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r); padding: 11px 13px; margin: 0 0 8px; overflow-x: auto; font-size: 12.5px;
+}
 .v2-msg-body .chat-code-block code { font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, monospace; white-space: pre; }
 .v2-msg-role { font-size: 11px; font-weight: 600; color: var(--text-tertiary); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
 
@@ -430,17 +571,17 @@
 
 /* Estado vacío del chat */
 .v2-empty { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
-.v2-empty h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin: 0 0 8px; }
-.v2-empty p { color: var(--text-secondary); max-width: 440px; margin: 0 0 24px; line-height: 1.55; }
-.v2-suggest-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 520px; width: 100%; }
-.v2-suggest {
-  text-align: left; padding: 12px 14px; border: 1px solid var(--border);
-  border-radius: var(--radius-lg); background: var(--bg-secondary); cursor: pointer;
-  font-size: 13px; color: var(--text-primary);
+.v2-empty h1 { font-size: 22px; font-weight: 650; letter-spacing: -0.022em; margin: 0 0 8px; }
+.v2-empty p { color: var(--text-secondary); max-width: 420px; margin: 0; line-height: 1.6; font-size: 13.5px; }
+
+/* Estado vacío del CHAT — ya no es un saludo centrado: es el navegador de
+   contextos (V2ContextBrowser). Se ancla ARRIBA, no al centro vertical, para que
+   la rejilla no baile según cuántos contextos haya. */
+.v2-chat-empty { max-width: 720px; margin: 0 auto; padding: 4px 20px 20px; width: 100%; }
+.v2-chat-empty-hint {
+  color: var(--text-tertiary); font-size: 13px; line-height: 1.6;
+  padding: 22px 2px; text-align: center;
 }
-.v2-suggest:hover { border-color: var(--accent); background: var(--accent-soft); }
-.v2-suggest .v2-suggest-t { font-weight: 600; margin-bottom: 2px; }
-.v2-suggest .v2-suggest-d { color: var(--text-tertiary); font-size: 12px; }
 
 /* Grabadora activa — vista a pantalla completa de la columna derecha. */
 .v2-recording-view {
@@ -468,56 +609,77 @@
 .v2-recording-stop:hover { opacity: 0.9; }
 
 /* Composer */
-.v2-composer { flex: 0 0 auto; padding: 12px 0 18px; }
+.v2-composer { flex: 0 0 auto; padding: 10px 0 16px; }
 .v2-composer-inner { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+/* La caja del composer es la pieza más mirada de la app: borde casi invisible +
+   sombra corta (como Claude/DeepSeek), no un rectángulo con línea dura. */
 .v2-composer-box {
-  border: 1px solid var(--border-focus); border-radius: var(--radius-lg);
-  background: var(--bg-secondary); padding: 10px 12px;
-  display: flex; align-items: flex-end; gap: 8px;
+  border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r-xl);
+  background: var(--v2-surface); padding: 9px 10px 9px 12px;
+  display: flex; align-items: flex-end; gap: 6px;
+  box-shadow: var(--v2-shadow);
+  transition: border-color var(--v2-fast), box-shadow var(--v2-fast);
 }
-.v2-composer-box:focus-within { border-color: var(--accent); }
+.v2-composer-box:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: var(--v2-shadow), 0 0 0 3px var(--accent-soft);
+}
 .v2-composer textarea {
   flex: 1; border: none; outline: none; resize: none; background: transparent;
-  font-family: inherit; font-size: 14px; line-height: 1.5; color: var(--text-primary);
-  max-height: 200px; min-height: 24px;
+  font-family: inherit; font-size: 14.5px; line-height: 1.55; color: var(--text-primary);
+  max-height: 200px; min-height: 26px; padding: 3px 0;
 }
+.v2-composer textarea::placeholder { color: var(--text-tertiary); }
 .v2-send {
-  flex: 0 0 auto; width: 32px; height: 32px; border-radius: 8px; border: none;
-  background: var(--accent); color: #fff; cursor: pointer; display: grid; place-items: center; font-size: 15px;
+  flex: 0 0 auto; width: 30px; height: 30px; border-radius: 50%; border: none;
+  background: var(--accent); color: #fff; cursor: pointer; display: grid; place-items: center;
+  transition: background var(--v2-fast), opacity var(--v2-fast), transform var(--v2-fast);
 }
-.v2-send:disabled { opacity: 0.4; cursor: default; }
-.v2-composer-hint { text-align: center; color: var(--text-tertiary); font-size: 11px; margin-top: 8px; }
+.v2-send:hover:not(:disabled) { background: var(--accent-hover); }
+.v2-send:active:not(:disabled) { transform: scale(0.94); }
+.v2-send:disabled { opacity: 0.28; cursor: default; }
+.v2-composer-hint { text-align: center; color: var(--text-tertiary); font-size: 11px; margin-top: 9px; }
 
 /* Attach chips (archivos arrastrados) */
 .v2-attach-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
 .v2-attach-chip {
   display: inline-flex; align-items: center; gap: 6px; font-size: 12px;
-  background: var(--bg-tertiary); border: 1px solid var(--border);
-  padding: 4px 8px; border-radius: 6px; color: var(--text-secondary);
+  background: var(--v2-surface-sunken); border: 1px solid var(--v2-line);
+  padding: 4px 9px; border-radius: 99px; color: var(--text-secondary);
 }
 
 /* Drag overlay */
 .v2-drop-overlay {
-  position: absolute; inset: 0; z-index: 50; display: grid; place-items: center;
-  background: var(--accent-soft); border: 2px dashed var(--accent);
-  border-radius: 12px; margin: 8px; pointer-events: none;
-  font-weight: 600; color: var(--text-accent);
+  position: absolute; inset: 0; z-index: 50;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  background: var(--accent-soft); border: 1.5px dashed var(--accent);
+  border-radius: var(--v2-r-lg); margin: 8px; pointer-events: none;
+  font-weight: 600; font-size: 13.5px; color: var(--text-accent);
+  backdrop-filter: blur(1px);
 }
 
 /* ── Columna derecha contextual (modos) ────────────────────────────── */
-.v2-right-tabs { display: flex; gap: 0; padding: 0 8px; border-bottom: 1px solid var(--border); flex: 0 0 auto; }
-.v2-right-tab {
-  flex: 1; text-align: center; padding: 11px 4px; font-size: 12px; font-weight: 600;
-  color: var(--text-tertiary); background: transparent; border: none; cursor: pointer;
-  border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .12s, border-color .12s;
+/* Tabs de la columna derecha — segmentadas al estilo Drive/Claude: sin la línea
+   inferior a todo lo ancho, cada tab es una pastilla que se rellena al activarse.
+   La altura coincide con .v2-center-head (52px) para que las 3 columnas alineen
+   sus cabeceras. */
+.v2-right-tabs {
+  display: flex; gap: 3px; padding: 0 10px; height: 52px; align-items: center;
+  border-bottom: 1px solid var(--v2-line); flex: 0 0 auto;
 }
-.v2-right-tab:hover { color: var(--text-secondary); }
-.v2-right-tab.active { color: var(--text-primary); border-bottom-color: var(--accent); }
-.v2-right-body { flex: 1; overflow-y: auto; padding: 14px; container-type: inline-size; }
+.v2-right-tab {
+  flex: 1; text-align: center; padding: 7px 6px; border-radius: var(--v2-r-sm);
+  font-size: 12.5px; font-weight: 550; letter-spacing: -0.005em;
+  color: var(--text-tertiary); background: transparent; border: none; cursor: pointer;
+  transition: color var(--v2-fast), background var(--v2-fast);
+}
+.v2-right-tab:hover { color: var(--text-secondary); background: var(--v2-hover); }
+.v2-right-tab.active { color: var(--text-primary); background: var(--v2-active); font-weight: 650; }
+.v2-right-body { flex: 1; overflow-y: auto; padding: 16px; container-type: inline-size; }
 /* Contenedor a altura completa (sin padding) para paneles v1 con su propio scroll (ElementsPanel). */
 .v2-right-fill { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
-.v2-right-empty { color: var(--text-tertiary); font-size: 12.5px; text-align: center; padding: 30px 12px; line-height: 1.5; }
+.v2-right-empty { color: var(--text-tertiary); font-size: 12.5px; text-align: center; padding: 30px 12px; line-height: 1.6; }
 
 /* Miniaturas de archivos en la derecha */
 .v2-thumb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -532,11 +694,16 @@
 
 /* Lista de elementos / recientes */
 .v2-el-row {
-  display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; border-radius: var(--radius);
-  cursor: pointer; font-size: 13px; color: var(--text-primary);
+  display: flex; align-items: flex-start; gap: 10px; padding: 9px 10px; border-radius: var(--v2-r);
+  cursor: pointer; font-size: 13.5px; color: var(--text-primary);
+  transition: background var(--v2-fast);
 }
-.v2-el-row:hover { background: var(--bg-hover); }
-.v2-el-icon { flex: 0 0 auto; font-size: 15px; width: 20px; text-align: center; line-height: 1.4; }
+.v2-el-row:hover { background: var(--v2-hover); }
+.v2-el-icon {
+  flex: 0 0 auto; width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-tertiary);
+}
 .v2-el-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; }
 /* Título completo: envuelve a varias líneas, nunca se recorta por la derecha. */
 .v2-el-title { white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
@@ -546,15 +713,15 @@
    tracking y un cuadradito de color como acento (no la píldora infantil de antes). */
 .v2-el-ctxchip {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; line-height: 1.5;
-  color: var(--text-tertiary); padding: 1px 6px 1px 5px;
-  border: 1px solid var(--border); border-radius: 3px; background: transparent; white-space: nowrap;
+  font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; line-height: 1.6;
+  color: var(--text-tertiary); padding: 1px 7px 1px 6px;
+  border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r-sm); background: transparent; white-space: nowrap;
 }
 .v2-el-ctxchip::before {
   content: ''; width: 6px; height: 6px; border-radius: 1.5px; flex: 0 0 auto;
   background: var(--chip, var(--text-tertiary));
 }
-.v2-el-child { margin-left: 18px; border-left: 1px solid var(--border); padding-left: 12px; }
+.v2-el-child { margin-left: 18px; border-left: 1px solid var(--v2-line); padding-left: 12px; }
 .v2-el-child .v2-el-title { font-size: 12.5px; }
 /* Eliminar al hover — oculto en reposo, visible al pasar por la fila (mismo patrón que .dc-del). */
 .v2-el-del {
@@ -569,19 +736,21 @@
 .v2-chip {
   display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
   font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--text-secondary); padding: 2px 8px 2px 6px;
-  border: 1px solid var(--border); border-radius: 3px; background: transparent; font-family: inherit;
+  color: var(--text-secondary); padding: 3px 9px 3px 7px;
+  border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r-sm); background: transparent; font-family: inherit;
+  transition: border-color var(--v2-fast), color var(--v2-fast), background var(--v2-fast);
 }
 .v2-chip::before {
   content: ''; width: 6px; height: 6px; border-radius: 1.5px; flex: 0 0 auto;
   background: var(--chip, var(--text-tertiary));
 }
-.v2-chip:hover { border-color: var(--accent); color: var(--text-accent); }
+.v2-chip:hover { border-color: var(--accent); color: var(--text-accent); background: var(--accent-soft); }
 .v2-search-input {
-  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius);
-  font-size: 13px; margin-bottom: 12px; background: var(--bg-primary); color: var(--text-primary); outline: none;
+  width: 100%; padding: 9px 11px; border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r);
+  font-size: 13px; margin-bottom: 12px; background: var(--v2-surface); color: var(--text-primary); outline: none;
+  transition: border-color var(--v2-fast), box-shadow var(--v2-fast);
 }
-.v2-search-input:focus { border-color: var(--accent); }
+.v2-search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
 /* ── Vista de contexto (modo Contexto) ─────────────────────────────── */
 .v2-ctx-head { border-bottom: 1px solid var(--border); padding-bottom: 12px; }
@@ -636,25 +805,26 @@
    borde para no pegarse ni arriba ni abajo con lo que la rodea. */
 .v2-notectx-row {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
-  padding: 8px 12px; border-bottom: 1px solid var(--border);
+  padding: 8px 12px; border-bottom: 1px solid var(--v2-line);
 }
 /* Cambiar/añadir contexto — chip-icono a la MISMA altura que .v2-chip (antes era
    un botón con texto largo y padding distinto que desentonaba). */
 .v2-ctx-edit-btn {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; padding: 0; border-radius: 3px;
-  border: 1px solid var(--border); background: transparent; color: var(--text-tertiary); cursor: pointer;
+  width: 21px; height: 21px; padding: 0; border-radius: var(--v2-r-sm);
+  border: 1px solid var(--v2-line-strong); background: transparent; color: var(--text-tertiary); cursor: pointer;
+  transition: border-color var(--v2-fast), color var(--v2-fast);
 }
 .v2-ctx-edit-btn:hover { border-color: var(--accent); color: var(--text-accent); }
 .v2-ctxpick-pop {
   position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; width: 260px;
-  background: var(--bg-elevated, var(--bg-secondary)); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: 0 8px 28px rgba(0,0,0,0.18); padding: 6px;
+  background: var(--v2-elevated); border: 1px solid var(--v2-line);
+  border-radius: var(--v2-r-lg); box-shadow: var(--v2-shadow-lg); padding: 6px;
 }
 
 /* ── Vista de detalle (visor/editor en la columna derecha) ─────────── */
 .v2-detail-head {
-  flex: 0 0 auto; padding: 6px 10px; border-bottom: 1px solid var(--border);
+  flex: 0 0 auto; padding: 8px 12px; border-bottom: 1px solid var(--v2-line);
 }
 .v2-detail-head-top { height: 36px; display: flex; align-items: center; gap: 8px; }
 .v2-detail-dates {
@@ -686,7 +856,7 @@
   background: var(--bg-elevated, var(--bg-secondary)); cursor: pointer; padding: 0;
   font-family: inherit; transition: border-color .12s, box-shadow .12s;
 }
-.v2-thumb:hover { border-color: var(--text-accent); box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+.v2-thumb:hover { border-color: var(--v2-line-strong); box-shadow: var(--v2-shadow); }
 /* Quitar de la conversación — esquina, solo al hover de la tarjeta. */
 .v2-thumb-detach {
   position: absolute; top: 4px; right: 4px; z-index: 2;
@@ -715,11 +885,199 @@
    un archivo sobre la columna de contextos, y resalte de la sidebar / contexto destino. */
 .v2-import-banner {
   position: absolute; top: 0; left: 0; right: 0; z-index: 50;
-  background: var(--text-accent, #6c5ce7); color: #fff;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--accent); color: #fff;
   font-size: 12.5px; font-weight: 600; text-align: center;
-  padding: 9px 12px; letter-spacing: 0.02em;
+  padding: 10px 12px; letter-spacing: 0.01em;
 }
 .v2-sidebar--drag { outline: 2px dashed var(--text-accent, #6c5ce7); outline-offset: -4px; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   Historial + tarjetas de contexto (V2ContextBrowser)
+   Dos pieles del MISMO componente (ver V2ContextBrowser.tsx):
+     · `--cards` → rejilla en el estado vacío del chat.
+     · `--list`  → filas en el tab «Historial» de la columna derecha.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.v2-hist { display: flex; flex-direction: column; min-width: 0; }
+
+/* Etiqueta de sección («Contextos» / «Recientes»). Con `:not(:first-child)` para
+   que la primera no empuje el bloque hacia abajo. */
+.v2-hist-section {
+  font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.075em;
+  color: var(--text-tertiary); padding: 4px 2px 8px;
+}
+.v2-hist-section:not(:first-child) { padding-top: 20px; }
+
+.v2-hist-list { display: flex; flex-direction: column; gap: 1px; }
+.v2-hist-empty {
+  color: var(--text-tertiary); font-size: 12.5px; line-height: 1.6;
+  padding: 10px 2px 14px;
+}
+
+/* ── Fila (contexto o conversación) ───────────────────────────────────── */
+.v2-hist-row {
+  display: flex; align-items: flex-start; gap: 10px; width: 100%;
+  padding: 9px 10px; border: none; border-radius: var(--v2-r);
+  background: transparent; color: var(--text-primary); font: inherit; text-align: left;
+  cursor: pointer; transition: background var(--v2-fast);
+}
+.v2-hist-row:hover { background: var(--v2-hover); }
+.v2-hist-row-icon { color: var(--text-tertiary); margin-top: 1px; }
+.v2-hist-row-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.v2-hist-row-title {
+  font-size: 13.5px; line-height: 1.35; color: var(--text-primary);
+  /* Una sola línea con elipsis: en una lista de historial el título es una
+     etiqueta para reconocer la conversación, no el contenido de la fila (misma
+     regla que la fila genérica de Elementos). */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.v2-hist-row-meta {
+  display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+  font-size: 11px; color: var(--text-tertiary);
+}
+.v2-hist-row-caret { color: var(--text-tertiary); align-self: center; opacity: 0; transition: opacity var(--v2-fast); }
+.v2-hist-row:hover .v2-hist-row-caret { opacity: 1; }
+/* Punto de color del contexto — mismo lenguaje que .v2-ctx-dot de la sidebar. */
+.v2-hist-ctxdot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; margin-top: 6px; }
+
+/* ── Buscador del Historial ───────────────────────────────────────────── */
+.v2-hist-search {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+  padding: 8px 11px; border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r);
+  background: var(--v2-surface); color: var(--text-tertiary);
+  transition: border-color var(--v2-fast), box-shadow var(--v2-fast);
+}
+.v2-hist-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.v2-hist-search input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  font: inherit; font-size: 13px; color: var(--text-primary);
+}
+.v2-hist-search input::placeholder { color: var(--text-tertiary); }
+
+/* ── Cabecera del drill-down (dentro de un contexto) ──────────────────── */
+.v2-hist-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.v2-hist-back, .v2-hist-headaction {
+  display: inline-flex; align-items: center; gap: 4px; padding: 5px 9px 5px 6px;
+  border: none; border-radius: var(--v2-r-sm); background: transparent;
+  font: inherit; font-size: 12.5px; font-weight: 550; color: var(--text-secondary);
+  cursor: pointer; transition: background var(--v2-fast), color var(--v2-fast);
+}
+.v2-hist-headaction { padding: 5px 9px; color: var(--text-accent); }
+.v2-hist-back:hover, .v2-hist-headaction:hover { background: var(--v2-hover); color: var(--text-primary); }
+
+.v2-hist-title-row { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; }
+.v2-hist-title-row .v2-hist-ctxdot { margin-top: 0; width: 9px; height: 9px; }
+.v2-hist-title {
+  font-size: 19px; font-weight: 650; letter-spacing: -0.02em; line-height: 1.25;
+  color: var(--text-primary); margin: 0; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.v2-hist-newchat {
+  display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px;
+  padding: 7px 12px; border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r);
+  background: transparent; font: inherit; font-size: 12.5px; font-weight: 600;
+  color: var(--text-secondary); cursor: pointer;
+  transition: background var(--v2-fast), color var(--v2-fast), border-color var(--v2-fast);
+}
+.v2-hist-newchat:hover { background: var(--v2-hover); color: var(--text-primary); border-color: var(--v2-line-strong); }
+
+/* ── Tarjetas de contexto (estado vacío del chat) ─────────────────────── */
+/* auto-fill + minmax: la MISMA rejilla sirve para el centro ancho (3-4 columnas)
+   y para el chat embebido en la columna derecha (1-2). Sin media queries. */
+.v2-ctxcards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px;
+}
+.v2-ctxcard {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
+  padding: 14px 15px 13px; min-height: 96px;
+  border: 1px solid var(--v2-line); border-radius: var(--v2-r-lg);
+  background: var(--v2-surface); color: var(--text-primary);
+  font: inherit; text-align: left; cursor: pointer;
+  box-shadow: var(--v2-shadow-sm);
+  transition: border-color var(--v2-fast), box-shadow var(--v2-fast), transform var(--v2-fast);
+}
+.v2-ctxcard:hover {
+  border-color: var(--v2-line-strong);
+  box-shadow: var(--v2-shadow);
+  transform: translateY(-1px);
+}
+.v2-ctxcard:active { transform: translateY(0); box-shadow: var(--v2-shadow-sm); }
+.v2-ctxcard-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.v2-ctxcard-name {
+  font-size: 13.5px; font-weight: 600; line-height: 1.35; letter-spacing: -0.008em;
+  /* 2 líneas máximo: los nombres de contexto largos («Servicios para Radios»)
+     tienen que leerse enteros, pero sin descuadrar la altura de la rejilla. */
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.v2-ctxcard-meta { margin-top: auto; font-size: 11px; color: var(--text-tertiary); }
+.v2-ctxcard--general { background: transparent; box-shadow: none; border-style: dashed; }
+.v2-ctxcard--general:hover { background: var(--v2-hover); box-shadow: none; }
+
+/* ── Barra de creación (sidebar) ───────────────────────────────────────────
+   Sustituye a los botones «Nueva conversación» / «Nuevo elemento»: una sola fila
+   de iconos (chat · nota · lienzo · tarea · grabar · adjuntar), repartidos a lo
+   ancho. Al ser 6 acciones con etiqueta solo en el `title`, el área de clic es
+   generosa (36px de alto) y el hover deja claro cuál está debajo del cursor. */
+.v2-createbar {
+  display: flex; gap: 2px; margin: 0 10px 14px; padding: 3px;
+  border: 1px solid var(--v2-line); border-radius: var(--v2-r-lg);
+  background: var(--v2-surface); box-shadow: var(--v2-shadow-sm);
+}
+.v2-createbtn {
+  flex: 1; height: 32px; display: grid; place-items: center;
+  border: none; border-radius: var(--v2-r-sm); background: transparent;
+  color: var(--text-secondary); cursor: pointer;
+  transition: background var(--v2-fast), color var(--v2-fast);
+}
+.v2-createbtn:hover { background: var(--v2-hover); color: var(--text-primary); }
+.v2-createbtn:active { background: var(--v2-active); }
+
+/* Etiqueta de sección cuya acción («+») solo aparece con el ratón encima. */
+.v2-section-label--hoverable .v2-ctx-add { display: none; }
+.v2-section-label--hoverable:hover .v2-ctx-add { display: inline-flex; }
+
+/* ── Modal «Adjuntar» (V2AttachModal) ─────────────────────────────────────── */
+.v2-attach { width: min(480px, 92vw); }
+.v2-attach .v2-modal-body { padding: 16px; display: flex; flex-direction: column; gap: 18px; }
+
+.v2-attach-drop {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 26px 18px; text-align: center; cursor: pointer;
+  border: 1.5px dashed var(--v2-line-strong); border-radius: var(--v2-r-lg);
+  color: var(--text-tertiary); background: transparent;
+  transition: border-color var(--v2-fast), background var(--v2-fast), color var(--v2-fast);
+}
+.v2-attach-drop:hover { border-color: var(--accent); color: var(--text-secondary); }
+.v2-attach-drop--over { border-color: var(--accent); background: var(--accent-soft); color: var(--text-accent); }
+.v2-attach-drop-main { font-size: 13.5px; font-weight: 600; color: var(--text-primary); }
+.v2-attach-drop-sub { font-size: 12px; line-height: 1.5; }
+
+.v2-attach-section { display: flex; flex-direction: column; gap: 7px; }
+.v2-attach-label {
+  font-size: 10.5px; font-weight: 650; text-transform: uppercase; letter-spacing: 0.075em;
+  color: var(--text-tertiary);
+}
+.v2-attach-linkrow {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 8px 6px 11px; color: var(--text-tertiary);
+  border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r);
+  background: var(--v2-surface);
+  transition: border-color var(--v2-fast), box-shadow var(--v2-fast);
+}
+.v2-attach-linkrow:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.v2-attach-linkrow input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  font: inherit; font-size: 13px; color: var(--text-primary);
+}
+.v2-attach-drive {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 10px 12px; border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r);
+  background: transparent; font: inherit; font-size: 13px; color: var(--text-primary);
+  cursor: pointer; transition: background var(--v2-fast), border-color var(--v2-fast);
+}
+.v2-attach-drive:hover { background: var(--v2-hover); }
+.v2-attach-drive svg { color: var(--text-tertiary); }
 
 @media (max-width: 900px) {
   .v2-root { grid-template-columns: 1fr; }

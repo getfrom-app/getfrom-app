@@ -13,6 +13,7 @@ import { resolvePrompt } from '../../utils/promptsHelper'
 import { trashNode } from '../../utils/papeleraHelper'
 import Outliner from '../../components/outliner/Outliner'
 import PromptPropertiesPanel from '../../components/panels/PromptPropertiesPanel'
+import Icon from './Icon'
 
 interface Props {
   node: Node
@@ -24,8 +25,8 @@ export default function V2PromptDetailView({ node, onSelectCtx, onOpenElementsFi
   useStore()
   const { t } = useTranslation()
   const ctx = firstContextOf(node)
-  let icon = '⚡'
-  try { icon = JSON.parse(node.extraData || '{}')._promptIcon || '⚡' } catch { /* ignore */ }
+  // El `_promptIcon` guardado es un emoji del usuario (dato) — la UI usa siempre
+  // el icono del sistema para «prompt», igual en todas las superficies.
   // Propiedades a la derecha, dentro de la misma columna (debajo, ya que v2 no
   // tiene una columna extra): panel plegable con el control real de v1.
   const [showProps, setShowProps] = useState(true)
@@ -40,13 +41,13 @@ export default function V2PromptDetailView({ node, onSelectCtx, onOpenElementsFi
   return (
     <div style={{ padding: '4px 18px 18px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0' }}>
-        <span style={{ fontSize: 20 }}>{icon}</span>
+        <Icon name="prompt" size={20} />
         <button
           title={t('tip.delete', 'Eliminar')}
           onClick={() => { trashNode(node.id); window.dispatchEvent(new Event('from:close-detail')) }}
           style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: 4 }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          <Icon name="trash" size={14} />
         </button>
       </div>
 
@@ -64,7 +65,7 @@ export default function V2PromptDetailView({ node, onSelectCtx, onOpenElementsFi
 
       {/* Contenido del prompt — outliner clásico (los hijos SON las instrucciones). */}
       <div style={{ marginTop: 10 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>📝 {t('prompts.contentLabel', 'Contenido del prompt')}</div>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('prompts.contentLabel', 'Contenido del prompt')}</div>
         <Outliner parentId={node.id} autoFocusEmpty placeholder={t('v2.outlinerPlaceholder', 'Escribe aquí… (usa «/» para insertar tabla, kanban, calendario…)')} />
       </div>
 
@@ -75,7 +76,7 @@ export default function V2PromptDetailView({ node, onSelectCtx, onOpenElementsFi
           onClick={() => setShowProps(v => !v)}
           style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginBottom: showProps ? 8 : 0 }}
         >
-          <span className="v2-section-label" style={{ padding: 0 }}>⚙️ {t('agents.propertiesLabel', 'Propiedades')}</span>
+          <span className="v2-section-label" style={{ padding: 0 }}>{t('agents.propertiesLabel', 'Propiedades')}</span>
           <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-tertiary)' }}>{showProps ? '▾' : '▸'}</span>
         </button>
         {showProps && (

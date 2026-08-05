@@ -5,7 +5,7 @@
  * Sin selección → completamente invisible, no existe en el DOM.
  *
  * Secciones:
- *   Barra principal: H1 H2 H3 | B I S | <> 🔗 | A (color)
+ *   Barra principal: H1 H2 H3 | B I S | <> enlace | A (color)
  *   Panel de color (al hacer clic en A):
  *     Texto:     ✕ + 10 colores
  *     Resaltado: ✕ + 10 colores
@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
+import Icon from '../../v2/components/Icon'
 
 export type FormatType =
   | 'h1' | 'h2' | 'h3'
@@ -130,7 +131,7 @@ export default function FormatToolbar({ onFormat, nodeRef }: Props) {
   if (!selRect) return null
 
   // ── Posición ──────────────────────────────────────────────────────────────
-  const MAIN_W   = 340   // suficiente para H1 H2 H3 | B I S | <> 🔗 | A sin cortes
+  const MAIN_W   = 340   // suficiente para H1 H2 H3 | B I S | <> enlace | A sin cortes
   const COLOR_W  = 300
   const W = showColors ? COLOR_W : MAIN_W
   const H = showColors ? 110 : 40
@@ -203,7 +204,7 @@ export default function FormatToolbar({ onFormat, nodeRef }: Props) {
             <span style={{ fontFamily: 'monospace', fontSize: 10 }}>{'<>'}</span>
           </Btn>
           <Btn type="link" title={t('format.link')}>
-            <span style={{ fontSize: 12 }}>🔗</span>
+            <Icon name="link" size={13} />
           </Btn>
 
           <div className="ft-sep" />

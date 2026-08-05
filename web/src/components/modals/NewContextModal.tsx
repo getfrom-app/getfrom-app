@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { createContext, listContextsForParent } from '../../utils/cajones'
 import { useToast } from '../Toast'
+import Icon from '../../v2/components/Icon'
 
 interface Props {
   onClose: () => void
@@ -28,7 +29,7 @@ export default function NewContextModal({ onClose, defaultParentId, onCreated }:
     e.preventDefault()
     if (!name.trim()) return
     const node = createContext(name.trim(), parentId || null)
-    showToast(`✓ ${t('modal.newContextCreatedToast', 'Contexto creado')}`)
+    showToast(t('modal.newContextCreatedToast', 'Contexto creado'))
     onCreated?.(node.id)
     onClose()
   }
@@ -41,7 +42,7 @@ export default function NewContextModal({ onClose, defaultParentId, onCreated }:
     <div className="modal-overlay" onClick={onClose} onKeyDown={handleKeyDown}>
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <span className="modal-icon">📁</span>
+          <span className="modal-icon"><Icon name="folder" size={18} /></span>
           <h2>{t('modal.newContext', 'Nuevo contexto')}</h2>
           <button className="modal-close-btn" onClick={onClose}>×</button>
         </div>

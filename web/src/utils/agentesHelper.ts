@@ -221,7 +221,12 @@ export function createAgentUnder(opts: {
   conversational?: boolean
 }): Node {
   const icon = opts.icon || '🤖'
-  const node = store.createNode({ text: `${icon} ${opts.label}`.trim(), parentId: opts.parentId })
+  // El título va LIMPIO, sin el emoji delante (rediseño 5 ago 2026: Fromly ya no
+  // pinta emojis; el icono lo pone la UI). `_agentIcon` se sigue guardando porque
+  // iOS aún lo lee, pero ya no forma parte del nombre visible del agente — los
+  // agentes creados ANTES sí lo llevan escrito, y la UI se lo quita al pintar
+  // (utils/displayText.ts).
+  const node = store.createNode({ text: opts.label.trim(), parentId: opts.parentId })
   const userMessage = opts.userMessage || ''
   store.updateNode(node.id, {
     extraData: JSON.stringify({
@@ -447,7 +452,7 @@ export function ensureAgentesNode(): void {
     if (existingIds.has(def.id)) continue
     const userMsg = typeof def.userMessage === 'function' ? def.userMessage() : def.userMessage
     const node = store.createNode({
-      text:     `${def.icon} ${def.label}`,
+      text:     def.label,   // sin el emoji delante — ver createAgentUnder
       parentId: agentesNode.id,
     })
     store.updateNode(node.id, {

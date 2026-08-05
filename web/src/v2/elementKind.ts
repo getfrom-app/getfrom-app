@@ -5,6 +5,7 @@
 import { parseExtraData } from '../utils/papeleraHelper'
 import { isDocNode } from '../utils/docNode'
 import { isContextKnowledge } from '../utils/knowledgeNodes'
+import type { IconName } from './components/Icon'
 import type { Node } from '../types'
 
 export type ElKind = 'document' | 'note' | 'pdf' | 'image' | 'link' | 'audio' | 'highlight' | 'cita'
@@ -35,7 +36,9 @@ export function isMentionable(n: Node): boolean {
   return true
 }
 
-export function classifyElement(n: Node): { kind: ElKind; icon: string; label: string } | null {
+// `icon` es el NOMBRE de un icono de components/Icon.tsx, nunca un emoji
+// (rediseño 5 ago 2026 — ver la cabecera de ese archivo).
+export function classifyElement(n: Node): { kind: ElKind; icon: IconName; label: string } | null {
   // OJO: antes también exigía `n.text` no vacío — eso descartaba un documento RECIÉN
   // creado (nace con text:'' hasta que escribes algo), así que no aparecía en
   // Historial/Contexto hasta tener título. Los nodos vacíos que de verdad no son un
@@ -48,20 +51,20 @@ export function classifyElement(n: Node): { kind: ElKind; icon: string; label: s
   if (e._aiSession === '1' || e._aiTranscript === '1' || e._aiMsgRole) return null
   if (e._ctx === '1') return null                              // subcontexto
   if (e._containerNotes === '1') return null                   // espacio de notas libres (no es un elemento)
-  if (isContextKnowledge(n.text)) return null                  // 🧠 Memoria del contexto (no es un elemento)
-  if (e._pdfSelection != null) return { kind: 'highlight', icon: '🖍️', label: 'Subrayado' }
+  if (isContextKnowledge(n.text)) return null                  // Memoria del contexto (no es un elemento)
+  if (e._pdfSelection != null) return { kind: 'highlight', icon: 'highlight', label: 'Subrayado' }
   // Cita de un párrafo de OTRA nota, asignada a este contexto (ver DocEditor.tsx,
   // «?» al pasar el ratón). Mismo patrón que el subrayado de PDF, pero la fuente
   // es un documento propio, no un PDF — su propio tipo para no confundirlos.
-  if (e._docSelection != null) return { kind: 'cita', icon: '🔖', label: 'Cita' }
+  if (e._docSelection != null) return { kind: 'cita', icon: 'quote', label: 'Cita' }
   if (n.status != null || (n.types || []).includes('tarea')) return null   // tarea
   if (n.isEvent || (n.types || []).includes('evento')) return null         // evento
 
   const rt = (e._resourceType as string) || (n.resourceType || '')
-  if (rt === 'image' || e._imageUrl) return { kind: 'image', icon: '🖼', label: 'Imagen' }
-  if (isPdfResource(n, e)) return { kind: 'pdf', icon: '📄', label: 'PDF' }
-  if (n.isResource || e._resourceUrl != null || e._resource != null || rt) return { kind: 'link', icon: '🔗', label: 'Enlace' }
-  if (Array.isArray(e._audios)) return { kind: 'audio', icon: '🎙', label: 'Audio' }
-  if (isDocNode(n) || e._doc === '1') return { kind: 'document', icon: '📝', label: 'Documento' }
-  return { kind: 'note', icon: '📝', label: 'Nota' }
+  if (rt === 'image' || e._imageUrl) return { kind: 'image', icon: 'image', label: 'Imagen' }
+  if (isPdfResource(n, e)) return { kind: 'pdf', icon: 'pdf', label: 'PDF' }
+  if (n.isResource || e._resourceUrl != null || e._resource != null || rt) return { kind: 'link', icon: 'link', label: 'Enlace' }
+  if (Array.isArray(e._audios)) return { kind: 'audio', icon: 'audio', label: 'Audio' }
+  if (isDocNode(n) || e._doc === '1') return { kind: 'document', icon: 'document', label: 'Documento' }
+  return { kind: 'note', icon: 'note', label: 'Nota' }
 }

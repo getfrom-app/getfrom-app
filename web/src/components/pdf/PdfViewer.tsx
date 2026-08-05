@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { fetchFileContent, uploadFile } from '../../api/client'
 import { store, useStore } from '../../store/nodeStore'
 import { parseExtraData } from '../../utils/papeleraHelper'
+import Icon from '../../v2/components/Icon'
 
 /** Rectángulo NORMALIZADO (0-1, relativo al ancho/alto de la página) — mismo
  *  convenio que los `points` de PathAnnotation, para que el subrayado se dibuje
@@ -394,7 +395,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
           <div className="pdf-tb-group" style={{position:'relative',borderRight:'none'}}>
             <button className="pdf-tb-btn" title={tr('pdf.highlights')} onClick={()=>setShowHl(v=>!v)}
               style={{width:'auto',padding:'0 8px',gap:4,display:'flex',alignItems:'center',fontSize:12,color: showHl ? 'var(--text-primary)' : undefined}}>
-              🖍 {highlights.length}
+              <Icon name="highlight" size={13} /> {highlights.length}
             </button>
             {showHl && (
               <div className="pdf-highlights-menu">
@@ -484,7 +485,7 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
               </button>
             )}
             <button className="pdf-send-to-canvas-btn pdf-send-to-canvas-btn--save" onClick={()=>actOnSelection('save')}>
-              💾 {tr('tip.saveSelection')}
+              <Icon name="download" size={13} /> {tr('tip.saveSelection')}
             </button>
           </div>
         )}

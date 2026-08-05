@@ -11,7 +11,10 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
 import { listAllPrompts, resolvePrompt } from '../../utils/promptsHelper'
 import { listAllAgents } from '../../utils/agentesHelper'
+import { displayTitle } from '../../utils/displayText'
 import { isMentionable } from '../elementKind'
+import Icon from './Icon'
+import V2ContextBrowser from './V2ContextBrowser'
 
 interface Props {
   currentNodeId: string | null
@@ -35,6 +38,11 @@ interface Props {
    *  así que los sitios existentes (centro, `V2ElementChat`) no cambian de
    *  comportamiento al no pasarlo nunca. */
   elementScoped?: boolean
+  /** Estado vacío = tarjetas de contexto (ver más abajo). Estos tres handlers
+   *  son los mismos que usa el tab «Historial» — se pasan tal cual desde V2App. */
+  onOpenConversation?: (id: string) => void
+  onNewChatInCtx?: (id: string | null) => void
+  onSelectCtx?: (id: string) => void
 }
 
 // Oculta los bloques ```from-action``` (completos o el parcial que aún se está
@@ -54,28 +62,11 @@ function stripActions(s: string): string {
     .trim()
 }
 
-export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, embedded, elementScoped }: Props) {
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, embedded, elementScoped, onOpenConversation, onNewChatInCtx, onSelectCtx }: Props) {
   const { t } = useTranslation()
   // Ver comentario del prop `elementScoped` — decide copy (sugerencias/saludo/título),
   // NO maquetación (esa se queda en `embedded` puro más abajo).
   const scoped = elementScoped ?? embedded
-  // Sugerencias del estado vacío del chat GENERAL (sin elemento asociado) — sobre
-  // el día, las notas guardadas o tareas sueltas, nada de un documento concreto.
-  const GENERAL_SUGGESTIONS = [
-    { t: t('v2.chat.suggestSummarizeDayTitle', 'Resume mi día'), d: t('v2.chat.suggestSummarizeDayDesc', 'Tareas y eventos de hoy'), p: t('v2.chat.suggestSummarizeDayPrompt', '¿Qué tengo para hoy? Resume mis tareas y eventos.') },
-    { t: t('v2.chat.suggestSearchNotesTitle', 'Busca en mis notas'), d: t('v2.chat.suggestSearchNotesDesc', 'Pregunta a todo lo guardado'), p: t('v2.chat.suggestSearchNotesPrompt', 'Busca en mis notas lo que sé sobre ') },
-    { t: t('v2.chat.suggestOrganizeTitle', 'Organiza esto'), d: t('v2.chat.suggestOrganizeDesc', 'Ordena y prioriza'), p: t('v2.chat.suggestOrganizePrompt', 'Ayúdame a organizar y priorizar mis tareas pendientes.') },
-    { t: t('v2.chat.suggestCreateTaskTitle', 'Crea una tarea'), d: t('v2.chat.suggestCreateTaskDesc', 'Captura rápida'), p: t('v2.chat.suggestCreateTaskPrompt', 'Crea una tarea: ') },
-  ]
-  // Sugerencias cuando el chat está asociado a UN elemento concreto (embedded,
-  // columna derecha) — accionables sobre EL DOCUMENTO que ya está abierto al lado.
-  const ELEMENT_SUGGESTIONS = [
-    { t: t('v2.chat.suggestSummarizeDocTitle', 'Resume esto'), d: t('v2.chat.suggestSummarizeDocDesc', 'Los puntos clave'), p: t('v2.chat.suggestSummarizeDocPrompt', 'Resume este documento en pocas frases.') },
-    { t: t('v2.chat.suggestTasksFromDocTitle', 'Sácame tareas'), d: t('v2.chat.suggestTasksFromDocDesc', 'Conviértelo en pendientes'), p: t('v2.chat.suggestTasksFromDocPrompt', 'Convierte esto en una lista de tareas.') },
-    { t: t('v2.chat.suggestImproveDocTitle', 'Mejora la redacción'), d: t('v2.chat.suggestImproveDocDesc', 'Más claro y directo'), p: t('v2.chat.suggestImproveDocPrompt', 'Repasa y mejora la redacción de este documento.') },
-    { t: t('v2.chat.suggestWhatsMissingTitle', '¿Falta algo?'), d: t('v2.chat.suggestWhatsMissingDesc', 'Revisa huecos'), p: t('v2.chat.suggestWhatsMissingPrompt', '¿Qué le falta a esto, o qué deberíamos añadir?') },
-  ]
-  const SUGGESTIONS = scoped ? ELEMENT_SUGGESTIONS : GENERAL_SUGGESTIONS
   const chat = useAIChat()
   useStore()
   const [input, setInput] = useState('')
@@ -273,7 +264,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
             es este panel. */}
         <span className="v2-center-title">
           {scoped
-            ? `💬 ${t('v2.rightColumn.tabChat', 'Chat')}`
+            ? <><Icon name="chat" size={15} className="v2-title-icon" />{t('v2.rightColumn.tabChat', 'Chat')}</>
             : <>
                 {hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}
                 {chat.sessionId ? (convTitle || t('v2.chat.conversation', 'Conversación')) : t('v2.chat.newConversation', 'Nueva conversación')}
@@ -283,31 +274,42 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
 
       <div className="v2-chat-scroll" ref={scrollRef}>
         {isEmpty ? (
-          <div className="v2-empty">
-            <h1>{scoped ? t('v2.chat.elementGreeting', 'Habla sobre esto') : t('v2.chat.greeting', 'Hola')} 👋</h1>
-            <p>{scoped
-              ? t('v2.chat.elementEmptyHint', 'Pregunta por este documento, pídele que lo resuma, lo convierta en tareas, o lo mejore. Ya sabe de qué se trata.')
-              : t('v2.chat.emptyHint', 'Habla con Fromly. Pregúntale a todo lo que guardas, crea notas y tareas, o sube archivos arrastrándolos aquí.')}</p>
-            <div className="v2-suggest-grid">
-              {SUGGESTIONS.map((s, i) => (
-                <button key={i} className="v2-suggest" onClick={() => { setInput(s.p); taRef.current?.focus() }}>
-                  <div className="v2-suggest-t">{s.t}</div>
-                  <div className="v2-suggest-d">{s.d}</div>
-                </button>
-              ))}
-            </div>
+          /* Estado vacío del chat. Ya NO es un saludo ("Hola 👋") con 4 sugerencias
+             genéricas — Alberto, 5 ago 2026: "no se utiliza realmente, lo podemos
+             quitar... podemos aprovechar ese espacio para poner tarjetas con cada
+             uno de los contextos, según se han ido utilizando, igual que hace
+             Claude. Al hacer clic en cada tarjeta se abre la lista de
+             conversaciones de ese contexto".
+             · Chat de un ELEMENTO (`scoped`): una línea de contexto y nada más —
+               ahí las tarjetas sobran (ya sabes de qué estás hablando).
+             · Chat general/de contexto: las tarjetas, si hay con qué navegar.
+               `onOpenConversation` es lo que decide: sin él (usos que aún no lo
+               pasan) el estado vacío se queda simplemente en blanco, sin romperse. */
+          <div className="v2-chat-empty">
+            {scoped ? (
+              <div className="v2-chat-empty-hint">
+                {t('v2.chat.elementEmptyHint', 'Pregunta por este documento, pídele que lo resuma, lo convierta en tareas, o lo mejore. Ya sabe de qué se trata.')}
+              </div>
+            ) : onOpenConversation ? (
+              <V2ContextBrowser
+                variant="cards"
+                onOpenConversation={onOpenConversation}
+                onNewChatInCtx={onNewChatInCtx}
+                onSelectCtx={onSelectCtx}
+              />
+            ) : null}
           </div>
         ) : (
           <div className="v2-chat-inner">
             {messages.map((m: ChatMessage) => (
               <div key={m.id} className={`v2-msg ${m.role}`}>
-                <div className="v2-msg-avatar">{m.role === 'user' ? t('v2.chat.you', 'Tú') : '✦'}</div>
+                <div className="v2-msg-avatar">{m.role === 'user' ? t('v2.chat.you', 'Tú') : <Icon name="sparkle" size={15} />}</div>
                 <div className="v2-msg-body">
                   {(() => {
                     const disp = stripActions(m.content)
                     if (disp) return renderChatContent(disp)
                     if (streaming && m.role === 'assistant') {
-                      return <span className="v2-creating">✨ {t('v2.chat.creating', 'Creando')}<span className="v2-creating-dots" /></span>
+                      return <span className="v2-creating"><Icon name="sparkle" size={14} /> {t('v2.chat.creating', 'Creando')}<span className="v2-creating-dots" /></span>
                     }
                     return null
                   })()}
@@ -376,20 +378,16 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                 elegir qué se va a enviar. Desplegable hacia ARRIBA (v2-doc-menu-up):
                 el composer está pegado abajo del todo. */}
             <div style={{ position: 'relative' }} ref={promptMenuRef}>
-              <button className="v2-iconbtn" title={t('v2.chat.promptsTitle', 'Prompts')} onClick={() => setPromptMenu(o => !o)}>⚡</button>
+              <button className="v2-iconbtn" title={t('v2.chat.promptsTitle', 'Prompts')} onClick={() => setPromptMenu(o => !o)}><Icon name="prompt" /></button>
               {promptMenu && (
                 <div className="v2-doc-menu v2-doc-menu-up">
-                  {listAllPrompts().map(p => {
-                    let picon = '⚡'
-                    try { picon = JSON.parse(p.extraData || '{}')._promptIcon || '⚡' } catch { /* ignore */ }
-                    return (
-                      <button key={p.id} onClick={() => {
-                        const text = resolvePrompt(p.id, { currentNodeId: currentNodeId || undefined })
-                        doSend(text)
-                        setPromptMenu(false)
-                      }}>{picon} {p.text || t('common.noTitle', 'Sin título')}</button>
-                    )
-                  })}
+                  {listAllPrompts().map(p => (
+                    <button key={p.id} onClick={() => {
+                      const text = resolvePrompt(p.id, { currentNodeId: currentNodeId || undefined })
+                      doSend(text)
+                      setPromptMenu(false)
+                    }}><Icon name="prompt" size={14} /> {p.text || t('common.noTitle', 'Sin título')}</button>
+                  ))}
                   {listAllPrompts().length === 0 && (
                     <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.noPrompts', 'Sin prompts todavía')}</div>
                   )}
@@ -405,7 +403,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                     setPromptMenu(false)
                     aiChatStore.addNotice(t('v2.chat.askNewPrompt', '¿Qué prompt quieres crear? Cuéntame para qué lo vas a usar y qué debe decir, y te preparo un borrador.'))
                     taRef.current?.focus()
-                  }}>➕ {t('v2.chat.newPrompt', 'Nuevo prompt')}</button>
+                  }}><Icon name="plus" size={14} /> {t('v2.chat.newPrompt', 'Nuevo prompt')}</button>
                 </div>
               )}
             </div>
@@ -414,17 +412,16 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                 Elementos, tras seleccionar el filtro «Agentes» — poco descubrible
                 (Alberto, 15 jul: "sigo sin saber cómo crear... un agente"). */}
             <div style={{ position: 'relative' }} ref={agentMenuRef}>
-              <button className="v2-iconbtn" title={t('v2.chat.agentsTitle', 'Agentes')} onClick={() => setAgentMenu(o => !o)}>🤖</button>
+              <button className="v2-iconbtn" title={t('v2.chat.agentsTitle', 'Agentes')} onClick={() => setAgentMenu(o => !o)}><Icon name="agent" /></button>
               {agentMenu && (
                 <div className="v2-doc-menu v2-doc-menu-up">
                   {listAllAgents().map(a => (
-                    // El icono ya viene incluido como prefijo de `a.text` (createAgentUnder
-                    // lo escribe así al crear el agente) — no volver a anteponerlo aparte,
-                    // o se ve duplicado (p.ej. "📈📈 Informe de mercado").
+                    // `displayTitle` quita el emoji que createAgentUnder dejó escrito
+                    // como prefijo EN EL DATO — el icono lo pone la UI, siempre el mismo.
                     <button key={a.id} onClick={() => {
                       setAgentMenu(false)
                       window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: a.id } }))
-                    }}>{a.text || t('common.noTitle', 'Sin título')}</button>
+                    }}><Icon name="agent" size={14} /> {displayTitle(a.text, t('common.noTitle', 'Sin título'))}</button>
                   ))}
                   {listAllAgents().length === 0 && (
                     <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.noAgents', 'Sin agentes todavía')}</div>
@@ -439,7 +436,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                     setAgentMenu(false)
                     aiChatStore.addNotice(t('v2.chat.askNewAgent', '¿Qué quieres automatizar? Cuéntame qué debe hacer el agente y con qué frecuencia, y te preparo un borrador.'))
                     taRef.current?.focus()
-                  }}>➕ {t('v2.chat.newAgent', 'Nuevo agente')}</button>
+                  }}><Icon name="plus" size={14} /> {t('v2.chat.newAgent', 'Nuevo agente')}</button>
                 </div>
               )}
             </div>
@@ -457,8 +454,8 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               title={isRecording ? t('v2.chat.voiceStop', 'Detener dictado') : t('v2.chat.voiceStart', 'Dictar por voz (Alt+Espacio)')}
               onClick={toggleVoice}
               style={isRecording ? { color: '#ef4444' } : undefined}
-            >{isRecording ? '🎙' : '🎤'}</button>
-            <button className="v2-send" disabled={!input.trim() || streaming} onClick={() => doSend(input)}>↑</button>
+            ><Icon name={isRecording ? 'stop' : 'mic'} /></button>
+            <button className="v2-send" disabled={!input.trim() || streaming} onClick={() => doSend(input)} title={t('v2.chat.send', 'Enviar')}><Icon name="arrow-up" size={16} strokeWidth={2} /></button>
           </div>
           <div className="v2-composer-hint">
             {streaming ? t('v2.chat.thinking', 'Fromly está pensando…') : t('v2.chat.composerHint', 'Enter para enviar · Shift+Enter salto de línea · arrastra archivos aquí')}
@@ -466,7 +463,12 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
         </div>
       </div>
 
-      {dragOver && <div className="v2-drop-overlay">{chat.sessionId ? `📎 ${t('v2.chat.importToConversation', 'Importar a la conversación')}` : `📥 ${t('v2.chat.importToFromly', 'Importar a Fromly')}`}</div>}
+      {dragOver && (
+        <div className="v2-drop-overlay">
+          <Icon name={chat.sessionId ? 'attachment' : 'import'} size={18} />
+          {chat.sessionId ? t('v2.chat.importToConversation', 'Importar a la conversación') : t('v2.chat.importToFromly', 'Importar a Fromly')}
+        </div>
+      )}
     </Wrapper>
   )
 }
