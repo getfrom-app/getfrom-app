@@ -458,7 +458,7 @@ press **Share → Fromly**.
   text, it's saved as-is (no transcription).
 - **The first time**, enable Fromly in the share sheet: swipe the app row all the way → **More /
   Edit** → turn on **Fromly**.
-- Transcription uses your **AI tokens** (Pro plan or trial).
+- Transcription uses your **AI tokens** (paid plan).
 
 ---
 
@@ -738,12 +738,14 @@ an extra one-time package of 5,000,000 tokens.
 plus 3,000,000 AI tokens as a welcome grant. Checkout is available both inside the app (**Settings
 → Account → Plans**) and at [fromly.app/pricing.html](https://fromly.app/pricing.html).
 
-### Free trial
+### There is no trial period
 
-Trial access to Pro features is activated by invitation (a link you receive by email) or through a
-checkout with a trial period set up specifically for you — there's no self-serve "start your free
-trial" button on the app's pricing screen. If you've received a trial invitation, the top bar will
-show a badge with the days remaining for as long as it lasts.
+Fromly has **no free trials**. There are only two situations: the **free plan**, which never
+expires and lets you use the app with a 1,000-item limit, or a **paid plan** (Pro, Yearly or
+Lifetime). There is no in-between state that expires and locks you out.
+
+If you have a coupon or a beta code, enter it at checkout: it activates the plan just like a
+regular payment, with no expiry date other than the plan's own.
 
 ### Manage your subscription
 

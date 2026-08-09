@@ -613,7 +613,7 @@ Cuando ves un vídeo en redes y quieres quedarte con **lo que dice, no con el v�
   texto, se guarda tal cual (sin transcribir).
 - **La primera vez**, activa Fromly en la hoja de compartir: desliza la fila de apps hasta el
   final → **Más / Editar** → activa **Fromly**.
-- La transcripción usa tus **tokens de IA** (plan Pro o prueba).
+- La transcripción usa tus **tokens de IA** (plan de pago).
 
 ---
 
@@ -907,13 +907,14 @@ izquierda, un enlace "Pasar a Pro" lleva directo a esta comparativa sin esperar 
 más 3.000.000 tokens de IA de regalo al comprarlo. El checkout está disponible tanto en **Ajustes →
 Cuenta → Planes** dentro de la propia app como en [fromly.app/pricing.html](https://fromly.app/pricing.html).
 
-### Prueba gratuita
+### No hay periodo de prueba
 
-El acceso de prueba a las funcionalidades Pro se activa por invitación (un enlace que recibes por
-email) o mediante un checkout con periodo de prueba configurado específicamente para ti — no hay un
-botón de autoservicio "empieza tu prueba gratis" en la pantalla de precios de la app. Si has
-recibido una invitación de prueba, la barra superior te mostrará un badge con los días restantes
-mientras dure.
+Fromly **no tiene pruebas gratuitas**. Solo hay dos situaciones: el **plan gratuito**, que no
+caduca nunca y te deja usar la app con un límite de 1.000 elementos, o un **plan de pago** (Pro,
+Anual o Lifetime). No existe ningún estado intermedio que expire y te deje sin acceso.
+
+Si tienes un cupón o un código de beta, se introduce en el checkout: activa el plan igual que un
+pago normal, sin fecha de caducidad distinta a la del propio plan.
 
 ### Gestionar tu suscripción
 

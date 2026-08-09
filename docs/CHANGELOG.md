@@ -4,6 +4,32 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## iOS v2.14.143 — 9 agosto 2026 · Ya puedes pasar a Pro desde el iPhone
+
+- **Compras dentro de la app**: Pro mensual, Pro anual, Lifetime y el paquete de 5.000.000 de
+  tokens de IA se compran ya desde el propio iPhone, con tu Apple ID. Antes la pantalla de
+  planes se quedaba vacía.
+- **Tu compra no se pierde**: si al comprar falla la conexión, la app lo reintenta sola hasta
+  que tu plan queda activado. Y «Restaurar compras» solo dice que ha ido bien cuando de verdad
+  ha ido bien.
+- **Cancelaciones y reembolsos al día**: si cancelas o Apple te devuelve el dinero, tu plan se
+  actualiza solo, sin tener que abrir la app.
+
+---
+
+## Web v9.6.953 — 9 agosto 2026 · El pago, arreglado de punta a punta
+
+- **«Pasar a Pro» funciona**: el enlace de compra llevaba a una página de error de la pasarela.
+  Corregido, y comprobado en los tres planes. Si lo intentaste alguna vez y no pudiste, lo
+  sentimos.
+- **Tu plan se activa solo** tras pagar, en segundos, sin recargar ni volver a entrar.
+- **Se acabó hablar de «prueba gratuita»**: Fromly no tiene periodo de prueba y nunca lo tuvo.
+  Hay **plan gratis, que no caduca** (1.000 elementos), y planes de pago. El aviso que prometía
+  «7 días gratis» ha desaparecido de la app, de la web, de los términos y del manual, en todos
+  los idiomas.
+
+---
+
 ## Web v9.6.952 — 5 agosto 2026 · Se acabaron los «nodos»
 
 - En toda la app, los correos y la web ya no se habla de «nodos»: son **elementos**, que es como se llaman en la app desde el rediseño.

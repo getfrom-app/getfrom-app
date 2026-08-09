@@ -1,7 +1,65 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-05 (Web v9.6.952 · iOS v2.13 build 142)
+> Última actualización: 2026-08-09 (Web v9.6.953 · iOS v2.14 build 143)
+
+---
+
+## Sesión 2026-08-09 — Auditoría del cobro: ninguna vía de compra funcionaba
+
+Web **v9.6.952 → v9.6.953**. iOS **2.13 (142) → 2.14 (143)**, enviada a revisión con los 4
+productos in-app. Log completo en `logs/2026-08-09-auditoria-compra-pro.md`.
+
+**Por qué no había ni una venta real.** Las tres vías de compra estaban rotas a la vez:
+
+1. `createLSCheckoutUrl` (`server/src/routes/auth.ts`) concatenaba
+   `&checkout[success_url]=…` a la URL **ya firmada** por LemonSqueezy → la pasarela respondía
+   *«Invalid signature»*. Ahora la URL firmada se devuelve intacta y el retorno se configura en
+   la propia petición de creación, con `product_options.redirect_url`.
+2. El webhook de LemonSqueezy apuntaba a `getfrom.app/api/webhooks/lemonsqueezy` (dominio
+   viejo) → 301 → 405. Re-apuntado por API a
+   `from-server-production.up.railway.app/webhooks/lemonsqueezy`.
+3. En App Store Connect no existía **ningún** producto in-app; el paywall de iOS pedía cuatro
+   identificadores desconocidos para Apple y recibía una lista vacía.
+
+**Concesión de plan, endurecida.** La decisión pasa por un único `isPaidPlan()`
+(`server/src/lib/plan.ts`, 10 llamadas) y el límite del plan gratis por un único
+`freeNodeCapacity()` — antes MCP y captura escribían en `sync_nodes` sin comprobarlo. La
+lógica de StoreKit se extrajo a `server/src/lib/storekitLogic.ts`, pura y con 13 tests:
+rechaza transacciones no verificadas por Apple, entorno Sandbox (salvo
+`ALLOW_SANDBOX_PURCHASES=1`), `bundleId` ajeno, caducadas, y `productId` que no cuadre. El
+`productId` y la fecha de caducidad se toman **de Apple**, nunca del cuerpo de la petición;
+`ownedByAnotherUser()` devuelve 409 si esa transacción ya está ligada a otra cuenta. La
+verificación de firma de los webhooks pasa a fail-closed (sin secreto configurado → 401) y
+`isLicense` exige que `VARIANT_LICENSE` esté definida y coincida (antes, variante vacía =
+Lifetime).
+
+**Nuevo `POST /webhooks/appstore`** (App Store Server Notifications V2): hasta ahora el
+servidor solo conocía una compra de iOS si la app se la contaba, así que una cancelación, un
+reembolso o una renovación fallida pasaban desapercibidos. En el cliente, `StoreKitService`
+persiste en `UserDefaults` una cola de avisos pendientes y la reintenta.
+
+**`/webhooks/license-verify`, eliminado.** Activaba `licenseStatus: "active"` sin
+autenticación y escribía un `fromUserId` tomado del cuerpo. Existía desde el commit inicial y
+ningún cliente lo llamó nunca (el Mac valida contra la API de LemonSqueezy directamente,
+`LicenseService.swift:147`).
+
+**No existen las pruebas gratuitas.** Fuera `trialing` como plan de pago, `/auth/trial-invite`,
+el cron de invitaciones y el de expiración, la opción del dashboard admin y el copy de «7 días
+gratis» en web e iOS (12 idiomas cada uno), términos legales ES/EN y manual ES/EN. `trialing`
+queda como valor histórico en base de datos y **no** concede acceso.
+
+**Informe diario** (`lib/daily-report.ts`): todas las consultas filtran ya por
+`exclude_from_stats = false`, y las filas distinguen suscriptores de pago, licencias Lifetime,
+pago pendiente, «activas ya vencidas ⚠» y churn.
+
+**Verificación en vivo** (no solo compilación): plan gratis contra función Pro → 402; compra de
+iOS con transacción inventada → 400; webhook mal firmado → 401; webhook Lifetime bien firmado →
+200 con licencia, 3M tokens y publicación desbloqueada; cancelación → acceso revocado. Cuentas
+y cupón de prueba borrados al terminar.
+
+⚠️ **`ALLOW_SANDBOX_PURCHASES=1` debe volver a `0`** cuando Apple apruebe los productos: el
+revisor compra en Sandbox, así que hasta entonces tiene que seguir activo.
 
 ---
 
