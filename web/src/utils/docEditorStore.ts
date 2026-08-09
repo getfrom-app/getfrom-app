@@ -35,6 +35,14 @@ export function setDocEditor(editor: Editor | null, img?: ((file: File) => void)
 export function notifyDocEditor(): void { emit() }
 export function getDocImageInsert(): ((file: File) => void) | null { return imageInsert }
 
+/** Editor VIVO de un nodo concreto, o null si ese documento no está abierto. No es un
+ *  hook: lo usan operaciones sueltas (convertir una cita en documento) que tienen que
+ *  editar el documento origen POR EL EDITOR si está abierto — escribirle el `body` por
+ *  detrás mientras hay un editor vivo encima lo pisaría en el siguiente guardado. */
+export function getDocEditorFor(nodeId: string): Editor | null {
+  return activeEditor && activeNodeId === nodeId ? activeEditor : null
+}
+
 /** Hook ligero: id del nodo cuyo editor está registrado como «activo» (el del panel), o
  *  null si no hay ninguno. Re-renderiza solo al aparecer/desaparecer (como presence). */
 export function useActiveDocNodeId(): string | null {

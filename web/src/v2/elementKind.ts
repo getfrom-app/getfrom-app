@@ -4,7 +4,7 @@
 // el campo promovido resourceType — así los enlaces nunca se pierden.
 import { parseExtraData } from '../utils/papeleraHelper'
 import { isDocNode } from '../utils/docNode'
-import { isContextKnowledge } from '../utils/knowledgeNodes'
+import { isContextMemoryNode } from '../utils/knowledgeNodes'
 import { isTaskNode } from '../utils/taskNode'
 import type { IconName } from './components/Icon'
 import type { Node } from '../types'
@@ -34,6 +34,7 @@ export function isMentionable(n: Node): boolean {
   if (n.deletedAt || !(n.text || '').trim()) return false
   const e = parseExtraData(n.extraData)
   if (e._aiTranscript != null || e._aiMsgRole != null || e._containerNotes === '1') return false
+  if (isContextMemoryNode(n)) return false                     // memoria del contexto: superficie interna
   return true
 }
 
@@ -52,7 +53,9 @@ export function classifyElement(n: Node): { kind: ElKind; icon: IconName; label:
   if (e._aiSession === '1' || e._aiTranscript === '1' || e._aiMsgRole) return null
   if (e._ctx === '1') return null                              // subcontexto
   if (e._containerNotes === '1') return null                   // espacio de notas libres (no es un elemento)
-  if (isContextKnowledge(n.text)) return null                  // Memoria del contexto (no es un elemento)
+  // Memoria del contexto: por FLAG o por título (los contextos anteriores al flag no
+  // lo tienen hasta que se abren una vez) — nunca es un elemento del usuario.
+  if (isContextMemoryNode(n)) return null
   if (e._pdfSelection != null) return { kind: 'highlight', icon: 'highlight', label: 'Subrayado' }
   // Cita de un párrafo de OTRA nota, asignada a este contexto (ver DocEditor.tsx,
   // «?» al pasar el ratón). Mismo patrón que el subrayado de PDF, pero la fuente

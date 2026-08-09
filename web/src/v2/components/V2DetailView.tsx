@@ -23,6 +23,8 @@ import DocInspector from '../../components/views/DocInspector'
 import PublishButton from '../../components/PublishButton'
 import { exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
 import { convertNoteToBlock } from '../../utils/noteBlocks'
+import { promoteCitationWithFeedback } from '../../utils/citations'
+import V2DocTasks from './V2DocTasks'
 import { firstContextOf, setNodeContext, contextColor } from '../../utils/cajones'
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from '../../components/panels/ContextPicker'
@@ -238,6 +240,10 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
           ? <PizarraView parentId={node.id} flowUnpositioned globalCanvas={false} embedded />
           : asDoc
             ? <>
+                {/* Tareas DEL documento (seguimientos): encima del texto, porque son el
+                    estado del asunto, no una nota al pie. Fuera de la nota diaria (sus
+                    tareas ya son el cockpit del día) y de los usos incrustados. */}
+                {!isDayNote && !inlinePage && <V2DocTasks docId={node.id} />}
                 <div style={{ padding: '18px 20px 12px' }}><DocEditorBoundary compact><DocEditor node={node} compact registerActive autofocus={(!node.body || node.body === '<p></p>') ? 'start' : false} /></DocEditorBoundary></div>
                 <V2Backlinks nodeId={node.id} />
               </>
@@ -305,8 +311,13 @@ function V2CitationView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: s
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div className="v2-note-toolbar">
         <span className="v2-section-label" style={{ padding: 0 }}><Icon name="quote" size={13} /> {t('v2.citation', 'Cita')}</span>
+        {/* Dejar de ser cita: el párrafo sale del documento origen y esto pasa a ser un
+            documento propio, colgado de su contexto (utils/citations.ts). */}
+        <button className="v2-head-action" style={{ marginLeft: 'auto' }} onClick={() => promoteCitationWithFeedback(node.id, t)}>
+          {t('citation.toDocument', 'Convertir en documento')}
+        </button>
         {source && (
-          <button className="v2-head-action" style={{ marginLeft: 'auto' }} onClick={goToSource}>
+          <button className="v2-head-action" onClick={goToSource}>
             {t('v2.citation.goToSource', 'Ir a la nota')} — {source.text || t('common.noTitle')} ›
           </button>
         )}

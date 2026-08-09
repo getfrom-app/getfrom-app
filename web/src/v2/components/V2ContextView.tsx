@@ -9,12 +9,11 @@ import {
   contextColor, contextParent, isContextClosed, setContextClosed,
   isContextFollowed, setContextFollowed,
   getOrCreateContextKnowledgeDoc, nodesInContext,
-  containerNotesNode, reparentContext, clearContextParent,
+  reparentContext, clearContextParent,
   firstContextOf,
 } from '../../utils/cajones'
-import { htmlToMarkdown } from '../../utils/htmlMarkdown'
 import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
-import { isContextKnowledge } from '../../utils/knowledgeNodes'
+import { isContextMemoryNode } from '../../utils/knowledgeNodes'
 import { isTaskNode } from '../../utils/taskNode'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
@@ -72,32 +71,15 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
     return false
   }
 
-  // «Lo que Fromly sabe» — documento unificado (memoria de la IA + notas libres del
-  // usuario en un único bloque, Alberto: "debería quedarse, pero en formato nota").
-  // getOrCreateContextKnowledgeDoc migra automáticamente el formato antiguo (hijos-
-  // línea) la primera vez que se abre el contexto. Get-or-create UNA vez por
-  // contexto (no en cada render), igual que notesNode antes.
-  const knowledgeDoc = useMemo(() => {
+  // La MEMORIA del contexto se crea/repara al abrir el contexto, pero NO se pinta
+  // aquí ni ocupa el centro: es interna (`_ctxMemory`) y se consulta desde el menú
+  // ··· de la sidebar (Alberto, 6 ago 2026). Antes esto además FUSIONABA la nota
+  // libre del usuario dentro de la memoria y le dejaba la nota vacía — con el centro
+  // del contexto siendo ya esa nota libre (V2App.onSelectCtx), esa fusión se llevaría
+  // por delante justo lo que el usuario acaba de escribir.
+  useMemo(() => {
     if (ctxId === null) return null
-    const doc = getOrCreateContextKnowledgeDoc(ctxId)
-    // Fusión con las "Notas" antiguas (ahora eliminadas de la UI de contexto): si el
-    // usuario ya había escrito algo en el bloque "📝 Notas" separado y el nuevo
-    // documento de conocimiento está vacío, usamos las Notas como base (no perder lo
-    // ya escrito). Si AMBOS tienen contenido, se concatenan con un separador claro
-    // — decisión: preferimos no perder ningún texto ya escrito antes que decidir
-    // arbitrariamente cuál "gana". Se ejecuta una sola vez (idempotente: las Notas
-    // legado quedan vacías tras la fusión, así no se repite en próximas aperturas).
-    const legacyNotes = containerNotesNode(ctxId)
-    const legacyText = legacyNotes ? htmlToMarkdown(legacyNotes.body || '').trim() : ''
-    if (legacyText) {
-      const currentText = htmlToMarkdown(doc.body || '').trim()
-      const mergedHtml = currentText
-        ? `${doc.body || ''}<p>---</p>${legacyNotes!.body || ''}`
-        : (legacyNotes!.body || '<p></p>')
-      store.updateNode(doc.id, { body: mergedHtml })
-      store.updateNode(legacyNotes!.id, { body: '<p></p>' })
-    }
-    return store.getNode(doc.id)!
+    return getOrCreateContextKnowledgeDoc(ctxId)
   }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // TAREAS del contexto, estilo Hoy.
@@ -120,7 +102,10 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
     // propio contexto. No se duplican con la lista de Elementos de abajo:
     // `classifyElement` devuelve null para cualquier tarea/evento.
     const isTask = (n: Node) => !n.deletedAt && isTaskNode(n)
-    if (ctxId === null) return store.allActive().filter(n => isTask(n) && !firstContextOf(n))
+    // `isInPapelera` también aquí: `allActive()` devuelve los nodos de la PAPELERA
+    // (se reparentan, no se marcan `deletedAt`), así que «General» seguía listando
+    // tareas ya borradas — la rama con contexto sí lo filtraba, esta se olvidó.
+    if (ctxId === null) return store.allActive().filter(n => isTask(n) && !firstContextOf(n) && !isInPapelera(n.id))
     const seen = new Set<string>()
     const out: Node[] = []
     for (const n of [...store.children(ctxId), ...nodesInContext(ctxId)]) {
@@ -148,7 +133,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
       // no debe duplicarse como una fila más en Elementos. classifyElement() lo clasifica
       // como 'document' (tiene _doc:'1'), no 'note', así que sin esta exclusión explícita
       // se colaba en la lista (Alberto, 14 jul).
-      if (isContextKnowledge(n.text)) return
+      if (isContextMemoryNode(n)) return
       // Defensa extra: un nodo movido a la papelera por una vía que no reparenta (además
       // del caso normal, ya cubierto porque deja de ser hijo directo) nunca debe listarse.
       if (isInPapelera(n.id)) return

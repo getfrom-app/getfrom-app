@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
-import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent, reparentContext, listContextsForParent } from '../../utils/cajones'
+import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent, reparentContext, listContextsForParent, getOrCreateContextKnowledgeDoc } from '../../utils/cajones'
 import { listPendingAgentConversations, listUnseenAgentResults } from '../../store/aiChatStore'
 import { useTheme } from '../../hooks/useTheme'
 import { clearTokens } from '../../api/client'
@@ -504,6 +504,14 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
                   ))}
                 </div>
                 <button className="v2-ctx-menu-item" onClick={() => setMoveSubmenu(true)}>{t('v2.ctxMenu.moveTo', 'Mover a…')}</button>
+                {/* La MEMORIA del contexto es interna: no se lista como elemento y ya no
+                    ocupa el centro al abrir el contexto (Alberto, 6 ago 2026). Pero se
+                    inyecta en cada turno de chat de este contexto, así que tiene que
+                    poder leerse y corregirse desde algún sitio — este. Se abre como el
+                    documento que es. */}
+                <button className="v2-ctx-menu-item" onClick={() => { onOpenNode?.(getOrCreateContextKnowledgeDoc(ctxMenu.id).id); setCtxMenu(null) }}>
+                  {t('v2.ctxMenu.memory', 'Lo que Fromly sabe')}
+                </button>
                 <div className="v2-ctx-menu-sep" />
                 <button className="v2-ctx-menu-item v2-ctx-menu-item--danger" onClick={() => deleteContext(ctxMenu.id)}>{t('v2.ctxMenu.delete', 'Eliminar')}</button>
               </>

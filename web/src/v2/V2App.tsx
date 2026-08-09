@@ -11,7 +11,7 @@ import { aiChatStore, useAIChat, markAgentResultSeen, markPendingConversationSee
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
-import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent, getOrCreateContextKnowledgeDoc } from '../utils/cajones'
+import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent, getOrCreateContainerNotes } from '../utils/cajones'
 import { darkenHex, lightenHex, hexToRgba } from '../utils/color'
 import { htmlToMarkdown } from '../utils/htmlMarkdown'
 import { createMarkdownNode } from '../utils/importMarkdown'
@@ -34,6 +34,8 @@ import V2Onboarding from './components/V2Onboarding'
 import V2AttachModal from './components/V2AttachModal'
 import { maybeOfferProfileChat, openProfileChat } from './profileChat'
 import RightColMenu from '../components/panels/RightColMenu'
+import TaskPropsModal from '../components/modals/TaskPropsModal'
+import { docOfTask } from '../utils/docTasks'
 import UnifiedCapture from '../components/modals/UnifiedCapture'
 import { ToastProvider } from '../components/Toast'
 import { WEB_VERSION } from '../components/layout/StatusBar'
@@ -288,7 +290,14 @@ export default function V2App() {
     setRightMode('contexto')
     setRightSubTab('primary')
     if (id) {
-      setCenterElementId(getOrCreateContextKnowledgeDoc(id).id)
+      // El centro de un contexto es la NOTA DEL USUARIO, no la memoria de la IA
+      // (Alberto, 6 ago 2026: "no creo que deba usar la nota de contexto, porque puede
+      // ser confuso para el usuario"). Hasta hoy se abría aquí
+      // `getOrCreateContextKnowledgeDoc`: un documento que Fromly reescribe solo y que
+      // parecía la nota del contexto — nadie podía saber qué había escrito él y qué la
+      // IA. La memoria sigue viva y alimentándose igual, pero OCULTA (`_ctxMemory`), y
+      // se consulta desde el menú ··· del contexto.
+      setCenterElementId(getOrCreateContainerNotes(id).id)
     } else {
       setCenterElementId(null)
       aiChatStore.startNewSession()
@@ -351,7 +360,14 @@ export default function V2App() {
     setRightMode('contexto')
     setRightSubTab('chat')
     if (id) {
-      setCenterElementId(getOrCreateContextKnowledgeDoc(id).id)
+      // El centro de un contexto es la NOTA DEL USUARIO, no la memoria de la IA
+      // (Alberto, 6 ago 2026: "no creo que deba usar la nota de contexto, porque puede
+      // ser confuso para el usuario"). Hasta hoy se abría aquí
+      // `getOrCreateContextKnowledgeDoc`: un documento que Fromly reescribe solo y que
+      // parecía la nota del contexto — nadie podía saber qué había escrito él y qué la
+      // IA. La memoria sigue viva y alimentándose igual, pero OCULTA (`_ctxMemory`), y
+      // se consulta desde el menú ··· del contexto.
+      setCenterElementId(getOrCreateContainerNotes(id).id)
     } else {
       setCenterElementId(null)
     }
@@ -591,6 +607,19 @@ export default function V2App() {
     const node = store.getNode(id)
     if (isMarkedContext(node) || isRootContext(id)) { onSelectCtx(id); return }
 
+    // Una tarea DE UN DOCUMENTO abre el DOCUMENTO, no una ficha de tarea suelta
+    // (Alberto, 6 ago 2026: "no sería una tarea separada del documento, sino que al
+    // hacer clic sobre ella en cualquier parte se abriría el propio documento"). Va
+    // aquí porque este es el punto único por el que pasan todas las aperturas —
+    // cockpit, planner, columna del día, buscador y `from:open-detail`.
+    const taskDoc = docOfTask(node)
+    if (taskDoc && taskDoc.id !== id) {
+      onOpenNode(taskDoc.id)
+      // Tras montar el documento: resalta la tarea concreta (V2DocTasks la escucha).
+      setTimeout(() => window.dispatchEvent(new CustomEvent('from:highlight-doc-task', { detail: { docId: taskDoc.id, taskId: id } })), 250)
+      return
+    }
+
     // Una CONVERSACIÓN nunca se abre como detalle genérico (Alberto, 15 jul: "eso
     // es una conversación, entonces debería guardarse como conversación... no
     // abrirse en la columna derecha, sino... abrirse en el espacio de chat como
@@ -754,6 +783,20 @@ export default function V2App() {
     return () => window.removeEventListener('from:open-rowmenu', h as EventListener)
   }, [])
 
+  // Propiedades de tarea (fecha, recurrencia, prioridad). El evento existía desde v1
+  // pero SOLO lo escuchaba MainLayout, que ya no está montado en ninguna ruta: el chip
+  // de fecha de una casilla dentro de un documento (TaskItemChip) no hacía nada. Aquí
+  // no hace falta el guard del outliner de v1 — en la v2 esa fila no existe.
+  const [taskPropsId, setTaskPropsId] = useState<string | null>(null)
+  useEffect(() => {
+    const h = (e: Event) => {
+      const id = (e as CustomEvent).detail?.nodeId
+      if (id) setTaskPropsId(id)
+    }
+    window.addEventListener('from:open-task-props', h as EventListener)
+    return () => window.removeEventListener('from:open-task-props', h as EventListener)
+  }, [])
+
   // Quick capture (como en v1): BARRA ESPACIADORA lo lanza cuando no estás escribiendo
   // en un campo. Abre el UnifiedCapture real (ghost text, @contextos, -t/-e/-n, voz).
   const [showCapture, setShowCapture] = useState(false)
@@ -905,6 +948,7 @@ export default function V2App() {
         onFilesDropped={onFilesDropped}
       />
       {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
+      {taskPropsId && <TaskPropsModal nodeId={taskPropsId} onClose={() => setTaskPropsId(null)} />}
       {showCapture && (
         <UnifiedCapture
           onClose={() => setShowCapture(false)}

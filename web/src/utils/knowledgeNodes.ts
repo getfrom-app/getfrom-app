@@ -51,3 +51,20 @@ export function isProfileKnowledge(text: string | null | undefined): boolean {
 export function isContextKnowledge(text: string | null | undefined): boolean {
   return CONTEXT_ALIASES.includes((text || '').trim())
 }
+
+// ── La memoria de un contexto es una superficie INTERNA ────────────────────────
+// Alberto, 6 ago 2026: "no creo que deba usar la nota de contexto, porque puede ser
+// confuso para el usuario... ¿cómo podemos hacerlo de forma oculta?". La memoria
+// sigue viva y alimentándose sola, pero no es un elemento del usuario: no se lista
+// en Elementos ni en la ficha del contexto, y el centro del contexto pasó a ser su
+// nota libre (V2App.onSelectCtx). Se consulta desde el menú ··· del contexto.
+export const CTX_MEMORY = '_ctxMemory'
+
+/** true si este nodo es la memoria de un contexto. Mira el flag Y el título: los
+ *  contextos creados antes del flag no lo tienen hasta que se abren una vez, y
+ *  hasta entonces seguirían apareciendo como un elemento más. */
+export function isContextMemoryNode(node: { text?: string | null; extraData?: string | null } | null | undefined): boolean {
+  if (!node) return false
+  if (isContextKnowledge(node.text)) return true
+  try { return JSON.parse(node.extraData || '{}')[CTX_MEMORY] === '1' } catch { return false }
+}

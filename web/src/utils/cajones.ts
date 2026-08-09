@@ -20,13 +20,12 @@ import { store } from '../store/nodeStore'
 import type { Node } from '../types'
 import { findContextRoot } from './rootLookup'
 import { ensureTagDefinition, getNodeTagSlug, textToTagSlug } from './tagsHelper'
-import { CONTEXT_KNOWLEDGE, isContextKnowledge } from './knowledgeNodes'
+import { CONTEXT_KNOWLEDGE, CTX_MEMORY, isContextKnowledge } from './knowledgeNodes'
 import { isInPapelera } from './papeleraHelper'
 import { markdownToHtml } from './importMarkdown'
 import { htmlToMarkdown } from './htmlMarkdown'
 import { updateContextKnowledgeFromElement } from '../api/autoClassify'
 import { structuralId } from './deterministicId'
-import i18n from '../i18n/config'
 
 const CONTEXT_DEFAULT_COLOR = '#2C4356'
 const CONTEXT_DEFAULT_COLOR_DARK = '#8FB4D9'
@@ -596,21 +595,27 @@ export function getOrCreateContextKnowledgeDoc(contextId: string): Node {
     if (hasRealBody) {
       let ed2: Record<string, unknown> = {}
       try { ed2 = JSON.parse(kn.extraData || '{}') } catch { /* ignore */ }
-      if (ed2._doc !== '1') { ed2._doc = '1'; store.updateNode(kn.id, { extraData: JSON.stringify(ed2) }) }
+      // `_ctxMemory`: la memoria es una superficie INTERNA, no un elemento del usuario
+      // (Alberto, 6 ago 2026). El flag la saca de Elementos/búsqueda; se repara aquí
+      // para los contextos que ya existían, sin migración aparte.
+      if (ed2._doc !== '1' || ed2[CTX_MEMORY] !== '1') {
+        ed2._doc = '1'; ed2[CTX_MEMORY] = '1'
+        store.updateNode(kn.id, { extraData: JSON.stringify(ed2) })
+      }
       return store.getNode(kn.id)!
     }
     // Formato antiguo de verdad (sin body real) → migrar: texto de los hijos-línea
     // pasa a `.body` (HTML).
     const legacyText = readLegacyKnowledgeLines(kn)
     for (const child of store.children(kn.id).filter(c => !c.deletedAt)) store.deleteNode(child.id)
-    const merged = { _doc: '1' }
+    const merged = { _doc: '1', [CTX_MEMORY]: '1' }
     store.updateNode(kn.id, { extraData: JSON.stringify(merged), body: legacyText ? markdownToHtml(legacyText) : '<p></p>' })
     return store.getNode(kn.id)!
   }
   const sibs = store.children(contextId).filter(n => !n.deletedAt)
   const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
   const created = store.createNode({ text: CONTEXT_KNOWLEDGE, parentId: contextId, siblingOrder: maxOrder + 1000, predefinedId: detId ?? undefined })
-  store.updateNode(created.id, { extraData: JSON.stringify({ _doc: '1' }), body: '<p></p>' })
+  store.updateNode(created.id, { extraData: JSON.stringify({ _doc: '1', [CTX_MEMORY]: '1' }), body: '<p></p>' })
   return store.getNode(created.id)!
 }
 
@@ -687,12 +692,12 @@ export function maybeUpdateContextKnowledge(node: Node | null | undefined): void
   updateContextKnowledgeFromElement(ctx.text || '', currentKnowledge, elementTitle, elementText)
     .then(res => {
       if (res.updated && res.knowledge) {
+        // Silencioso desde el 6 ago 2026: la memoria es interna (`_ctxMemory`), no una
+        // nota que el usuario esté mirando. El aviso existía cuando ERA el documento
+        // abierto en el centro y había que distinguir "trabaja en segundo plano" de "no
+        // hace nada"; con la memoria oculta, un toast por cada elemento que se cierra es
+        // solo ruido sobre algo que el usuario ya no ve.
         writeContextKnowledge(ctx.id, res.knowledge)
-        // Aviso discreto: antes la actualización era silenciosa y nadie podía distinguir
-        // "está funcionando en segundo plano" de "no ha hecho nada" (Alberto, 14 jul).
-        window.dispatchEvent(new CustomEvent('from:toast', {
-          detail: { message: i18n.t('v2.context.knowledgeUpdatedToast', '🧠 "{{name}}" actualizado', { name: ctx.text || '' }), type: 'info' },
-        }))
       }
     })
     .catch(() => { /* silencioso: mismo criterio que appendContextFacts */ })

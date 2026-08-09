@@ -254,11 +254,10 @@ export function CuentaPane() {
 
       {(() => {
         const isLifetime  = user?.licenseStatus === 'active'
-        const isActiveSub = user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing'
+        const isActiveSub = user?.subscriptionStatus === 'active'
         const isCancelled = user?.subscriptionStatus === 'cancelled' || user?.subscriptionStatus === 'expired'
         const estadoLabel = isLifetime ? t('account.planBadgeLicense', 'Licencia perpetua')
           : user?.subscriptionStatus === 'active' ? t('account.planBadgeActive', 'Suscripción activa')
-          : user?.subscriptionStatus === 'trialing' ? t('account.planBadgeTrial', 'Prueba gratuita')
           : isCancelled ? t('account.planBadgeCancelled', 'Cancelada')
           : t('account.planBadgeFree', 'Plan gratuito')
         return (

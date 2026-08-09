@@ -9,7 +9,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import Icon, { isIconName } from '../../v2/components/Icon'
 
-export type DocSlashAction = 'view-table' | 'view-kanban' | 'view-calendar'
+export type DocSlashAction = 'task' | 'view-table' | 'view-kanban' | 'view-calendar'
 
 export interface DocSlashOption {
   action: DocSlashAction
@@ -32,6 +32,9 @@ export default function DocSlashMenu({ anchorEl, query, onSelect, onClose }: Pro
   const [activeIdx, setActiveIdx] = useState(0)
 
   const OPTIONS: DocSlashOption[] = [
+    // Primera: una tarea del documento (seguimiento) es lo que más se escribe dentro
+    // de un documento de trabajo; las 3 vistas inline son mucho más ocasionales.
+    { action: 'task', label: t('docSlash.task', 'Tarea'), icon: 'task', description: t('docSlash.taskDesc', 'Casilla en el texto, con fecha y recurrencia') },
     { action: 'view-table', label: t('docSlash.table', 'Tabla'), icon: '⊞', description: t('docSlash.tableDesc', 'Vista tabla inline con hijos') },
     { action: 'view-kanban', label: t('docSlash.kanban', 'Kanban'), icon: '⫴', description: t('docSlash.kanbanDesc', 'Tablero kanban inline') },
     { action: 'view-calendar', label: t('docSlash.calendar', 'Calendario'), icon: 'calendar', description: t('docSlash.calendarDesc', 'Calendario inline') },

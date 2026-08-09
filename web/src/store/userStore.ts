@@ -63,10 +63,13 @@ class UserStore {
     this.notify()
   }
 
+  // Fromly no tiene periodo de prueba: o gratis (sin caducidad) o de pago.
+  // Debe coincidir EXACTAMENTE con isPaidPlan() del servidor (lib/plan.ts):
+  // si el cliente diera Pro donde el servidor no lo da, la app enseñaría
+  // funciones que luego la API rechaza.
   get isPremium(): boolean {
     return (
       this.user?.subscriptionStatus === 'active' ||
-      this.user?.subscriptionStatus === 'trialing' ||
       this.user?.licenseStatus === 'active'
     )
   }
@@ -74,13 +77,6 @@ class UserStore {
   get planLabel(): string {
     if (this.user?.licenseStatus === 'active') return i18n.t('account.planLifetime', { defaultValue: 'Licencia perpetua' })
     if (this.user?.subscriptionStatus === 'active') return i18n.t('account.subActive', { defaultValue: 'Suscripción activa' })
-    if (this.user?.subscriptionStatus === 'trialing') {
-      const ends = this.user.trialEndsAt ? new Date(this.user.trialEndsAt) : null
-      const days = ends ? Math.ceil((ends.getTime() - Date.now()) / 86400000) : 0
-      return days > 0
-        ? i18n.t('account.trialDaysLeft', { defaultValue: 'Prueba gratuita — {{days}}d restantes', days })
-        : i18n.t('account.trial', { defaultValue: 'Prueba gratuita' })
-    }
     if (this.user?.subscriptionStatus === 'past_due') return i18n.t('account.pastDue', { defaultValue: 'Pago pendiente' })
     return i18n.t('account.planFree', { defaultValue: 'Plan gratuito' })
   }

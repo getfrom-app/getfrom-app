@@ -48,8 +48,18 @@ export function spawnRecurrence(node: Node): void {
       : (ed._recurrence as RecurrenceConfig | undefined)
     if (!rec) return
 
+    // Base del cálculo: el día del que cuelga la tarea. Si no cuelga de ninguno (una
+    // tarea de un DOCUMENTO, p.ej. «seguimiento cada 15 días»), su propia fecha —
+    // antes se caía siempre a HOY y la instancia siguiente nacía el mismo día que la
+    // recién completada (visto en vivo: completar el seguimiento del 21 ago creaba
+    // otro para el 21 ago). Nunca antes de hoy: completar con mucho retraso no debe
+    // generar una tarea que nace ya atrasada.
     const parent = node.parentId ? store.getNode(node.parentId) : null
-    const baseDate = parent?.diaryDate ? new Date(parent.diaryDate) : new Date()
+    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const ownDue = node.due ? new Date(node.due) : null
+    const baseDate = parent?.diaryDate
+      ? new Date(parent.diaryDate)
+      : (ownDue && ownDue.getTime() > today.getTime() ? ownDue : today)
     baseDate.setHours(0, 0, 0, 0)
     const nextDate = nextRecurrence(baseDate, rec)
     const dayNode = ensureDayPath(nextDate)

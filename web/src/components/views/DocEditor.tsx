@@ -25,7 +25,7 @@ import { parseExtraData } from '../../utils/papeleraHelper'
 import { firstLineTitle, DOC } from '../../utils/docNode'
 import { markdownToHtml } from '../../utils/importMarkdown'
 import DocMention from './DocMention'
-import { extractDateFromEnd } from '../../utils/naturalDate'
+import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { uploadFile } from '../../api/client'
 import { setDocEditor, notifyDocEditor } from '../../utils/docEditorStore'
@@ -42,6 +42,9 @@ import ContextPicker from '../panels/ContextPicker'
 import { ParagraphId, dedupePids } from '../../utils/tiptapParagraphId'
 import { CiteDecorations, citeDecoKey } from '../../utils/tiptapCiteDecorations'
 import { TabIndent } from '../../utils/tiptapTabIndent'
+import { descendantPids, blockTexts, type DocBlock } from '../../utils/docBlocks'
+import { TASK_OF, docIdOfTask, nextRecurrenceInstance } from '../../utils/docTasks'
+import { toggleTaskDone } from '../../utils/dailyCockpit'
 import Icon from '../../v2/components/Icon'
 
 // ¿El texto pegado parece MARKDOWN? (encabezados, listas, code fence, cita, enlaces,
@@ -153,6 +156,14 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     closeSlashMenu()
     if (!ed || from == null) return
     const to = ed.state.selection.from
+    // TAREA: no marca el documento como bloque-vista — inserta una casilla en el punto
+    // del texto donde estás. Esa casilla YA es una tarea real de este documento
+    // (`syncTasksToNodes` le crea el nodo con `_taskOf`), con su fecha y su recurrencia
+    // leídas de lo que escribas: «seguimiento cada 15 días» (Alberto, 6 ago 2026).
+    if (action === 'task') {
+      ed.chain().focus().deleteRange({ from, to }).toggleTaskList().run()
+      return
+    }
     const kind = action === 'view-table' ? 'tabla' : action === 'view-kanban' ? 'kanban' : 'calendario'
     // Borra el "/query" escrito y marca ESTE nodo como bloque-vista inline — mismo
     // extraData que usa el outliner clásico (viewBlock+_inline), para que
@@ -238,9 +249,8 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // párrafos indentados deberían pertenecer a la misma cita... es más, todos
   // los párrafos bajo un heading mayor que tenga contexto, también deben
   // pertenecer a ese heading. es un orden jerárquico").
-  type Block = { pid: string; type: string; level: number; indent: number; text: string }
-  const getOrderedBlocks = (): Block[] => {
-    const blocks: Block[] = []
+  const getOrderedBlocks = (): DocBlock[] => {
+    const blocks: DocBlock[] = []
     editorRef.current?.state.doc.descendants(n => {
       const pid = n.attrs?.pid as string | undefined
       if (!pid) return
@@ -256,25 +266,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // la cita [debe] actualizarse automáticamente").
   const collectDescendantText = (anchorPid: string): string => {
     const blocks = getOrderedBlocks()
-    const idx = blocks.findIndex(b => b.pid === anchorPid)
-    if (idx === -1) return ''
-    const anchor = blocks[idx]
-    const parts = [anchor.text]
-    if (anchor.type === 'heading') {
-      for (let i = idx + 1; i < blocks.length; i++) {
-        const b = blocks[i]
-        if (b.type === 'heading' && b.level <= anchor.level) break
-        if (b.text.trim()) parts.push(b.text)
-      }
-    } else {
-      for (let i = idx + 1; i < blocks.length; i++) {
-        const b = blocks[i]
-        if (b.type === 'heading') break
-        if (b.indent <= anchor.indent) break
-        if (b.text.trim()) parts.push(b.text)
-      }
-    }
-    return parts.filter(p => p.trim()).join('\n\n')
+    return blockTexts(blocks, descendantPids(blocks, anchorPid))
   }
 
   // Cita YA existente para un párrafo (si la hay) — por pid exacto o, si el pid
@@ -643,6 +635,10 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     try {
       const seen = new Set<string>()
       const assign: { pos: number; id: string }[] = []
+      // Casillas que hay que RE-APUNTAR a la instancia siguiente de una tarea
+      // recurrente (ver abajo): { pos, id nuevo }. Se aplican al final, fuera del
+      // recorrido, para no mutar el doc mientras se recorre.
+      const repoint: { pos: number; id: string }[] = []
       let parentRefs: string[] = []
       try { const r = JSON.parse(store.getNode(node.id)?.extraData || '{}')._ctxRefs; if (Array.isArray(r)) parentRefs = r } catch { /* ignore */ }
       ed.state.doc.descendants((item, pos) => {
@@ -653,10 +649,46 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         const id = item.attrs.dataNodeId as string | null
         const existing = id ? store.getNode(id) : null
         if (existing && !existing.deletedAt) {
-          if (existing.text !== text || existing.status !== status) store.updateNode(id!, { text, status })
+          // RECURRENCIA: al completar, `spawnRecurrence` no recicla el nodo — crea la
+          // instancia siguiente en el día que toca (modelo intocable, ver FROM.md). La
+          // casilla del cuerpo se quedaba marcada para siempre apuntando a la instancia
+          // COMPLETADA, así que un «seguimiento cada 15 días» escrito en el documento
+          // moría en el primer seguimiento. Aquí la casilla se reengancha a la instancia
+          // viva y se desmarca: representa el seguimiento VIGENTE, y la completada queda
+          // archivada en su día como historial. Se repara aquí (idempotente, corre al
+          // abrir el documento) y no en el toggle, para cubrir también lo que se complete
+          // desde el cockpit, el planner o el iPhone.
+          if (existing.status === 'done' && existing.recurrence && item.attrs.checked) {
+            const next = nextRecurrenceInstance(existing)
+            if (next) {
+              repoint.push({ pos, id: next.id })
+              seen.add(existing.id); seen.add(next.id)
+              return true
+            }
+          }
+          if (existing.text !== text) store.updateNode(id!, { text })
+          if (existing.status !== status) {
+            if (status === 'done') {
+              // Por `toggleTaskDone`, no por un `updateNode` a pelo: marcar la casilla
+              // tiene que hacer lo MISMO que completar la tarea en el cockpit (estampar
+              // `_doneAt` y, si es recurrente, crear la instancia siguiente). Antes la
+              // casilla del documento se saltaba las dos cosas.
+              toggleTaskDone(store.getNode(id!)!)
+              const next = existing.recurrence ? nextRecurrenceInstance(store.getNode(id!)!) : null
+              if (next) { repoint.push({ pos, id: next.id }); seen.add(next.id) }
+            } else {
+              store.updateNode(id!, { status })
+            }
+          }
+          // Legado: las casillas anteriores a `_taskOf` solo se enlazaban por parentId,
+          // que se pierde en cuanto la recurrencia reubica la tarea (utils/docTasks.ts).
+          if (docIdOfTask(existing) !== node.id) {
+            const e2 = parseExtraData(existing.extraData)
+            store.updateNode(id!, { extraData: JSON.stringify({ ...e2, [TASK_OF]: node.id }) })
+          }
           seen.add(id!)
         } else {
-          const created = store.createNode({ text, parentId: node.id, extraData: { _taskEmbed: '1' } })
+          const created = store.createNode({ text, parentId: node.id, extraData: { _taskEmbed: '1', [TASK_OF]: node.id } })
           const updates: Record<string, unknown> = { status }
           // Fecha del magic (ghost): el título ya viene limpio, la fecha se guardó aparte.
           const pend = pendingDueRef.current.get(text.toLowerCase())
@@ -675,6 +707,10 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
                 if (dt.timeStr) { const [h, m] = dt.timeStr.split(':').map(Number); updates.due = new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m).toISOString() }
                 else updates.due = d.toISOString()
               }
+              // RECURRENCIA del mismo texto («… cada 15 días»): faltaba, así que una
+              // casilla recurrente escrita en un documento nacía con fecha pero sin
+              // repetición — el seguimiento no se repetía nunca.
+              if (dt?.parsed?.recurrence) updates.recurrence = recurrenceToString(dt.parsed.recurrence)
             } catch { /* sin fecha */ }
           }
           store.updateNode(created.id, updates)
@@ -685,9 +721,10 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         }
         return true
       })
-      if (assign.length) {
+      if (assign.length || repoint.length) {
         const tr = ed.state.tr
         for (const a of assign) tr.setNodeAttribute(a.pos, 'dataNodeId', a.id)
+        for (const r of repoint) { tr.setNodeAttribute(r.pos, 'dataNodeId', r.id); tr.setNodeAttribute(r.pos, 'checked', false) }
         tr.setMeta('addToHistory', false)
         ed.view.dispatch(tr)
       }

@@ -367,9 +367,6 @@ export default function AccountView() {
     if (user?.subscriptionStatus === 'active') {
       return <span className="plan-badge plan-badge--active">{t('account.planBadgeActive')}</span>
     }
-    if (user?.subscriptionStatus === 'trialing') {
-      return <span className="plan-badge plan-badge--active">{t('account.planBadgeTrial')}</span>
-    }
     if (user?.subscriptionStatus === 'cancelled' || user?.subscriptionStatus === 'expired') {
       return <span className="plan-badge plan-badge--cancelled">{t('account.planBadgeCancelled')}</span>
     }
@@ -797,17 +794,6 @@ export default function AccountView() {
             </div>
           )}
 
-          {user?.subscriptionStatus === 'trialing' && user.trialEndsAt && (
-            <div className="settings-row">
-              <div className="settings-row-label">{t('account.subscriptionTrialEnds')}</div>
-              <div className="settings-row-value">
-                {new Date(user.trialEndsAt).toLocaleDateString('es-ES', {
-                  day: 'numeric', month: 'long', year: 'numeric',
-                })}
-              </div>
-            </div>
-          )}
-
           {user?.tokensBalance !== undefined && (
             <div className="settings-row">
               <div className="settings-row-label">{t('account.tokensBalance')}</div>
@@ -818,13 +804,13 @@ export default function AccountView() {
           {subError && <div className="auth-error" style={{ marginTop: 8 }}>{subError}</div>}
 
           <div className="settings-actions">
-            {user?.subscriptionStatus !== 'active' && user?.subscriptionStatus !== 'trialing' && user?.licenseStatus !== 'active' && (
+            {user?.subscriptionStatus !== 'active' && user?.licenseStatus !== 'active' && (
               <button className="btn-primary" onClick={handleSubscribe} disabled={subLoading}>
                 {subLoading ? t('common.loading') : t('account.subscribeButton')}
               </button>
             )}
 
-            {(user?.subscriptionStatus === 'active' || user?.subscriptionStatus === 'trialing') && (
+            {user?.subscriptionStatus === 'active' && (
               <button className="btn-secondary btn-danger-outline" onClick={handleCancelSubscription} disabled={subLoading}>
                 {subLoading ? t('common.processing') : t('account.cancelSubscriptionButton')}
               </button>

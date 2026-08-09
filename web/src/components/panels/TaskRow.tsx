@@ -14,6 +14,7 @@ import { openNodeDetail } from '../../utils/canvasNav'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
+import { docOfTask } from '../../utils/docTasks'
 import Icon from '../../v2/components/Icon'
 
 // Exportadas: las reutiliza V2TaskDetailView (chips de fecha/hora/repetición en el
@@ -88,6 +89,7 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
   const time = timeLabel(node, i18n.language)
   const due = showDue ? dueLabel(node, i18n.language) : ''
   const rec = recLabel(node, t)
+  const taskDoc = docOfTask(node)
   return (
     <div
       ref={rowRef}
@@ -135,6 +137,14 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
           )}
           {time && <span className="dc-time">{time}</span>}
           {rec && <span className="dc-rec" title={rec}><Icon name="repeat" size={12} /> {rec}</span>}
+          {/* Tarea DE UN DOCUMENTO: se dice de cuál. Sin esto, en el cockpit un
+              «seguimiento» suelto no dice de quién es — y pulsar la fila abre ese
+              documento (V2App.onOpenNode), así que el chip explica adónde lleva. */}
+          {taskDoc && (
+            <span className="dc-rec" title={taskDoc.text || ''}>
+              <Icon name="document" size={12} /> {taskDoc.text || t('common.noTitle')}
+            </span>
+          )}
           <span style={{ flex: 1 }} />
           <TaskHoverActions node={node} onOpenDate={onOpenDate} />
           <RowContextChip node={node} />

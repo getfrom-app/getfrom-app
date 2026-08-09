@@ -1091,3 +1091,43 @@
   .v2-root { grid-template-columns: 1fr; }
   .v2-sidebar, .v2-right { display: none; }
 }
+
+/* ── Tareas DE UN DOCUMENTO (V2DocTasks) ─────────────────────────────────────
+   Franja discreta encima del texto: el seguimiento del asunto se ve al abrir el
+   documento, sin competir con el propio contenido. */
+.v2-doctasks {
+  padding: 10px 20px 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.v2-doctask {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 6px; border-radius: var(--v2-r-sm, 6px);
+  font-size: 13px; color: var(--text-primary);
+  transition: background var(--v2-fast);
+}
+.v2-doctask:hover { background: var(--v2-hover); }
+.v2-doctask input[type="checkbox"] { flex: 0 0 auto; cursor: pointer; margin: 0; }
+.v2-doctask-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v2-doctask--done .v2-doctask-title { text-decoration: line-through; opacity: 0.55; }
+.v2-doctask--flash { background: var(--accent-soft); }
+.v2-doctask-chip {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: 1px solid var(--v2-line); border-radius: 999px;
+  padding: 2px 8px; font-size: 11.5px; color: var(--text-secondary, #666); cursor: pointer;
+}
+.v2-doctask-chip:hover { border-color: var(--border, #d9d9d9); color: var(--text-primary); }
+.v2-doctask-rec { display: inline-flex; align-items: center; gap: 3px; opacity: 0.8; }
+/* `.v2-done-toggle` lo comparten el bloque de tareas de un documento y la lista de
+   tareas de un contexto/conversación (V2TaskList): el mismo gesto «ver lo hecho». */
+.v2-doctask-add, .v2-done-toggle {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 5px;
+  background: none; border: none; cursor: pointer; padding: 4px 6px;
+  font-size: 12.5px; color: var(--text-tertiary, #999); border-radius: var(--v2-r-sm, 6px);
+}
+.v2-doctask-add:hover, .v2-done-toggle:hover { color: var(--text-primary); background: var(--v2-hover); }
+.v2-doctask-input {
+  border: 1px solid var(--v2-line); border-radius: var(--v2-r-sm, 6px);
+  padding: 5px 8px; font-size: 13px; font-family: inherit;
+  background: var(--v2-surface); color: var(--text-primary); outline: none;
+}
+.v2-doctask-input:focus { border-color: var(--accent); }

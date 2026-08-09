@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { trashNode } from '../../utils/papeleraHelper'
 import { firstContextOf, setNodeContext, convertToTask, isContextNode } from '../../utils/cajones'
+import { isCitationNode, promoteCitationToDocument } from '../../utils/citations'
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from './ContextPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
@@ -120,6 +121,13 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
             convertTask()). */}
         {!isTask && (
           <button className="node-ctx-item" onClick={convertTask}>{t('rightColMenu.convertToTask')}</button>
+        )}
+        {/* Solo en CITAS: se lleva el párrafo del documento origen y lo deja como
+            documento propio (utils/citations.ts). Reversible desde el toast. */}
+        {isCitationNode(node) && (
+          <button className="node-ctx-item" onClick={() => { promoteCitationWithFeedback(nodeId, t); onClose() }}>
+            {t('citation.toDocument', 'Convertir en documento')}
+          </button>
         )}
         <button ref={ctxBtnRef} className="node-ctx-item" onClick={toggleCtxFlyout}>
           {current ? t('rightColMenu.changeContext') : t('rightColMenu.addContext')} <span style={{ float: 'right', opacity: 0.6 }}>›</span>
