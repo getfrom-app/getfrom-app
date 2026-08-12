@@ -28,6 +28,7 @@ export default function StatusBar({ isSyncing, showSaved, currentNodeId }: Props
   const [lastBackup, setLastBackup] = useState<string | null>(null)
   const [loadingBackup, setLoadingBackup] = useState(true)
   const [agentsSummary, setAgentsSummary] = useState<{ count: number; nextDate: Date | null } | null>(null)
+  const [failingAgents, setFailingAgents] = useState(0)
   const [updateAvailable, setUpdateAvailable] = useState<{ version: string; download: () => Promise<void> } | null>(null)
   const [updating, setUpdating] = useState(false)
   const [updateError, setUpdateError] = useState<string | null>(null)
@@ -146,9 +147,13 @@ export default function StatusBar({ isSyncing, showSaved, currentNodeId }: Props
     let cancelled = false
     const load = async () => {
       try {
-        const res = await apiRequest<{ schedules: Array<{ schedule: string; agentTitle: string | null; enabled: boolean }> }>('/agents/schedules')
+        const res = await apiRequest<{ schedules: Array<{ schedule: string; agentTitle: string | null; enabled: boolean; lastError?: string | null }> }>('/agents/schedules')
         if (!cancelled) {
           setAgentsSummary(scheduledAgentsSummary(res.schedules ?? []))
+          // Un agente activo que lleva fallando no puede quedar invisible —
+          // antes solo se veía en los logs del servidor (Alberto, 12 ago:
+          // "llevan tiempo así y no funcionan... deberian dejar un aviso").
+          setFailingAgents((res.schedules ?? []).filter(s => s.enabled && s.lastError).length)
         }
       } catch { /* silencioso */ }
     }
@@ -210,6 +215,20 @@ export default function StatusBar({ isSyncing, showSaved, currentNodeId }: Props
                 {agentsSummary.nextDate && ` · ${t('statusbar.nextRun', { when: relativeUntil(agentsSummary.nextDate, i18n.language?.startsWith('en')) })}`}
               </>
             )}
+          </span>
+        </>
+      )}
+
+      {/* Aviso: uno o más agentes activos fallan al ejecutarse (12 ago) */}
+      {failingAgents > 0 && (
+        <>
+          <span className="footer-sep" />
+          <span
+            className="footer-item"
+            style={{ color: 'var(--color-error, #e53e3e)' }}
+            title={t('statusbar.agentsFailingHint', 'Revisa su configuración — llevan fallando desde la última ejecución correcta')}
+          >
+            ⚠ {t('statusbar.agentsFailing', { count: failingAgents, defaultValue: '{{count}} agente con error' })}
           </span>
         </>
       )}
