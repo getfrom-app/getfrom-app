@@ -95,7 +95,11 @@ class UserStore {
 
   get planLabel(): string {
     if (this.user?.licenseStatus === 'active') return i18n.t('account.planLifetime', { defaultValue: 'Licencia perpetua' })
-    if (this.user?.subscriptionStatus === 'active') return i18n.t('account.subActive', { defaultValue: 'Suscripción activa' })
+    if (this.user?.subscriptionStatus === 'active') {
+      if (this.user.subscriptionInterval === 'annual') return i18n.t('account.subActiveAnnual', { defaultValue: 'Suscripción activa (anual)' })
+      if (this.user.subscriptionInterval === 'monthly') return i18n.t('account.subActiveMonthly', { defaultValue: 'Suscripción activa (mensual)' })
+      return i18n.t('account.subActive', { defaultValue: 'Suscripción activa' })
+    }
     if (this.user?.subscriptionStatus === 'past_due') return i18n.t('account.pastDue', { defaultValue: 'Pago pendiente' })
     if (this.isInTrial) {
       return i18n.t('account.planTrial', { defaultValue: 'Prueba — {{days}} días', days: this.trialDaysLeft })

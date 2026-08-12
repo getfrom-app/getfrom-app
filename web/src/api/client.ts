@@ -168,6 +168,9 @@ export interface UserProfile {
   name?: string | null
   subscriptionStatus: 'active' | 'trialing' | 'past_due' | 'expired' | 'cancelled' | null
   subscriptionRenewsAt: string | null
+  /** "monthly" | "annual" | null — null en Lifetime, o si viene de antes de que
+   *  esto se empezara a guardar (12 ago 2026). */
+  subscriptionInterval: 'monthly' | 'annual' | null
   trialEndsAt: string | null
   licenseStatus: 'active' | null
   tokensBalance: number
