@@ -28,6 +28,8 @@ export default function PaywallModal({ reason, onClose }: Props) {
   const navigate = useNavigate()
   const us = useUserStore()
   const isPremium = us.isPremium
+  const isInTrial = us.isInTrial
+  const trialDaysLeft = us.trialDaysLeft
   const [loading, setLoading] = useState(false)
 
   async function openSubscriptionCheckout() {
@@ -61,44 +63,28 @@ export default function PaywallModal({ reason, onClose }: Props) {
   let primaryAction = () => {}
   let secondaryLabel = t('paywall.notNow')
 
-  if (reason === 'node_limit') {
-    // Límite de elementos — siempre free
-    icon          = 'layers'
-    title         = 'Has alcanzado el límite del plan gratuito'
-    subtitle      = 'Con el plan gratuito puedes tener hasta 1.000 elementos. Suscríbete para tener elementos ilimitados y la IA de Fromly.'
-    primaryLabel  = 'Ver planes'
-    primaryAction = () => { onClose(); navigate('/pricing') }
+  // node_limit / file_limit / publish_limit / agent_limit / free_chat_limit ya
+  // NO son límites del "plan gratis" (ese límite de 1.000 elementos se retiró:
+  // ahora el asistente es el producto). El servidor solo devuelve estos 402
+  // cuando la prueba de 15 días terminó y no hay suscripción — así que los
+  // cinco motivos comparten el mismo mensaje de "se acabó tu prueba".
+  const FEATURE_LABEL: Record<string, string> = {
+    node_limit:   'guardar más elementos',
+    file_limit:   'adjuntar archivos',
+    publish_limit: 'publicar notas',
+    agent_limit:  'activar más de un agente',
+    free_chat_limit: 'seguir hablando con el asistente',
+  }
 
-  } else if (reason === 'file_limit') {
-    icon          = 'attachment'
-    title         = 'Adjuntar archivos requiere Fromly Pro'
-    subtitle      = 'Sube imágenes, PDFs y documentos sin límite con cualquier plan Pro.'
-    primaryLabel  = loading ? '…' : 'Suscribirme ahora'
-    primaryAction = openSubscriptionCheckout
-
-  } else if (reason === 'publish_limit') {
-    icon          = 'link'
-    title         = 'Publicar notas requiere Fromly Pro'
-    subtitle      = 'Comparte cualquier nota con una URL pública — disponible en los planes Pro.'
-    primaryLabel  = loading ? '…' : 'Suscribirme ahora'
-    primaryAction = openSubscriptionCheckout
-
-  } else if (reason === 'agent_limit') {
-    icon          = 'agent'
-    title         = 'Ya tienes 1 agente activo'
-    subtitle      = 'El plan gratis permite tener 1 agente activo a la vez, para que puedas probarlo. Pásate a Pro para activar todos los que quieras.'
-    primaryLabel  = loading ? '…' : 'Suscribirme ahora'
-    primaryAction = openSubscriptionCheckout
-
-  } else if (reason === 'free_chat_limit') {
-    icon          = 'conversation'
-    title         = 'Has usado tus 5 chats gratis de este mes'
-    subtitle      = 'El plan gratis incluye 5 conversaciones nuevas de IA al mes. Con Pro tienes IA sin límite.'
+  if (reason in FEATURE_LABEL) {
+    icon          = reason === 'agent_limit' ? 'agent' : reason === 'publish_limit' ? 'link' : reason === 'file_limit' ? 'attachment' : 'sparkle'
+    title         = 'Tu prueba de 15 días ha terminado'
+    subtitle      = `Pásate a Pro para seguir usando Fromly sin límites — incluido ${FEATURE_LABEL[reason]}.`
     primaryLabel  = loading ? '…' : 'Suscribirme ahora'
     primaryAction = openSubscriptionCheckout
 
   } else if (isPremium) {
-    // Suscriptor sin tokens
+    // Suscriptor de verdad, sin tokens del mes.
     icon          = 'prompt'
     title         = 'Te has quedado sin tokens de IA'
     subtitle      = 'Has consumido todos tus tokens del mes. Puedes comprar tokens adicionales o esperar a la renovación de tu suscripción.'
@@ -106,11 +92,20 @@ export default function PaywallModal({ reason, onClose }: Props) {
     primaryAction = openTopupCheckout
     secondaryLabel = 'Gestionar suscripción'
 
+  } else if (isInTrial) {
+    // En prueba pero se ha gastado el balance de tokens de la prueba antes de
+    // que pasen los 15 días — no ha terminado el plazo, se ha terminado el saldo.
+    icon          = 'prompt'
+    title         = 'Has agotado los tokens de tu prueba'
+    subtitle      = `Aún te quedan ${trialDaysLeft} día${trialDaysLeft === 1 ? '' : 's'} de prueba, pero se han acabado los tokens de IA incluidos. Pásate a Pro para seguir sin límite.`
+    primaryLabel  = loading ? '…' : 'Suscribirme ahora'
+    primaryAction = openSubscriptionCheckout
+
   } else {
-    // Free sin IA
+    // Prueba terminada y sin tokens.
     icon          = 'sparkle'
-    title         = 'La IA de Fromly requiere suscripción'
-    subtitle      = 'Suscríbete para usar el asistente de IA sin límites: crea notas, tareas y eventos con tu voz, y deja que Fromly organice todo por ti.'
+    title         = 'Tu prueba de 15 días ha terminado'
+    subtitle      = 'Suscríbete para seguir usando el asistente de IA sin límites: crea notas, tareas y eventos con tu voz, y deja que Fromly organice todo por ti.'
     primaryLabel  = loading ? '…' : 'Suscribirme ahora'
     primaryAction = openSubscriptionCheckout
   }

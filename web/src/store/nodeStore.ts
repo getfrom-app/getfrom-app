@@ -340,7 +340,7 @@ export class NodeStore {
    *  bloquearía/avisaría de forma prematura frente a lo que el servidor
    *  realmente permite. */
   atFreeNodeLimit(): boolean {
-    if (userStore.isPremium) return false
+    if (userStore.hasAccess) return false
     const countable = this.allActive().filter(n => {
       try {
         const ed = JSON.parse(n.extraData || '{}')

@@ -106,7 +106,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
     // servidor, POST /agents/schedule es quien lo hace cumplir de verdad — esto
     // es solo UX para no dejar clicar en vano). Suscriptor/trial/lifetime: sin
     // límite.
-    if (next && !userStore.isPremium) {
+    if (next && !userStore.hasAccess) {
       const otherEnabled = listAllAgents().filter(a => a.id !== nodeId && getAgentData(a.id)?.enabled).length
       if (otherEnabled >= 1) {
         window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'agent_limit' } }))

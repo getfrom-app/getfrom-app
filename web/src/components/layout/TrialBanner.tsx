@@ -20,8 +20,16 @@ export default function TrialBanner() {
   const [dismissed, setDismissed] = useState(isDismissed)
   const [loading, setLoading] = useState(false)
 
-  // Only show for loaded, non-premium users
-  if (!u.user || u.isPremium || dismissed) return null
+  const expired = !!u.user && !u.isPremium && !u.isInTrial
+  const endingSoon = u.isInTrial && u.trialDaysLeft <= 5
+
+  // Solo se enseña para usuarios cargados, sin plan de pago, cuando la prueba
+  // se acaba o ya se acabó — no durante los primeros días (Alberto, 12 ago:
+  // el trial sustituye al límite de 1.000 elementos, no hace falta insistir
+  // desde el primer minuto).
+  if (!u.user || u.isPremium) return null
+  if (!expired && !endingSoon) return null
+  if (dismissed && !expired) return null
 
   function handleDismiss() {
     localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_DAYS * 86400000))
@@ -38,8 +46,12 @@ export default function TrialBanner() {
   }
 
   return (
-    <div className="trial-banner">
-      <span>{t('trialBanner.message')}</span>
+    <div className={`trial-banner${expired ? ' trial-banner-expired' : ''}`}>
+      <span>
+        {expired
+          ? t('trialBanner.expired', 'Tu prueba de 15 días ha terminado')
+          : t('trialBanner.endingSoon', 'Quedan {{count}} días de prueba', { count: u.trialDaysLeft })}
+      </span>
       <button
         className="trial-banner-cta"
         onClick={handleUpgrade}
@@ -47,13 +59,15 @@ export default function TrialBanner() {
       >
         {loading ? '…' : t('trialBanner.cta')}
       </button>
-      <button
-        className="trial-banner-dismiss"
-        onClick={handleDismiss}
-        aria-label={t('trialBanner.dismiss')}
-      >
-        ×
-      </button>
+      {!expired && (
+        <button
+          className="trial-banner-dismiss"
+          onClick={handleDismiss}
+          aria-label={t('trialBanner.dismiss')}
+        >
+          ×
+        </button>
+      )}
     </div>
   )
 }

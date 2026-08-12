@@ -125,6 +125,9 @@
   max-width: calc(100vw - 40px);
 }
 .v2-upgrade-banner-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Prueba terminada: naranja de aviso, no el acento normal — para que se
+   distinga de "quedan N días" a simple vista y no se confunda con un adorno. */
+.v2-upgrade-banner-expired { background: linear-gradient(90deg, #e08a2e, #c96f1a); }
 .v2-upgrade-banner-cta {
   background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;
   border-radius: 999px; padding: 5px 14px; font-size: 12px; font-weight: 600;

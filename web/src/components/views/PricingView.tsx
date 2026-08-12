@@ -42,15 +42,17 @@ export default function PricingView() {
     }
   }
 
+  // La prueba da acceso COMPLETO — asistente incluido — durante 15 días; ya no
+  // es un plan gratis permanente con tope de 1.000 elementos (Alberto, 12 ago:
+  // "centramos el peso en el chat, la versión free debe ser un trial").
   const freeFeatures = [
+    t('pricing.featureAssistant', 'Tu asistente por chat, sin límite'),
     t('pricing.featureOutliner', 'Outliner + diario'),
-    t('pricing.featureAdvancedSearch', 'Búsqueda avanzada'),
     t('pricing.featurePlatforms', 'Mac, iPhone y web'),
     t('pricing.featureSync', 'Sync en tiempo real'),
   ]
   const proFeatures = [
-    t('pricing.proEverythingFree', 'Todo lo de Gratis, y además:'),
-    t('pricing.featureAIIncluded', 'IA, prompts y agentes'),
+    t('pricing.proEverythingFree', 'Todo lo de la prueba, para siempre:'),
     t('pricing.featureOwnKey', 'Usa tu propia clave de Claude, GPT o Gemini'),
     t('pricing.featureAdvancedViews', 'Vistas tabla, kanban, calendario'),
     t('pricing.proPriority', 'Soporte prioritario'),
@@ -66,8 +68,8 @@ export default function PricingView() {
   return (
     <div className="pricing2">
       <div className="pricing2-head">
-        <h1 className="pricing2-title">{t('pricing.titleFree', 'Empieza gratis')}</h1>
-        <p className="pricing2-sub">{t('pricing.subtitleFree', 'Pasa a Pro cuando lo necesites')}</p>
+        <h1 className="pricing2-title">{t('pricing.titleTrial', 'Empieza con 15 días gratis')}</h1>
+        <p className="pricing2-sub">{t('pricing.subtitleTrial', 'Todo Fromly, sin tarjeta. Pasa a Pro cuando quieras seguir')}</p>
       </div>
 
       {/* Toggle mes/año FUERA de la caja, alineado encima de la tarjeta Pro (columna central) */}
@@ -90,12 +92,12 @@ export default function PricingView() {
       <div className="pricing2-grid pricing2-grid--3">
         {/* ── Gratis ── */}
         <div className="pcard">
-          <span className="pcard-name">{t('pricing.free', 'Gratis')}</span>
+          <span className="pcard-name">{t('pricing.free', 'Prueba')}</span>
           <div className="pcard-hero">
-            <span className="pcard-hero-num">1.000</span>
-            <span className="pcard-hero-label">{t('pricing.nodesLabel', 'elementos')}</span>
+            <span className="pcard-hero-num">15</span>
+            <span className="pcard-hero-label">{t('pricing.trialDaysLabel', 'días')}</span>
           </div>
-          <p className="pcard-note">{t('pricing.freeNodesNote', 'Notas, tareas, chats, agentes — de sobra para empezar')}</p>
+          <p className="pcard-note">{t('pricing.freeNodesNote', 'Todo Fromly, sin tarjeta ni compromiso')}</p>
           <ul className="pcard-feats">
             {freeFeatures.map((f, i) => <li key={i}><span className="pcard-check">✓</span>{f}</li>)}
           </ul>

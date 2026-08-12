@@ -259,7 +259,8 @@ export function CuentaPane() {
         const estadoLabel = isLifetime ? t('account.planBadgeLicense', 'Licencia perpetua')
           : user?.subscriptionStatus === 'active' ? t('account.planBadgeActive', 'Suscripción activa')
           : isCancelled ? t('account.planBadgeCancelled', 'Cancelada')
-          : t('account.planBadgeFree', 'Plan gratuito')
+          : us.isInTrial ? t('account.planBadgeTrial', 'Prueba — {{days}} días', { days: us.trialDaysLeft })
+          : t('account.planBadgeExpired', 'Prueba terminada')
         return (
           <>
             <Row label={t('account.subscriptionStatus')}>

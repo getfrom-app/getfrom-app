@@ -348,7 +348,7 @@ function updateAgentAction(a: Record<string, unknown>): ExecutedAction {
   if ('enabled' in a) {
     const enabled = !!a.enabled
     // Gate Pro: solo al ACTIVAR, mismo criterio que AgentPropertiesPanel.toggleEnabled.
-    if (enabled && !userStore.isPremium) {
+    if (enabled && !userStore.hasAccess) {
       return result('update_agent', false,
         'No se pudo activar: activar agentes requiere Fromly Pro. El agente sigue pausado.')
     }

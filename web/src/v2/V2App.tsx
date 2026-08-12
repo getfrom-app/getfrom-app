@@ -485,7 +485,7 @@ export default function V2App() {
     // Adjuntar archivos (no texto plano) requiere plan de pago — el servidor ya
     // lo rechaza en /files/upload (402 file_limit), esto evita el intento fallido
     // y muestra el paywall directamente en el punto de fricción real.
-    if (!userStore.isPremium) {
+    if (!userStore.hasAccess) {
       window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'file_limit' } }))
       return
     }

@@ -20,7 +20,7 @@ export default function PublishButton({ node }: { node: Node }) {
   const doPublish = async () => {
     // El servidor ya rechaza /notes/publish para free (402 publish_limit) —
     // esto evita el intento fallido y muestra el paywall en el punto de fricción.
-    if (!userStore.isPremium) {
+    if (!userStore.hasAccess) {
       setMenuOpen(false)
       window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'publish_limit' } }))
       return

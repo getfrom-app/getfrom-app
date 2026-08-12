@@ -25,7 +25,14 @@ export default function V2UpgradeBanner() {
   const [dismissed, setDismissed] = useState(isDismissed)
   const [loading, setLoading] = useState(false)
 
-  if (!u.user || u.isPremium || dismissed) return null
+  const expired = !!u.user && !u.isPremium && !u.isInTrial
+  // Los últimos días de prueba se avisan siempre — dismiss no debe poder
+  // silenciar el aviso de "se acaba" hasta el mismo día que se acaba.
+  const endingSoon = u.isInTrial && u.trialDaysLeft <= 5
+
+  if (!u.user || u.isPremium) return null
+  if (!expired && !endingSoon) return null
+  if (dismissed && !expired) return null
 
   function handleDismiss() {
     localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_DAYS * 86400000))
@@ -37,17 +44,23 @@ export default function V2UpgradeBanner() {
     try { await openUpgradeCheckout('subscription') } finally { setLoading(false) }
   }
 
+  const message = expired
+    ? t('v2.upgradeBanner.expired', 'Tu prueba de 15 días ha terminado')
+    : t('v2.upgradeBanner.endingSoon', 'Quedan {{count}} días de prueba', { count: u.trialDaysLeft })
+
   return (
-    <div className="v2-upgrade-banner" role="status">
+    <div className={`v2-upgrade-banner${expired ? ' v2-upgrade-banner-expired' : ''}`} role="status">
       <span className="v2-upgrade-banner-text">
-        <Icon name="sparkle" size={14} /> {t('v2.upgradeBanner.message', 'Plan gratis · 1.000 elementos · Sin IA')}
+        <Icon name="sparkle" size={14} /> {message}
       </span>
       <button className="v2-upgrade-banner-cta" onClick={handleUpgrade} disabled={loading}>
         {loading ? '…' : t('v2.upgradeBanner.cta', 'Pasar a Pro')}
       </button>
-      <button className="v2-upgrade-banner-dismiss" onClick={handleDismiss} aria-label={t('common.dismiss', 'Cerrar')}>
-        ×
-      </button>
+      {!expired && (
+        <button className="v2-upgrade-banner-dismiss" onClick={handleDismiss} aria-label={t('common.dismiss', 'Cerrar')}>
+          ×
+        </button>
+      )}
     </div>
   )
 }

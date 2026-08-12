@@ -9827,6 +9827,11 @@ textarea:focus-visible,
   color: white;
 }
 
+/* Prueba terminada: naranja de aviso — se distingue de "quedan N días". */
+.trial-banner-expired {
+  background: linear-gradient(90deg, #e08a2e, #c96f1a);
+}
+
 .trial-banner-cta {
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.3);
