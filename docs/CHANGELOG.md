@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## iOS v2.14.146 — 13 agosto 2026 · El chat, rediseñado, y comparte desde cualquier app
+
+- **Chat rediseñado**: las respuestas se leen como texto normal, sin globos, con enlaces tocables — más fácil de leer, sobre todo en modo oscuro.
+- **Comparte desde cualquier app**: un enlace, texto, foto, PDF, vídeo o audio compartido desde otra app se guarda al momento y aparece en el chat como una tarjeta, con opción de ponerle nombre o contexto.
+- **Tus tareas, por voz**: dicta varias instrucciones seguidas ("pospón esta y marca esa otra como hecha") y Fromly las ejecuta directamente.
+- **Agentes a demanda**: tus agentes programados ya se pueden lanzar desde el chat cuando quieras, y puedes decidir dónde guardan lo que generan.
+- **Desliza cualquier tarea** del chat para completarla, posponerla, moverla a la papelera o asignarle un contexto.
+- **iPad**: vista de tres columnas con agenda, timeline y un resumen del día siempre a mano junto al chat.
+
+---
+
 ## iOS v2.14.143 — 9 agosto 2026 · Ya puedes pasar a Pro desde el iPhone
 
 - **Compras dentro de la app**: Pro mensual, Pro anual, Lifetime y el paquete de 5.000.000 de tokens de IA se compran ya desde el propio iPhone, con tu Apple ID. Antes la pantalla de planes se quedaba vacía.
