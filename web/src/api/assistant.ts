@@ -37,6 +37,9 @@ export interface AssistantChatReply {
   list: AssistantListedTask[] | null
   agents: AssistantListedAgent[] | null
   linkedNodeId: string | null
+  /** true si el usuario pidió justo VER linkedNodeId — navegar sin esperar
+   *  un clic en "Abrir" (13 ago, paridad con iOS). */
+  autoOpen?: boolean
 }
 
 export async function assistantChat(

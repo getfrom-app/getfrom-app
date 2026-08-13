@@ -102,6 +102,23 @@ function AssistantAgentList({ items }: { items: AssistantListedAgent[] }) {
   )
 }
 
+function minuteOf(iso: string): number {
+  return Math.floor(new Date(iso).getTime() / 60000)
+}
+
+// Paridad con SessionDivider en AssistantChatView.swift (iOS) — mismo formato
+// "———— 8:01 ————", misma frecuencia (13 ago).
+function SessionDivider({ date }: { date: string }) {
+  const label = new Date(date).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
+  return (
+    <div className="v2-assistant-divider">
+      <span className="v2-assistant-divider-line" />
+      <span className="v2-assistant-divider-time">{label}</span>
+      <span className="v2-assistant-divider-line" />
+    </div>
+  )
+}
+
 function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boolean; onOption: (t: string) => void }) {
   const { t } = useTranslation()
   const visibleCreated = m.created.filter(c => !assistantStore.isTrashed(c.id))
@@ -134,8 +151,11 @@ function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boo
       {m.agents && m.agents.length > 0 && <AssistantAgentList items={m.agents} />}
 
       {m.linkedNodeId && (
+        // "→", no "›" — el "›" ya lo usa el prefijo de los mensajes del
+        // usuario (línea ~112) y se confundían al leer rápido (Alberto, 13
+        // ago: paridad con el mismo fix en AssistantChatView.swift).
         <button className="v2-chip" style={{ marginTop: 6 }} onClick={() => openNode(m.linkedNodeId!)}>
-          › {t('v2.chat.open', 'Abrir')}
+          → {t('v2.chat.open', 'Abrir')}
         </button>
       )}
 
@@ -177,6 +197,15 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [agentMenu])
+
+  // "Abre mi nota de hoy" navega sola, sin esperar un clic en "Abrir" —
+  // paridad con AssistantChatView.swift (13 ago).
+  useEffect(() => {
+    if (!chat.pendingAutoOpen) return
+    const target = chat.pendingAutoOpen
+    chat.pendingAutoOpen = null
+    openNode(target)
+  }, [chat.pendingAutoOpen])
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
 
@@ -368,9 +397,18 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                 {t('v2.chat.loadMore', 'Cargar más antiguos')}
               </button>
             )}
-            {messages.map((m, i) => (
-              <AssistantBubble key={m.id} m={m} isLast={i === messages.length - 1} onOption={doSend} />
-            ))}
+            {messages.map((m, i) => {
+              // Igual que en iOS (AssistantChatView.swift, SessionDivider):
+              // antes solo aparecía si habían pasado horas — ahora sale
+              // siempre al principio de la conversación y cada vez que entra
+              // un mensaje nuevo (Alberto, 13 ago), salvo que caiga en el
+              // mismo minuto que el anterior (pregunta + respuesta seguidas).
+              const showDivider = i === 0 || minuteOf(messages[i - 1].date) !== minuteOf(m.date)
+              return [
+                showDivider ? <SessionDivider key={`${m.id}-d`} date={m.date} /> : null,
+                <AssistantBubble key={m.id} m={m} isLast={i === messages.length - 1} onOption={doSend} />,
+              ]
+            })}
             {thinking && (
               <div className="v2-assistant-msg assistant">
                 <span className="v2-creating"><Icon name="sparkle" size={14} /> {t('v2.chat.thinking', 'Fromly está pensando…')}<span className="v2-creating-dots" /></span>

@@ -572,6 +572,12 @@
 .v2-assistant-prompt { opacity: 0.7; margin-right: 2px; }
 .v2-assistant-reply { color: var(--text-primary); line-height: 1.65; }
 
+/* Separador de hora — "———— 8:01 ————", siempre visible entre mensajes
+   (13 ago, paridad con SessionDivider en iOS). */
+.v2-assistant-divider { display: flex; align-items: center; gap: 10px; margin: 18px 0 14px; }
+.v2-assistant-divider-line { flex: 1; height: 1px; background: var(--v2-line); }
+.v2-assistant-divider-time { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.02em; white-space: nowrap; }
+
 /* Filas de tareas/agentes nombrados en la respuesta — el equivalente web al
    deslizar de iOS es clic derecho (menú ya existente) + botones de hover que
    ya trae TaskRow; esto es solo el puente para lo que aún no está

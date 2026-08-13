@@ -57,6 +57,10 @@ class AssistantStore {
   errorMessage: string | null = null
   doneIds: Set<string> = new Set()
   trashedIds: Set<string> = new Set()
+  /** Nodo a abrir sin que el usuario toque nada — paridad con
+   *  AssistantStore.swift `pendingAutoOpen` (13 ago). V2Chat lo consume
+   *  (navega y lo vuelve a null) en cuanto lo ve. */
+  pendingAutoOpen: string | null = null
 
   constructor() {
     this.load()
@@ -120,6 +124,7 @@ class AssistantStore {
         agents: reply.agents && reply.agents.length > 0 ? reply.agents : null,
       })
       for (const t of reply.list ?? []) this.doneIds.delete(t.id)
+      if (reply.autoOpen && reply.linkedNodeId) this.pendingAutoOpen = reply.linkedNodeId
     } catch (e) {
       this.errorMessage = e instanceof Error ? e.message : String(e)
       this.appendVisible({
