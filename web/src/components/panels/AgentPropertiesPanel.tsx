@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
-import { getAgentData, setAgentEnabled, syncAgentInstruction, listAllAgents } from '../../utils/agentesHelper'
+import { getAgentData, setAgentEnabled, setAgentConversational, syncAgentInstruction, listAllAgents } from '../../utils/agentesHelper'
 import { apiRequest, getToken, TokensError } from '../../api/client'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { scheduleNextLabel } from '../../utils/scheduleHelper'
@@ -276,6 +276,38 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
                 '⚠️ Activo pero NO se está ejecutando: tu plan gratis solo permite 1 agente en marcha a la vez y ya tienes otro más antiguo activo. Pásate a Pro o pausa el otro agente.')}
             </div>
           )}
+        </div>
+
+        {/* Conversacional — sin esto un agente creado a mano se quedaba
+            SIEMPRE en modo "una pasada": el cron tomaba su pregunta de
+            apertura como resultado final y la enseñaba como informe
+            terminado en vez de preguntar de verdad y esperar (Alberto, 13
+            ago: "el agente debía preguntarme... no tiene ningún sentido"). */}
+        <div>
+          <div className="rc-section-label" style={{ marginBottom: 6 }}>
+            {t('agents.conversationalTitle', 'Cómo responde')}
+          </div>
+          <button
+            onClick={() => setAgentConversational(nodeId, !data.conversational)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, width: '100%', minWidth: 0,
+              background: 'var(--bg-secondary)', border: '1px solid var(--border)',
+              borderRadius: 8, padding: '9px 11px', cursor: 'pointer', fontFamily: 'inherit',
+              textAlign: 'left',
+            }}
+          >
+            <span style={{ fontSize: 15 }}>{data.conversational ? '💬' : '📄'}</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
+                {data.conversational
+                  ? t('agents.conversationalOn', 'Conversacional — pregunta y espera tu respuesta')
+                  : t('agents.conversationalOff', 'Una pasada — escribe un documento y ya está')}
+              </div>
+              <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', marginTop: 2 }}>
+                {t('agents.conversationalHint', 'Toca para cambiar')}
+              </div>
+            </div>
+          </button>
         </div>
 
         {/* Programación — modal con hora/repetición/expiración (Alberto, 15 jul:

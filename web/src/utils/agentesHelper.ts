@@ -455,6 +455,29 @@ export function setAgentEnabled(nodeId: string, enabled: boolean) {
   } catch { /* ignore */ }
 }
 
+/**
+ * Marca un agente como conversacional (pregunta en el chat y espera la
+ * respuesta del usuario) o no (una sola pasada que vuelca un documento). Sin
+ * este toggle, un agente creado a mano se quedaba SIEMPRE en modo no
+ * conversacional aunque su instrucción fuera una pregunta — el cron lo
+ * ejecutaba una vez, tomaba la pregunta del propio modelo como "resultado" y
+ * la enseñaba como informe terminado (Alberto, 13 ago: "el agente debía
+ * preguntarme... no tiene ningún sentido"). También recalcula el disparador
+ * ("userMessage") con la misma regla que al crearlo, para que el cron abra
+ * un chat de verdad en vez de ejecutar una pasada.
+ */
+export function setAgentConversational(nodeId: string, conversational: boolean) {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  try {
+    const ed = JSON.parse(n.extraData || '{}')
+    ed._agentConversational = conversational ? '1' : ''
+    const instruction = typeof ed._agentSystemPrompt === 'string' ? ed._agentSystemPrompt : ''
+    ed._agentUserMessage = deriveAgentTrigger(instruction, conversational)
+    store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
+  } catch { /* ignore */ }
+}
+
 // ── Ensure ───────────────────────────────────────────────────────────────────
 
 let _ensureDone = false
