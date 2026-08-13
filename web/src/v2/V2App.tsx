@@ -260,7 +260,7 @@ export default function V2App() {
   useEffect(() => {
     if (!ready) return
     if (rightMode === 'dia' && !centerElementId) {
-      try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
+      try { const diaryId = getTodayDiaryUnderAgenda().id; setCenterElementId(diaryId); markAgentResultSeen(diaryId) } catch { /* noop */ }
     }
     // Fromly ofrece ampliar el perfil por su cuenta cada cierto tiempo. NO abre
     // nada: crea la conversación con `_pendingReply`, que la sidebar ya pinta como
@@ -319,7 +319,7 @@ export default function V2App() {
       // Reset duro a HOY: nota diaria en el centro + timeline remontado (su día
       // es estado LOCAL de PlannerPanel). Pulsarlo de nuevo siempre vuelve aquí,
       // cierre lo que cierre en el centro.
-      try { setCenterElementId(getTodayDiaryUnderAgenda().id) } catch { /* noop */ }
+      try { const diaryId = getTodayDiaryUnderAgenda().id; setCenterElementId(diaryId); markAgentResultSeen(diaryId) } catch { /* noop */ }
       setDiaResetKey(k => k + 1)
     } else if (dest === 'agenda') {
       // El centro ES el planificador (semana/mes/año), así que no hay elemento
