@@ -334,6 +334,13 @@ if (window.I18N_EXTRA) {
 // Los idiomas que ESTA página sabe hablar. Se calcula, no se fija a mano: así
 // pricing.html ofrece los 15 y las demás siguen ofreciendo 2.
 function availableLangs() { return Object.keys(TRANSLATIONS); }
+
+// Cada idioma en su propio idioma, que es como se busca en un selector.
+const LANG_NAMES = {
+  es: 'Español', en: 'English', fr: 'Français', de: 'Deutsch', it: 'Italiano',
+  pt: 'Português', nl: 'Nederlands', sv: 'Svenska', pl: 'Polski', tr: 'Türkçe',
+  ru: 'Русский', el: 'Ελληνικά', zh: '中文', ja: '日本語', ko: '한국어',
+};
 const LANGUAGES = availableLangs();
 
 function detectLang() {
@@ -386,8 +393,21 @@ function applyTranslations(lang) {
     if (v !== undefined) el.innerHTML = v;
   });
 
+  // El selector se rellena con los idiomas que ESTA página sabe hablar: dos en
+  // casi todas, quince en precios. Si ya trae <option> escritos a mano, se
+  // respetan (las páginas viejas siguen igual).
   const sel = document.getElementById('lang-select');
-  if (sel) sel.value = lang;
+  if (sel) {
+    if (!sel.options.length) {
+      for (const code of availableLangs()) {
+        const o = document.createElement('option');
+        o.value = code;
+        o.textContent = LANG_NAMES[code] || code.toUpperCase();
+        sel.appendChild(o);
+      }
+    }
+    sel.value = lang;
+  }
 }
 
 function setLang(lang) {

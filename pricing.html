@@ -21,6 +21,7 @@
     }
   })();
 </script>
+    <script src="i18n-pricing.js"></script>
     <script src="i18n.js"></script>
     <style>
         /* Pricing page overrides */
@@ -305,17 +306,17 @@
         </button>
                 <div class="nav-links">
             <a href="index.html#features" data-i18n="nav.features">Funciones</a>
-            <a href="index.html#magic">IA</a>
-            <a href="accesorios.html">Accesorios</a>
+            <a href="index.html#magic" data-i18n="pr.nav_ai">IA</a>
+            <a href="accesorios.html" data-i18n="pr.nav_addons">Accesorios</a>
             <a href="index.html#ai" data-i18n="nav.ai">Agentes</a>
             <a href="blog/index.html">Blog</a>
             <a href="pricing.html" data-i18n="nav.pricing">Precios</a>
-            <a href="changelog.html">Novedades</a>
+            <a href="changelog.html" data-i18n="pr.nav_changelog">Novedades</a>
             <a href="docs/index.html" data-i18n="nav.manual">Manual</a>
             <a href="support.html" data-i18n="nav.support">Soporte</a>
-            <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><option value="es">Español</option><option value="en">English</option></select>
-            <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'">Acceder</a>
-            <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/Fromly.dmg" class="btn-nav">Descargar para Mac</a>
+            <select class="lang-select" id="lang-select" onchange="setLang(this.value)" aria-label="Language"><!-- lo rellena i18n.js con los idiomas de esta página --></select>
+            <a href="#" class="btn-nav-outline" onclick="event.preventDefault();window.location.href=localStorage.getItem('from_access_token')? '/app/' : '/app/login'" data-i18n="pr.nav_login">Acceder</a>
+            <a href="https://github.com/getfrom-app/getfrom-app/releases/latest/download/Fromly.dmg" class="btn-nav" data-i18n="pr.nav_download">Descargar para Mac</a>
         </div>
     </div>
 </nav>
@@ -324,7 +325,7 @@
 <div class="page-hero">
     <span class="hero-badge" data-i18n="pr.badge">Precios</span>
     <h1 data-i18n-html="pr.title">Elige el plan que mejor<br>se adapta a ti</h1>
-    <p>Crea tu cuenta gratis. Sin tarjeta de crédito.</p>
+    <p data-i18n="pr.subtitle">Crea tu cuenta gratis. Sin tarjeta de crédito.</p>
 
 </div>
 
@@ -479,10 +480,10 @@
                 <thead>
                     <tr>
                         <th style="width:35%; text-align:left;" data-i18n="pr.t_feature">Función</th>
-                        <th>Prueba</th>
-                        <th>Pro Mensual</th>
-                        <th class="col-featured">Pro Anual</th>
-                        <th>Lifetime</th>
+                        <th data-i18n="pr.trial_name">Prueba</th>
+                        <th data-i18n="pr.monthly_name">Pro Mensual</th>
+                        <th class="col-featured" data-i18n="pr.annual_name">Pro Anual</th>
+                        <th data-i18n="pr.life_name">Lifetime</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -610,7 +611,7 @@
             <h4 data-i18n="footer.col_product">Producto</h4>
             <a href="index.html#features" data-i18n="footer.link_features">Funciones</a>
             <a href="pricing.html" data-i18n="footer.link_pricing">Precios</a>
-            <a href="changelog.html">Novedades</a>
+            <a href="changelog.html" data-i18n="pr.nav_changelog">Novedades</a>
             <a href="blog/index.html">Blog</a>
             <a href="index.html#download" data-i18n="footer.link_download">Descargar</a>
         </div>
