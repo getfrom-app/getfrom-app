@@ -23,7 +23,7 @@ import { getOrCreateTagsRoot } from './tagsHelper'
 import { getOrCreatePromptsRoot, getPromptsRoot } from './promptsHelper'
 import { getAgentesNode } from './agentesHelper'
 
-export const HOME_ROOT_NAME = '🏠 From'
+export const HOME_ROOT_NAME = '🏠 Fromly'
 
 /** Raíz 🏠 From si existe (no la crea). Para usar en render. */
 export function findHomeRoot(): Node | undefined {
@@ -60,6 +60,13 @@ function findPlantillasRoot(): Node | undefined {
  */
 export function ensureHomeRootAndReparent(): void {
   const home = getOrCreateHomeRoot()
+  // Nombre antiguo, de antes de que la app se llamara Fromly — renombra el
+  // nodo YA creado (el id determinista es el mismo, cambiar solo la
+  // constante no corrige lo que ya existe en el dato) (Alberto, 14 ago:
+  // "pone from lo cual es incorrecto. nombre antiguo").
+  if (home.text.trim() === '🏠 From' || home.text.trim() === 'From') {
+    store.updateNode(home.id, { text: HOME_ROOT_NAME })
+  }
 
   // Agenda/Contexto/Prompts se CREAN si faltan (deben existir siempre como raíces
   // visibles, aunque la cuenta no los haya generado todavía). Agentes y Plantillas
