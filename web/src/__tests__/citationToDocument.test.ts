@@ -25,7 +25,7 @@ function setup() {
     extraData: {
       _doc: '1', _docSelection: '1', _docSourceId: doc.id, _docParagraphId: 'p1',
       _docText: 'Alejandro Mantecón\n\nEmpezó en marzo', _ctxRefs: [ctx.id],
-    },
+    } as unknown as Record<string, string>,   // _ctxRefs es un array: createNode lo declara string, el dato real no lo es
   })
   store.updateNode(cita.id, { body: '<blockquote><p>Alejandro Mantecón</p><p>Empezó en marzo</p></blockquote>' })
   return { ctx, doc, cita }

@@ -53,15 +53,15 @@ const TRANSLATIONS = {
 
     /* ── pricing.html ── */
     "pricing.meta_title":   "Precios — Fromly",
-    "pricing.meta_desc":    "Elige el plan que mejor se adapta a ti. Fromly gratis para siempre, Pro desde €7/mes, o Lifetime por €149.",
+    "pricing.meta_desc":    "Elige el plan que mejor se adapta a ti. 15 días de prueba, Pro desde €7/mes, o Lifetime por €149.",
     "pricing.hero_badge":   "Precios",
     "pricing.hero_title":   "Elige el plan que mejor se adapta a ti",
-    "pricing.hero_subtitle": "Crea tu cuenta gratis. Sin tarjeta de crédito.",
+    "pricing.hero_subtitle": "Empieza con 15 días de todo. Sin tarjeta de crédito.",
 
     "pricing.comparison_title": "Comparativa de planes",
     "pricing.faq_title": "Preguntas frecuentes",
     "pricing.cta_title": "Crea tu cuenta gratis",
-    "pricing.cta_body":  "Sin tarjeta de crédito. Sin límite de tiempo. Decide después.",
+    "pricing.cta_body":  "15 días con todo abierto. Sin tarjeta de crédito. Decide después.",
 
     /* ── support.html ── */
     "support.meta_title": "Soporte — Fromly",
@@ -209,15 +209,15 @@ const TRANSLATIONS = {
 
     /* ── pricing.html ── */
     "pricing.meta_title":   "Pricing — Fromly",
-    "pricing.meta_desc":    "Choose the plan that works best for you. Fromly free forever, Pro from €7/mo, or Lifetime for €149.",
+    "pricing.meta_desc":    "Choose the plan that works best for you. 15-day trial, Pro from €7/mo, or Lifetime for €149.",
     "pricing.hero_badge":   "Pricing",
     "pricing.hero_title":   "Choose the plan that works best for you",
-    "pricing.hero_subtitle": "Create your free account. No credit card required.",
+    "pricing.hero_subtitle": "Start with 15 days of everything. No credit card required.",
 
     "pricing.comparison_title": "Plan comparison",
     "pricing.faq_title": "Frequently asked questions",
     "pricing.cta_title": "Create your free account",
-    "pricing.cta_body":  "No credit card. No time limit. Decide later.",
+    "pricing.cta_body":  "15 days with everything open. No credit card. Decide later.",
 
     /* ── support.html ── */
     "support.meta_title": "Support — Fromly",

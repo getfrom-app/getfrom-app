@@ -111,13 +111,31 @@ export async function login(email: string, password: string) {
     { method: 'POST', body: JSON.stringify({ email, password }) }
   )
   setTokens(data.accessToken, data.refreshToken)
+  // Las cuentas creadas antes del 13 ago 2026 tienen locale NULL y reciben todo
+  // el correo en español. Al entrar se corrigen solas.
+  syncLocale()
   return data
 }
 
+/** Guarda el idioma de la interfaz en la cuenta (decide el idioma de los correos). */
+export function syncLocale(): void {
+  let lang = 'en'
+  try { lang = localStorage.getItem('fromly-lang') || navigator.language?.slice(0, 2) || 'en' }
+  catch { lang = navigator.language?.slice(0, 2) || 'en' }
+  apiRequest('/auth/me/locale', { method: 'PUT', body: JSON.stringify({ locale: lang }) }).catch(() => {})
+}
+
 export async function register(email: string, password: string) {
+  // El idioma va en el registro: es el que decide en qué idioma llegan la
+  // bienvenida y toda la secuencia de la prueba. Sin esto el servidor guardaba
+  // NULL y los correos salían siempre en español (13 ago 2026).
+  const locale = (() => {
+    try { return localStorage.getItem('fromly-lang') || navigator.language?.slice(0, 2) || 'en' }
+    catch { return navigator.language?.slice(0, 2) || 'en' }
+  })()
   const data = await apiRequest<{ accessToken: string; refreshToken: string; user: { id: string; email: string } }>(
     '/auth/register',
-    { method: 'POST', body: JSON.stringify({ email, password }) }
+    { method: 'POST', body: JSON.stringify({ email, password, locale }) }
   )
   setTokens(data.accessToken, data.refreshToken)
   return data
