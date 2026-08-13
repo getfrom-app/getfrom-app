@@ -47,21 +47,24 @@
   -webkit-font-smoothing: antialiased;
 }
 
-/* Dark mode */
+/* Dark mode — paleta copiada de la terminal favorita de Alberto (13 ago 2026):
+   navy oscuro de fondo, texto blanco suave, texto secundario en el teal/cian
+   de sus etiquetas ("iOS Credentials", "Project"…). Antes era un gris neutro
+   sin personalidad; esta es la que de verdad usa a diario. */
 [data-theme="dark"] {
-  --bg-primary:   #1a1a1a;
-  --bg-secondary: #222222;
-  --bg-tertiary:  #2a2a2a;
-  --bg-hover:     #303030;
-  --bg-active:    #383838;
+  --bg-primary:   #1b2130;
+  --bg-secondary: #222939;
+  --bg-tertiary:  #2a3244;
+  --bg-hover:     #313a4d;
+  --bg-active:    #3a4459;
 
   --border:       rgba(255,255,255,0.08);
   --border-focus: rgba(255,255,255,0.18);
 
-  --text-primary:   #e8e8e8;
-  --text-secondary: #888;
-  --text-tertiary:  #555;
-  --text-accent:    #8FB4D9;
+  --text-primary:   #e7ebf1;
+  --text-secondary: #6fb8cc;
+  --text-tertiary:  #5b6577;
+  --text-accent:    #6fb8cc;
 
   --success:  #4ade80;
   --warning:  #fbbf24;

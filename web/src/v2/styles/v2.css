@@ -54,10 +54,12 @@
 }
 
 [data-theme="dark"] {
-  --v2-surface:        #1e1e1d;
-  --v2-surface-panel:  #1a1a19;
-  --v2-surface-sunken: #171716;
-  --v2-elevated:       #262625;
+  /* Misma paleta navy que el resto de la app (styles/index.css) — terminal
+     favorita de Alberto, 13 ago 2026. */
+  --v2-surface:        #1c2230;
+  --v2-surface-panel:  #191f2c;
+  --v2-surface-sunken: #161b27;
+  --v2-elevated:       #262f42;
 
   --v2-line:           rgba(255,255,255,0.07);
   --v2-line-strong:    rgba(255,255,255,0.13);
@@ -565,8 +567,18 @@
 /* Chat del asistente (motor /assistant/chat) — texto plano, sin globos ni
    avatar, igual que el chat de iOS (Alberto, 13 ago: "hazlo como Claude
    Code, simplemente texto"). El mensaje del usuario lleva un «›» delante en
-   el color de acento en vez de fondo propio. */
-.v2-assistant-inner { max-width: 720px; margin: 0 auto; padding: 0 20px; }
+   el color de acento en vez de fondo propio.
+
+   Tipografía monoespaciada (13 ago 2026, Alberto: "copia el tipo de letra
+   para el chat, ya sea claro u oscuro, me gusta mucho" — sobre su terminal
+   de Mac). Mismo stack que ya usaban los bloques de código del chat
+   (`--chat-font` centraliza el valor); solo el HILO + el composer, el resto
+   de la app sigue en Inter. */
+.v2-assistant-inner {
+  max-width: 720px; margin: 0 auto; padding: 0 20px;
+  --chat-font: 'SF Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, Menlo, monospace;
+  font-family: var(--chat-font);
+}
 .v2-assistant-msg { margin-bottom: 20px; }
 .v2-assistant-user-line { color: var(--text-accent); font-weight: 500; line-height: 1.55; }
 .v2-assistant-prompt { opacity: 0.7; margin-right: 2px; }
@@ -577,6 +589,9 @@
 .v2-assistant-divider { display: flex; align-items: center; gap: 10px; margin: 18px 0 14px; }
 .v2-assistant-divider-line { flex: 1; height: 1px; background: var(--v2-line); }
 .v2-assistant-divider-time { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.02em; white-space: nowrap; }
+/* Línea "No leído" (13 ago 2026) — mismo layout que el divisor de hora, en el color de acento. */
+.v2-assistant-divider-unread .v2-assistant-divider-line { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+.v2-assistant-divider-unread .v2-assistant-divider-time { color: var(--accent); font-weight: 600; }
 
 /* Filas de tareas/agentes nombrados en la respuesta — el equivalente web al
    deslizar de iOS es clic derecho (menú ya existente) + botones de hover que
@@ -670,7 +685,9 @@
 }
 .v2-composer textarea {
   flex: 1; border: none; outline: none; resize: none; background: transparent;
-  font-family: inherit; font-size: 14.5px; line-height: 1.55; color: var(--text-primary);
+  /* Misma tipografía monoespaciada que el hilo (13 ago 2026) — ver .v2-assistant-inner. */
+  font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, Menlo, monospace;
+  font-size: 14.5px; line-height: 1.55; color: var(--text-primary);
   max-height: 200px; min-height: 26px; padding: 3px 0;
 }
 .v2-composer textarea::placeholder { color: var(--text-tertiary); }

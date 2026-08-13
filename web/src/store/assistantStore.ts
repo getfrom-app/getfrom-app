@@ -136,6 +136,32 @@ class AssistantStore {
     this.save(); this.notify()
   }
 
+  // ── No leído (13 ago 2026, estilo WhatsApp) ──────────────────────────────
+  // Línea "No leído" sobre el primer mensaje del asistente que llegó después
+  // de la última vez que el usuario tuvo el chat abierto. Puramente local
+  // (no sincroniza entre dispositivos, como el resto de UI-state de este
+  // store) — paridad AssistantStore.swift lastReadAt.
+  private get lastReadAt(): number {
+    return Number(localStorage.getItem('assistant.web.lastRead') || 0)
+  }
+  private set lastReadAt(ts: number) {
+    localStorage.setItem('assistant.web.lastRead', String(ts))
+  }
+
+  /** Id del primer mensaje del asistente no leído, o null si no hay ninguno. */
+  get firstUnreadId(): string | null {
+    const cutoff = this.lastReadAt
+    if (!cutoff) return null
+    const m = this.messages.find(m => m.role === 'assistant' && new Date(m.date).getTime() > cutoff)
+    return m ? m.id : null
+  }
+
+  /** Marca todo lo visto hasta ahora como leído — la línea desaparece. */
+  markRead() {
+    this.lastReadAt = Date.now()
+    this.notify()
+  }
+
   // ── Inbox: brief, cierre del día, recordatorios, informes de agentes ─────
 
   private get lastInboxDate(): Date | null {

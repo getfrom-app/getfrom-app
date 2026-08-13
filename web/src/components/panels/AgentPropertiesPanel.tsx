@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { useStore, store } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
-import { getAgentData, setAgentEnabled, syncAgentUserMessage, listAllAgents } from '../../utils/agentesHelper'
+import { getAgentData, setAgentEnabled, syncAgentInstruction, listAllAgents } from '../../utils/agentesHelper'
 import { apiRequest, getToken, TokensError } from '../../api/client'
 import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
 import { scheduleNextLabel } from '../../utils/scheduleHelper'
@@ -78,7 +78,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
     const n = store.getNode(nodeId)
     if (!n || !data) return
     try {
-      const userMessage = syncAgentUserMessage(nodeId)  // la nota = instrucción
+      const { systemPrompt, userMessage } = syncAgentInstruction(nodeId)  // la nota = instrucción
       const ed = JSON.parse((store.getNode(nodeId)?.extraData) || '{}')
       ed._agentSchedule = schedule
       ed._agentScheduleExpiresAt = expiresAt
@@ -90,7 +90,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
         method: 'POST',
         body: JSON.stringify({
           nodeId, agentId: data.agentId, agentTitle: n.text,
-          systemPrompt: data.systemPrompt, userMessage,
+          systemPrompt, userMessage,
           schedule, enabled: data.enabled,
           expiresAt: expiresAt || undefined,
         }),
@@ -115,12 +115,12 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
     }
     setAgentEnabled(nodeId, next)
     if (data.schedule && isLoggedIn) {
-      const userMessage = syncAgentUserMessage(nodeId)
+      const { systemPrompt, userMessage } = syncAgentInstruction(nodeId)
       apiRequest('/agents/schedule', {
         method: 'POST',
         body: JSON.stringify({
           nodeId, agentId: data.agentId, agentTitle: node!.text,
-          systemPrompt: data.systemPrompt, userMessage,
+          systemPrompt, userMessage,
           schedule: data.schedule, enabled: next,
           expiresAt: data.scheduleExpiresAt || undefined,
         }),
@@ -130,7 +130,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
 
   async function handleRun() {
     if (running || !isLoggedIn || !data) return
-    const userMessage = syncAgentUserMessage(nodeId)  // ejecutar lo que dice la nota
+    const { systemPrompt, userMessage } = syncAgentInstruction(nodeId)  // ejecutar lo que dice la nota
     if (!userMessage) { setError(isEn ? 'Write an instruction in the note first' : 'Escribe una instrucción en la nota primero'); return }
     setRunning(true); setError(null); setSaved(false)
 
@@ -167,7 +167,7 @@ export default function AgentPropertiesPanel({ nodeId, onBack }: Props) {
         method: 'POST',
         body: JSON.stringify({
           agentId: data.agentId, agentTitle: node!.text,
-          systemPrompt: data.systemPrompt, firstUserMessage: userMessage,
+          systemPrompt, firstUserMessage: userMessage,
           modelTier: 'fast', nodeId,
         }),
       })

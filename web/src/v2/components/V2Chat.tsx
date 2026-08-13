@@ -18,7 +18,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { renderChatContent } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
-import { listAllPrompts, resolvePrompt } from '../../utils/promptsHelper'
+import { listAllPromptsGrouped, resolvePrompt, createPromptUnder, listPromptGroups, getOrCreatePromptsRoot, DEFAULT_PROMPT_GROUP } from '../../utils/promptsHelper'
 import { listAllAgents } from '../../utils/agentesHelper'
 import { displayTitle } from '../../utils/displayText'
 import { isMentionable } from '../elementKind'
@@ -119,6 +119,20 @@ function SessionDivider({ date }: { date: string }) {
   )
 }
 
+// Línea "No leído" (13 ago 2026, estilo WhatsApp/Telegram) — paridad iOS
+// UnreadDivider. Se retira sola a los pocos segundos de abrir el chat
+// (assistantStore.markRead, ver useEffect más abajo).
+function UnreadDivider() {
+  const { t } = useTranslation()
+  return (
+    <div className="v2-assistant-divider v2-assistant-divider-unread">
+      <span className="v2-assistant-divider-line" />
+      <span className="v2-assistant-divider-time">{t('v2.chat.unread', 'No leído')}</span>
+      <span className="v2-assistant-divider-line" />
+    </div>
+  )
+}
+
 function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boolean; onOption: (t: string) => void }) {
   const { t } = useTranslation()
   const visibleCreated = m.created.filter(c => !assistantStore.isTrashed(c.id))
@@ -179,6 +193,13 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   const [dragOver, setDragOver] = useState(false)
   const [promptMenu, setPromptMenu] = useState(false)
   const [agentMenu, setAgentMenu] = useState(false)
+  // Formulario de "Nuevo prompt" embebido en el propio desplegable — antes solo
+  // mandaba un mensaje al chat pidiéndole a Fromly que lo redactara; ahora el
+  // usuario puede crear su prompt (con carpeta) directamente aquí (13 ago 2026).
+  const [newPromptOpen, setNewPromptOpen] = useState(false)
+  const [newPromptTitle, setNewPromptTitle] = useState('')
+  const [newPromptGroup, setNewPromptGroup] = useState('')
+  const [newPromptContent, setNewPromptContent] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const recognitionRef = useRef<unknown>(null)
   const promptMenuRef = useRef<HTMLDivElement>(null)
@@ -217,6 +238,17 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   // registro completo de lo que el asistente ha dicho por su cuenta.
   useEffect(() => {
     assistantStore.fetchInbox().catch(() => {})
+  }, [])
+
+  // Línea "No leído" (13 ago 2026, estilo WhatsApp) — se congela el id al
+  // ABRIR el chat (no en cada render: si se recalculara en vivo, la línea
+  // desaparecería sola en cuanto markRead() corriera). Se marca todo como
+  // leído poco después de abrir — igual que WhatsApp, "abrir el chat" ya
+  // cuenta como haberlo visto, sin esperar más gesto del usuario.
+  const [unreadId] = useState(() => assistantStore.firstUnreadId)
+  useEffect(() => {
+    const t = setTimeout(() => assistantStore.markRead(), 1500)
+    return () => clearTimeout(t)
   }, [])
 
   // Al abrir, directo al final del hilo — sin depender de que cambie el
@@ -398,14 +430,16 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               </button>
             )}
             {messages.map((m, i) => {
-              // Igual que en iOS (AssistantChatView.swift, SessionDivider):
-              // antes solo aparecía si habían pasado horas — ahora sale
-              // siempre al principio de la conversación y cada vez que entra
-              // un mensaje nuevo (Alberto, 13 ago), salvo que caiga en el
-              // mismo minuto que el anterior (pregunta + respuesta seguidas).
-              const showDivider = i === 0 || minuteOf(messages[i - 1].date) !== minuteOf(m.date)
+              // Igual que en iOS (AssistantChatView.swift, gapMinutes): antes
+              // bastaba cruzar un borde de minuto (p.ej. 14:59:59→15:00:01)
+              // para partir una interacción activa a la mitad. Ahora hace
+              // falta un hueco real de 2 minutos — no separa nada mientras el
+              // usuario está interactuando de verdad (Alberto, 13 ago).
+              const showDivider = i === 0 || minuteOf(m.date) - minuteOf(messages[i - 1].date) >= 2
               return [
-                showDivider ? <SessionDivider key={`${m.id}-d`} date={m.date} /> : null,
+                m.id === unreadId
+                  ? <UnreadDivider key={`${m.id}-u`} />
+                  : (showDivider ? <SessionDivider key={`${m.id}-d`} date={m.date} /> : null),
                 <AssistantBubble key={m.id} m={m} isLast={i === messages.length - 1} onOption={doSend} />,
               ]
             })}
@@ -429,25 +463,74 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               </div>
             )}
             <div style={{ position: 'relative' }} ref={promptMenuRef}>
-              <button className="v2-iconbtn" title={t('v2.chat.promptsTitle', 'Prompts')} onClick={() => setPromptMenu(o => !o)}><Icon name="prompt" /></button>
-              {promptMenu && (
-                <div className="v2-doc-menu v2-doc-menu-up">
-                  {listAllPrompts().map(p => (
-                    <button key={p.id} onClick={() => {
-                      const text = resolvePrompt(p.id, { currentNodeId: currentNodeId || undefined })
-                      doSend(text)
-                      setPromptMenu(false)
-                    }}><Icon name="prompt" size={14} /> {p.text || t('common.noTitle', 'Sin título')}</button>
+              <button className="v2-iconbtn" title={t('v2.chat.promptsTitle', 'Prompts')} onClick={() => { setPromptMenu(o => !o); setNewPromptOpen(false) }}><Icon name="prompt" /></button>
+              {promptMenu && !newPromptOpen && (
+                <div className="v2-doc-menu v2-doc-menu-up" style={{ maxHeight: 320, overflowY: 'auto' }}>
+                  {listAllPromptsGrouped().map(({ group, prompts }) => (
+                    <div key={group}>
+                      <div className="v2-usermenu-label" style={{ padding: '6px 10px 2px', fontWeight: 600 }}>{group}</div>
+                      {prompts.map(p => (
+                        <button key={p.id} onClick={() => {
+                          const text = resolvePrompt(p.id, { currentNodeId: currentNodeId || undefined })
+                          doSend(text)
+                          setPromptMenu(false)
+                        }}><Icon name="prompt" size={14} /> {p.text || t('common.noTitle', 'Sin título')}</button>
+                      ))}
+                    </div>
                   ))}
-                  {listAllPrompts().length === 0 && (
+                  {listAllPromptsGrouped().length === 0 && (
                     <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.noPrompts', 'Sin prompts todavía')}</div>
                   )}
                   <div className="v2-doc-menu-sep" />
-                  <button onClick={() => {
-                    setPromptMenu(false)
-                    assistantStore.addNotice(t('v2.chat.askNewPrompt', '¿Qué prompt quieres crear? Cuéntame para qué lo vas a usar y qué debe decir, y te preparo un borrador.'))
-                    taRef.current?.focus()
-                  }}><Icon name="plus" size={14} /> {t('v2.chat.newPrompt', 'Nuevo prompt')}</button>
+                  <button onClick={() => { setNewPromptOpen(true); setNewPromptTitle(''); setNewPromptGroup(''); setNewPromptContent('') }}>
+                    <Icon name="plus" size={14} /> {t('v2.chat.newPrompt', 'Nuevo prompt')}
+                  </button>
+                </div>
+              )}
+              {promptMenu && newPromptOpen && (
+                <div className="v2-doc-menu v2-doc-menu-up" style={{ width: 260, padding: 10, display: 'flex', flexDirection: 'column', gap: 6 }} onKeyDown={e => e.stopPropagation()}>
+                  <input
+                    autoFocus
+                    className="ctx-pick-search"
+                    placeholder={t('v2.chat.newPromptTitle', 'Título del prompt')}
+                    value={newPromptTitle}
+                    onChange={e => setNewPromptTitle(e.target.value)}
+                  />
+                  <input
+                    className="ctx-pick-search"
+                    list="v2-prompt-groups"
+                    placeholder={t('v2.chat.newPromptGroup', 'Carpeta (opcional)')}
+                    value={newPromptGroup}
+                    onChange={e => setNewPromptGroup(e.target.value)}
+                  />
+                  <datalist id="v2-prompt-groups">
+                    {listPromptGroups().map(g => <option key={g} value={g} />)}
+                  </datalist>
+                  <textarea
+                    placeholder={t('v2.chat.newPromptContent', 'Qué debe decir/hacer al enviarlo…')}
+                    value={newPromptContent}
+                    onChange={e => setNewPromptContent(e.target.value)}
+                    rows={4}
+                    style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: 12.5, padding: '6px 8px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+                  />
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 2 }}>
+                    <button className="v2-usermenu-label" style={{ padding: '4px 8px' }} onClick={() => setNewPromptOpen(false)}>{t('common.cancel', 'Cancelar')}</button>
+                    <button
+                      disabled={!newPromptTitle.trim()}
+                      onClick={() => {
+                        const root = getOrCreatePromptsRoot()
+                        const created = createPromptUnder({
+                          parentId: root.id,
+                          label: newPromptTitle,
+                          group: newPromptGroup.trim() || DEFAULT_PROMPT_GROUP,
+                          content: newPromptContent,
+                        })
+                        setPromptMenu(false); setNewPromptOpen(false)
+                        window.dispatchEvent(new CustomEvent('from:open-artifact', { detail: { nodeId: created.id } }))
+                      }}
+                      style={{ padding: '5px 10px', borderRadius: 6, border: 'none', background: 'var(--accent)', color: '#fff', fontSize: 12.5, cursor: newPromptTitle.trim() ? 'pointer' : 'default', opacity: newPromptTitle.trim() ? 1 : 0.5 }}
+                    >{t('common.create', 'Crear')}</button>
+                  </div>
                 </div>
               )}
             </div>

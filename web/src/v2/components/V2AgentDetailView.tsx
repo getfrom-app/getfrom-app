@@ -1,22 +1,25 @@
 // Detalle de un AGENTE en la columna derecha de Fromly 2.0.
-// La ventana central es el CONTENIDO real del agente — el prompt de usuario se
-// guarda como UN hijo-DOCUMENTO del nodo agente (createAgentUnder/readAgentNote/
-// syncAgentUserMessage/getOrCreateAgentInstructionDoc en agentesHelper.ts), y se
+// La ventana central es el CONTENIDO real del agente — UNA instrucción única
+// (persona + tarea; para conversacionales, termina en la pregunta de apertura),
+// guardada como UN hijo-DOCUMENTO del nodo agente (createAgentUnder/readAgentNote/
+// syncAgentInstruction/getOrCreateAgentInstructionDoc en agentesHelper.ts), y se
 // edita con el mismo editor de documento que cualquier nota (DocEditor, con
 // formato/párrafos) — NUNCA con Outliner, que siempre muestra viñetas de lista
-// aunque solo haya un hijo. Las propiedades reales (activar/pausar, ejecutar
-// ahora, programación) viven en AgentPropertiesPanel de v1, reutilizado SIN
-// reescribir.
+// aunque solo haya un hijo. Antes había DOS campos separados ("Instrucción del
+// agente" + "Cómo debe responder") — fusionados el 13 ago 2026 (Alberto: "no
+// tiene sentido, unifica eso en un solo campo"); `syncAgentInstruction` deriva
+// internamente los dos campos que consume la IA (ver cabecera de agentesHelper.ts).
+// Las propiedades reales (activar/pausar, ejecutar ahora, programación) viven en
+// AgentPropertiesPanel de v1, reutilizado SIN reescribir.
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import {
-  getAgentData, getOrCreateAgentInstructionDoc, syncAgentUserMessage,
+  getAgentData, getOrCreateAgentInstructionDoc, syncAgentInstruction,
   getAgentReferencedElements, addAgentReferencedElement, removeAgentReferencedElement,
 } from '../../utils/agentesHelper'
 import { trashNode } from '../../utils/papeleraHelper'
-import { apiRequest, getToken } from '../../api/client'
 import DocEditor from '../../components/views/DocEditor'
 import DocEditorBoundary from '../../components/DocEditorBoundary'
 import DocInspector from '../../components/views/DocInspector'
@@ -80,44 +83,17 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
   // render — mismo patrón que getOrCreateContainerNotes en V2ContextView).
   const docNode = useMemo(() => getOrCreateAgentInstructionDoc(node.id), [node.id])
 
-  // Mantiene _agentUserMessage (lo que ejecuta el cron del servidor) sincronizado
-  // con lo que el usuario edita en el documento-instrucción (mismo patrón que
-  // AgentPropertiesPanel.handleRun/setSchedule, aquí en cada cambio del árbol).
-  useEffect(() => { syncAgentUserMessage(node.id) }, [node.id, s.nodesVersion])
+  // Mantiene _agentSystemPrompt/_agentUserMessage (lo que ejecuta el cron del
+  // servidor) sincronizados con lo que el usuario edita en el documento-instrucción
+  // (mismo patrón que AgentPropertiesPanel.handleRun/setSchedule, aquí en cada
+  // cambio del árbol).
+  useEffect(() => { syncAgentInstruction(node.id) }, [node.id, s.nodesVersion])
 
   // Elementos que el agente debe tener SIEMPRE en cuenta (p.ej. Morning Formula
   // como guía de vida) — se inyectan en cada respuesta vía originAgentBlock en
   // aiChatStore.ts, no solo se mencionan.
   const referencedIds = useMemo(() => getAgentReferencedElements(node.id), [node.id, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   const [refPickerOpen, setRefPickerOpen] = useState(false)
-
-  // «Cómo debe responder» — _agentSystemPrompt, ANTES invisible en la UI (solo se
-  // veía la pregunta de apertura en «Instrucción del agente») — el usuario no podía
-  // ver ni editar el formato de respuesta (Alberto, 15 jul: "si no tiene esas
-  // instrucciones no va a saber cómo contestarme"). Editable directamente, igual
-  // que KnowledgeBlock en ContextPropertiesPanel.tsx.
-  const [systemPrompt, setSystemPrompt] = useState(data?.systemPrompt || '')
-  const [spFocused, setSpFocused] = useState(false)
-  useEffect(() => { if (!spFocused) setSystemPrompt(data?.systemPrompt || '') }, [data?.systemPrompt, spFocused])
-  const commitSystemPrompt = () => {
-    setSpFocused(false)
-    if (!data || systemPrompt.trim() === data.systemPrompt.trim()) return
-    const ed = JSON.parse(node.extraData || '{}')
-    ed._agentSystemPrompt = systemPrompt
-    store.updateNode(node.id, { extraData: JSON.stringify(ed) })
-    // Mismo patrón que AgentPropertiesPanel: sync al servidor si ya hay schedule.
-    if (getToken() && data.schedule) {
-      apiRequest('/agents/schedule', {
-        method: 'POST',
-        body: JSON.stringify({
-          nodeId: node.id, agentId: data.agentId, agentTitle: node.text,
-          systemPrompt, userMessage: data.userMessage,
-          schedule: data.schedule, enabled: data.enabled,
-          expiresAt: data.scheduleExpiresAt || undefined,
-        }),
-      }).catch(() => { /* silencioso */ })
-    }
-  }
 
   return (
     <div style={{ padding: '4px 18px 18px' }}>
@@ -151,40 +127,24 @@ export default function V2AgentDetailView({ node, onSelectCtx, onOpenElementsFil
           guardan por defecto en este mismo contexto (ver openAgentConversation). */}
       <V2NoteContext node={node} onSelectCtx={onSelectCtx} />
 
-      {/* Prompt del agente — UN hijo-documento del propio nodo agente ES la
-          instrucción (createAgentUnder/readAgentNote/getOrCreateAgentInstructionDoc),
+      {/* Instrucción única del agente — UN hijo-documento del propio nodo agente ES
+          la instrucción (createAgentUnder/readAgentNote/getOrCreateAgentInstructionDoc),
           editado con el editor de documento normal (párrafos, formato), NUNCA con
-          viñetas de outliner. Esto es SOLO la pregunta/tarea de apertura — el
-          formato de respuesta va en el bloque de abajo. */}
+          viñetas de outliner. Persona + tarea en el mismo sitio (fusionado 13 ago
+          2026 — antes eran dos campos, "Instrucción del agente" y "Cómo debe
+          responder"); para agentes conversacionales, termina con la pregunta de
+          apertura (`deriveAgentTrigger` la recupera automáticamente). */}
       <div style={{ marginTop: 10 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('agents.promptLabel', 'Instrucción del agente')}</div>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('agents.promptLabel', 'Instrucción')}</div>
+        <div style={{ fontSize: 11.5, color: 'var(--text-tertiary)', padding: '0 0 6px', lineHeight: 1.4 }}>
+          {data?.conversational
+            ? t('agents.instructionHintConversational', 'Cómo debe comportarse y, al final, la pregunta con la que abre la conversación.')
+            : t('agents.instructionHint', 'Cómo debe comportarse y qué debe entregar cada vez que se ejecuta.')}
+        </div>
         <div className="v2-note-formatbar"><DocInspector bar /></div>
         <DocEditorBoundary compact>
           <DocEditor node={docNode} compact registerActive autofocus={false} />
         </DocEditorBoundary>
-      </div>
-
-      {/* Cómo debe responder — _agentSystemPrompt. Antes de este cambio no se veía
-          en ningún sitio de la UI, aunque SÍ se usaba internamente (originAgentBlock
-          en aiChatStore.ts) para que Fromly sepa cómo estructurar su respuesta tras
-          la primera pregunta de un agente conversacional. */}
-      <div style={{ marginTop: 18 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('agents.responseFormatLabel', 'Cómo debe responder')}</div>
-        <textarea
-          value={systemPrompt}
-          placeholder={t('agents.responseFormatPlaceholder', 'Formato y estilo de la respuesta que debe dar el agente (p. ej. secciones, tono, longitud)…')}
-          onFocus={() => setSpFocused(true)}
-          onChange={e => setSystemPrompt(e.target.value)}
-          onBlur={commitSystemPrompt}
-          rows={Math.max(3, Math.min(14, systemPrompt.split('\n').length + 1))}
-          style={{
-            width: '100%', minWidth: 0, maxWidth: '100%', resize: 'none',
-            fontSize: 13, lineHeight: 1.5,
-            color: 'var(--text-primary)', background: 'var(--bg-secondary)',
-            border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px',
-            fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box',
-          }}
-        />
       </div>
 
       {/* Elementos a tener en cuenta — el agente los lee y los usa en TODA la

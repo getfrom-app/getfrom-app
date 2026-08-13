@@ -7,7 +7,7 @@ import { store } from './nodeStore'
 import type { ExecutedAction } from './aiChatStore'
 import { ensureDayPath } from '../utils/agendaHelper'
 import { pushEventToGcal } from '../utils/gcalNodesSync'
-import { createAgentUnder, getAgentData, setAgentEnabled, isAgentNode } from '../utils/agentesHelper'
+import { createAgentUnder, getAgentData, setAgentEnabled, isAgentNode, syncAgentInstruction } from '../utils/agentesHelper'
 import { createPromptUnder } from '../utils/promptsHelper'
 import { markdownToHtml } from '../utils/importMarkdown'
 import { createContext, appendContextFacts, maybeUpdateContextKnowledge, assignContext, isRootContext, isMarkedContext, firstContextOf } from '../utils/cajones'
@@ -249,8 +249,13 @@ function createContextAction(a: Record<string, unknown>): ExecutedAction {
  *  que create_task/create_note, con tarjeta de confirmación en el chat. */
 function createAgentAction(a: Record<string, unknown>, sessionId?: string, currentNodeId?: string): ExecutedAction {
   const label = cleanNodeTitle((a.text as string) || (a.title as string) || 'Agente')
+  // La IA sigue rellenando dos campos (systemPrompt=persona, userMessage=tarea/
+  // pregunta de apertura — ver el tool `create_agent` en assistantTurn.ts, server),
+  // pero el modelo de datos del cliente ya solo tiene UNA instrucción (13 ago
+  // 2026): se fusionan aquí, persona primero.
   const systemPrompt = (a.system_prompt as string) || (a.systemPrompt as string) || ''
   const userMessage = (a.user_message as string) || (a.userMessage as string) || ''
+  const instruction = (a.instruction as string) || [systemPrompt, userMessage].filter(Boolean).join('\n\n')
   const schedule = (a.schedule as string) || ''
   const conversational = a.conversational === true || a.conversational === 'true'
   const rawParent = (a.parent_id as string | undefined) || null
@@ -258,7 +263,7 @@ function createAgentAction(a: Record<string, unknown>, sessionId?: string, curre
   const parentId = explicitParent ?? sessionId ?? currentNodeId ?? null
 
   const created = createAgentUnder({
-    parentId, label, systemPrompt, userMessage, schedule, enabled: false, conversational,
+    parentId, label, instruction, schedule, enabled: false, conversational,
   })
   const schedulePart = schedule ? ` (programado: ${schedule})` : ' (sin programar todavía)'
   const convoPart = conversational ? ' Al ejecutarse, abrirá una conversación nueva con esa pregunta y esperará tu respuesta.' : ''
@@ -316,21 +321,20 @@ function updateAgentAction(a: Record<string, unknown>): ExecutedAction {
 
   const changes: string[] = []
 
-  if ('user_message' in a || 'userMessage' in a) {
-    const userMessage = String((a.user_message as string) ?? (a.userMessage as string) ?? '').trim()
-    if (userMessage) {
+  if ('instruction' in a || 'user_message' in a || 'userMessage' in a) {
+    const instruction = String(
+      (a.instruction as string) ?? (a.user_message as string) ?? (a.userMessage as string) ?? ''
+    ).trim()
+    if (instruction) {
       // Mismo patrón que createAgentUnder: la nota central = UN hijo-documento
-      // (`_doc='1'`, editor de texto normal, sin viñetas de outliner). Al
-      // ACTUALIZAR, se borran los hijos-instrucción viejos y se crea uno nuevo
-      // (evita mezclar el texto anterior con el nuevo en el editor).
+      // (`_doc='1'`, editor de texto normal, sin viñetas de outliner) con la
+      // instrucción ÚNICA (persona + tarea, 13 ago 2026). Al ACTUALIZAR, se borran
+      // los hijos-instrucción viejos y se crea uno nuevo (evita mezclar el texto
+      // anterior con el nuevo en el editor).
       for (const child of store.children(nodeId)) store.deleteNode(child.id)
       const doc = store.createNode({ text: '', parentId: nodeId })
-      store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: markdownToHtml(userMessage) })
-      try {
-        const ed = JSON.parse(node.extraData || '{}')
-        ed._agentUserMessage = userMessage
-        store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
-      } catch { /* ignore */ }
+      store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: markdownToHtml(instruction) })
+      syncAgentInstruction(nodeId)  // deriva _agentSystemPrompt/_agentUserMessage de la nota
       changes.push('instrucción')
     }
   }

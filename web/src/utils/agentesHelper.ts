@@ -7,11 +7,27 @@
  *     ├── ✅ Extraer tareas
  *     └── ...
  *
+ * UN SOLO CAMPO DE INSTRUCCIÓN (13 ago 2026): el usuario edita UNA instrucción
+ * (el hijo-documento del agente, `getOrCreateAgentInstructionDoc`), no dos
+ * ("Instrucción del agente" + "Cómo debe responder" por separado — confuso,
+ * Alberto: "no tiene sentido, unifica eso en un solo campo"). Internamente
+ * SIGUE habiendo dos campos en extraData porque la IA los consume por canales
+ * distintos (ver aiChatStore.ts originAgentBlock / executor.ts), pero ahora
+ * se derivan automáticamente de la instrucción única, nunca se editan a mano:
+ *   - `_agentSystemPrompt` = la instrucción COMPLETA tal cual la escribe el
+ *     usuario. Es lo que se re-inyecta en cada turno de una conversación de
+ *     agente y lo que arma el system prompt real en el servidor.
+ *   - `_agentUserMessage` = "disparador" derivado (`deriveAgentTrigger`):
+ *     para agentes conversacionales, la última línea/pregunta de la
+ *     instrucción (así "Diario"/"Check-in" siguen abriendo con una pregunta
+ *     natural); para agentes que se ejecutan solos, una frase fija interna
+ *     ("Ejecuta la tarea ahora…") — el usuario nunca la ve ni la escribe.
+ *
  * Propiedades de cada agente en extraData:
  *   _agentDef:          "1"           — identifica nodos agente
  *   _agentIcon:         "📋"          — emoji del agente
- *   _agentSystemPrompt: "..."         — prompt del sistema
- *   _agentUserMessage:  "..."         — mensaje del usuario
+ *   _agentSystemPrompt: "..."         — instrucción completa (persona + tarea)
+ *   _agentUserMessage:  "..."         — disparador derivado (ver arriba)
  *   _agentEnabled:      "true"/"false" — activo o no
  *   _agentSchedule:     ""            — cron futuro, ej: "daily:09:00"
  *   _agentId:           "unique-id"   — ID estable para el server
@@ -32,13 +48,39 @@ export interface AgentDef {
   id: string
   label: string
   icon: string
-  systemPrompt: string
-  userMessage: string | (() => string)
+  /** Instrucción ÚNICA (persona + tarea). Para conversacionales, termina con
+   *  la pregunta de apertura (se recupera con `deriveAgentTrigger`). */
+  instruction: string
   /** Programación por defecto (ej. "daily:08:00", "weekly:1:09:00"). '' = manual. */
   schedule?: string
-  /** Agente CONVERSACIONAL: abre un chat con `userMessage` como primera pregunta
-   *  y espera la respuesta del usuario, en vez de ejecutarse solo. */
+  /** Agente CONVERSACIONAL: abre un chat con la pregunta de apertura derivada
+   *  de la instrucción, y espera la respuesta del usuario, en vez de ejecutarse solo. */
   conversational?: boolean
+}
+
+// Frase con la que se lanza un agente NO conversacional: la instrucción completa
+// ya va como system prompt, esto es solo el "adelante" que dispara la ejecución.
+// El usuario nunca ve ni edita esto.
+const FIXED_RUN_TRIGGER = 'Ejecuta la tarea ahora, siguiendo tus instrucciones anteriores. Entrega directamente el resultado final, sin explicaciones previas ni saludos.'
+
+// Frase de apertura genérica para un agente conversacional si su instrucción no
+// termina en una pregunta/frase corta reconocible (fallback, no debería usarse
+// con los predefinidos, que sí terminan en pregunta).
+const FALLBACK_OPEN_TRIGGER = '¿Qué tal? Cuéntame.'
+
+/**
+ * deriveAgentTrigger — de la instrucción única, obtiene el "disparador":
+ * para agentes conversacionales, la última línea no vacía (normalmente la
+ * pregunta de apertura con la que el usuario termina de escribir su
+ * instrucción); para el resto, la frase fija de ejecución.
+ */
+export function deriveAgentTrigger(instruction: string, conversational: boolean): string {
+  const text = (instruction || '').trim()
+  if (!text) return ''
+  if (!conversational) return FIXED_RUN_TRIGGER
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const last = lines[lines.length - 1] || ''
+  return (last && last.length <= 220) ? last : FALLBACK_OPEN_TRIGGER
 }
 
 // Instrucción compartida: cómo navegar la web y cómo entregar el resultado.
@@ -54,17 +96,20 @@ Formato del resultado: en español, directo, una idea por línea (sin Markdown d
 
 const WRITE_AGENT_INSTRUCTIONS = `Responde en español, directo y conciso, una idea por línea (sin encabezados Markdown). El resultado se guarda en la nota del día, así que cada línea debe entenderse suelta. Sin saludos ni "aquí tienes".`
 
-// Agentes predefinidos — agentes "de verdad": producen un entregable concreto,
-// algunos navegan la web, tienen horario sugerido y guardan el resultado en la
-// nota diaria. El usuario los edita y crea los suyos.
+// Agentes predefinidos — agentes "de verdad": tienen horario (o son conversacionales
+// y se abren manualmente) y NO se disparan simplemente pegando algo en el chat — eso
+// es lo que son los Prompts (ver promptsHelper.ts; "Investigar un tema" y "Resumen de
+// un enlace" vivían aquí antes pero encajan mejor como prompts — 13 ago 2026: se lanzan
+// escribiendo/pegando algo, no tienen horario ni conversación real).
 export const PREDEFINED_AGENTS: AgentDef[] = [
   {
     id: 'informe-mercado',
     label: 'Informe de mercado',
     icon: '📈',
     schedule: 'daily:08:00',
-    systemPrompt: `Eres un analista de mercados que prepara cada mañana un informe breve y accionable para un trader e inversor particular. ${WEB_AGENT_INSTRUCTIONS}`,
-    userMessage: `Prepara el informe de mercado de hoy. Consulta estas fuentes y resume lo relevante:
+    instruction: `Eres un analista de mercados que prepara cada mañana un informe breve y accionable para un trader e inversor particular. ${WEB_AGENT_INSTRUCTIONS}
+
+Prepara el informe de mercado de hoy. Consulta estas fuentes y resume lo relevante:
 - https://www.investing.com/
 - https://www.cnbc.com/world-markets/
 - https://www.coindesk.com/
@@ -75,49 +120,36 @@ Entrega: 1) cómo abren/están los índices clave (S&P 500, Nasdaq, IBEX 35), 2)
     label: 'Resumen de prensa',
     icon: '📰',
     schedule: 'daily:07:30',
-    systemPrompt: `Eres un editor que prepara un resumen de prensa matutino, claro y sin ruido. ${WEB_AGENT_INSTRUCTIONS}`,
-    userMessage: `Haz el resumen de prensa de hoy. Consulta estas portadas y destaca lo importante:
+    instruction: `Eres un editor que prepara un resumen de prensa matutino, claro y sin ruido. ${WEB_AGENT_INSTRUCTIONS}
+
+Haz el resumen de prensa de hoy. Consulta estas portadas y destaca lo importante:
 - https://www.elmundo.es/
 - https://www.expansion.com/
 - https://www.reuters.com/
 Entrega los 5 titulares más relevantes, cada uno en una línea con una frase de contexto. Prioriza economía, mercados y tecnología.`,
   },
   {
-    id: 'investigar-tema',
-    label: 'Investigar un tema',
-    icon: '🔎',
-    schedule: '',
-    systemPrompt: `Eres un investigador que prepara un briefing estructurado sobre el tema que te pidan. ${WEB_AGENT_INSTRUCTIONS}`,
-    userMessage: `Investiga el tema que te indique (escríbelo aquí o pásame enlaces). Consulta las fuentes necesarias con fetch_url y entrega: qué es / por qué importa, los 3-4 puntos clave, datos o cifras relevantes, y una conclusión con próximos pasos. Si te paso enlaces, básate en ellos.`,
-  },
-  {
-    id: 'resumen-enlace',
-    label: 'Resumen de un enlace',
-    icon: '🧾',
-    schedule: '',
-    systemPrompt: `Eres un asistente que resume páginas web de forma fiel y útil. ${WEB_AGENT_INSTRUCTIONS}`,
-    userMessage: `Pega aquí la URL que quieres resumir. Léela con fetch_url y entrega: resumen en 3 líneas, los puntos clave en bullets, y si procede, acciones o ideas que se desprenden. No inventes nada que no esté en la página.`,
-  },
-  {
     id: 'revision-semanal-v2',
     label: 'Revisión semanal',
     icon: '🗓',
     schedule: 'weekly:1:09:00',
-    systemPrompt: `Eres un coach de productividad que conduce una revisión semanal enfocada en resultados. ${WRITE_AGENT_INSTRUCTIONS}`,
-    userMessage: `Condúceme una revisión semanal. Entrega: 3 preguntas para revisar logros y aprendizajes de la semana, 3 preguntas sobre lo que mejoraría, y propón las 3 prioridades concretas para empezar el lunes. Deja espacio para que yo conteste debajo de cada pregunta.`,
+    instruction: `Eres un coach de productividad que conduce una revisión semanal enfocada en resultados. ${WRITE_AGENT_INSTRUCTIONS}
+
+Condúceme una revisión semanal. Entrega: 3 preguntas para revisar logros y aprendizajes de la semana, 3 preguntas sobre lo que mejoraría, y propón las 3 prioridades concretas para empezar el lunes. Deja espacio para que yo conteste debajo de cada pregunta.`,
   },
   // Agentes conversacionales — abren un chat y esperan la respuesta del usuario en
   // vez de ejecutarse solos. Genéricos y editables: sin datos personales de nadie,
   // pensados para que cada usuario los ajuste a su vida (Alberto, 15 jul: "el de
   // diario no lo dejes porque tiene información mía... haz uno de diario genérico,
-  // y que el usuario lo pueda ajustar").
+  // y que el usuario lo pueda ajustar"). Cada instrucción TERMINA con la pregunta de
+  // apertura — `deriveAgentTrigger` recupera esa última línea como disparador.
   {
     id: 'diario-generico',
     label: 'Diario',
     icon: '🌅',
     schedule: 'daily:09:00',
     conversational: true,
-    systemPrompt: `Eres el compañero personal de diario del usuario. Cada mañana le haces una pregunta sobre cómo fue el día anterior — pero nunca la misma frase, varíala de forma natural.
+    instruction: `Eres el compañero personal de diario del usuario. Cada mañana le haces una pregunta sobre cómo fue el día anterior — pero nunca la misma frase, varíala de forma natural.
 
 Cuando responda, es donde entra lo importante:
 
@@ -135,8 +167,9 @@ Cuando responda, es donde entra lo importante:
 
 **CUBRE LO IMPORTANTE, PERO FLUYENDO:** lo que haya contado (trabajo, disciplina/hábitos, relaciones, lo que sea) son temas que naturalmente salen — pero que la conversación no suene estructurada en bloques. Es charla real.
 
-Usa emojis muy ocasionalmente — máximo 1-2 por respuesta, y solo si encaja de verdad. Eso es todo. Eres su compañero de verdad. Habla como tal.`,
-    userMessage: `¿Qué tal ayer?`,
+Usa emojis muy ocasionalmente — máximo 1-2 por respuesta, y solo si encaja de verdad. Eso es todo. Eres su compañero de verdad. Habla como tal.
+
+¿Qué tal ayer?`,
   },
   {
     id: 'seguimiento-objetivos',
@@ -144,10 +177,11 @@ Usa emojis muy ocasionalmente — máximo 1-2 por respuesta, y solo si encaja de
     icon: '🎯',
     schedule: 'weekly:1:09:00',
     conversational: true,
-    systemPrompt: `Eres un compañero de seguimiento de objetivos. Una vez por semana le preguntas al usuario cómo van sus metas y proyectos en marcha — no es una revisión genérica de la semana (eso ya lo cubre otro agente), es específicamente sobre si avanza hacia lo que dijo que quería.
+    instruction: `Eres un compañero de seguimiento de objetivos. Una vez por semana le preguntas al usuario cómo van sus metas y proyectos en marcha — no es una revisión genérica de la semana (eso ya lo cubre otro agente), es específicamente sobre si avanza hacia lo que dijo que quería.
 
-Cuando responda: sé conversacional y directo, no un formulario. Si dice que algo no avanzó, pregunta por qué de verdad (¿faltó tiempo, prioridad, o es que ya no le importa tanto?). Si algo avanzó, no te limites a felicitar sin más — pregunta qué funcionó para poder repetirlo. Usa su Perfil (se inyecta automáticamente) para saber cuáles son sus metas reales y hablar en concreto, no en genérico. Respuestas con sustancia, no telegráficas. Termina siempre con una pregunta o una prioridad clara para la semana que empieza.`,
-    userMessage: `¿Cómo van tus objetivos esta semana? Cuéntame qué avanzó de verdad y qué se quedó parado.`,
+Cuando responda: sé conversacional y directo, no un formulario. Si dice que algo no avanzó, pregunta por qué de verdad (¿faltó tiempo, prioridad, o es que ya no le importa tanto?). Si algo avanzó, no te limites a felicitar sin más — pregunta qué funcionó para poder repetirlo. Usa su Perfil (se inyecta automáticamente) para saber cuáles son sus metas reales y hablar en concreto, no en genérico. Respuestas con sustancia, no telegráficas. Termina siempre con una pregunta o una prioridad clara para la semana que empieza.
+
+¿Cómo van tus objetivos esta semana? Cuéntame qué avanzó de verdad y qué se quedó parado.`,
   },
   {
     id: 'checkin-bienestar',
@@ -155,12 +189,18 @@ Cuando responda: sé conversacional y directo, no un formulario. Si dice que alg
     icon: '🧘',
     schedule: '',
     conversational: true,
-    systemPrompt: `Eres un compañero cercano que hace un check-in de bienestar cuando el usuario lo activa (no tiene horario fijo, lo abre cuando lo necesita). No eres un terapeuta ni das diagnósticos — eres alguien que escucha de verdad y ayuda a poner en palabras cómo está.
+    instruction: `Eres un compañero cercano que hace un check-in de bienestar cuando el usuario lo activa (no tiene horario fijo, lo abre cuando lo necesita). No eres un terapeuta ni das diagnósticos — eres alguien que escucha de verdad y ayuda a poner en palabras cómo está.
 
-Responde con calidez real, sin sonar a formulario ni a app de mindfulness genérica. Usa su Perfil para saber su contexto (trabajo, relaciones, metas) y conectar lo que cuenta con su situación real, no en abstracto. Si detectas que algo se repite en su historial (cansancio, estrés por un tema concreto), nómbralo con cuidado. No dictes soluciones no pedidas — pregunta antes de aconsejar. Respuestas con espacio para respirar, no listas de consejos.`,
-    userMessage: `¿Cómo estás de verdad hoy? No la respuesta rápida — cuéntame.`,
+Responde con calidez real, sin sonar a formulario ni a app de mindfulness genérica. Usa su Perfil para saber su contexto (trabajo, relaciones, metas) y conectar lo que cuenta con su situación real, no en abstracto. Si detectas que algo se repite en su historial (cansancio, estrés por un tema concreto), nómbralo con cuidado. No dictes soluciones no pedidas — pregunta antes de aconsejar. Respuestas con espacio para respirar, no listas de consejos.
+
+¿Cómo estás de verdad hoy? No la respuesta rápida — cuéntame.`,
   },
 ]
+
+// IDs de los agentes que pasaron a ser Prompts (13 ago 2026) — se eliminan del
+// árbol de Agentes en la migración, `migratePromptifiedAgents` los recrea como
+// prompts si el usuario no los había editado ya.
+const PROMPTIFIED_AGENT_IDS = new Set(['investigar-tema', 'resumen-enlace'])
 
 // IDs de los agentes-ejemplo antiguos (v1) — se eliminan en la migración v2.
 const LEGACY_AGENT_IDS = new Set([
@@ -196,7 +236,7 @@ export function listAllAgents(): Node[] {
  *  HTML simple de párrafos, para guardarlo como `.body` de un nodo-documento.
  *  Reutiliza `markdownToHtml` (importMarkdown.ts): sin sintaxis Markdown especial,
  *  cada línea no vacía se envuelve en su propio `<p>`. */
-function userMessageToHtml(text: string): string {
+function instructionToHtml(text: string): string {
   return markdownToHtml(text || '')
 }
 
@@ -211,13 +251,14 @@ export function createAgentUnder(opts: {
   parentId: string | null
   label: string
   icon?: string
-  systemPrompt?: string
-  userMessage?: string
+  /** Instrucción ÚNICA (persona + tarea; para conversacionales, termina en la
+   *  pregunta de apertura). */
+  instruction?: string
   schedule?: string
   enabled?: boolean
-  /** Agente CONVERSACIONAL: en vez de ejecutarse solo, abre un chat con
-   *  `userMessage` como primera pregunta y espera la respuesta del usuario
-   *  (ver openAgentConversation en el servidor). */
+  /** Agente CONVERSACIONAL: en vez de ejecutarse solo, abre un chat con la
+   *  pregunta de apertura derivada de `instruction` y espera la respuesta del
+   *  usuario (ver openAgentConversation en el servidor). */
   conversational?: boolean
 }): Node {
   const icon = opts.icon || '🤖'
@@ -227,24 +268,25 @@ export function createAgentUnder(opts: {
   // agentes creados ANTES sí lo llevan escrito, y la UI se lo quita al pintar
   // (utils/displayText.ts).
   const node = store.createNode({ text: opts.label.trim(), parentId: opts.parentId })
-  const userMessage = opts.userMessage || ''
+  const instruction = opts.instruction || ''
+  const conversational = !!opts.conversational
   store.updateNode(node.id, {
     extraData: JSON.stringify({
       _agentDef:            '1',
       _agentId:             node.id,
       _agentIcon:           icon,
-      _agentSystemPrompt:   opts.systemPrompt || '',
-      _agentUserMessage:    userMessage,
+      _agentSystemPrompt:   instruction,
+      _agentUserMessage:    deriveAgentTrigger(instruction, conversational),
       _agentEnabled:        opts.enabled ? 'true' : 'false',
       _agentSchedule:       opts.schedule ?? '',
-      _agentConversational: opts.conversational ? '1' : '',
+      _agentConversational: conversational ? '1' : '',
     }),
   })
   // La nota central del agente es un DOCUMENTO (editor de texto normal, sin viñetas
-  // de outliner) — un único hijo con `_doc='1'` y el prompt en `.body` como HTML.
-  if (userMessage) {
+  // de outliner) — un único hijo con `_doc='1'` y la instrucción en `.body` como HTML.
+  if (instruction) {
     const doc = store.createNode({ text: '', parentId: node.id })
-    store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: userMessageToHtml(userMessage) })
+    store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: instructionToHtml(instruction) })
   }
   return store.getNode(node.id)!
 }
@@ -278,7 +320,7 @@ export function getOrCreateAgentInstructionDoc(agentId: string): Node {
   const legacyText = readAgentNote(agentId)
   for (const k of kids) store.deleteNode(k.id)
   const doc = store.createNode({ text: '', parentId: agentId })
-  store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: legacyText ? userMessageToHtml(legacyText) : '<p></p>' })
+  store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: legacyText ? instructionToHtml(legacyText) : '<p></p>' })
   return store.getNode(doc.id)!
 }
 
@@ -379,21 +421,27 @@ export function readAgentNote(nodeId: string): string {
   return lines.join('\n').trim()
 }
 
-/** Sincroniza _agentUserMessage con la nota actual (lo que se ve y edita en el
- *  centro). Así "lo que escribes = lo que el agente ejecuta", también en el cron
- *  del servidor (que usa _agentUserMessage). Devuelve el mensaje resultante. */
-export function syncAgentUserMessage(nodeId: string): string {
+/** Sincroniza la instrucción única (nota central) con los campos internos que
+ *  consume la IA: `_agentSystemPrompt` = la instrucción completa tal cual;
+ *  `_agentUserMessage` = disparador derivado (`deriveAgentTrigger`). Así "lo
+ *  que escribes = lo que el agente ejecuta", también en el cron del servidor
+ *  (que usa ambos campos, sincronizados vía POST /agents/schedule). */
+export function syncAgentInstruction(nodeId: string): { systemPrompt: string; userMessage: string } {
   const n = store.getNode(nodeId)
-  if (!n) return ''
-  const note = readAgentNote(nodeId)
+  if (!n) return { systemPrompt: '', userMessage: '' }
+  const instruction = readAgentNote(nodeId)
   try {
     const ed = JSON.parse(n.extraData || '{}')
-    if (ed._agentDef === '1' && (ed._agentUserMessage || '') !== note) {
-      ed._agentUserMessage = note
+    if (ed._agentDef !== '1') return { systemPrompt: instruction, userMessage: '' }
+    const conversational = ed._agentConversational === '1'
+    const userMessage = deriveAgentTrigger(instruction, conversational)
+    if ((ed._agentSystemPrompt || '') !== instruction || (ed._agentUserMessage || '') !== userMessage) {
+      ed._agentSystemPrompt = instruction
+      ed._agentUserMessage = userMessage
       store.updateNode(nodeId, { extraData: JSON.stringify(ed) })
     }
-  } catch { /* ignore */ }
-  return note
+    return { systemPrompt: instruction, userMessage }
+  } catch { return { systemPrompt: instruction, userMessage: '' } }
 }
 
 /** Activa o desactiva un agente */
@@ -450,7 +498,6 @@ export function ensureAgentesNode(): void {
   // Añadir solo los que no existan aún (ni activos ni en la papelera)
   for (const def of PREDEFINED_AGENTS) {
     if (existingIds.has(def.id)) continue
-    const userMsg = typeof def.userMessage === 'function' ? def.userMessage() : def.userMessage
     const node = store.createNode({
       text:     def.label,   // sin el emoji delante — ver createAgentUnder
       parentId: agentesNode.id,
@@ -460,8 +507,8 @@ export function ensureAgentesNode(): void {
         _agentDef:            '1',
         _agentId:             def.id,
         _agentIcon:           def.icon,
-        _agentSystemPrompt:   def.systemPrompt,
-        _agentUserMessage:    userMsg,
+        _agentSystemPrompt:   def.instruction,
+        _agentUserMessage:    deriveAgentTrigger(def.instruction, !!def.conversational),
         // Los predefinidos se siembran DESACTIVADOS: el usuario los activa a
         // propósito desde sus Propiedades (Alberto, 23 jul).
         _agentEnabled:        'false',
@@ -471,14 +518,78 @@ export function ensureAgentesNode(): void {
       isCollapsed: false,
     })
 
-    // La nota central es SOLO el prompt del usuario (lo que el agente debe hacer),
-    // como un DOCUMENTO editable normal (sin viñetas de outliner). El horario y el
-    // estado se muestran en la columna derecha, no como hijo.
-    if (userMsg) {
+    // La nota central es la instrucción única, como un DOCUMENTO editable normal
+    // (sin viñetas de outliner). El horario y el estado se muestran en la columna
+    // derecha, no como hijo.
+    if (def.instruction) {
       const doc = store.createNode({ text: '', parentId: node.id })
-      store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: userMessageToHtml(userMsg) })
+      store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: instructionToHtml(def.instruction) })
     }
   }
+}
+
+/**
+ * migratePromptifiedAgents — "Investigar un tema" y "Resumen de un enlace" pasaron
+ * de agentes a prompts (13 ago 2026: son manuales, sin horario ni conversación —
+ * encajan mejor con lo que ya se escribe/pega en el chat). Si el usuario tiene esos
+ * agentes predefinidos SIN editar (creados por `ensureAgentesNode`, nunca activados
+ * ni tocados), se eliminan del árbol de Agentes — `ensurePromptsNode`/migración de
+ * prompts los recrea como prompts reales. Si el usuario los editó o activó, se
+ * dejan intactos como agente (es su contenido, no se toca sin más).
+ */
+export function migratePromptifiedAgents(): void {
+  try { if (localStorage.getItem('from_agents_promptify_v1') === '1') return } catch { /* */ }
+  const agentesNode = getAgentesNode()
+  if (agentesNode) {
+    for (const child of store.children(agentesNode.id)) {
+      if (child.deletedAt) continue
+      try {
+        const ed = JSON.parse(child.extraData || '{}')
+        if (ed._agentDef !== '1' || !PROMPTIFIED_AGENT_IDS.has(ed._agentId)) continue
+        if (ed._agentEnabled === 'true') continue // el usuario lo activó — no tocar
+        const def = PREDEFINED_AGENTS_LEGACY_PROMPTIFIED[ed._agentId as string]
+        const noteText = readAgentNote(child.id)
+        if (def && noteText.trim() !== def.trim()) continue // el usuario lo editó — no tocar
+        store.deleteNode(child.id)
+      } catch { /* ignore */ }
+    }
+  }
+  try { localStorage.setItem('from_agents_promptify_v1', '1') } catch { /* */ }
+}
+
+// Contenido original de los agentes-que-ahora-son-prompts, para detectar edición
+// del usuario en `migratePromptifiedAgents` (comparación exacta con la nota).
+const PREDEFINED_AGENTS_LEGACY_PROMPTIFIED: Record<string, string> = {
+  'investigar-tema': 'Investiga el tema que te indique (escríbelo aquí o pásame enlaces). Consulta las fuentes necesarias con fetch_url y entrega: qué es / por qué importa, los 3-4 puntos clave, datos o cifras relevantes, y una conclusión con próximos pasos. Si te paso enlaces, básate en ellos.',
+  'resumen-enlace': 'Pega aquí la URL que quieres resumir. Léela con fetch_url y entrega: resumen en 3 líneas, los puntos clave en bullets, y si procede, acciones o ideas que se desprenden. No inventes nada que no esté en la página.',
+}
+
+/**
+ * migrateAgentsV3UnifyInstruction — un agente creado ANTES de la instrucción única
+ * (13 ago 2026) tiene `_agentSystemPrompt` (persona) y el documento central con SOLO
+ * la tarea (`_agentUserMessage` viejo) por separado. La UI ya no muestra el campo
+ * "Cómo debe responder" — sin esta migración, esa persona quedaría invisible (aunque
+ * seguiría funcionando internamente). Se fusiona UNA vez en el documento central:
+ * persona + tarea, en ese orden (igual que se escribieron los predefinidos nuevos).
+ */
+export function migrateAgentsV3UnifyInstruction(): void {
+  try { if (localStorage.getItem('from_agents_v3_unify') === '1') return } catch { /* */ }
+  for (const n of Array.from(store.nodes.values())) {
+    if (n.deletedAt) continue
+    let ed: Record<string, unknown>
+    try { ed = JSON.parse(n.extraData || '{}') } catch { continue }
+    if (ed._agentDef !== '1') continue
+    const persona = String(ed._agentSystemPrompt || '').trim()
+    if (!persona) continue
+    const currentDoc = readAgentNote(n.id)
+    // Ya fusionado (la persona ya forma parte de la nota) → nada que hacer.
+    if (currentDoc.startsWith(persona)) continue
+    const merged = currentDoc ? `${persona}\n\n${currentDoc}` : persona
+    const doc = getOrCreateAgentInstructionDoc(n.id)
+    store.updateNode(doc.id, { body: instructionToHtml(merged) })
+    syncAgentInstruction(n.id)
+  }
+  try { localStorage.setItem('from_agents_v3_unify', '1') } catch { /* */ }
 }
 
 /**

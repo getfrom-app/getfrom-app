@@ -15,11 +15,11 @@
 import { store } from '../store/nodeStore'
 import { syncTagDefinitions, cleanupSpuriousTags, migrateTagsToContexto, ensurePerfilInsideContexto, ensurePlantillasNode, cleanupNonAgendaContexts } from './tagsHelper'
 import { ensureAtajosNode, migrateLocalStorageShortcuts, migrateNodeShortcutsToFavorites } from './atajosHelper'
-import { ensureAgentesNode, migrateAgentsV2, migrateAgentMetaChildren } from './agentesHelper'
+import { ensureAgentesNode, migrateAgentsV2, migrateAgentMetaChildren, migratePromptifiedAgents, migrateAgentsV3UnifyInstruction } from './agentesHelper'
 import { cleanupOrphanProfileKnowledge, migrateKnowledgeNodesToFromly, migrateContextKnowledgeToMemoria } from '../api/userKnowledge'
 import { ensurePapeleraNode } from './papeleraHelper'
 import { ensureHomeRootAndReparent } from './homeHelper'
-import { ensurePromptsNode } from './promptsHelper'
+import { ensurePromptsNode, migratePromptifiedAgentPrompts } from './promptsHelper'
 import { relocateRootDiariesToAgenda, cleanupYearMonthContexts, migrateDiaryEntriesToDoc } from './agendaHelper'
 import { revertContextReferenceOnce } from './migrateContextReference'
 import { migrateEventsToTasks } from './migrateEventsToTasks'
@@ -44,9 +44,12 @@ export async function runStartupMigrations(): Promise<void> {
   migrateLocalStorageShortcuts()
   migrateNodeShortcutsToFavorites()
   migrateAgentsV2()
+  migratePromptifiedAgents()
   ensureAgentesNode()
   migrateAgentMetaChildren()
+  migrateAgentsV3UnifyInstruction()
   ensurePromptsNode()
+  migratePromptifiedAgentPrompts()
   ensurePapeleraNode()
   ensureHomeRootAndReparent()
   await relocateRootDiariesToAgenda()

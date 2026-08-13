@@ -1,20 +1,24 @@
 /**
  * promptsHelper — Sistema de Prompts para Magic
  *
- * Un prompt es un nodo bajo la raíz «⚡ Prompts». Su contenido (las instrucciones
- * que recibe Magic) son sus nodos hijos, que el usuario edita como cualquier nota.
+ * Un prompt es un nodo bajo la raíz «⚡ Prompts» (o colgado de cualquier contexto,
+ * v2). Su contenido (el mensaje que se envía al pulsarlo) son sus nodos hijos, que
+ * el usuario edita como cualquier nota.
  *
  * Estructura:
  *   ⚡ Prompts                       (nodo raíz de sistema)
- *     ├── Diario del día            extraData._promptDef="1", _promptActivation="diary"
+ *     ├── Diario del día            extraData._promptDef="1", _promptActivation="diary", _promptGroup="Diario"
  *     │   ├── Eres mi compañero…    ← contenido del prompt (hijos)
  *     │   └── …
- *     └── Brainstorming             _promptActivation="manual"
+ *     └── Brainstorming             _promptActivation="manual", _promptGroup="General"
  *
  * Propiedades en extraData del nodo prompt:
  *   _promptDef:        "1"          — identifica un nodo prompt
  *   _promptActivation: "manual" | "diary" | "task" | "context:<contextNodeId>"
  *   _promptIcon:       "⚡"          — emoji opcional
+ *   _promptGroup:      "General"     — carpeta/grupo (13 ago 2026, unificado con
+ *                                      iOS): agrupa el desplegable del composer.
+ *                                      "" o ausente = sin grupo ("General").
  *
  * Tres modos de activación en Magic (ver MagicChat / aiChatStore):
  *   1. Manual: el usuario lo elige (slash `/` o chip en la cabecera).
@@ -29,6 +33,9 @@ import { findRootByKey, findContextRoot } from './rootLookup'
 import { isInPapelera } from './papeleraHelper'
 
 export const PROMPTS_ROOT_NAME = '⚡ Prompts'
+
+// Carpeta/grupo por defecto — un prompt sin `_promptGroup` cae aquí.
+export const DEFAULT_PROMPT_GROUP = 'General'
 
 // ── Tipos de activación ───────────────────────────────────────────────────────
 
@@ -95,6 +102,9 @@ export function createPromptUnder(opts: {
   label: string
   icon?: string
   activation?: PromptActivation
+  /** Carpeta/grupo para el desplegable del composer (13 ago 2026). '' o ausente
+   *  = DEFAULT_PROMPT_GROUP ("General"). */
+  group?: string
   /** Contenido inicial (una línea por hijo, outliner) — lo usa create_prompt cuando
    *  la IA redacta el prompt a partir de lo que pide el usuario en el chat. */
   content?: string
@@ -106,6 +116,7 @@ export function createPromptUnder(opts: {
       _promptDef:        '1',
       _promptIcon:       icon,
       _promptActivation: opts.activation || 'manual',
+      _promptGroup:      (opts.group || '').trim(),
     }),
     isCollapsed: false,
   })
@@ -177,6 +188,55 @@ export function setPromptActivation(promptNodeId: string, activation: PromptActi
     ed._promptActivation = activation
     store.updateNode(promptNodeId, { extraData: JSON.stringify(ed) })
   } catch { /* ignore */ }
+}
+
+export function getPromptGroup(promptNodeId: string): string {
+  const n = store.getNode(promptNodeId)
+  if (!n) return DEFAULT_PROMPT_GROUP
+  try {
+    const ed = JSON.parse(n.extraData || '{}')
+    const g = (ed._promptGroup as string | undefined)?.trim()
+    return g || DEFAULT_PROMPT_GROUP
+  } catch { return DEFAULT_PROMPT_GROUP }
+}
+
+export function setPromptGroup(promptNodeId: string, group: string): void {
+  const n = store.getNode(promptNodeId)
+  if (!n) return
+  try {
+    const ed = JSON.parse(n.extraData || '{}')
+    ed._promptGroup = group.trim()
+    store.updateNode(promptNodeId, { extraData: JSON.stringify(ed) })
+  } catch { /* ignore */ }
+}
+
+/** Nombres de grupo ya usados por algún prompt (para autocompletar al crear uno
+ *  nuevo), orden alfabético con DEFAULT_PROMPT_GROUP siempre primero si existe. */
+export function listPromptGroups(): string[] {
+  const set = new Set<string>()
+  for (const p of listAllPrompts()) set.add(getPromptGroup(p.id))
+  const rest = [...set].filter(g => g !== DEFAULT_PROMPT_GROUP).sort((a, b) => a.localeCompare(b))
+  return set.has(DEFAULT_PROMPT_GROUP) ? [DEFAULT_PROMPT_GROUP, ...rest] : rest
+}
+
+/** listAllPromptsGrouped — mismos prompts que listAllPrompts(), organizados por
+ *  `_promptGroup` para el desplegable del composer (13 ago 2026). Grupos en
+ *  orden alfabético (DEFAULT_PROMPT_GROUP último, es el "cajón sin clasificar"),
+ *  prompts dentro de cada grupo por título. */
+export function listAllPromptsGrouped(): { group: string; prompts: Node[] }[] {
+  const byGroup = new Map<string, Node[]>()
+  for (const p of listAllPrompts()) {
+    const g = getPromptGroup(p.id)
+    if (!byGroup.has(g)) byGroup.set(g, [])
+    byGroup.get(g)!.push(p)
+  }
+  for (const list of byGroup.values()) list.sort((a, b) => (a.text || '').localeCompare(b.text || ''))
+  const groups = [...byGroup.keys()].sort((a, b) => {
+    if (a === DEFAULT_PROMPT_GROUP) return 1
+    if (b === DEFAULT_PROMPT_GROUP) return -1
+    return a.localeCompare(b)
+  })
+  return groups.map(group => ({ group, prompts: byGroup.get(group)! }))
 }
 
 /** Marca un nodo como prompt (al crearlo manualmente bajo la raíz). */
@@ -403,7 +463,7 @@ export function ensurePromptsNode(): void {
   // Prompt de ejemplo 1 — Diario del día (activación automática en notas diarias)
   const diario = store.createNode({ text: 'Diario del día', parentId: root.id })
   store.updateNode(diario.id, {
-    extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'diary', _promptIcon: '📔' }),
+    extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'diary', _promptIcon: '📔', _promptGroup: 'Diario' }),
     isCollapsed: false,
   })
   for (const line of [
@@ -452,4 +512,40 @@ export function ensurePromptsNode(): void {
     'Cada acción en una línea, empezando por un verbo, sin explicaciones largas.',
     'Si detectas una tarea con fecha o urgencia implícita, márcala. Si no hay ninguna acción real, dilo en vez de inventar una.',
   ]) store.createNode({ text: line, parentId: proximosPasos.id })
+}
+
+/**
+ * migratePromptifiedAgentPrompts — "Investigar un tema" y "Resumen de un enlace"
+ * pasaron de agentes a prompts (13 ago 2026: son manuales, sin horario ni
+ * conversación — se lanzan escribiendo/pegando algo, así que encajan mejor en el
+ * catálogo de Prompts). `migratePromptifiedAgents` (agentesHelper.ts) los quita
+ * del árbol de Agentes; esta función los añade aquí, una sola vez, si el usuario
+ * no tiene ya un prompt con el mismo nombre (evita duplicar si los creó a mano).
+ */
+export function migratePromptifiedAgentPrompts(): void {
+  try { if (localStorage.getItem('from_prompts_promptify_v1') === '1') return } catch { /* */ }
+  const root = getOrCreatePromptsRoot()
+  const existingNames = new Set(listAllPrompts().map(p => (p.text || '').trim().toLowerCase()))
+
+  if (!existingNames.has('investigar un tema')) {
+    createPromptUnder({
+      parentId: root.id, label: 'Investigar un tema', icon: '🔎', activation: 'manual', group: 'Investigación',
+      content: [
+        'Actúa como un investigador que prepara un briefing estructurado sobre un tema.',
+        'Te voy a indicar el tema (o pasarte enlaces). Consulta las fuentes necesarias y entrega: qué es / por qué importa, los 3-4 puntos clave, datos o cifras relevantes, y una conclusión con próximos pasos.',
+        'Si te paso enlaces, básate en ellos.',
+      ].join('\n'),
+    })
+  }
+  if (!existingNames.has('resumen de un enlace')) {
+    createPromptUnder({
+      parentId: root.id, label: 'Resumen de un enlace', icon: '🧾', activation: 'manual', group: 'Investigación',
+      content: [
+        'Actúa como un asistente que resume páginas web de forma fiel y útil.',
+        'Te voy a pasar una URL. Léela y entrega: resumen en 3 líneas, los puntos clave en bullets, y si procede, acciones o ideas que se desprenden.',
+        'No inventes nada que no esté en la página.',
+      ].join('\n'),
+    })
+  }
+  try { localStorage.setItem('from_prompts_promptify_v1', '1') } catch { /* */ }
 }
