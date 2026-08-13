@@ -4,6 +4,21 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.956 — 13 agosto 2026 · La prueba de 15 días, contada bien y en tu idioma
+
+- **La página de precios, en 15 idiomas**: alemán, francés, italiano, portugués, neerlandés, sueco, polaco, turco, ruso, griego, chino, japonés y coreano, además de español e inglés. Antes estaba en dos, y quien llegaba desde un correo en su idioma se encontraba una página en otro.
+- **Los planes, como son de verdad**: la comparativa decía que la prueba no incluía adjuntos ni publicar notas, y sí los incluye. También decía «1.000 elementos» cuando durante la prueba no hay tope, y «sin límite de tiempo» cuando son 15 días. Corregido, y lo mismo en la versión en inglés, que seguía entera con el modelo antiguo.
+- **Idioma correcto en toda la app**: 22 textos existían solo en español e inglés — entre ellos el aviso de la prueba, que un usuario alemán veía en español. Traducidos a los doce idiomas de la app.
+- **El botón de descargar para Mac** llevaba a un archivo que no existe. Nueve páginas afectadas, incluida la portada.
+
+---
+
+## iOS v2.14.147 — 13 agosto 2026 · Correos en tu idioma
+
+- **Fromly te escribe en tu idioma**: la app no le decía al servidor en qué idioma la usas, así que los correos llegaban en inglés aunque tuvieras el iPhone en español. Ahora lo manda al crear la cuenta y lo mantiene al día cada vez que entras.
+
+---
+
 ## iOS v2.14.146 — 13 agosto 2026 · El chat, rediseñado, y comparte desde cualquier app
 
 - **Chat rediseñado**: las respuestas se leen como texto normal, sin globos, con enlaces tocables — más fácil de leer, sobre todo en modo oscuro.

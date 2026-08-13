@@ -1,9 +1,89 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-09 (Web v9.6.953 · iOS v2.14 build 143)
+> Última actualización: 2026-08-13 (Web v9.6.956 · iOS v2.14 build 147)
 
 ---
+
+## Sesión 2026-08-13 (sesión 2) — El embudo de la prueba de 15 días
+
+Web **v9.6.955 → v9.6.956**. iOS **build 147 subida a App Store Connect** (no adjuntada: ver
+abajo). Log completo en `logs/2026-08-13-sesion2-embudo-prueba-15-dias.md`.
+
+### El problema: correos de un producto que ya no existe
+
+La prueba de 15 días entró el 12 ago (`lib/plan.ts`), pero los correos seguían siendo los del plan
+gratis. `/auth/register` encolaba la secuencia `free` —24 correos en 90 días— cuyo argumento era
+«el plan gratis te da 1.000 elementos, pásate a Pro», dirigido a alguien que **ya tenía Pro**
+durante la prueba. Y del día 16 en adelante no había nada: quien no compraba, desaparecía.
+
+### El ciclo de vida nuevo (`lib/email-sequences.ts` + `services/trialLifecycle.ts`)
+
+```
+registro ──> trial (15 días, 9 correos)
+               ├─ compra ──> pro / lifetime          (se cancela UNPAID_SEQUENCES)
+               └─ vence ──> post_trial (2: "te doy un mes más")
+                              ├─ canjea ──> trial_extra (8 correos / 30 días)
+                              │                └─ vence ──> winback
+                              └─ no canjea ──> winback (+30/+60/+90/+150 días)
+```
+
+Invariantes que hay que respetar al tocar esto:
+
+- **Quien encola `post_trial`/`winback` es el cron, no el registro.** La prueba se puede ampliar
+  (mes extra, días de regalo desde admin) y la fecha real de vencimiento no se conoce el día que
+  alguien se apunta.
+- **Al activar un plan hay que cancelar `UNPAID_SEQUENCES`** desde LOS DOS sitios: el webhook de
+  LemonSqueezy y `routes/storekit.ts` (compra y restauración). Que StoreKit no lo hiciera es por lo
+  que un comprador de iPhone seguía recibiendo «te quedan 3 días de prueba».
+- **El mes extra se ofrece una vez por cuenta** (`users.trial_extended_at`), con enlace firmado de
+  14 días → `GET /auth/trial-extend`. El recordatorio va al día +4 para caber en esa ventana.
+- **`enqueueSequence(..., skipPast)`**: con una fecha de referencia antigua, sin esto el cron manda
+  la secuencia entera de golpe. Mismo motivo tras el corte de 7 días de `referenceFor()`.
+- **Desde cuándo cuenta el backfill**: fin de prueba menos 15 días, NO `createdAt`. A las cuentas
+  que ya existían se les dio la prueba a mano meses después de registrarse; con `createdAt` los 9
+  pasos caían en el pasado y 25 personas se habrían quedado sin un solo correo.
+
+### El idioma, de punta a punta
+
+`users.locale` decide el idioma de todo el correo y **ningún camino de registro lo rellenaba** —ni
+email, ni Google, ni Apple—: la columna se quedaba en su `DEFAULT 'en'`, así que todo el mundo,
+españoles incluidos, recibía los correos en inglés. Además, quien entraba con Google o Apple no
+recibía **ningún** correo: solo `/auth/register` encolaba. Los tres caminos comparten ahora
+`onNewSignup()`.
+
+Regla de reserva, en las tres capas (plantillas, `email-i18n.ts` y el `i18n.js` de la landing):
+**idioma exacto → inglés. Nunca español.** Las tres caían a español, que no lo entiende quien no lo
+habla.
+
+### Cobertura de idiomas
+
+| Superficie | Idiomas |
+|---|---|
+| Correos | 15 (embudo de captación completo; pro/lifetime/monthly caen a inglés en los 6 nuevos) |
+| Página de precios | 15 (`i18n-pricing.js`, solo esa página) |
+| App web / iOS | 12 |
+| App Mac | 7 |
+| Resto de la landing | 2 (es/en) |
+
+`i18n.js` entiende `?lang=xx` —lo que usan los enlaces de los correos—, resuelve por prefijo
+(`de-AT` → `de`) y calcula los idiomas disponibles en vez de tenerlos fijos.
+
+### Endpoints nuevos
+
+- `GET /auth/unsubscribe?token=` — baja de marketing (público, HTML, 9 idiomas). Antes el pie de
+  todas las plantillas llevaba un `{{unsubscribe}}` literal que no sustituía nadie: **no había
+  forma de darse de baja**.
+- `GET /auth/trial-extend?token=` — canje del mes extra.
+- `POST /admin/email/run-lifecycle` — pasa el ciclo sin esperar al cron.
+- `POST /admin/users/:id/extra-month` — concede el mes extra a mano (soporte).
+- `POST /admin/email/preview` acepta ya `locale`.
+
+### Migraciones
+
+`users.trial_extended_at`, `users.email_opt_out`, y la cancelación de los pasos pendientes de la
+secuencia `free`. ⚠️ Esa cancelación va **después** del `CREATE TABLE email_sequences`: puesta
+antes, una base de datos nueva no arranca.
 
 ## Sesión 2026-08-09 — Auditoría del cobro: ninguna vía de compra funcionaba
 

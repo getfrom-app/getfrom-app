@@ -516,7 +516,7 @@ un agente AUTÓNOMO termina de ejecutarse en el servidor, aparece un aviso "N in
 nuevos" en la sidebar (igual que ya pasaba con los agentes conversacionales, que avisan con "N
 conversaciones esperando" hasta que abres cada una).
 
-**Plan gratis — solo 1 agente activo a la vez.** Si activas un segundo agente sin ser Pro, el más
+**Prueba terminada — solo 1 agente activo a la vez.** Si activas un segundo agente sin ser Pro, el más
 reciente se queda "Activo" en apariencia pero el servidor no lo ejecuta — el panel de Propiedades del
 agente te avisa explícitamente cuando le pasa esto a uno de los tuyos.
 
@@ -788,7 +788,7 @@ En **Ajustes → Exportar** puedes descargar todos tus datos en cualquier moment
   editor.
 
 Tus datos no están atrapados en Fromly. La exportación es completa, sin restricciones, y funciona
-en el plan gratuito.
+cuando la prueba ha terminado.
 
 ### Privacidad
 
@@ -809,7 +809,7 @@ en el plan gratuito.
 - **Email**: solo lectura (cambiarlo rompería el inicio de sesión con Google/Apple).
 - **Contraseña**: puedes cambiarla (pide la actual).
 - **Suscripción**: tu plan y, si tienes suscripción activa, renovación, «Cancelar» y «Gestionar
-  facturación» (portal de cliente). En plan gratuito solo verás «Mejorar».
+  facturación» (portal de cliente). Con la prueba terminada solo verás «Mejorar».
 - **Eliminar cuenta**: protegida — pide confirmar con tu contraseña (o tu email si entras con
   Google).
 
@@ -885,8 +885,9 @@ ver los disponibles en tu versión.
 
 | Plan | Precio | Incluye |
 |---|---|---|
-| **Gratis** | €0 | Hasta 1.000 elementos sincronizados (notas, tareas, chats, agentes — cada conversación entera cuenta como 1 solo elemento, no cada mensaje). Outliner + diario, búsqueda avanzada, Mac + iPhone + web, sync en tiempo real. Sin IA, sin archivos adjuntos, sin publicar notas. |
-| **Pro Mensual** | €7/mes | Todo lo de Gratis + elementos ilimitados + IA completa (Claude) + Agentes + Prompts + vistas tabla/kanban/calendario + archivos adjuntos + publicar notas con URL + soporte prioritario + 2.000.000 tokens de IA al mes incluidos + opción de usar tu propia clave de Claude/GPT/Gemini. |
+| **Prueba** | €0 · 15 días | **Fromly entero**, sin funciones bloqueadas: asistente por chat sin límite, agentes, elementos ilimitados, archivos adjuntos, publicar notas, Mac + iPhone + web. Sin tarjeta. Lo único que no incluye es usar tu propia clave de IA (BYOK), que requiere plan de pago. |
+| **Prueba terminada** | €0 | Tus datos siguen ahí y puedes seguir leyéndolos, con la sincronización limitada a 1.000 elementos. Lo que se apaga es el asistente: chat, agentes, aviso de la mañana y adjuntos. |
+| **Pro Mensual** | €7/mes | Todo lo de la prueba, sin que caduque: elementos ilimitados + IA completa (Claude) + Agentes + Prompts + vistas tabla/kanban/calendario + archivos adjuntos + publicar notas con URL + soporte prioritario + 2.000.000 tokens de IA al mes incluidos + opción de usar tu propia clave de Claude/GPT/Gemini. |
 | **Pro Anual** | €49/año (~€4,08/mes) | Todo lo de Pro Mensual, facturado anualmente. Ahorras cerca de un **42%** frente al mensual (7×12 = 84€ → 49€). |
 | **Lifetime** | €149 pago único | Todo lo de Pro, para siempre, sin suscripciones, + 3.000.000 tokens de IA incluidos de una vez. |
 
@@ -900,18 +901,29 @@ API (facturación por uso, en la consola de cada proveedor), no las credenciales
 **Recarga de tokens:** si agotas los tokens incluidos en tu plan Pro o Lifetime, puedes comprar un
 paquete adicional de 5.000.000 de tokens de forma puntual.
 
-**Enlace directo desde la sidebar:** en plan gratis, junto a "Plan gratuito" en la esquina inferior
+**Enlace directo desde la sidebar:** con la prueba terminada, junto al aviso de plan en la esquina inferior
 izquierda, un enlace "Pasar a Pro" lleva directo a esta comparativa sin esperar a chocar con un límite.
 
 **Sobre el plan Lifetime:** es un pago único que te da acceso a todo lo de Pro de forma indefinida,
 más 3.000.000 tokens de IA de regalo al comprarlo. El checkout está disponible tanto en **Ajustes →
 Cuenta → Planes** dentro de la propia app como en [fromly.app/pricing.html](https://fromly.app/pricing.html).
 
-### No hay periodo de prueba
+### La prueba de 15 días
 
-Fromly **no tiene pruebas gratuitas**. Solo hay dos situaciones: el **plan gratuito**, que no
-caduca nunca y te deja usar la app con un límite de 1.000 elementos, o un **plan de pago** (Pro,
-Anual o Lifetime). No existe ningún estado intermedio que expire y te deje sin acceso.
+Toda cuenta nueva empieza con **15 días de Fromly entero**, asistente incluido y sin tarjeta. No
+hay funciones bloqueadas durante ese tiempo: se prueba lo mismo que se compra.
+
+Al terminar, **no se borra nada**. Sigues entrando y leyendo todo lo tuyo, con la sincronización
+limitada a 1.000 elementos; lo que se apaga es el asistente (chat, agentes, mensaje de la mañana y
+adjuntos). Activar Pro en cualquier momento lo devuelve todo tal y como estaba.
+
+Si la prueba se te pasó sin haber podido probarlo en condiciones, recibirás por correo la opción de
+**un mes más**, gratis y sin tarjeta. Se canjea con un clic desde ese correo y solo se puede una vez
+por cuenta.
+
+**Correos:** te escribimos en el idioma en el que usas la app, y todos llevan al pie un enlace para
+darte de baja. La baja solo afecta a los correos de consejos y novedades: los de contraseña, compra
+o cancelación se envían igual, porque son de servicio.
 
 Si tienes un cupón o un código de beta, se introduce en el checkout: activa el plan igual que un
 pago normal, sin fecha de caducidad distinta a la del propio plan.
@@ -946,9 +958,9 @@ para aprender Fromly de forma gradual sin saturar tu bandeja de entrada.
 Sí. La app Mac e iPhone funciona sin conexión. Los cambios se sincronizan automáticamente cuando
 recuperas la conexión.
 
-**¿Qué pasa si supero los 1.000 elementos en el plan gratuito?**
+**¿Qué pasa si supero los 1.000 elementos con la prueba terminada?**
 Puedes seguir leyendo tus notas, pero no crear nuevas hasta que elimines contenido o actualices a
-Pro. Chatear con Fromly dentro de una conversación ya empezada no cuenta contra este límite — solo
+Pro. Durante los 15 días de prueba no hay ningún tope. Chatear con Fromly dentro de una conversación ya empezada no cuenta contra este límite — solo
 cuenta 1 elemento por conversación, no cada mensaje.
 
 **¿Dónde se guardan mis datos?**
