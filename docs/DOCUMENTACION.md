@@ -1,7 +1,128 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-13 (Web v9.6.956 · iOS v2.14 build 147)
+> Última actualización: 2026-08-13 (Web v9.6.961 · iOS v2.14 build 149, en revisión de Apple)
+
+---
+
+## Sesión 2026-08-13 (sesión 3) — Agentes unificados, Web Push, tema Solar, widgets de iOS
+
+Web **v9.6.956 → v9.6.961**. iOS **build 147 → 149, enviada a revisión con los 2 IAP + grupo de
+suscripción + 2 suscripciones, tras retirar la 147 del proceso**. Servidor: varios commits, sin
+migración de versión propia.
+
+### 1. La lista de agentes del chat vs. la pestaña Agentes — dos fuentes de datos distintas
+
+`loadAgentsContext()` (`assistantTurn.ts`) leía **solo** la tabla `agent_schedules` — la que revisa
+el cron para disparar agentes por hora. Las pestañas Agentes de web (`agentesHelper.ts`) e iOS
+(`AgentsHelper.swift`) leen **los nodos** con `extraData._agentDef === "1"`. Un agente creado desde
+la web (`ElementsPanel.tsx` → `createAgentUnder`) solo escribe el nodo — la fila en
+`agent_schedules` solo aparece si el usuario le pone hora después, desde el panel de propiedades. El
+resultado: agentes visibles en la pestaña Agentes pero invisibles para el chat, sin poder pedirle
+"ejecuta X ahora".
+
+Arreglo: `loadAgentsContext()` pasa a leer `sync_nodes` (`extraData._agentDef==="1"`, no borrados, no
+en papelera — mismo filtro exacto que las dos pestañas) como fuente primaria, y solo usa
+`agent_schedules` para completar horario/activado cuando existe una fila. `AgentEntry.id` pasa a ser
+el id de la fila de `agent_schedules` cuando existe, si no el id del nodo — seguro de cambiar porque
+el JSON que ven los clientes ya mapeaba `id: a.nodeId` (`routes/assistant.ts`), nunca el id de la
+fila. `POST /agents/schedule` (programar desde cualquier plataforma) ya hacía upsert correcto en
+`agent_schedules`, así que el cron seguía disparando bien — el bug era solo de visibilidad en el chat.
+
+De paso: los dos `emitOpsForNodes(...).catch(() => {})` sin log (creación de agente por chat, escribir
+en la nota diaria) pasan a loguear el error en vez de tragarlo en silencio.
+
+### 2. Web Push real — tercer canal de `notifyUser()`
+
+La web no tenía NINGÚN aviso posible con la pestaña cerrada — solo el badge `_agentResultUnseen` en
+la sidebar, que exige tenerla abierta y enfocada. Nuevo:
+
+- `web_push_subscriptions` (`userId`, `endpoint`, `p256dh`, `auth`) — equivalente de `device_tokens`
+  para el navegador.
+- `lib/webPush.ts` — `sendWebPush()`, mismo patrón que `push.ts` (APNs): sin `VAPID_PUBLIC_KEY` /
+  `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` no hace nada, no rompe nada. Suscripciones que el navegador
+  invalida (404/410) se borran solas.
+- `POST /webpush/subscribe|unsubscribe`, `GET /webpush/vapid-public-key`.
+- `notifyUser()` (`lib/notify.ts`) manda por los tres canales (push iOS, web push, Telegram) sin que
+  quien llama sepa cuál está activo.
+- Cliente: `public/sw.js` (recibe el push, muestra la notificación, en clic enfoca una pestaña
+  abierta vía `postMessage` o abre una nueva con `?openNode=`), `hooks/useWebPush.ts` (registra el
+  SW, suscribe con la clave del servidor), toggle "Avisarme aunque tenga la pestaña cerrada" en
+  `V2Sidebar.tsx`. Sin pedir el permiso solo al cargar — requiere un clic explícito.
+- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` ya en Railway.
+
+### 3. Tema Solar — claro de día, oscuro de noche, sin geolocalización
+
+Mismos umbrales en las dos plataformas (dawn 6:00–7:00, dusk 19:30–20:30, hora LOCAL del
+dispositivo, sin pedir ubicación):
+
+- Web (`hooks/useTheme.ts`): durante la ventana de transición interpola en directo (cada minuto) los
+  colores de superficie entre su versión clara y oscura, escribiéndolos como overrides inline de las
+  CSS custom properties — fuera de la ventana, vuelve a la hoja de estilo normal (`data-theme`).
+- iOS (`Services/SolarTheme.swift`): corte discreto a mitad de cada ventana de 30 min;
+  `preferredColorScheme` cambia envuelto en `.animation()`, igual que el propio "Automático" de iOS
+  hace su cross-fade con el sensor de luz.
+
+### 4. Chat — tres pulidos de paridad web/iOS
+
+- El separador de hora ya no exige >3h de hueco: sale al principio de la conversación y cada vez que
+  cambia el minuto entre dos mensajes.
+- "Abrir" pasa de "›" (mismo signo que el prefijo del mensaje del usuario) a "→ Abrir".
+- Nuevo campo `autoOpen` en la respuesta de `/assistant/chat`: `true` solo cuando `plan.openToday`
+  (el usuario pidió justo VER su nota de hoy) — el cliente navega solo, sin esperar un toque en
+  "Abrir". Nunca en confirmaciones de escritura (`appendToDiary`), donde un salto de pantalla sería
+  un susto.
+
+### 5. iOS — Google Calendar, gestos, calendario de días, widgets, Quick Actions
+
+- **Google Calendar nunca conectaba**: `connectGoogle()` solo fijaba
+  `presentationContextProvider` bajo `#if os(macOS)` — en iOS `ASWebAuthenticationSession.start()`
+  fallaba siempre con `presentationContextNotProvided` (error 2). Nuevo
+  `IOSPresentationAnchorHelper` (UIWindowScene) con su propio `retainSession` (la propiedad es
+  `weak`).
+- **"Sin conexión" falso**: una sync cancelada por otra más reciente (`NSURLErrorCancelled`, típico
+  al cambiar de pantalla) se interpretaba como fallo de red. Ahora una cancelación no toca
+  `isOffline`/`lastSyncError`.
+- **Gestos de borde** en `AssistantChatView`: 20pt en cada borde del hilo (no del composer);
+  izquierda abre/crea la nota diaria, derecha presenta `IOSAgendaView` (vista de agenda que había
+  quedado huérfana tras el pivote a chat-first, reaprovechada en vez de duplicada) como sheet.
+- **Selector de calendario** (`AssistantDayPickerSheet`, `DatePicker` gráfico) en la toolbar de
+  cualquier nota diaria, para saltar a cualquier fecha; nueva `AssistantDayAgendaView` generaliza la
+  agenda de "hoy" a un día cualquiera. `navigator.open(id)` ahora soporta transiciones id→id con la
+  cubierta ya abierta — necesitó `.id(navigator.rootId)` en el `fullScreenCover`, si no
+  `AssistantNodeView` conservaba su identidad y `.task` no volvía a correr.
+- **Target `FromWidget` nuevo** (WidgetKit — el directorio existía desde el 16 jul pero nunca se
+  había registrado en el `.pbxproj`): 3 widgets (`FromTodayWidget`, `FromNoteWidget`,
+  `FromQuickWidget`) reusando el App Group `group.com.albertolezaun.from` y el token de sesión que ya
+  comparte `FromServerService` con la Share Extension — sin sesión/red, "Abre Fromly para ver tus
+  tareas", nunca datos inventados. `syncCaptureCredentialsToAppGroup()` llama
+  `WidgetCenter.shared.reloadAllTimelines()` al sincronizar, sin esperar el ciclo de refresco.
+- **Quick Actions** del icono (`UIApplicationShortcutItems` en `Info-Extra.plist` + `AppDelegate`):
+  4 accesos — nueva tarea, nota de hoy, nota de voz, preguntar — convergen en los mismos
+  `Notification.Name` que ya posteaba (sin que nadie los escuchara) `FromAppIntents.swift` para Siri.
+
+### 6. App Store — primera vez con una extensión nueva en el envío
+
+Al archivar con la extensión `FromWidget` recién registrada, el archive falló la primera vez:
+`Provisioning profile doesn't include the App Groups capability`. `xcodebuild archive
+-allowProvisioningUpdates` lo resolvió solo, regenerando el perfil con el entitlement — mismo
+mecanismo (sesión de Xcode ya autenticada, cero credenciales extra) que ya se usaba para el
+upload. Export con `destination: upload` en el plist (nuevo `ExportOptionsAppStore***Upload.plist`)
+sube directo, sin pasos manuales de Transporter.
+
+Cancelar+resubir con una build que YA incluye una extensión nueva no cambió el procedimiento de las
+sesiones anteriores: "eliminar del proceso de revisión" → editar → swap de build → cada IAP y cada
+suscripción (grupo Y tiers, por separado) con "Añadir a revisión" eligiendo el borrador existente,
+nunca "Crear nuevo envío" → enviar todo junto al final.
+
+### 7. Auditoría de pagos y email — todo verificado en vivo, nada roto
+
+Repaso completo de checkout/LemonSqueezy, IAP/StoreKit, sincronización de plan, paywall, precios y
+deliverability de email. Único hallazgo real: `.env.example` tenía variantes de LemonSqueezy
+desactualizadas — Railway (producción) ya tenía los valores correctos, confirmado leyendo
+`railway variables` directamente. Confirmado además, con acceso a los paneles: el webhook de
+LemonSqueezy responde `200 {"ok":true}` en las últimas entregas, y `fromly.app` está `Verified` en
+Resend con envíos "Delivered" en las últimas horas (transaccionales y de nurturing).
 
 ---
 

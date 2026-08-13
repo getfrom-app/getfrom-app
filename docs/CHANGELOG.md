@@ -4,6 +4,29 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.961 — 13 agosto 2026 · Notificaciones reales, tema Solar y un chat más claro
+
+- **Notificaciones aunque tengas la pestaña cerrada**: hasta ahora, si un agente terminaba con la web cerrada, no te enterabas hasta volver a abrirla. Nuevo aviso "Avisarme aunque tenga la pestaña cerrada" en el menú de usuario.
+- **Tema Solar**: claro de día, oscuro de noche, con la hora de tu propio dispositivo — sin pedir tu ubicación. Se activa junto a Claro/Oscuro/Sistema.
+- **El chat ya no confunde tus mensajes con los enlaces para abrir**: antes ambos usaban "›"; ahora el enlace es "→ Abrir".
+- **El separador de hora sale siempre** en el chat, no solo cuando pasaban horas entre mensajes.
+- **"Abre mi nota de hoy" la abre de verdad**, sin tener que tocar nada más.
+- **Los agentes creados desde la web ya aparecen en el chat**: antes solo salían en la pestaña Agentes si no tenían hora programada.
+
+---
+
+## iOS v2.14.149 — 13 agosto 2026 · Widgets, accesos rápidos y gestos nuevos
+
+- **3 widgets nuevos** para la pantalla de inicio: tareas y eventos de hoy, tu nota diaria, y accesos rápidos.
+- **Acciones rápidas al mantener pulsado el icono**: nueva tarea, nota de hoy, nota de voz, preguntar a Fromly.
+- **Gestos de borde en el chat**: estira desde la derecha para ver las tareas de hoy, desde la izquierda para tu nota diaria.
+- **Selector de calendario** para saltar directamente a cualquier día, con su agenda.
+- **Conectar Google Calendar ya funciona**: llevaba roto desde siempre — nunca llegaba a mostrar la pantalla de Google.
+- **Tema Solar**, igual que en la web.
+- Mismos pulidos de chat que la web: separador de hora siempre, "→ Abrir" en vez de "›", nota de hoy que se abre sola.
+
+---
+
 ## Web v9.6.956 — 13 agosto 2026 · La prueba de 15 días, contada bien y en tu idioma
 
 - **La página de precios, en 15 idiomas**: alemán, francés, italiano, portugués, neerlandés, sueco, polaco, turco, ruso, griego, chino, japonés y coreano, además de español e inglés. Antes estaba en dos, y quien llegaba desde un correo en su idioma se encontraba una página en otro.

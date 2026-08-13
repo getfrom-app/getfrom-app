@@ -44,6 +44,20 @@ navegador si algún día quieres repasarlo.
 
 ## Novedades (agosto 2026)
 
+- **Notificaciones con la pestaña cerrada (web)**: activa el aviso desde el menú de tu nombre →
+  «Avisarme aunque tenga la pestaña cerrada». Antes, si un agente terminaba con la web cerrada, no
+  te enterabas hasta volver a abrirla.
+- **Tema Solar**: junto a Claro/Oscuro/Sistema, un cuarto modo que sigue la luz del día — claro de
+  día, oscuro de noche, con la hora de tu propio dispositivo, sin pedir tu ubicación. Disponible en
+  web y en iPhone/iPad.
+- **Widgets para la pantalla de inicio (iPhone/iPad)**: tareas y eventos de hoy, tu nota diaria, y
+  accesos rápidos — mantén pulsado un hueco vacío de la pantalla de inicio y elige «Añadir widget».
+- **Accesos rápidos del icono (iPhone/iPad)**: mantén pulsado el icono de Fromly para nueva tarea,
+  nota de hoy, nota de voz o preguntar directamente.
+- **Gestos de borde en el chat (iPhone)**: estira desde el borde derecho de la pantalla para ver las
+  tareas de hoy, desde el izquierdo para tu nota diaria.
+- **Salta a cualquier día**: desde tu nota diaria, un icono de calendario abre un selector para ir
+  directo a cualquier fecha — verás la nota de ese día y un enlace a su agenda.
 - **Barra de creación**: arriba de la columna izquierda, una fila de iconos crea directamente en el
   contexto que tengas activo — **Chat**, **Nota**, **Lienzo**, **Tarea**, **Grabar** y
   **Adjuntar**. Sustituye a los botones «Nueva conversación» y «Nuevo elemento».
