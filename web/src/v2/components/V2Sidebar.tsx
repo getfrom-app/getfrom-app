@@ -10,6 +10,7 @@ import { useUserStore } from '../../store/userStore'
 import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent, reparentContext, listContextsForParent, getOrCreateContextKnowledgeDoc } from '../../utils/cajones'
 import { listPendingAgentConversations, listUnseenAgentResults } from '../../store/aiChatStore'
 import { useTheme } from '../../hooks/useTheme'
+import { useWebPush } from '../../hooks/useWebPush'
 import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
 import NewContextModal from '../../components/modals/NewContextModal'
@@ -100,6 +101,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
     if (files.length) onFilesDropped(files)
   }
   const { theme, setTheme } = useTheme()
+  const webPush = useWebPush()
   const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
   const [userMenu, setUserMenu] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
@@ -551,6 +553,28 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
                   {tk === 'light' ? t('v2.themeLight', 'Claro') : tk === 'dark' ? t('v2.themeDark', 'Oscuro') : tk === 'solar' ? t('v2.themeSolar', 'Solar') : t('v2.themeAuto', 'Sistema')}</button>
               ))}
             </div>
+            {webPush.status !== 'unsupported' && (
+              <>
+                <div className="v2-usermenu-sep" />
+                <div className="v2-usermenu-label">{t('v2.notifications', 'Notificaciones')}</div>
+                {webPush.status === 'granted' ? (
+                  <button className="v2-usermenu-item" onClick={() => webPush.disable()}>
+                    <Icon name="check" size={15} /> {t('v2.notificationsOn', 'Activadas — desactivar')}
+                  </button>
+                ) : webPush.status === 'denied' ? (
+                  <div className="v2-usermenu-item" style={{ opacity: 0.6, cursor: 'default' }}>
+                    {t('v2.notificationsBlocked', 'Bloqueadas por el navegador — actívalas desde su configuración')}
+                  </div>
+                ) : (
+                  // Sin esto, un agente activo (p.ej. "diario" a las 9h) no avisa
+                  // si la pestaña está cerrada — solo el badge de la sidebar, y
+                  // solo con la web ya abierta (Alberto, 13 ago).
+                  <button className="v2-usermenu-item" onClick={() => webPush.enable()}>
+                    <Icon name="report" size={15} /> {t('v2.notificationsEnable', 'Avisarme aunque tenga la pestaña cerrada')}
+                  </button>
+                )}
+              </>
+            )}
             <div className="v2-usermenu-sep" />
             <button className="v2-usermenu-item v2-usermenu-item--danger" onClick={() => { clearTokens(); window.location.href = '/login' }}>{t('v2.logOut', 'Cerrar sesión')}</button>
           </div>

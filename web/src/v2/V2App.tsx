@@ -33,6 +33,7 @@ import type { ElemKind } from '../components/panels/ElementsPanel'
 import V2Onboarding from './components/V2Onboarding'
 import V2AttachModal from './components/V2AttachModal'
 import { maybeOfferProfileChat, openProfileChat } from './profileChat'
+import { useWebPush } from '../hooks/useWebPush'
 import RightColMenu from '../components/panels/RightColMenu'
 import TaskPropsModal from '../components/modals/TaskPropsModal'
 import { docOfTask } from '../utils/docTasks'
@@ -72,6 +73,7 @@ export default function V2App() {
   const chat = useAIChat()
   const [ready, setReady] = useState(store.isLoaded)
   const [selectedCtxId, setSelectedCtxId] = useState<string | null>(null)
+  useWebPush()
 
   // Acento dinámico: si el contexto abierto (o alguno de sus padres) tiene un color
   // propio (menú de clic derecho en la sidebar), TODA la app cambia a ese acento
@@ -660,6 +662,27 @@ export default function V2App() {
     // tipo), sustituyendo al chat — mismo patrón que el Perfil (Alberto, 22 jul).
     setCenterElementId(id)
   }
+
+  // Clic en una notificación de Web Push (sw.js): si la pestaña ya estaba
+  // abierta, el service worker manda un postMessage; si la abrió de cero,
+  // llega como ?openNode= en la URL. Los dos casos navegan igual que abrir
+  // el elemento desde cualquier otro sitio de la app.
+  useEffect(() => {
+    if (!ready) return
+    const params = new URLSearchParams(window.location.search)
+    const fromUrl = params.get('openNode')
+    if (fromUrl) {
+      onOpenNode(fromUrl)
+      params.delete('openNode')
+      const rest = params.toString()
+      window.history.replaceState(null, '', window.location.pathname + (rest ? `?${rest}` : ''))
+    }
+    const onMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'from:push-open' && e.data.nodeId) onOpenNode(e.data.nodeId)
+    }
+    navigator.serviceWorker?.addEventListener('message', onMessage)
+    return () => navigator.serviceWorker?.removeEventListener('message', onMessage)
+  }, [ready]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Artifacts: cuando la IA crea un documento/nota/recurso en una conversación
   // GENERAL (sin nada abierto en el centro), ese artifact pasa a ser el CENTRO —
