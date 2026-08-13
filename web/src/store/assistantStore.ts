@@ -54,6 +54,10 @@ class AssistantStore {
   private listeners: Set<Listener> = new Set()
 
   isThinking = false
+  /** Última acción deshacible — paridad iOS AssistantUndo (13 ago 2026). Solo
+   *  completar/posponer (revierten con las mismas llamadas ya existentes);
+   *  papelera no tiene "deshacer" todavía, no hay endpoint de restaurar. */
+  lastUndo: { label: string; revert: () => Promise<void> } | null = null
   errorMessage: string | null = null
   doneIds: Set<string> = new Set()
   trashedIds: Set<string> = new Set()
@@ -216,11 +220,22 @@ class AssistantStore {
   isDone(id: string): boolean { return this.doneIds.has(id) }
   isTrashed(id: string): boolean { return this.trashedIds.has(id) }
 
-  async toggleDone(id: string, done: boolean) {
+  async toggleDone(id: string, done: boolean, text?: string) {
     const was = this.doneIds.has(id)
     if (done) this.doneIds.add(id); else this.doneIds.delete(id)
     this.notify()
-    try { await assistantComplete(id, done) }
+    try {
+      await assistantComplete(id, done)
+      // Deshacer (13 ago 2026) — solo al COMPLETAR (reabrir ya es en sí
+      // mismo el "deshacer" de completar, no hace falta otro nivel).
+      if (done) {
+        this.lastUndo = {
+          label: text ? `"${text}" completada` : 'Tarea completada',
+          revert: async () => { await this.toggleDone(id, false, text) },
+        }
+        this.notify()
+      }
+    }
     catch (e) {
       if (was) this.doneIds.add(id); else this.doneIds.delete(id)
       this.errorMessage = e instanceof Error ? e.message : String(e)
@@ -238,10 +253,20 @@ class AssistantStore {
     }
   }
 
-  async postponeOneDay(id: string, currentDue: string | null) {
+  async postponeOneDay(id: string, currentDue: string | null, text?: string) {
     const base = currentDue ? new Date(currentDue) : new Date()
     const next = new Date(base.getTime() + 24 * 3600 * 1000)
-    try { await assistantPostpone(id, next) }
+    try {
+      await assistantPostpone(id, next)
+      if (currentDue) {
+        const restoreDue = new Date(currentDue)
+        this.lastUndo = {
+          label: text ? `"${text}" pospuesta` : 'Tarea pospuesta',
+          revert: async () => { await assistantPostpone(id, restoreDue); this.notify() },
+        }
+        this.notify()
+      }
+    }
     catch (e) { this.errorMessage = e instanceof Error ? e.message : String(e); this.notify() }
   }
 

@@ -19,7 +19,7 @@ import { ensureAgentesNode, migrateAgentsV2, migrateAgentMetaChildren, migratePr
 import { cleanupOrphanProfileKnowledge, migrateKnowledgeNodesToFromly, migrateContextKnowledgeToMemoria } from '../api/userKnowledge'
 import { ensurePapeleraNode } from './papeleraHelper'
 import { ensureHomeRootAndReparent } from './homeHelper'
-import { ensurePromptsNode, migratePromptifiedAgentPrompts } from './promptsHelper'
+import { ensurePromptsNode, migratePromptifiedAgentPrompts, mergeDuplicatePrompts } from './promptsHelper'
 import { relocateRootDiariesToAgenda, cleanupYearMonthContexts, migrateDiaryEntriesToDoc } from './agendaHelper'
 import { revertContextReferenceOnce } from './migrateContextReference'
 import { migrateEventsToTasks } from './migrateEventsToTasks'
@@ -50,6 +50,10 @@ export async function runStartupMigrations(): Promise<void> {
   migrateAgentsV3UnifyInstruction()
   ensurePromptsNode()
   migratePromptifiedAgentPrompts()
+  try {
+    const dupMerged = mergeDuplicatePrompts()
+    if (dupMerged > 0) console.info(`[from] prompts duplicados fusionados: ${dupMerged}`)
+  } catch (e) { console.warn('[from] mergeDuplicatePrompts falló:', e) }
   ensurePapeleraNode()
   ensureHomeRootAndReparent()
   await relocateRootDiariesToAgenda()

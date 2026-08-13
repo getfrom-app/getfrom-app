@@ -108,9 +108,14 @@ export function createPromptUnder(opts: {
   /** Contenido inicial (una línea por hijo, outliner) — lo usa create_prompt cuando
    *  la IA redacta el prompt a partir de lo que pide el usuario en el chat. */
   content?: string
+  /** ID determinista (structuralId) para prompts "de fábrica"/migrados — así dos
+   *  clientes que crean "el mismo" prompt sin haberse sincronizado aún convergen en
+   *  el mismo nodo en vez de duplicarlo (Alberto, 13 ago: "los prompts se duplican
+   *  mucho"). Ausente = id aleatorio, para prompts que crea el usuario a mano. */
+  predefinedId?: string
 }): Node {
   const icon = opts.icon || '⚡'
-  const node = store.createNode({ text: opts.label.trim(), parentId: opts.parentId })
+  const node = store.createNode({ text: opts.label.trim(), parentId: opts.parentId, predefinedId: opts.predefinedId })
   store.updateNode(node.id, {
     extraData: JSON.stringify({
       _promptDef:        '1',
@@ -461,7 +466,7 @@ export function ensurePromptsNode(): void {
   const root = store.createNode({ text: PROMPTS_ROOT_NAME, parentId: null, siblingOrder: 9996, predefinedId: structuralId('prompts') ?? undefined })
 
   // Prompt de ejemplo 1 — Diario del día (activación automática en notas diarias)
-  const diario = store.createNode({ text: 'Diario del día', parentId: root.id })
+  const diario = store.createNode({ text: 'Diario del día', parentId: root.id, predefinedId: structuralId('prompt.diario') ?? undefined })
   store.updateNode(diario.id, {
     extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'diary', _promptIcon: '📔', _promptGroup: 'Diario' }),
     isCollapsed: false,
@@ -475,7 +480,7 @@ export function ensurePromptsNode(): void {
   ]) store.createNode({ text: line, parentId: diario.id })
 
   // Prompt de ejemplo 2 — Brainstorming (manual)
-  const brainstorm = store.createNode({ text: 'Brainstorming', parentId: root.id })
+  const brainstorm = store.createNode({ text: 'Brainstorming', parentId: root.id, predefinedId: structuralId('prompt.brainstorm') ?? undefined })
   store.updateNode(brainstorm.id, {
     extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'manual', _promptIcon: '💡' }),
     isCollapsed: false,
@@ -488,7 +493,7 @@ export function ensurePromptsNode(): void {
   ]) store.createNode({ text: line, parentId: brainstorm.id })
 
   // Prompt de ejemplo 3 — Resumen ejecutivo (manual)
-  const resumen = store.createNode({ text: 'Resumen ejecutivo', parentId: root.id })
+  const resumen = store.createNode({ text: 'Resumen ejecutivo', parentId: root.id, predefinedId: structuralId('prompt.resumen-ejecutivo') ?? undefined })
   store.updateNode(resumen.id, {
     extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'manual', _promptIcon: '📋' }),
     isCollapsed: false,
@@ -501,7 +506,7 @@ export function ensurePromptsNode(): void {
   ]) store.createNode({ text: line, parentId: resumen.id })
 
   // Prompt de ejemplo 4 — Próximos pasos (manual)
-  const proximosPasos = store.createNode({ text: 'Próximos pasos', parentId: root.id })
+  const proximosPasos = store.createNode({ text: 'Próximos pasos', parentId: root.id, predefinedId: structuralId('prompt.proximos-pasos') ?? undefined })
   store.updateNode(proximosPasos.id, {
     extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'manual', _promptIcon: '✅' }),
     isCollapsed: false,
@@ -530,6 +535,7 @@ export function migratePromptifiedAgentPrompts(): void {
   if (!existingNames.has('investigar un tema')) {
     createPromptUnder({
       parentId: root.id, label: 'Investigar un tema', icon: '🔎', activation: 'manual', group: 'Investigación',
+      predefinedId: structuralId('prompt.investigar-tema') ?? undefined,
       content: [
         'Actúa como un investigador que prepara un briefing estructurado sobre un tema.',
         'Te voy a indicar el tema (o pasarte enlaces). Consulta las fuentes necesarias y entrega: qué es / por qué importa, los 3-4 puntos clave, datos o cifras relevantes, y una conclusión con próximos pasos.',
@@ -540,6 +546,7 @@ export function migratePromptifiedAgentPrompts(): void {
   if (!existingNames.has('resumen de un enlace')) {
     createPromptUnder({
       parentId: root.id, label: 'Resumen de un enlace', icon: '🧾', activation: 'manual', group: 'Investigación',
+      predefinedId: structuralId('prompt.resumen-enlace') ?? undefined,
       content: [
         'Actúa como un asistente que resume páginas web de forma fiel y útil.',
         'Te voy a pasar una URL. Léela y entrega: resumen en 3 líneas, los puntos clave en bullets, y si procede, acciones o ideas que se desprenden.',
@@ -548,4 +555,43 @@ export function migratePromptifiedAgentPrompts(): void {
     })
   }
   try { localStorage.setItem('from_prompts_promptify_v1', '1') } catch { /* */ }
+}
+
+/**
+ * mergeDuplicatePrompts — limpia los duplicados YA creados por la carrera que
+ * arreglan los `predefinedId` de arriba (dos dispositivos que crearon "el mismo"
+ * prompt de fábrica/migrado antes de sincronizarse) — Alberto, 13 ago: "los
+ * prompts se duplican mucho". Agrupa por (padre, texto normalizado) entre nodos
+ * `_promptDef`, se queda con el que tenga más contenido (o el más antiguo si
+ * empatan) y reparenta+borra el resto. Mismo patrón que mergeDuplicateDiaries
+ * (nodeStore.ts) — corre en cada arranque, sin flag: no hace nada si no hay
+ * duplicados.
+ */
+export function mergeDuplicatePrompts(): number {
+  const groups = new Map<string, Node[]>()
+  for (const n of store.nodes.values()) {
+    if (n.deletedAt || !isPromptNode(n)) continue
+    const key = `${n.parentId ?? 'root'}|${(n.text || '').trim().toLowerCase()}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(n)
+  }
+  let merged = 0
+  for (const [, dups] of groups) {
+    if (dups.length < 2) continue
+    dups.sort((a, b) => {
+      const ca = store.children(a.id).length
+      const cb = store.children(b.id).length
+      if (cb !== ca) return cb - ca
+      return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime()
+    })
+    const canonical = dups[0]
+    for (const dup of dups.slice(1)) {
+      for (const child of store.children(dup.id).filter(c => !c.deletedAt)) {
+        store.updateNode(child.id, { parentId: canonical.id })
+      }
+      store.deleteNode(dup.id)
+      merged++
+    }
+  }
+  return merged
 }
