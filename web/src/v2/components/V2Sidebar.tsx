@@ -541,13 +541,14 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
             <div className="v2-usermenu-sep" />
             <div className="v2-usermenu-label">{t('v2.theme', 'Tema')}</div>
             <div className="v2-theme-seg">
-              {(['light', 'dark', 'system'] as const).map(tk => (
+              {(['light', 'dark', 'solar', 'system'] as const).map(tk => (
                 <button
                   key={tk}
                   className={`v2-theme-opt ${theme === tk ? 'active' : ''}`}
                   onClick={() => setTheme(tk)}
-                ><Icon name={tk === 'light' ? 'sun' : tk === 'dark' ? 'moon' : 'auto'} size={13} />
-                  {tk === 'light' ? t('v2.themeLight', 'Claro') : tk === 'dark' ? t('v2.themeDark', 'Oscuro') : t('v2.themeAuto', 'Auto')}</button>
+                  title={tk === 'solar' ? t('v2.themeSolarHint', 'Claro de día, oscuro de noche, con la hora de este dispositivo') : undefined}
+                ><Icon name={tk === 'light' ? 'sun' : tk === 'dark' ? 'moon' : tk === 'solar' ? 'auto' : 'auto'} size={13} />
+                  {tk === 'light' ? t('v2.themeLight', 'Claro') : tk === 'dark' ? t('v2.themeDark', 'Oscuro') : tk === 'solar' ? t('v2.themeSolar', 'Solar') : t('v2.themeAuto', 'Sistema')}</button>
               ))}
             </div>
             <div className="v2-usermenu-sep" />
