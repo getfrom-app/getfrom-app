@@ -1,10 +1,19 @@
 // Chat central de Fromly 2.0 — el corazón de la app chat-first.
-// Reutiliza el motor REAL: aiChatStore.send() + streaming SSE + acciones.
-// currentNodeId = contexto seleccionado → buildPayload le inyecta ese contexto.
+// Habla con /assistant/chat, el mismo "cerebro" que ya usan iOS y Telegram
+// (Alberto, 13 ago: "la misma inteligencia y magia del chat de iOS"). Antes
+// usaba un motor propio (/ai/chat, streaming, bloques from-action) sin
+// acciones dictadas sobre tareas existentes ni agentes a demanda.
+//
+// Estilo del mensaje: texto plano, sin globos — igual que el chat de iOS
+// (Alberto, 13 ago, sobre iOS: "hazlo como Claude Code, simplemente texto").
+// El equivalente al "deslizar" de iOS son las acciones que YA existen en la
+// web: clic derecho (from:open-rowmenu → RightColMenu) y los botones de hover
+// de TaskRow — se reutilizan tal cual, no se reinventa nada.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useAIChat, aiChatStore } from '../../store/aiChatStore'
-import type { ChatMessage } from '../../store/aiChatStore'
+import { useAssistantStore, assistantStore } from '../../store/assistantStore'
+import type { AssistantMsg } from '../../store/assistantStore'
+import type { AssistantListedTask, AssistantListedAgent } from '../../api/assistant'
 import { store, useStore } from '../../store/nodeStore'
 import { renderChatContent } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
@@ -13,6 +22,8 @@ import { listAllPrompts, resolvePrompt } from '../../utils/promptsHelper'
 import { listAllAgents } from '../../utils/agentesHelper'
 import { displayTitle } from '../../utils/displayText'
 import { isMentionable } from '../elementKind'
+import TaskRow from '../../components/panels/TaskRow'
+import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
 import Icon from './Icon'
 import V2ContextBrowser from './V2ContextBrowser'
 
@@ -20,54 +31,129 @@ interface Props {
   currentNodeId: string | null
   contextLabel: string
   onFilesDropped: (files: File[]) => void
-  /** Mismo chat, montado dentro de la columna derecha en vez del espacio central
-   *  — SIEMPRE que hay un elemento abierto en el centro, es su chat asociado
-   *  (V2ElementChat/V2RightColumn.tsx). `.v2-col.v2-center` fija `height:100vh`,
-   *  correcto solo como columna raíz del grid — en `embedded` se usa
-   *  `.v2-right-fill` (mismo flex:1/min-height:0 que el resto de contenido de
-   *  la columna derecha). También cambia el saludo/sugerencias del estado
-   *  vacío: sobre EL DOCUMENTO, no genéricos de "resume mi día" (Alberto, 30
-   *  jul: "no debería aparecer, debería ser un chat dedicado al tema del que
-   *  se está hablando"). */
   embedded?: boolean
-  /** `embedded` mezclaba dos cosas — maquetación (columna derecha vs centro) Y si el
-   *  copy/sugerencias son "sobre este documento" vs genéricos. El destino "Chat"
-   *  general (Alberto, 5 ago 2026) necesita la maquetación de `embedded` pero el
-   *  copy GENÉRICO (no hay documento del que hablar) — este prop desacopla lo
-   *  segundo. Por defecto cae en `embedded` (`scoped = elementScoped ?? embedded`),
-   *  así que los sitios existentes (centro, `V2ElementChat`) no cambian de
-   *  comportamiento al no pasarlo nunca. */
   elementScoped?: boolean
-  /** Estado vacío = tarjetas de contexto (ver más abajo). Estos tres handlers
-   *  son los mismos que usa el tab «Historial» — se pasan tal cual desde V2App. */
   onOpenConversation?: (id: string) => void
   onNewChatInCtx?: (id: string | null) => void
   onSelectCtx?: (id: string) => void
 }
 
-// Oculta los bloques ```from-action``` (completos o el parcial que aún se está
-// escribiendo) para que el usuario NUNCA vea el JSON de la acción en el chat.
-function stripActions(s: string): string {
-  return s
-    .replace(/```from-action[\s\S]*?```/g, '')
-    .replace(/```from-action[\s\S]*$/, '')
-    // Red de seguridad: el marcador de chips de seguimiento ya se separa en el store
-    // (parseChips), pero nunca debe poder colarse crudo al chat pase lo que pase.
-    .replace(/\{\{chips:[\s\S]*?\}\}/g, '')
-    // Red de seguridad: pese a la instrucción del prompt, el modelo a veces suelta
-    // <function_calls> justo antes del bloque de acción (hábito de otros formatos
-    // de function-calling) — nunca debe verse como texto suelto en el chat.
-    .replace(/<\/?function_calls?>/gi, '')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
+function openNode(id: string) {
+  window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: id } }))
+}
+
+/** Las tareas nombradas en la respuesta ("refs"/"list") — fila tocable, no
+ *  texto muerto. Reusa TaskRow cuando el nodo ya está sincronizado
+ *  localmente (normal: los cambios server-side llegan en ~15-20s por el
+ *  poll de ops); si aún no ha llegado, una fila simple hace de puente. */
+function AssistantTaskList({ items }: { items: AssistantListedTask[] }) {
+  useStore()
+  const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
+  const propsNode = propsNodeId ? store.getNode(propsNodeId) : null
+  return (
+    <div className="v2-assistant-list">
+      {items.map(it => {
+        const node = store.getNode(it.id)
+        if (node) {
+          return <TaskRow key={it.id} node={node} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
+        }
+        return (
+          <button key={it.id} className="v2-assistant-row" onClick={() => openNode(it.id)}>
+            <span className={`v2-assistant-row-dot ${it.overdue ? 'overdue' : ''}`} />
+            <span className="v2-assistant-row-text">{it.text}</span>
+          </button>
+        )
+      })}
+      {propsNode && <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />}
+    </div>
+  )
+}
+
+/** Los agentes nombrados en la respuesta — clic abre su ficha, clic derecho
+ *  ejecuta ahora o activa/desactiva (equivalente al swipe de iOS). */
+function AssistantAgentList({ items }: { items: AssistantListedAgent[] }) {
+  const { t } = useTranslation()
+  const [menuFor, setMenuFor] = useState<string | null>(null)
+  return (
+    <div className="v2-assistant-list">
+      {items.map(a => (
+        <div key={a.id} className="v2-assistant-row" style={{ position: 'relative' }}>
+          <button className="v2-assistant-row-main" onClick={() => openNode(a.id)}>
+            <Icon name="agent" size={14} />
+            <span className="v2-assistant-row-text">{a.title}</span>
+            {!a.enabled && <span className="v2-assistant-row-meta">{t('v2.chat.agentPaused', 'pausado')}</span>}
+          </button>
+          <button className="v2-iconbtn" title={t('v2.chat.agentMore', 'Más')} onClick={() => setMenuFor(m => m === a.id ? null : a.id)}>
+            <Icon name="more" size={14} />
+          </button>
+          {menuFor === a.id && (
+            <div className="v2-doc-menu" style={{ right: 0, left: 'auto', top: '100%' }}>
+              <button onClick={() => { setMenuFor(null); assistantStore.runAgent(a.id, a.title) }}>
+                {t('v2.chat.runNow', 'Ejecutar ahora')}
+              </button>
+              <button onClick={() => { setMenuFor(null); assistantStore.toggleAgentEnabled(a.id, !a.enabled) }}>
+                {a.enabled ? t('v2.chat.pause', 'Pausar') : t('v2.chat.activate', 'Activar')}
+              </button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boolean; onOption: (t: string) => void }) {
+  const { t } = useTranslation()
+  const visibleCreated = m.created.filter(c => !assistantStore.isTrashed(c.id))
+  return (
+    <div className={`v2-assistant-msg ${m.role}`}>
+      {m.role === 'user' ? (
+        <div className="v2-assistant-user-line">
+          <span className="v2-assistant-prompt">›</span> {m.text}
+        </div>
+      ) : (
+        <div className="v2-assistant-reply v2-msg-body">{renderChatContent(m.text)}</div>
+      )}
+
+      {visibleCreated.length > 0 && (
+        <div className="v2-assistant-list" style={{ marginTop: 6 }}>
+          {visibleCreated.map(c => {
+            const node = store.getNode(c.id)
+            if (node && c.isTask) return <TaskRow key={c.id} node={node} onOpenDate={() => openNode(c.id)} />
+            return (
+              <button key={c.id} className="v2-assistant-row" onClick={() => openNode(c.id)}>
+                <Icon name={c.isTask ? 'task' : 'document'} size={14} />
+                <span className="v2-assistant-row-text">{c.text}</span>
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {m.list && m.list.length > 0 && <AssistantTaskList items={m.list} />}
+      {m.agents && m.agents.length > 0 && <AssistantAgentList items={m.agents} />}
+
+      {m.linkedNodeId && (
+        <button className="v2-chip" style={{ marginTop: 6 }} onClick={() => openNode(m.linkedNodeId!)}>
+          › {t('v2.chat.open', 'Abrir')}
+        </button>
+      )}
+
+      {isLast && m.options && m.options.length > 0 && (
+        <div className="v2-el-filter" style={{ marginTop: 8 }}>
+          {m.options.map((o, i) => (
+            <button key={i} className="v2-chip" onClick={() => onOption(o)}>{o}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, embedded, elementScoped, onOpenConversation, onNewChatInCtx, onSelectCtx }: Props) {
   const { t } = useTranslation()
-  // Ver comentario del prop `elementScoped` — decide copy (sugerencias/saludo/título),
-  // NO maquetación (esa se queda en `embedded` puro más abajo).
   const scoped = elementScoped ?? embedded
-  const chat = useAIChat()
+  const chat = useAssistantStore()
   useStore()
   const [input, setInput] = useState('')
   const [dragOver, setDragOver] = useState(false)
@@ -95,16 +181,27 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   const taRef = useRef<HTMLTextAreaElement>(null)
 
   const messages = chat.messages
-  const streaming = chat.isStreaming
-  const pending = chat.pendingActions
+  const thinking = chat.isThinking
 
-  // Auto-scroll al fondo en cada mensaje/stream.
+  // Trae el brief/avisos que hayan llegado mientras la pestaña no estaba
+  // delante, igual que hace iOS al abrir — el hilo web es también el
+  // registro completo de lo que el asistente ha dicho por su cuenta.
+  useEffect(() => {
+    assistantStore.fetchInbox().catch(() => {})
+  }, [])
+
+  // Al abrir, directo al final del hilo — sin depender de que cambie el
+  // recuento (que también crece al pedir histórico hacia arriba).
   useEffect(() => {
     const el = scrollRef.current
     if (el) el.scrollTop = el.scrollHeight
-  }, [messages, streaming])
+  }, [])
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el && messages.length > 0) el.scrollTop = el.scrollHeight
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [messages[messages.length - 1]?.id, thinking])
 
-  // Auto-resize del textarea.
   useEffect(() => {
     const ta = taRef.current
     if (!ta) return
@@ -112,8 +209,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     ta.style.height = Math.min(ta.scrollHeight, 200) + 'px'
   }, [input])
 
-  // Atajos de texto (Ajustes → Atajos): expande el trigger en cuanto coincide,
-  // igual que en el outliner de v1 (misma fuente en localStorage).
   const onInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value
     const expanded = tryExpand(text, getShortcuts())
@@ -121,11 +216,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     updateMentionQuery(e.target)
   }
 
-  // @mención — referenciar CUALQUIER elemento de Fromly en el chat, mismo formato
-  // [[Título]] que ya reconoce/renderiza renderInline (wiki-link del outliner).
-  // Al enviar, aiChatStore resuelve estas menciones y le da a Fromly el contenido
-  // completo del elemento (Alberto, 15 jul: "usando @ se debe poder mencionar
-  // cualquier elemento de fromly y el chat tendrá acceso y lo leerá").
   const [mentionQuery, setMentionQuery] = useState<string | null>(null)
   const mentionStartRef = useRef<number>(0)
   function updateMentionQuery(ta: HTMLTextAreaElement) {
@@ -156,13 +246,11 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
 
   const doSend = (text: string) => {
     const trimmed = text.trim()
-    if (!trimmed || streaming) return
+    if (!trimmed || thinking) return
     setInput('')
-    chat.send(trimmed, currentNodeId || undefined).catch(() => {})
+    assistantStore.send(trimmed).catch(() => {})
   }
 
-  // Prompt resuelto desde el detalle («Probar en Magic») o desde el propio desplegable:
-  // se coloca y se envía directamente, sin paso intermedio.
   useEffect(() => {
     const onSendPrompt = (e: Event) => {
       const detail = (e as CustomEvent<{ text?: string }>).detail
@@ -171,7 +259,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     window.addEventListener('from:send-prompt', onSendPrompt)
     return () => window.removeEventListener('from:send-prompt', onSendPrompt)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentNodeId, streaming])
+  }, [thinking])
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (mentionQuery != null && mentionResults.length > 0 && (e.key === 'Enter' || e.key === 'Tab')) {
@@ -186,9 +274,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     }
   }
 
-  // Dictado por voz (Web Speech API) — mismo motor que el chat de v1 (AIChatModal.tsx):
-  // transcribe en vivo directamente sobre el input, sin pasar por grabación+Whisper
-  // (eso es la "Nota de voz" aparte, para audios largos). Alt+Espacio activa/desactiva.
   const toggleVoice = () => {
     if (isRecording) {
       try { (recognitionRef.current as { stop?: () => void } | null)?.stop?.() } catch { /* ignore */ }
@@ -241,13 +326,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   }
 
   const isEmpty = messages.length === 0
-
-  // Título de la CABECERA: cuando hay conversación, su título (el mismo que el Historial:
-  // ✦ + primer mensaje → luego auto-título IA). Sin conversación: «Nueva conversación»
-  // (+ contexto si hay uno seleccionado). El contexto va como prefijo tenue.
   const hasCtx = !!contextLabel && contextLabel !== 'General'
-  const sessionNode = chat.sessionId ? store.getNode(chat.sessionId) : null
-  const convTitle = sessionNode ? (sessionNode.text || '').replace(/^✦\s*/, '').trim() : ''
 
   const Wrapper = embedded ? 'div' : 'main'
   return (
@@ -259,32 +338,15 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
       style={{ position: 'relative' }}
     >
       <div className="v2-center-head">
-        {/* Embedded: sin título dinámico — el documento YA muestra su título en el
-            centro, repetirlo aquí es ruido; una etiqueta fija basta para decir qué
-            es este panel. */}
         <span className="v2-center-title">
           {scoped
             ? <><Icon name="chat" size={15} className="v2-title-icon" />{t('v2.rightColumn.tabChat', 'Chat')}</>
-            : <>
-                {hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}
-                {chat.sessionId ? (convTitle || t('v2.chat.conversation', 'Conversación')) : t('v2.chat.newConversation', 'Nueva conversación')}
-              </>}
+            : <>{hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}{t('v2.chat.title', 'Fromly')}</>}
         </span>
       </div>
 
       <div className="v2-chat-scroll" ref={scrollRef}>
         {isEmpty ? (
-          /* Estado vacío del chat. Ya NO es un saludo ("Hola 👋") con 4 sugerencias
-             genéricas — Alberto, 5 ago 2026: "no se utiliza realmente, lo podemos
-             quitar... podemos aprovechar ese espacio para poner tarjetas con cada
-             uno de los contextos, según se han ido utilizando, igual que hace
-             Claude. Al hacer clic en cada tarjeta se abre la lista de
-             conversaciones de ese contexto".
-             · Chat de un ELEMENTO (`scoped`): una línea de contexto y nada más —
-               ahí las tarjetas sobran (ya sabes de qué estás hablando).
-             · Chat general/de contexto: las tarjetas, si hay con qué navegar.
-               `onOpenConversation` es lo que decide: sin él (usos que aún no lo
-               pasan) el estado vacío se queda simplemente en blanco, sin romperse. */
           <div className="v2-chat-empty">
             {scoped ? (
               <div className="v2-chat-empty-hint">
@@ -300,68 +362,23 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
             ) : null}
           </div>
         ) : (
-          <div className="v2-chat-inner">
-            {messages.map((m: ChatMessage) => (
-              <div key={m.id} className={`v2-msg ${m.role}`}>
-                <div className="v2-msg-avatar">{m.role === 'user' ? t('v2.chat.you', 'Tú') : <Icon name="sparkle" size={15} />}</div>
-                <div className="v2-msg-body">
-                  {(() => {
-                    const disp = stripActions(m.content)
-                    if (disp) return renderChatContent(disp)
-                    if (streaming && m.role === 'assistant') {
-                      return <span className="v2-creating"><Icon name="sparkle" size={14} /> {t('v2.chat.creating', 'Creando')}<span className="v2-creating-dots" /></span>
-                    }
-                    return null
-                  })()}
-                  {m.chips && m.chips.length > 0 && (
-                    <div className="v2-el-filter" style={{ marginTop: 8 }}>
-                      {m.chips.map((c, i) => (
-                        <button key={i} className="v2-chip" onClick={() => doSend(c)}>{c}</button>
-                      ))}
-                    </div>
-                  )}
-                  {/* Referencia clicable al elemento recién creado, en el propio mensaje del
-                      chat — antes solo quedaba descrito en el texto, sin nada a lo que hacer
-                      clic aquí mismo (Alberto, 15 jul, sobre agentes/prompts: "debe aparecer
-                      allí mismo en el chat que se ha creado y se debe abrir a la derecha").
-                      Extendido a documentos/notas (Alberto, 30 jul): cuando el chat está
-                      centrado en un elemento (V2ElementChat) y la IA crea un documento nuevo,
-                      V2App.tsx YA NO lo abre solo en el centro (eso apartaría la nota que se
-                      estaba trabajando) — este chip es la única forma de llegar a él desde
-                      aquí, a un clic, sin perder de vista lo que había abierto. */}
-                  {m.actions
-                    .filter(a => a.ok && ['create_agent', 'create_prompt', 'create_document', 'create_note', 'create_resource'].includes(a.action) && a.createdIds.length === 1)
-                    .map(a => {
-                      const node = store.getNode(a.createdIds[0])
-                      if (!node) return null
-                      return (
-                        <button
-                          key={a.createdIds[0]}
-                          className="v2-chip"
-                          style={{ marginTop: 8, display: 'block' }}
-                          onClick={() => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: node.id } }))}
-                        >
-                          {node.text || t('common.noTitle', 'Sin título')}
-                        </button>
-                      )
-                    })}
-                </div>
-              </div>
+          <div className="v2-chat-inner v2-assistant-inner">
+            {chat.hasMoreHistory && (
+              <button className="v2-done-toggle" onClick={() => assistantStore.loadMoreHistory()}>
+                {t('v2.chat.loadMore', 'Cargar más antiguos')}
+              </button>
+            )}
+            {messages.map((m, i) => (
+              <AssistantBubble key={m.id} m={m} isLast={i === messages.length - 1} onOption={doSend} />
             ))}
+            {thinking && (
+              <div className="v2-assistant-msg assistant">
+                <span className="v2-creating"><Icon name="sparkle" size={14} /> {t('v2.chat.thinking', 'Fromly está pensando…')}<span className="v2-creating-dots" /></span>
+              </div>
+            )}
           </div>
         )}
       </div>
-
-      {/* Barra de acciones pendientes (confirmación de escrituras). */}
-      {pending && pending.length > 0 && (
-        <div className="v2-composer">
-          <div className="v2-composer-inner" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <span className="v2-el-meta" style={{ flex: 1 }}>{t('v2.chat.proposedChanges', '{{count}} cambio(s) propuesto(s)', { count: pending.length })}</span>
-            <button className="v2-chip" onClick={() => aiChatStore.cancelActions()}>{t('v2.chat.discard', 'Descartar')}</button>
-            <button className="v2-chip active" onClick={() => aiChatStore.confirmActions().catch(() => {})}>{t('v2.chat.apply', 'Aplicar')}</button>
-          </div>
-        </div>
-      )}
 
       <div className="v2-composer">
         <div className="v2-composer-inner">
@@ -373,10 +390,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                 ))}
               </div>
             )}
-            {/* Prompts: elegir uno para enviarlo directamente al chat, o crear uno nuevo.
-                Vive en el composer (no en la cabecera) — es aquí donde tiene sentido
-                elegir qué se va a enviar. Desplegable hacia ARRIBA (v2-doc-menu-up):
-                el composer está pegado abajo del todo. */}
             <div style={{ position: 'relative' }} ref={promptMenuRef}>
               <button className="v2-iconbtn" title={t('v2.chat.promptsTitle', 'Prompts')} onClick={() => setPromptMenu(o => !o)}><Icon name="prompt" /></button>
               {promptMenu && (
@@ -393,34 +406,21 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                   )}
                   <div className="v2-doc-menu-sep" />
                   <button onClick={() => {
-                    // Chat-first: en vez de un window.prompt() del navegador (Alberto,
-                    // 15 jul: "esta ventana feísima de Chrome... debería preguntar qué
-                    // prompt quieres crear... y confirmarlo por chat"), Fromly pregunta
-                    // en el propio chat; la respuesta del usuario dispara la IA con
-                    // acceso a create_prompt (aiChatExecutor.ts) — redacta el contenido,
-                    // crea el nodo y lo abre solo en la columna derecha (mismo mecanismo
-                    // que cualquier creación por chat, ver aiChatStore.ts).
                     setPromptMenu(false)
-                    aiChatStore.addNotice(t('v2.chat.askNewPrompt', '¿Qué prompt quieres crear? Cuéntame para qué lo vas a usar y qué debe decir, y te preparo un borrador.'))
+                    assistantStore.addNotice(t('v2.chat.askNewPrompt', '¿Qué prompt quieres crear? Cuéntame para qué lo vas a usar y qué debe decir, y te preparo un borrador.'))
                     taRef.current?.focus()
                   }}><Icon name="plus" size={14} /> {t('v2.chat.newPrompt', 'Nuevo prompt')}</button>
                 </div>
               )}
             </div>
-            {/* Agentes: mismo patrón que Prompts — ver los existentes (clic abre su
-                ficha) o crear uno nuevo. Antes solo se podía crear desde la tab
-                Elementos, tras seleccionar el filtro «Agentes» — poco descubrible
-                (Alberto, 15 jul: "sigo sin saber cómo crear... un agente"). */}
             <div style={{ position: 'relative' }} ref={agentMenuRef}>
               <button className="v2-iconbtn" title={t('v2.chat.agentsTitle', 'Agentes')} onClick={() => setAgentMenu(o => !o)}><Icon name="agent" /></button>
               {agentMenu && (
                 <div className="v2-doc-menu v2-doc-menu-up">
                   {listAllAgents().map(a => (
-                    // `displayTitle` quita el emoji que createAgentUnder dejó escrito
-                    // como prefijo EN EL DATO — el icono lo pone la UI, siempre el mismo.
                     <button key={a.id} onClick={() => {
                       setAgentMenu(false)
-                      window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: a.id } }))
+                      openNode(a.id)
                     }}><Icon name="agent" size={14} /> {displayTitle(a.text, t('common.noTitle', 'Sin título'))}</button>
                   ))}
                   {listAllAgents().length === 0 && (
@@ -428,13 +428,8 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                   )}
                   <div className="v2-doc-menu-sep" />
                   <button onClick={() => {
-                    // Chat-first, mismo motivo que «Nuevo prompt» arriba: Fromly pregunta
-                    // en el chat en vez de un window.prompt() del navegador. La IA ya sabe
-                    // usar create_agent (system prompt del servidor) y tiene la regla de
-                    // preguntar 1-2 cosas concretas antes de crear si hay ambigüedad — el
-                    // agente nace SIEMPRE desactivado (revisar y activar a mano).
                     setAgentMenu(false)
-                    aiChatStore.addNotice(t('v2.chat.askNewAgent', '¿Qué quieres automatizar? Cuéntame qué debe hacer el agente y con qué frecuencia, y te preparo un borrador.'))
+                    assistantStore.addNotice(t('v2.chat.askNewAgent', '¿Qué quieres automatizar? Cuéntame qué debe hacer el agente y con qué frecuencia, y te preparo un borrador.'))
                     taRef.current?.focus()
                   }}><Icon name="plus" size={14} /> {t('v2.chat.newAgent', 'Nuevo agente')}</button>
                 </div>
@@ -455,18 +450,18 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               onClick={toggleVoice}
               style={isRecording ? { color: '#ef4444' } : undefined}
             ><Icon name={isRecording ? 'stop' : 'mic'} /></button>
-            <button className="v2-send" disabled={!input.trim() || streaming} onClick={() => doSend(input)} title={t('v2.chat.send', 'Enviar')}><Icon name="arrow-up" size={16} strokeWidth={2} /></button>
+            <button className="v2-send" disabled={!input.trim() || thinking} onClick={() => doSend(input)} title={t('v2.chat.send', 'Enviar')}><Icon name="arrow-up" size={16} strokeWidth={2} /></button>
           </div>
           <div className="v2-composer-hint">
-            {streaming ? t('v2.chat.thinking', 'Fromly está pensando…') : t('v2.chat.composerHint', 'Enter para enviar · Shift+Enter salto de línea · arrastra archivos aquí')}
+            {thinking ? t('v2.chat.thinking', 'Fromly está pensando…') : t('v2.chat.composerHint', 'Enter para enviar · Shift+Enter salto de línea · arrastra archivos aquí')}
           </div>
         </div>
       </div>
 
       {dragOver && (
         <div className="v2-drop-overlay">
-          <Icon name={chat.sessionId ? 'attachment' : 'import'} size={18} />
-          {chat.sessionId ? t('v2.chat.importToConversation', 'Importar a la conversación') : t('v2.chat.importToFromly', 'Importar a Fromly')}
+          <Icon name="import" size={18} />
+          {t('v2.chat.importToFromly', 'Importar a Fromly')}
         </div>
       )}
     </Wrapper>

@@ -320,19 +320,47 @@ const TRANSLATIONS = {
 
 /* ─── Core functions ─────────────────────────────────────── */
 
-// Solo ES y EN. Cualquier idioma no-español usa inglés como fallback.
-const LANGUAGES = ['es','en'];
+// La landing va en ES y EN. Una página puede traer MÁS idiomas cargando su
+// propio archivo antes que este y dejándolos en `window.I18N_EXTRA` — así lo
+// hace pricing.html, que es a donde llevan los correos y por tanto tiene que
+// hablar los mismos idiomas que ellos (13 ago 2026). El resto de páginas siguen
+// en dos idiomas y no se enteran.
+if (window.I18N_EXTRA) {
+  for (const [lang, dict] of Object.entries(window.I18N_EXTRA)) {
+    TRANSLATIONS[lang] = Object.assign({}, TRANSLATIONS[lang], dict);
+  }
+}
+
+// Los idiomas que ESTA página sabe hablar. Se calcula, no se fija a mano: así
+// pricing.html ofrece los 15 y las demás siguen ofreciendo 2.
+function availableLangs() { return Object.keys(TRANSLATIONS); }
+const LANGUAGES = availableLangs();
 
 function detectLang() {
+  // 1) ?lang=xx — es lo que usan los enlaces de los correos, que saben en qué
+  //    idioma le escriben al usuario mejor que el navegador con el que abra.
+  const pedido = new URLSearchParams(location.search).get('lang');
+  if (pedido) {
+    const m = matchLang(pedido);
+    if (m) { try { localStorage.setItem('from-lang', m); } catch (e) {} return m; }
+  }
+  // 2) elección explícita guardada
   const saved = localStorage.getItem('from-lang');
-  if (saved && LANGUAGES.includes(saved)) return saved;
-  const b = (navigator.language || navigator.userLanguage || 'es').toLowerCase();
-  // Español → español. Cualquier otro idioma → inglés.
-  return b.startsWith('es') ? 'es' : 'en';
+  if (saved && availableLangs().includes(saved)) return saved;
+  // 3) idioma del navegador
+  return matchLang(navigator.language || navigator.userLanguage || '') || 'en';
+}
+
+// "de-AT" → "de" si esta página lo tiene. Si no, null (y se cae a inglés).
+function matchLang(raw) {
+  const base = String(raw).toLowerCase().split(/[-_]/)[0];
+  return availableLangs().includes(base) ? base : null;
 }
 
 function applyTranslations(lang) {
-  const t = TRANSLATIONS[lang] || TRANSLATIONS['es'];
+  // ⚠️ Reserva INGLÉS, no español: antes un idioma sin traducir caía a español,
+  // que no lo entiende quien no lo habla (mismo fallo que tenían los correos).
+  const t = TRANSLATIONS[lang] || TRANSLATIONS['en'];
 
   const pageKey = document.body.dataset.page;
   if (pageKey) {
@@ -363,7 +391,7 @@ function applyTranslations(lang) {
 }
 
 function setLang(lang) {
-  if (!LANGUAGES.includes(lang)) return;
+  if (!availableLangs().includes(lang)) return;
   localStorage.setItem('from-lang', lang);
   applyTranslations(lang);
 }
