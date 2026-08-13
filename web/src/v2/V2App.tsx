@@ -11,7 +11,8 @@ import { aiChatStore, useAIChat, markAgentResultSeen, markPendingConversationSee
 import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
-import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent, getOrCreateContainerNotes } from '../utils/cajones'
+import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent, getOrCreateContainerNotes, assignContext } from '../utils/cajones'
+import ContextPicker from '../components/panels/ContextPicker'
 import { darkenHex, lightenHex, hexToRgba } from '../utils/color'
 import { htmlToMarkdown } from '../utils/htmlMarkdown'
 import { createMarkdownNode } from '../utils/importMarkdown'
@@ -142,6 +143,12 @@ export default function V2App() {
   //   · 'dia'    → derecha = timeline horario · centro = nota diaria de hoy.
   //   · 'agenda' → derecha = atrasadas/sin fecha/seguimiento · centro = planner.
   const [centerElementId, setCenterElementId] = useState<string | null>(null)
+  // Ids del último lote de archivos subidos a la vez (2+) — para poder
+  // asignarles un contexto compartido en un solo gesto (Alberto, 13 ago: "al
+  // subir varios elementos... deberían agruparse para poder añadir contexto",
+  // estilo la selección múltiple + "Agrupar" del proyecto hermano "brain").
+  const [batchUploadIds, setBatchUploadIds] = useState<string[] | null>(null)
+  const [batchPickerOpen, setBatchPickerOpen] = useState(false)
   // Cuál de las 1-2 tabs de la columna derecha está activa — 'chat' solo tiene
   // efecto real si hay algo en `centerElementId` (V2RightColumn lo calcula de
   // forma defensiva, `effectiveSubTab`). Se resetea a 'primary' cada vez que
@@ -450,17 +457,20 @@ export default function V2App() {
 
   // Importa archivos a Fromly bajo `parentId` SIN crear conversación (.md → nota; resto →
   // recurso). Se usa al soltar sobre la columna de contextos (o sobre el chat sin conversación).
-  const importFilesToFromly = async (files: File[], parentId: string | null): Promise<string | null> => {
-    let lastId: string | null = null
+  // Devuelve TODOS los ids creados (no solo el último) — subir varios a la vez necesita
+  // poder agruparlos después para asignarles contexto de una sola vez (Alberto, 13 ago:
+  // "al subir varios elementos en la web deberían agruparse para poder añadir contexto").
+  const importFilesToFromly = async (files: File[], parentId: string | null): Promise<string[]> => {
+    const ids: string[] = []
     for (const f of files) {
       if (isTextFile(f)) {
-        try { const note = createMarkdownNode(parentId, await f.text(), f.name, false); if (note) lastId = note.id } catch { /* */ }
+        try { const note = createMarkdownNode(parentId, await f.text(), f.name, false); if (note) ids.push(note.id) } catch { /* */ }
       } else {
         const id = await uploadResourceNode(f, parentId)
-        if (id) { lastId = id; toast(t('v2.importedToFromly', '{{name}} importado a Fromly', { name: f.name })) }
+        if (id) { ids.push(id); toast(t('v2.importedToFromly', '{{name}} importado a Fromly', { name: f.name })) }
       }
     }
-    return lastId
+    return ids
   }
 
   // Soltar un archivo — MISMO comportamiento sea cual sea la superficie donde se suelte
@@ -505,8 +515,12 @@ export default function V2App() {
       }
     } else {
       // Sin conversación → importar a Fromly (RAG), sin iniciar chat.
-      const id = await importFilesToFromly(otherFiles, captureParentId())
-      if (id) setCenterElementId(id)
+      const ids = await importFilesToFromly(otherFiles, captureParentId())
+      if (ids.length) setCenterElementId(ids[ids.length - 1])
+      // Varios a la vez → ofrecer agruparlos con un contexto compartido en un
+      // solo gesto, en vez de abrir cada uno y asignárselo por separado
+      // (estilo brain: seleccionar varios → una acción de grupo).
+      if (ids.length > 1) setBatchUploadIds(ids)
     }
   }
 
@@ -990,6 +1004,29 @@ export default function V2App() {
       <V2Onboarding />
       <V2UpgradeBanner />
       {paywallReason && <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />}
+      {batchUploadIds && (
+        <div className="v2-batchupload-bar">
+          <span>{t('v2.batchUploadCount', '{{count}} elementos añadidos', { count: batchUploadIds.length })}</span>
+          <div className="v2-ctxpick-wrap">
+            <button className="v2-ctx-add-btn" onClick={() => setBatchPickerOpen(o => !o)}>
+              ＋ {t('v2.assignContextToAll', 'Asignar contexto a todos')}
+            </button>
+            {batchPickerOpen && (
+              <div className="v2-ctxpick-pop">
+                <ContextPicker
+                  currentId={null}
+                  onPick={id => {
+                    if (id) { for (const nid of batchUploadIds) assignContext(nid, id) }
+                    setBatchPickerOpen(false)
+                    setBatchUploadIds(null)
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <button className="v2-batchupload-dismiss" onClick={() => { setBatchUploadIds(null); setBatchPickerOpen(false) }} aria-label={t('common.close', 'Cerrar')}>✕</button>
+        </div>
+      )}
       <span className="v2-version">{WEB_VERSION}</span>
     </div>
     </ToastProvider>

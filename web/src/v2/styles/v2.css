@@ -108,6 +108,23 @@
   pointer-events: none;
 }
 
+/* ── Barra de subida múltiple — "N elementos añadidos" + asignar contexto a
+   todos de una vez (Alberto, 13 ago: "al subir varios elementos... deberían
+   agruparse para poder añadir contexto"), estilo la selección + "Agrupar"
+   del proyecto hermano "brain". */
+.v2-batchupload-bar {
+  position: fixed; left: 50%; bottom: 44px; transform: translateX(-50%); z-index: 40;
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg-primary); border: 1px solid var(--border); border-radius: 10px;
+  padding: 8px 10px 8px 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+  font-size: 13px; color: var(--text-primary);
+}
+.v2-batchupload-dismiss {
+  background: none; border: none; color: var(--text-tertiary); cursor: pointer;
+  font-size: 13px; padding: 2px 4px; border-radius: 6px;
+}
+.v2-batchupload-dismiss:hover { background: var(--bg-secondary); color: var(--text-primary); }
+
 /* ── Banner de upgrade a Pro (free) — píldora flotante, ver V2UpgradeBanner ── */
 .v2-upgrade-banner {
   /* top:68px, no 10px — a 10px tapaba por completo la cabecera de un documento
