@@ -9,6 +9,15 @@ import TaskRow from '../../components/panels/TaskRow'
 import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
 import type { Node } from '../../types'
 
+/** Comparador ÚNICO de tareas pendientes. Exportado para que cualquier lista de
+ *  tareas de la app use exactamente el mismo orden (paridad iOS `sortTasksForList`). */
+export function comparePendingTasks(a: Node, b: Node): number {
+  const da = a.due ? Date.parse(a.due) : Number.POSITIVE_INFINITY
+  const db = b.due ? Date.parse(b.due) : Number.POSITIVE_INFINITY
+  if (da !== db) return da - db
+  return (a.text || '').localeCompare(b.text || '')
+}
+
 export default function V2TaskList({ tasks }: { tasks: Node[] }) {
   const { t } = useTranslation()
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
@@ -19,7 +28,13 @@ export default function V2TaskList({ tasks }: { tasks: Node[] }) {
   // de finalizadas para no ocupar más espacio"). Un contexto vivo acumula meses de
   // tareas hechas, y tachadas entre medias empujaban las pendientes fuera de la vista.
   // Se quedan a un clic, de la más reciente a la más antigua.
-  const pending = tasks.filter(n => n.status !== 'done')
+  // Orden ÚNICO de las pendientes: primero lo que tiene fecha, de la más antigua a
+  // la más nueva (lo atrasado arriba), y al final lo que no tiene fecha, alfabético.
+  // Antes salían en el orden en que las devolvía el store — o sea, sin orden: en la
+  // lista de un contexto se leía «29 jul, 9 jul, 23 jun, 18 jun…» y era imposible
+  // saber qué vencía antes (Alberto, 20 ago 2026). Es el MISMO criterio que ya usaba
+  // el cockpit de Hoy y que ahora usa también el iPhone (`sortTasksForList`).
+  const pending = tasks.filter(n => n.status !== 'done').sort(comparePendingTasks)
   const done = tasks.filter(n => n.status === 'done')
     .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
 

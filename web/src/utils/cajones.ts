@@ -299,6 +299,145 @@ export function clearContextParent(nodeId: string): void {
   ensureTagDefinition(nodeId)
 }
 
+// ── Tags anidados: un contexto ES un tag, un subcontexto ES un subtag ────────
+//
+// Modelo acordado con Alberto el 20 ago 2026: en vez de dos conceptos (elegir un
+// contexto y luego elegirle un contexto padre), hay UNA sola cosa que se escribe
+// y se lee igual en todas partes: `#tag`, `#tag/subtag`, `#tag/subtag/subtag`.
+//
+// No cambia NADA del dato: cada tramo de la ruta sigue siendo un nodo bajo
+// 🧠 Contexto (marcado `_ctx='1'`) y la asignación sigue viviendo en
+// `extraData._ctxRefs = [idDelNodoHoja]`. La ruta es solo la forma de nombrar la
+// posición de ese nodo en el árbol — que es exactamente lo que ya calculaba
+// `getNodeTagSlug`. Por eso esto no necesita migración de datos.
+
+/** Ruta en slugs de un contexto: `la-isla/marketing`. null si no cuelga de 🧠 Contexto. */
+export function contextPath(nodeId: string): string | null {
+  return getNodeTagSlug(nodeId) || null
+}
+
+/** Ruta legible de un contexto: `La Isla/Marketing`. Vacío si no es un contexto. */
+export function contextPathLabel(nodeId: string): string {
+  const root = findContextRoot()
+  if (!root) return ''
+  const parts: string[] = []
+  let cur: Node | null | undefined = store.getNode(nodeId)
+  let guard = 0
+  while (cur && cur.id !== root.id && guard++ < 60) {
+    parts.unshift((cur.text || '').trim())
+    cur = cur.parentId ? store.getNode(cur.parentId) : null
+  }
+  return cur?.id === root.id ? parts.join('/') : ''
+}
+
+export interface ContextTag {
+  node: Node
+  /** Ruta en slugs, sin `#`: `la-isla/marketing`. */
+  path: string
+  /** Ruta legible: `La Isla/Marketing`. */
+  label: string
+  /** Cuántos niveles de profundidad (1 = tag de primer nivel). */
+  depth: number
+}
+
+/** TODOS los contextos como tags con su ruta completa, ordenados por ruta (así un
+ *  subtag sale siempre justo debajo de su tag padre). */
+export function listContextTags(opts?: { includeClosed?: boolean }): ContextTag[] {
+  const out: ContextTag[] = []
+  for (const c of listContextsForParent()) {
+    if (!opts?.includeClosed && isContextClosed(c)) continue
+    const path = contextPath(c.id)
+    if (!path) continue
+    out.push({ node: c, path, label: contextPathLabel(c.id), depth: path.split('/').length })
+  }
+  out.sort((a, b) => a.path.localeCompare(b.path))
+  return out
+}
+
+/** Normaliza lo que escribe el usuario (`#La Isla / Marketing `, `la-isla/marketing`)
+ *  a una ruta de slugs canónica `la-isla/marketing`. Devuelve '' si no queda nada. */
+export function normalizeContextPath(raw: string): string {
+  return raw
+    .replace(/^#/, '')
+    .split('/')
+    .map(part => textToTagSlug(part.trim()))
+    .filter(Boolean)
+    .join('/')
+}
+
+/** Busca el contexto que hay en una ruta, o null. Acepta la ruta con o sin `#`. */
+export function findContextByPath(raw: string): Node | null {
+  const path = normalizeContextPath(raw)
+  if (!path) return null
+  const root = findContextRoot()
+  if (!root) return null
+  let parent: Node = root
+  for (const part of path.split('/')) {
+    const match = store.children(parent.id).find(
+      c => !c.deletedAt && textToTagSlug(c.text || '') === part,
+    )
+    if (!match) return null
+    parent = match
+  }
+  return parent.id === root.id ? null : parent
+}
+
+/**
+ * Crea (o encuentra) la cadena completa de contextos de una ruta y devuelve el
+ * nodo HOJA — el que se asigna al elemento.
+ *
+ * `#la-isla/marketing/emails` sobre un árbol donde solo existe «La Isla» crea
+ * «Marketing» dentro de ella y «Emails» dentro de Marketing. Cada tramo se marca
+ * como contexto (`_ctx='1'`) vía `createContext`, así que un subtag es un
+ * contexto hijo de pleno derecho, igual que los que ya existían.
+ *
+ * `displayParts` permite conservar el texto tal cual lo escribió el usuario
+ * («La Isla» en vez de «La-Isla») para los tramos que haya que crear.
+ */
+export function ensureContextPath(raw: string): Node | null {
+  const cleaned = raw.replace(/^#/, '')
+  const displayParts = cleaned.split('/').map(p => p.trim()).filter(Boolean)
+  const slugParts = displayParts.map(textToTagSlug).filter(Boolean)
+  if (slugParts.length === 0) return null
+
+  const root = findContextRoot()
+  if (!root) return null
+
+  let parentId: string | null = null   // null = raíz de contextos (createContext lo resuelve)
+  let current: Node | null = null
+  for (let i = 0; i < slugParts.length; i++) {
+    const slug = slugParts[i]
+    const searchIn: string = current ? current.id : root.id
+    const existing: Node | undefined = store.children(searchIn).find(
+      (c: Node) => !c.deletedAt && textToTagSlug(c.text || '') === slug,
+    )
+    if (existing) {
+      current = existing
+      // Un tramo intermedio que existía como contenido pasa a ser contexto de
+      // pleno derecho: si no, la ruta se puede escribir pero no se puede listar.
+      if (!isMarkedContext(existing) && !isRootContext(existing.id)) {
+        const e = ed(existing); e._ctx = '1'
+        store.updateNode(existing.id, { extraData: JSON.stringify(e) })
+      }
+      ensureTagDefinition(existing.id)
+    } else {
+      current = createContext(displayParts[i] || slug, parentId)
+    }
+    parentId = current ? current.id : null
+  }
+  return current
+}
+
+/** Asigna a un elemento el contexto que indica una ruta de tag, creándola si hace
+ *  falta. Devuelve el contexto hoja asignado (o null si la ruta estaba vacía). */
+export function setNodeContextByPath(nodeId: string, raw: string | null): Node | null {
+  if (!raw || !normalizeContextPath(raw)) { setNodeContext(nodeId, null); return null }
+  const leaf = ensureContextPath(raw)
+  if (!leaf) return null
+  setNodeContext(nodeId, leaf.id)
+  return leaf
+}
+
 // ── Asignación de contexto a tareas/notas (por ID) ───────────────────
 
 export function nodeCtxRefs(n: Node | null | undefined): string[] {

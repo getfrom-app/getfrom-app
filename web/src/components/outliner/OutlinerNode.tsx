@@ -22,7 +22,7 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree, findTagNodeBySlug } from '../../utils/tagsHelper'
-import { listContextsForParent, createContext, assignContext, unassignContext, nodeCtxRefs, contextColor, contextParent, isContextClosed } from '../../utils/cajones'
+import { listContextsForParent, createContext, assignContext, unassignContext, nodeCtxRefs, contextColor, contextParent, isContextClosed, listContextTags, normalizeContextPath, findContextByPath, ensureContextPath, contextPath } from '../../utils/cajones'
 import RowContextChip from '../panels/RowContextChip'
 import { findContextRoot } from '../../utils/rootLookup'
 import { isInPapelera } from '../../utils/papeleraHelper'
@@ -1205,19 +1205,30 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
 
   // # — contextos/proyectos ABIERTOS que coinciden con el query, más la opción de
   // crear uno nuevo si el query no coincide exactamente.
+  /** Items del picker `#`: TAGS ANIDADOS (`#tag`, `#tag/subtag/subtag`).
+   *
+   *  Cada tramo de la ruta es un contexto y el subtag es un contexto hijo — el
+   *  mismo dato de siempre, escrito de una sola forma (Alberto, 20 ago 2026).
+   *  El filtro mira la ruta COMPLETA, así que escribir `#marketing` encuentra
+   *  `#la-isla/marketing` sin tener que teclear el tag padre. */
   function buildCajonPickerItems(query: string): PickerItem[] {
-    const q = query.trim().toLowerCase()
     const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-    const ctxs = listContextsForParent() // ÁREAS + proyectos abiertos (incluye contextos raíz como «Inversión»)
-      .filter(c => !q || norm(c.text || '').includes(norm(q)))
+    const q = norm(query.replace(/^#/, '').trim())
+    const tags = listContextTags()
+      .filter(tg => !q || norm(tg.path).includes(q) || norm(tg.label).includes(q))
       .slice(0, 8)
-    const items: PickerItem[] = ctxs.map(c => {
-      const parent = contextParent(c.id)
-      return { id: c.id, label: c.text || 'Contexto', group: 'cajon' as const, contextLabel: parent?.text }
-    })
-    const exact = ctxs.some(c => norm(c.text || '') === norm(q))
-    if (q.length > 0 && !exact) {
-      items.push({ id: '__create__', label: query.trim(), group: 'cajon' as const, cajonCreate: query.trim() })
+    const items: PickerItem[] = tags.map(tg => ({
+      id: tg.node.id,
+      label: tg.path,
+      group: 'cajon' as const,
+      // Ruta legible del padre, para ver de dónde cuelga sin repetirla en el label.
+      contextLabel: tg.depth > 1 ? tg.label.split('/').slice(0, -1).join('/') : undefined,
+    }))
+    // Solo se ofrece crear si la ruta escrita no existe TAL CUAL (crear
+    // `#la-isla/marketing` cuando ya existe `#marketing` suelto es legítimo).
+    const typed = normalizeContextPath(query)
+    if (typed && !findContextByPath(typed)) {
+      items.push({ id: '__create__', label: typed, group: 'cajon' as const, cajonCreate: query.replace(/^#/, '').trim() })
     }
     return items
   }
@@ -1597,9 +1608,11 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const cleanText = rawText.replace(/(?:^|\s)#[^\s#]*$/, '').replace(/\s+$/, '')
       let ctxId = item.id
       if (item.cajonCreate) {
-        // Crear el contexto bajo el contexto del nodo (si lo tiene), si no, en la raíz.
-        const parentCtxId = manuallySetContextId
-        const created = createContext(item.cajonCreate, parentCtxId)
+        // La ruta escrita manda: `#la-isla/marketing/emails` crea los tramos que
+        // falten y asigna el ÚLTIMO. Antes se creaba un contexto suelto colgado
+        // del contexto que tuviera el nodo, que no es lo que dice el texto.
+        const created = ensureContextPath(item.cajonCreate)
+        if (!created) { setPicker(null); return }
         ctxId = created.id
       }
       const targetNodeId = mirrorOfId ?? node.id
@@ -1615,8 +1628,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
         sel?.addRange(range)
       }
       setPicker(null)
-      const cj = store.getNode(ctxId)
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `En contexto "${(cj?.text || '').slice(0, 30)}"`, type: 'success' } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `#${contextPath(ctxId) || ''}`, type: 'success' } }))
       return
     }
 

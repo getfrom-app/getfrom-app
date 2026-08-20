@@ -13687,6 +13687,8 @@ textarea:focus-visible,
 .ctx-chip-name {
   cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* Tag anidado: los tramos padre de la ruta van atenuados; el propio, en color pleno. */
+.ctx-chip-path { color: var(--text-tertiary, #9a9a9a); }
 .ctx-chip-x {
   position: absolute; top: -6px; right: -6px;
   width: 15px; height: 15px; display: inline-flex; align-items: center;
@@ -14123,6 +14125,8 @@ textarea:focus-visible,
   border-radius: 0;
 }
 .ctx-pick-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctx-pick-path { color: var(--text-tertiary, #9a9a9a); }
+.ctx-pick-leaf { color: inherit; }
 .ctx-pick-create .ctx-pick-name { color: var(--accent, #6c5ce7); font-weight: 500; }
 .ctx-pick-check { flex-shrink: 0; color: var(--accent, #6c5ce7); font-size: 12px; }
 .ctx-pick-empty { padding: 10px 12px; font-size: 12px; color: var(--text-tertiary, #999); }
