@@ -586,14 +586,17 @@
    Code, simplemente texto"). El mensaje del usuario lleva un «›» delante en
    el color de acento en vez de fondo propio.
 
-   Tipografía monoespaciada (13 ago 2026, Alberto: "copia el tipo de letra
-   para el chat, ya sea claro u oscuro, me gusta mucho" — sobre su terminal
-   de Mac). Mismo stack que ya usaban los bloques de código del chat
-   (`--chat-font` centraliza el valor); solo el HILO + el composer, el resto
-   de la app sigue en Inter. */
+   ⚠️ SIN monoespaciado (20 ago 2026, Alberto: "ponlo también en el chat de la
+   web. quita el monoespaciado"). Lo hubo desde el 13 ago copiando su terminal
+   de Mac, pero el hilo no es una terminal: es prosa en español, con eñes,
+   tildes y frases largas, y una monoespaciada la hace más lenta de leer y más
+   ancha. El chat va en la MISMA tipografía que el resto de la app —
+   `--chat-font` se conserva apuntando a la del sistema para que los sitios que
+   ya la usaban sigan alineados; los BLOQUES DE CÓDIGO mantienen la suya, que
+   ahí sí hace falta. */
 .v2-assistant-inner {
   max-width: 720px; margin: 0 auto; padding: 0 20px;
-  --chat-font: 'SF Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, Menlo, monospace;
+  --chat-font: inherit;
   font-family: var(--chat-font);
 }
 .v2-assistant-msg { margin-bottom: 20px; }
@@ -614,17 +617,29 @@
    deslizar de iOS es clic derecho (menú ya existente) + botones de hover que
    ya trae TaskRow; esto es solo el puente para lo que aún no está
    sincronizado localmente, o para agentes (sin TaskRow). */
-.v2-assistant-list { display: flex; flex-direction: column; gap: 2px; margin-top: 6px; }
+/* Lista del hilo: filas PEGADAS separadas por una línea fina sangrada, no por
+   huecos entre cajas — el mismo tratamiento que se hizo en la app el 20 ago
+   2026 (`AssistantListRow.swift`). Un bloque así se lee como UNA lista; con
+   hueco y borde por fila se leía como N objetos sueltos. La línea se sangra
+   hasta donde empieza el texto (convención de Recordatorios/Mail/Things). */
+.v2-assistant-list { display: flex; flex-direction: column; gap: 0; margin-top: 6px; }
+.v2-assistant-list > * + * { border-top: 1px solid color-mix(in srgb, var(--text-primary) 7%, transparent); }
 .v2-assistant-row {
-  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
-  padding: 6px 8px; border-radius: var(--v2-r); border: 1px solid transparent;
+  display: flex; align-items: flex-start; gap: 8px; width: 100%; text-align: left;
+  padding: 8px 8px; border-radius: 0; border: none;
   background: none; cursor: pointer; font-size: 13.5px; color: var(--text-primary);
+  min-height: 36px;
 }
-.v2-assistant-row:hover { background: var(--v2-hover); border-color: var(--v2-line); }
+.v2-assistant-row:hover { background: var(--v2-hover); }
 .v2-assistant-row-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; background: none; border: none; padding: 0; cursor: pointer; text-align: left; color: inherit; font-size: 13.5px; }
 .v2-assistant-row-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-tertiary); flex: 0 0 auto; }
 .v2-assistant-row-dot.overdue { background: var(--danger); }
-.v2-assistant-row-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* El título puede ocupar DOS líneas: es el contenido, no un metadato. Truncarlo
+   a una («Llamar al tercer fontanero para el pre…») no sirve de nada. */
+.v2-assistant-row-text {
+  flex: 1; min-width: 0; white-space: normal; word-break: break-word; line-height: 1.35;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .v2-assistant-row-meta { font-size: 11px; color: var(--warning); }
 
 /* Indicador «Creando…» animado (como Claude): el chat trabaja tras bambalinas. */
@@ -702,8 +717,8 @@
 }
 .v2-composer textarea {
   flex: 1; border: none; outline: none; resize: none; background: transparent;
-  /* Misma tipografía monoespaciada que el hilo (13 ago 2026) — ver .v2-assistant-inner. */
-  font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, Menlo, monospace;
+  /* Misma tipografía que el hilo — ver .v2-assistant-inner (ya no monoespaciada). */
+  font-family: inherit;
   font-size: 14.5px; line-height: 1.55; color: var(--text-primary);
   max-height: 200px; min-height: 26px; padding: 3px 0;
 }
