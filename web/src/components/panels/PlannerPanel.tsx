@@ -35,11 +35,12 @@ import { GCalEventEditor } from './DiaryRightPanel'
 import { useUserStore } from '../../store/userStore'
 import { useToast } from '../Toast'
 import Icon from '../../v2/components/Icon'
+import { usePlannerHours } from '../../utils/plannerHours'
 
 // ── Geometría fija ────────────────────────────────────────────────────────
-const HOUR_START      = 6
-const HOUR_END        = 24
-const TOTAL_HOURS     = HOUR_END - HOUR_START
+// La franja del día YA NO es fija: se ajusta en Ajustes y se comparte con la
+// app (ver utils/plannerHours.ts). Antes estaba clavada en 6→24, así que quien
+// empieza a las 9 se comía tres horas vacías (Alberto, 22 ago 2026).
 const AXIS_W          = 40
 const DEFAULT_SLOT_H  = 40   // px por 30 min
 const DEFAULT_DAY_CNT = 5
@@ -245,6 +246,8 @@ interface Props {
 const ALL_VIEW_TABS: ViewMode[] = ['day', 'week', 'month', 'year']
 
 export default function PlannerPanel({ onClose, initialView, initialDays, viewTabs = ALL_VIEW_TABS, dayOnlyHeader, centerToday }: Props) {
+  const { start: HOUR_START, end: HOUR_END } = usePlannerHours()
+  const TOTAL_HOURS = HOUR_END - HOUR_START
   const s        = useStore()
   const us       = useUserStore()
   const navigate = useNavigate()

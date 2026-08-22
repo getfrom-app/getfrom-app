@@ -14,6 +14,7 @@ import { store } from '../../store/nodeStore'
 import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
 import HotkeysPane from '../settings/HotkeysPane'
 import { getGoogleOAuthUrl, disconnectGoogle } from '../../api/googleCalendar'
+import { apiRequest } from '../../api/client'
 import { downloadFullTextExport } from '../../utils/bulkTextExport'
 import { openExternalUrl } from '../../utils/openExternal'
 
@@ -407,11 +408,26 @@ export function AparienciaPane() {
     setDayStartState(h)
     localStorage.setItem('from_day_start_hour', String(h))
     window.dispatchEvent(new Event('from-day-hours-changed'))
+    pushDayHoursToServer(h, dayEnd)
+  }
+
+  /// Sube la franja al servidor para que la APP use la misma (Alberto, 22 ago
+  /// 2026: "se deben poder ajustar en ajustes tanto en web como en app"). Hasta
+  /// ahora esto solo vivía en el localStorage del navegador.
+  function pushDayHoursToServer(start: number, end: number) {
+    if (end <= start) return
+    // `apiRequest` ya resuelve la URL del servidor y mete el token — no hay que
+    // reconstruir nada aquí.
+    apiRequest('/assistant/prefs', {
+      method: 'PUT',
+      body: JSON.stringify({ dayStartHour: start, dayEndHour: end }),
+    }).catch(() => { /* sin red se queda en local y se reintenta al volver a guardar */ })
   }
   function applyDayEnd(h: number) {
     setDayEndState(h)
     localStorage.setItem('from_day_end_hour', String(h))
     window.dispatchEvent(new Event('from-day-hours-changed'))
+    pushDayHoursToServer(dayStart, h)
   }
 
   return (
