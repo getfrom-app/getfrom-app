@@ -1436,8 +1436,30 @@ conversacional) sin borrarlas.
 
 **Limpieza de datos.** `toolPurgeFragments` (con dry-run) movió ~954 fragmentos heredados de la migración (párrafos/títulos sueltos sin cuerpo ni hijos) a la Papelera — vault 6.500→5.546 nodos. Reversible. Protege documentos, contextos, conversaciones, tareas, eventos, PDFs y la estructura del calendario.
 
+**Papelera = lápida (24 ago 2026).** Hasta esta fecha, borrar solo reparentaba a `🗑 Papelera`
+y el nodo seguía "vivo" (`deletedAt` nulo, `status`/`due` intactos): cada lista de la app tenía
+que recorrer ancestros (`isInPapelera` / `IOSTrashScope` / `idsInTrash`) para descartarlo, y
+bastaba que una se olvidara para enseñar borrados — le pasó a la agenda del iPhone, que mostraba
+tareas de la papelera como pendientes. Motivo del cambio (Alberto): "¿cómo debería funcionar
+esto en una app de notas y tareas? hazlo más duro para que NADA en papelera se filtre en ningún
+lugar".
+
+Ahora **borrar escribe `deletedAt`** además de reparentar (web `trashNode`, servidor
+`nodeActions.moveToTrash`, MCP `toolDeleteNode`/`toolPurgeFragments`), así que el filtro
+`deletedAt == null` que ya existe en todas partes basta por sí solo. `restoreNode` quita la
+lápida; `emptyTrash` marca `_purgedAt` (purga lógica: deja de listarse y de poder restaurarse,
+el registro se conserva en la base por si hace falta un rescate desde backup). La Papelera
+(`V2Trash`, `trashItems()`) es ahora una vista sobre nodos con lápida, no una ubicación especial.
+
+Red de seguridad: `sweepTrashTombstones()` (`server/src/lib/trash.ts`), cron horario que le
+pone lápida a cualquier nodo que siga vivo bajo una raíz de papelera real (cliente viejo, fallo
+futuro) y emite las ops. Los recorridos por ancestros (`isInPapelera`, `IOSTrashScope`,
+`idsInTrash`) se mantienen para datos escritos antes de esta fecha, pero dejan de ser la única
+defensa. Purgado inicial: 6.365 nodos con lápida (incluidas 227 tareas fantasma) en la papelera
+de producción de Alberto; 17 tareas pendientes reales quedaron en el sistema.
+
 **Fromly 2.0 (web).**
-- Conversaciones fuera de Elementos/Buscador (viven en Historial). Fix: `trashNode` reparenta a Papelera SIN poner `deletedAt` → hay que filtrar `isInPapelera` en las listas sobre `allActive()`.
+- Conversaciones fuera de Elementos/Buscador (viven en Historial). `isInPapelera` sigue existiendo para datos antiguos, pero desde el 24 ago 2026 `trashNode` **SÍ pone `deletedAt`** al reparentar — ver "Papelera = lápida" más abajo.
 - Adjuntar PDF: sube a R2, nodo-recurso, toast + aviso en el chat, miniatura de la 1ª página en Contexto (usa `resourceKey` porque R2 es privado), línea en Historial. Subir sin conversación NO crea chat (importa a Fromly). Arrastrar a la columna de contextos = "Importar a Fromly" (placeholder) vs "Importar a la conversación".
 - Markdown en el chat (`renderInline`); visor PDF real en el detalle (`PdfContainer`) con selección/subrayado; subrayados guardados = tipo `highlight` (listados en Elementos).
 - Tab contexto muestra TODOS los elementos (incl. PDF de conversaciones-miembro); nota diaria = editor documento + quick-add tarea/evento (sin bullets); contexto asignado visible y editable en el detalle (coordinado con Historial).
