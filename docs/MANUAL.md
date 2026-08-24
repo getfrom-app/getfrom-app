@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 5 agosto 2026 (Web v9.6.946)
+> Web · Mac · iPhone · fromly.app · Última actualización: 24 agosto 2026 (Web v9.6.971)
 
 ---
 
@@ -11,12 +11,12 @@ experiencia, que es la única disponible en web, Mac e iPhone.
 
 Al entrar en Fromly tienes **tres columnas**:
 
-- **Izquierda — Día / Agenda / Chat / Elementos, y tus Contextos**: arriba del todo, cuatro accesos
-  generales que no dependen de ningún contexto — **Día** (tu día de hoy: la nota diaria en el centro
-  y el timeline horario a la derecha; es el destino por defecto al abrir la app), **Agenda** (el
-  Planificador completo en el centro y, a la derecha, lo que ese calendario no cubre: atrasadas, sin
-  fecha y contextos en seguimiento), **Chat** (empezar una conversación nueva sin contexto) y
-  **Elementos** (buscador de todo tu contenido). Debajo, tus Áreas (siempre activas, p. ej. "Trabajo", "Personal") y
+- **Izquierda — Agenda / Chat / Elementos, y tus Contextos**: arriba del todo, tres accesos
+  generales que no dependen de ningún contexto — **Agenda** (destino por defecto al abrir la app: el
+  Planificador semanal en el centro, con el día elegido siempre en el centro de 3 columnas, y a la
+  derecha lo que ese calendario no cubre —atrasadas y sin fecha— con la nota diaria de hoy embebida
+  debajo; ya no existe un destino "Día" aparte, se fusionó aquí), **Chat** (empezar una conversación
+  nueva sin contexto) y **Elementos** (buscador de todo tu contenido). Debajo, tus Áreas (siempre activas, p. ej. "Trabajo", "Personal") y
   Proyectos (subcontextos que se abren y se cierran), en jerarquía. Clic en cualquiera de los dos
   —destino general o contexto— para cambiar lo que ves en el centro y la derecha.
 - **Centro — el chat, o lo que tengas abierto**: tu forma principal de trabajar. Escribe lo que
@@ -90,11 +90,10 @@ navegador si algún día quieres repasarlo.
   botón 📄 de la barra flotante de formato — el texto seleccionado se convierte en un documento
   nuevo (título tomado de la primera frase, mismo contexto que la nota de origen) y desaparece del
   original.
-- **8 agentes de ejemplo, listos pero desactivados**: toda cuenta nueva trae 8 agentes predefinidos
-  (informe de mercado, resumen de prensa, diario, seguimiento de objetivos, check-in de bienestar…)
-  para que veas ejemplos reales sin tener que crearlos desde cero. Vienen **desactivados** — ábrelos
-  desde Elementos → Agentes y activa el interruptor de Estado (o pulsa ▶ Ejecutar para probarlos
-  antes de decidir).
+- **Agentes: empiezas de cero**: ninguna cuenta nueva recibe agentes de fábrica — el "Informe del
+  día" (por la mañana) y "Repasa el día conmigo" (por la noche) son funciones propias del asistente,
+  no agentes, y se configuran en Ajustes → Asistente. La sección Agentes queda vacía hasta que crees
+  los tuyos.
 - **Deshacer al eliminar**: al borrar cualquier nota, tarea o archivo (individual o en bloque desde
   Elementos), el aviso de confirmación incluye un botón "Deshacer" — nada desaparece sin que tengas
   unos segundos para recuperarlo antes de que pase a la papelera de forma silenciosa.
@@ -339,22 +338,17 @@ Arriba de tus Contextos, en la columna izquierda, tienes cuatro accesos generale
 ningún contexto concreto: **Día**, **Agenda**, **Chat** y **Elementos**. Clic en cualquiera de los
 cuatro, o en un contexto de más abajo, cambia lo que ves en el centro y en la columna derecha.
 
-### Día — tu día de hoy
+### Agenda — el Planificador completo, con tu día abajo
 
-Es el destino por defecto al abrir Fromly. El centro muestra la nota del día; la columna derecha, el
-timeline horario hora a hora con tus tareas y eventos con hora concreta. El botón **CAL** salta al
-calendario anual para ir a cualquier otro día. Volver a pulsar **Día** siempre te devuelve a hoy,
-pulses lo que pulses mientras tanto.
+Es el destino por defecto al abrir Fromly. El centro muestra el Planificador (semana de 3 columnas
+con el día elegido siempre en el centro, mes o año — navegable, ver sección 7); la columna derecha
+muestra lo que ese calendario no cubre (tareas atrasadas y tareas sin fecha) y, debajo, la nota del
+día de hoy embebida con scroll propio. Ya no existe un destino "Día" aparte — el timeline horario de
+un día concreto se ve directamente en el Planificador del centro, no duplicado en otro sitio.
 
-### Agenda — el Planificador completo
-
-El centro muestra el Planificador (semana/mes/año navegable, ver sección 7) y la columna derecha
-solo lo que ese calendario no cubre: tareas atrasadas, tareas sin fecha y tus contextos en
-seguimiento.
-
-Desde cualquiera de los dos destinos, abrir una tarea la centra y le da su propia pestaña **Chat**
-(ver más abajo); si esa tarea pertenece a un contexto, además queda seleccionado a la izquierda y su
-Ficha pasa a la columna derecha. La nota del día en sí no tiene chat propio.
+Abrir una tarea la centra y le da su propia pestaña **Chat** (ver más abajo); si esa tarea pertenece
+a un contexto, además queda seleccionado a la izquierda y su Ficha pasa a la columna derecha. La nota
+del día en sí no tiene chat propio.
 
 ### Chat — empezar una conversación sin contexto
 
@@ -460,8 +454,8 @@ suele haber muchas.
 
 ### Evento
 
-Los eventos tienen hora de inicio y de fin. Aparecen en el Planificador y en el timeline de Día del
-día correspondiente. Si tienes Google Calendar conectado, sincronizan automáticamente en ambas
+Los eventos tienen hora de inicio y de fin. Aparecen en el Planificador, en la columna de su día
+correspondiente. Si tienes Google Calendar conectado, sincronizan automáticamente en ambas
 direcciones.
 
 **Cómo crear un evento:** con el botón **+Evento** de la cabecera del chat, o pidiéndoselo a la IA
@@ -556,21 +550,21 @@ diario con el mismo formato cada vez.
 
 ## 7. El Planificador
 
-El Planificador es la vista de calendario completa de Fromly. Ábrelo desde **Agenda**, en la
-pestaña **Planner** de la columna derecha — ocupa el espacio central, con la columna de HOY siempre
-centrada en pantalla para que la encuentres sin buscarla; la derecha, mientras tanto, muestra solo
-tus tareas atrasadas, sin fecha y contextos en seguimiento (lo que el propio calendario no cubre).
+El Planificador es la vista de calendario completa de Fromly. Es lo que ves en el centro al entrar
+en **Agenda** (destino por defecto) — la columna derecha, mientras tanto, muestra tus tareas
+atrasadas y sin fecha (lo que el propio calendario no cubre) y, debajo, la nota diaria de hoy.
 
 ### Tres vistas: Semana · Mes · Año
 
-- **Semana**: varios días en columnas, con timeline horario. Arriba, una franja "todo el día" para
-  las tareas con fecha pero sin hora. La columna de hoy se distingue con un fondo propio.
+- **Semana**: 3 días en columnas, con el día elegido siempre CENTRADO en pantalla y timeline
+  horario. Arriba, una franja "todo el día" para las tareas con fecha pero sin hora. La columna de
+  hoy se distingue con un fondo propio.
 - **Mes**: la cuadrícula del mes, con las tareas y eventos de cada día.
 - **Año**: los 12 meses en una grid. Los días con contenido llevan un punto; clic en cualquier día
   te lleva a él.
 
-El timeline de UN día concreto, hora a hora, vive en la otra pestaña de Agenda — **Día** (ver
-sección 5) — no dentro del Planner.
+El timeline de UN día concreto, hora a hora, vive aquí mismo, en la vista Semana — ya no hay una
+pestaña "Día" aparte.
 
 **Tareas vs eventos de un vistazo:** las tareas se muestran sin fondo (borde fino con un toque de
 color); los eventos de Google se muestran con su color de fondo.
@@ -590,7 +584,7 @@ Si tienes Google Calendar conectado, el Planificador crea y actualiza eventos au
 - **Quitar la hora** → el evento de Google Calendar se elimina.
 
 Los eventos que ya existen en Google viven solo en Google (no se copian como notas en Fromly): se
-muestran en el Planificador y en el timeline de Día con su color original, y al hacer clic en uno
+muestran en el Planificador con su color original, y al hacer clic en uno
 se abre su editor con un botón **"➕ Crear elemento en Fromly"** — solo se crea una nota si lo pulsas tú.
 
 ---
@@ -604,8 +598,7 @@ necesitas hacerlo una vez.
 
 ### Cómo funciona
 
-- Tus eventos de Google Calendar aparecen en el Planificador y en el timeline de Día con el color
-  de cada calendario.
+- Tus eventos de Google Calendar aparecen en el Planificador con el color de cada calendario.
 - Crear un evento en Fromly lo crea también en Google Calendar.
 - Editar o eliminar un evento funciona en ambas direcciones.
 - La sincronización tiene en cuenta tu zona horaria local.
