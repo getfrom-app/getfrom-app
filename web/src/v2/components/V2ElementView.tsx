@@ -97,6 +97,16 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
   }
   return (
     <div className={compact ? 'v2-right-fill v2-element-compact' : 'v2-right-fill'}>
+      {/* Modo compacto (nota diaria al pie de Agenda): título INFORMATIVO con la
+          fecha del día que se está viendo — NO editable (Alberto, 24 ago 2026:
+          "estaría bien que aparezca el título de la nota con el día pero no
+          puede ser modificable"). `node.text` YA es el título canónico de la
+          fecha (`diaryDayTitle`, fijado al crear el día en `agendaHelper.ts` —
+          reutilizado aquí en vez de reformatear la fecha de nuevo). Texto plano
+          sin input ni onClick: a diferencia de `EditableTitle`, nada lo activa. */}
+      {compact && node?.isDiaryEntry && (
+        <div className="v2-daynote-header">{node.text}</div>
+      )}
       {!compact && !isCtxMemory && (
       <div className="v2-detail-head">
         <div className="v2-detail-head-top">

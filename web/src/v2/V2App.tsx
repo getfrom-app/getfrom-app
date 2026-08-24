@@ -183,6 +183,12 @@ export default function V2App() {
     const v = Number(localStorage.getItem('v2_right_w'))
     return v >= 320 && v <= 900 ? v : 440
   })
+  // Día centrado en el Planner del destino Agenda (semana/mes/año, `PlannerPanel
+  // centerToday`) — alimenta qué nota diaria embebe `V2RightColumn` al pie de la
+  // columna derecha (antes fija a la de HOY; Alberto, 24 ago 2026: "al hacer
+  // clic en otro día en el planificador, debería abrir la nota de ese otro
+  // día"). Arranca en hoy, como el propio Planner (`PlannerPanel.centerDate`).
+  const [agendaCenterDate, setAgendaCenterDate] = useState(() => new Date())
   useEffect(() => { localStorage.setItem('v2_right_w', String(rightWidth)) }, [rightWidth])
 
   // Auto-actualizar «Lo que Fromly sabe» del contexto al GUARDAR un elemento (nota/
@@ -963,7 +969,7 @@ export default function V2App() {
         // destino «Día» aparte (rejilla horaria de una sola columna) se retiró
         // por duplicado — ver el comentario de `centerElementId` más arriba.
         <main className="v2-col v2-center">
-          <PlannerPanel initialView="week" initialDays={3} viewTabs={['week', 'month', 'year']} onClose={() => {}} centerToday />
+          <PlannerPanel initialView="week" initialDays={3} viewTabs={['week', 'month', 'year']} onClose={() => {}} centerToday onCenterDateChange={setAgendaCenterDate} />
         </main>
       ) : (
         <V2Chat
@@ -991,6 +997,7 @@ export default function V2App() {
         onOpenElementsFiltered={onOpenElementsFiltered}
         recorder={recorder}
         onFilesDropped={onFilesDropped}
+        agendaDayNoteDate={agendaCenterDate}
       />
       {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
       {taskPropsId && <TaskPropsModal nodeId={taskPropsId} onClose={() => setTaskPropsId(null)} />}

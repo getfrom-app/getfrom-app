@@ -240,11 +240,19 @@ interface Props {
    *  tocar ese caso). Lo usa el tab «Planner» de Agenda en v2 (Alberto, 5 ago
    *  2026: quiere el planificador centrado, no desplazado). */
   centerToday?: boolean
+  /** Avisa de cada cambio del día centrado (clic en semana/mes/año, navegación
+   *  ‹/›/Hoy) — lo usa el destino Agenda de v2 (`V2App.tsx`) para que la nota
+   *  diaria embebida al pie de la columna derecha (`V2RightColumn.tsx`) siga al
+   *  día elegido aquí en vez de quedarse fija en la de hoy (Alberto, 24 ago
+   *  2026: "al hacer clic en otro día en el planificador, debería abrir la
+   *  nota de ese otro día"). Solo notifica — no dispara `from:open-detail` como
+   *  hace la vista Día de más abajo, que sí abre la nota en el CENTRO. */
+  onCenterDateChange?: (d: Date) => void
 }
 
 const ALL_VIEW_TABS: ViewMode[] = ['day', 'week', 'month', 'year']
 
-export default function PlannerPanel({ onClose, initialView, initialDays, viewTabs = ALL_VIEW_TABS, dayOnlyHeader, centerToday }: Props) {
+export default function PlannerPanel({ onClose, initialView, initialDays, viewTabs = ALL_VIEW_TABS, dayOnlyHeader, centerToday, onCenterDateChange }: Props) {
   const { start: HOUR_START, end: HOUR_END } = usePlannerHours()
   const TOTAL_HOURS = HOUR_END - HOUR_START
   const s        = useStore()
@@ -324,6 +332,14 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const dayNode = ensureDayPath(centerDate)
     window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: dayNode.id } }))
   }, [viewMode, centerDate.toDateString()]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Notifica el día centrado al contenedor (destino Agenda v2 → nota diaria
+  // embebida al pie de la columna derecha). Independiente del efecto de arriba:
+  // ese solo corre en viewMode 'day' (código muerto en v2, ver comentario del
+  // prop `viewTabs`); este corre siempre que haya alguien escuchando.
+  useEffect(() => {
+    onCenterDateChange?.(centerDate)
+  }, [centerDate.toDateString()]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     us.refreshGoogleStatus?.()

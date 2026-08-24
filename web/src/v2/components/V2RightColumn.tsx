@@ -42,7 +42,7 @@ import V2ElementChat from './V2ElementChat'
 import V2ElementView from './V2ElementView'
 import V2ContextBrowser from './V2ContextBrowser'
 import Icon from './Icon'
-import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
+import { ensureDayPath } from '../../utils/agendaHelper'
 import { markAgentResultSeen } from '../../store/aiChatStore'
 
 export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda'
@@ -85,6 +85,13 @@ interface Props {
    *  usuario necesita ver, no algo que competir por espacio con el resto. */
   recorder?: { recording: boolean; busy: boolean; elapsedSec: number; liveTranscript: string; stop: () => void }
   onFilesDropped: (files: File[]) => void
+  /** Día centrado en el Planner del destino Agenda (`V2App.agendaCenterDate`,
+   *  alimentado por `PlannerPanel.onCenterDateChange`) — decide qué nota diaria
+   *  se embebe al pie de esta columna (antes fija a la de HOY; Alberto, 24 ago
+   *  2026: "al hacer clic en otro día en el planificador, debería abrir la
+   *  nota de ese otro día"). Opcional por si algún consumidor viejo no lo pasa
+   *  — cae a hoy. */
+  agendaDayNoteDate?: Date
 }
 
 function fmtTimer(sec: number): string {
@@ -92,7 +99,7 @@ function fmtTimer(sec: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, onOpenConversation, onNewChatInCtx, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped }: Props) {
+export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, onOpenConversation, onNewChatInCtx, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped, agendaDayNoteDate }: Props) {
   useStore()
   const { t } = useTranslation()
 
@@ -113,12 +120,17 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
   // nota diaria, porque ya no tiene el icono que lo dispara).
   const centerIsDiary = !!elementId && !!store.getNode(elementId)?.isDiaryEntry
 
-  // Nota diaria de HOY, al pie del destino Agenda (fusión de «Día», 24 ago 2026).
-  let todayDiaryId: string | null = null
-  try { todayDiaryId = getTodayDiaryUnderAgenda().id } catch { /* store aún no listo */ }
+  // Nota diaria al pie del destino Agenda (fusión de «Día», 24 ago 2026) — del
+  // día CENTRADO en el Planner (`agendaDayNoteDate`), no siempre hoy (Alberto,
+  // 24 ago 2026: "al hacer clic en otro día en el planificador, debería abrir
+  // la nota de ese otro día"). `ensureDayPath` es el mismo resolutor de «nota
+  // diaria de fecha X» que usa el resto de la app (crea con id determinista si
+  // no existe, la encuentra si ya existe) — sin él, cae a hoy.
+  let dayNoteId: string | null = null
+  try { dayNoteId = ensureDayPath(agendaDayNoteDate ?? new Date()).id } catch { /* store aún no listo */ }
   useEffect(() => {
-    if (mode === 'agenda' && todayDiaryId) markAgentResultSeen(todayDiaryId)
-  }, [mode, todayDiaryId])
+    if (mode === 'agenda' && dayNoteId) markAgentResultSeen(dayNoteId)
+  }, [mode, dayNoteId])
 
   const TAB1_LABEL: Record<RightMode, string> = {
     contexto: t('v2.rightColumn.tabContext', 'Contexto'),
@@ -266,19 +278,20 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
       {/* Destino Agenda: el centro ya muestra el calendario completo (V2App.tsx)
           — aquí, arriba, lo que NO cubre ese calendario (atrasadas, sin fecha,
           futuro — hoy/futuras ya están en el planner central, Alberto 5 ago
-          2026) y, al PIE, la nota diaria de hoy (fusión de la tab «Día»,
+          2026) y, al PIE, la nota diaria del día CENTRADO en el planner (no
+          siempre hoy — sigue a `agendaDayNoteDate`, fusión de la tab «Día»,
           retirada el 24 ago 2026 — su timeline quedó duplicado con el planner
           central en 3 columnas; la nota es lo único que «Día» aportaba de más).
-          `key={todayDiaryId}`: mismo motivo que el visor central — sin
+          `key={dayNoteId}`: mismo motivo que el visor central — sin
           desmontar al cambiar de día no hay ventana de solape entre notas. */}
       {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (
         <div className="v2-right-fill v2-agenda-col">
           <div className="v2-agenda-cockpit-scroll">
             <DailyCockpit bare disablePlanner hideToday hideFuture />
           </div>
-          {todayDiaryId && (
+          {dayNoteId && (
             <div className="v2-agenda-daynote">
-              <V2ElementView key={todayDiaryId} nodeId={todayDiaryId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
+              <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
             </div>
           )}
         </div>

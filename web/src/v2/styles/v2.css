@@ -801,11 +801,33 @@
    La barra de formato (`.v2-note-formatbar`) queda pegada arriba, pegajosa,
    y el editor debajo se lleva el resto con su propio scroll. */
 .v2-element-compact { background: var(--bg-subtle, #f7f7f8); }
+/* Título informativo (fecha del día), SOLO lectura — ver V2ElementView.tsx.
+   Ni cursor de texto ni hover de edición: nada sugiere que se pueda tocar. */
+.v2-daynote-header {
+  flex: 0 0 auto; padding: 10px 14px 0; font-size: 13px; font-weight: 600;
+  color: var(--text-secondary, #666); user-select: none;
+}
 .v2-element-compact .v2-note-formatbar {
   position: sticky; top: 0; z-index: 1; background: var(--bg-subtle, #f7f7f8);
   padding: 8px 14px;
 }
 .v2-element-compact .v2-detail-body { padding-top: 2px; }
+/* La barra de formato (`.v2-doc-toolbar`, dentro de `.v2-note-formatbar`) tiene
+   ~15 botones + separadores — en el ancho estrecho de esta columna (mínimo
+   320px) no cabe en una fila con su tamaño normal (Alberto, 24 ago 2026: "se
+   parte en dos líneas, el último icono de deshacer se ve solo en la segunda").
+   Fix en dos capas: 1) iconos/gaps más pequeños SOLO aquí (no toca la barra de
+   una nota a pantalla completa en el centro, que sigue con `.v2-doc-toolbar`
+   normal) para que quepan de verdad en la mayoría de anchos; 2) `flex-wrap:
+   nowrap` + `overflow-x:auto` como red de seguridad — si aun así no cupiera
+   (columna al mínimo de 320px), scrollea en horizontal en vez de partirse en
+   una segunda línea. */
+.v2-element-compact .v2-doc-toolbar {
+  flex-wrap: nowrap; overflow-x: auto; gap: 1px; padding: 4px 8px;
+  scrollbar-width: thin;
+}
+.v2-element-compact .v2-doc-toolbar .ft-btn { min-width: 24px; height: 24px; padding: 0 3px; }
+.v2-element-compact .v2-doc-toolbar .ft-sep { height: 15px; margin: 0 3px; }
 
 /* Miniaturas de archivos en la derecha */
 .v2-thumb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
