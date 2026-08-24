@@ -85,7 +85,12 @@ interface Props {
 
 export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, rowRef, extra, style }: Props) {
   const { t, i18n } = useTranslation()
-  const done = node.status === 'done'
+  // Un evento (isEvent, día+hora) no se "completa" en el sentido GTD (Alberto,
+  // 24 ago 2026: distinguir eventos de tareas en el chat) — nunca aplicamos la
+  // semántica de tachado/checkbox de una tarea a un evento, aunque su `status`
+  // tenga valor por herencia del modelo (ver taskNode.ts).
+  const isEvent = !!node.isEvent
+  const done = !isEvent && node.status === 'done'
   const time = timeLabel(node, i18n.language)
   const due = showDue ? dueLabel(node, i18n.language) : ''
   const rec = recLabel(node, t)
@@ -93,18 +98,25 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
   return (
     <div
       ref={rowRef}
-      className={`dc-row ${done ? 'dc-row--done' : ''}`}
+      className={`dc-row ${isEvent ? 'dc-row--event' : ''} ${done ? 'dc-row--done' : ''}`}
       data-node-id={node.id}
       style={style}
       onClick={() => openNodeDetail(node.id)}
       onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: node.id, x: e.clientX, y: e.clientY } })) }}
       {...dragProps}
     >
-      <button
-        className={`dc-check ${done ? 'dc-check--done' : ''}`}
-        onClick={e => { e.stopPropagation(); toggleTaskDone(node) }}
-        title={t('daily.markDone')} aria-label={t('daily.markDone')}
-      >{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
+      {isEvent ? (
+        // Indicador de evento en vez de checkbox — mismo hueco visual que
+        // .dc-check (ver comentario de .dc-event-dot en styles/index.css), pero
+        // sin acción de completar: un evento se reprograma, no se marca hecho.
+        <span className="dc-event-dot" title={t('search.chipEvent')} />
+      ) : (
+        <button
+          className={`dc-check ${done ? 'dc-check--done' : ''}`}
+          onClick={e => { e.stopPropagation(); toggleTaskDone(node) }}
+          title={t('daily.markDone')} aria-label={t('daily.markDone')}
+        >{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
+      )}
       {/* Dos líneas (Alberto, 4 ago 2026: "las tareas de la tab agenda se deben leer
           completas" — con checkbox + título + fecha + chip de contexto compitiendo en
           una sola línea, el título llegaba a encogerse casi a 0px en filas con chip).

@@ -92,6 +92,17 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
     onClose()
   }
 
+  // Convertir tarea ↔ evento con clic derecho, sin pasar por el «Convertir en
+  // tarea» de arriba (Alberto, 24 ago 2026: distinguir tareas y eventos en el
+  // chat, y poder pasar de una a otra desde el menú contextual de la fila).
+  // Un evento sigue siendo la misma tarea con `isEvent` — no un tipo aparte
+  // (ver «Evento como TIPO propio» en FROM.md) — así que aquí solo alternamos
+  // el flag, igual que `toggleEvent` del menú del outliner (NodeContextMenu).
+  function toggleEvent() {
+    store.updateNode(nodeId, { isEvent: !isEvent })
+    onClose()
+  }
+
   return createPortal((
     <>
       <div onPointerDown={onClose} onContextMenu={e => { e.preventDefault(); onClose() }}
@@ -121,6 +132,16 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
             convertTask()). */}
         {!isTask && (
           <button className="node-ctx-item" onClick={convertTask}>{t('rightColMenu.convertToTask')}</button>
+        )}
+        {/* Tarea ↔ evento: solo cuando el nodo YA es una tarea con `status` (isTask) —
+            los casos sin status los sigue cubriendo el botón de arriba (`!isTask`),
+            que además limpia hora/`dueEnd` al convertir; aquí es el toggle simple
+            que pidió Alberto, sin tocar fecha. */}
+        {isTask && !isEvent && (
+          <button className="node-ctx-item" onClick={toggleEvent}>{t('nodeRightPanel.makeEvent')}</button>
+        )}
+        {isTask && isEvent && (
+          <button className="node-ctx-item" onClick={toggleEvent}>{t('rightColMenu.convertToTask')}</button>
         )}
         {/* Solo en CITAS: se lleva el párrafo del documento origen y lo deja como
             documento propio (utils/citations.ts). Reversible desde el toast. */}
