@@ -1,15 +1,27 @@
 // TaskHoverActions — acciones de hover comunes a CUALQUIER fila de tarea, esté
-// donde esté (columna del día, contextos, etc.). Mismo set en todos los sitios:
-//   «Hoy» (programar para hoy)  ·  papelera.
-// Se ocultan y aparecen en hover por el contenedor `.dc-actions` (la fila debe
-// ser `.dc-row`). Para tareas completadas solo se muestra borrar.
+// donde esté (columna del día, contextos, chat, elementos…). Mismo set en
+// todos los sitios: «Hoy» (programar para hoy) · «Posponer» (mañana/+7d/sin
+// fecha) · papelera. Se ocultan y aparecen en hover por el contenedor
+// `.dc-actions` (la fila debe ser `.dc-row`). Para tareas completadas solo se
+// muestra borrar.
 // ⚠️ El botón de "poner/cambiar fecha" que vivía aquí se quitó (Alberto, 5 ago
 // 2026): con fecha, el propio badge `.dc-due` de TaskRow ya abre `onOpenDate` al
 // clicarlo; sin fecha, el nuevo badge `.dc-due--empty` ("+") hace lo mismo — el
 // botón de hover quedó puramente redundante en los dos casos.
+// «Posponer» (24 ago 2026, paridad con el swipe de iOS en el chat —
+// `AssistantSwipeRow`/`AssistantChatView.swift`: Completar+Contexto a la
+// izquierda, Posponer+Eliminar a la derecha). Completar ya vive en el
+// checkbox `.dc-check` de TaskRow, siempre visible, no solo al hover; Contexto
+// ya vive en `RowContextChip`, también siempre visible y clicable — ninguno
+// de los dos necesitaba duplicarse aquí. Posponer sí era un hueco real: la
+// única forma de mover una fecha ya puesta era abrir el popover completo
+// (`onOpenDate`/TaskPropsPopover). Reutiliza `postponeTask` (`dailyCockpit.ts`,
+// ya cubierto por tests) y el markup `.dc-postpone-wrap`/`.dc-postpone-menu`
+// que ya existía en `index.css` sin ningún componente que lo usara.
+import { useEffect, useRef, useState } from 'react'
 import type { Node } from '../../types'
 import { useTranslation } from 'react-i18next'
-import { scheduleTask } from '../../utils/dailyCockpit'
+import { scheduleTask, postponeTask } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
 import Icon from '../../v2/components/Icon'
 
@@ -20,15 +32,43 @@ export default function TaskHoverActions({ node, onOpenDate }: {
 }) {
   const { t } = useTranslation()
   const done = node.status === 'done'
+  const [postponeOpen, setPostponeOpen] = useState(false)
+  const wrapRef = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    if (!postponeOpen) return
+    const onDoc = (e: PointerEvent) => { if (!wrapRef.current?.contains(e.target as globalThis.Node)) setPostponeOpen(false) }
+    window.addEventListener('pointerdown', onDoc, true)
+    return () => window.removeEventListener('pointerdown', onDoc, true)
+  }, [postponeOpen])
+
   return (
     <span className="dc-actions">
       {/* «Hoy» SOLO para tareas sin fecha (Por planificar): las programa para hoy.
-          Las tareas que ya tienen fecha no llevan este botón. */}
+          Las tareas que ya tienen fecha no llevan este botón — para esas está
+          «Posponer», justo debajo. */}
       {!done && !node.due && (
         <button className="dc-action dc-action--hoy" title={t('taskHover.scheduleToday')}
           onClick={e => { e.stopPropagation(); scheduleTask(node, 0) }}>
           Hoy
         </button>
+      )}
+      {/* «Posponer» SOLO para tareas abiertas que YA tienen fecha — mover una
+          tarea sin fecha «al futuro» no tiene sentido, para eso está «Hoy». */}
+      {!done && node.due && (
+        <span className="dc-postpone-wrap" ref={wrapRef}>
+          <button className="dc-action" title={t('daily.postpone')}
+            onClick={e => { e.stopPropagation(); setPostponeOpen(o => !o) }}>
+            <Icon name="clock" size={13} />
+          </button>
+          {postponeOpen && (
+            <div className="dc-postpone-menu" onClick={e => e.stopPropagation()}>
+              <button onClick={() => { postponeTask(node, 1); setPostponeOpen(false) }}>{t('common.tomorrow')}</button>
+              <button onClick={() => { postponeTask(node, 7); setPostponeOpen(false) }}>{t('daily.nextWeek')}</button>
+              <button onClick={() => { postponeTask(node, null); setPostponeOpen(false) }}>{t('taskHover.unschedule')}</button>
+            </div>
+          )}
+        </span>
       )}
       <button className="dc-action dc-action--del" title={t('common.delete')}
         onClick={e => { e.stopPropagation(); trashNode(node.id) }}>
