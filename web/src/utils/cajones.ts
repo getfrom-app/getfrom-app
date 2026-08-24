@@ -218,30 +218,12 @@ export function setContextClosed(nodeId: string, closed: boolean): void {
   store.updateNode(nodeId, { extraData: JSON.stringify(e) })
 }
 
-// ── Seguimiento («Seguir») ──────────────────────────────────────────────────
-// Un contexto NUEVO nace neutro: ni archivado ni en seguimiento, un simple
-// contenedor de elementos (Alberto, 15 jul: "Documentos personales" no necesita
-// aparecer en Hoy, pero "Radio Elche" sí, si lo quiero revisar día a día).
-// Antes CUALQUIER subcontexto abierto sin tareas de hoy aparecía en «Seguimiento»
-// — sin forma de sacar un contenedor puramente de archivo de esa lista salvo
-// archivándolo del todo. `_ctxFollowed='1'` es el opt-in explícito: el botón
-// «Seguir» de la ficha del contexto. Independiente de abierto/cerrado.
-
-export function isContextFollowed(n: Node | null | undefined): boolean {
-  return ed(n)._ctxFollowed === '1'
-}
-
-/** SOLO subcontextos (con contexto padre) — igual que setContextClosed: los
- *  contextos RAÍZ no participan de la columna del día. */
-export function setContextFollowed(nodeId: string, followed: boolean): void {
-  const n = store.getNode(nodeId)
-  if (!n) return
-  if (!contextParent(nodeId)) return
-  const e = ed(n)
-  if (followed) e._ctxFollowed = '1'
-  else delete e._ctxFollowed
-  store.updateNode(nodeId, { extraData: JSON.stringify(e) })
-}
+// ── Seguimiento de contextos: RETIRADO (24 ago 2026) ────────────────────────
+// El botón «Seguir»/«Dejar de seguir» de la ficha de un contexto y la sección
+// «Seguimiento» de la columna derecha de Agenda se quitaron por completo
+// (Alberto). El flag `_ctxFollowed` puede seguir viviendo en `extraData` de
+// contextos antiguos sin que nadie lo lea — no se ha hecho migración
+// destructiva a propósito, no hace falta.
 
 // Deliberadamente SIN migración de "todos los contextos abiertos ya existentes
 // pasan a seguidos": el propio ejemplo de Alberto (15 jul) para explicar la

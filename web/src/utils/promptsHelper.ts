@@ -453,8 +453,12 @@ Sin comillas, sin explicaciones, sin puntuación extra. Ante la duda, responde N
 let _ensureDone = false
 
 /**
- * Crea la raíz «⚡ Prompts» con prompts de ejemplo si no existe.
- * Idempotente: solo crea ejemplos cuando la raíz se crea por primera vez.
+ * Crea la raíz «⚡ Prompts», vacía. Antes sembraba ejemplos de "elaboración"
+ * (Diario del día, Brainstorming, Resumen ejecutivo, Próximos pasos) — Fromly
+ * app es para cosas rápidas, no para elaboraciones largas (eso es lo que
+ * ofrece la web, Alberto 24 ago 2026): la lista de Prompts en la app es solo
+ * Rápidos, sin categoría "General". Idempotente: no toca nada si la raíz ya
+ * existe.
  */
 export function ensurePromptsNode(): void {
   if (_ensureDone) return
@@ -463,97 +467,18 @@ export function ensurePromptsNode(): void {
   const existing = getPromptsRoot()
   if (existing) return  // ya existe — no tocar el contenido del usuario
 
-  const root = store.createNode({ text: PROMPTS_ROOT_NAME, parentId: null, siblingOrder: 9996, predefinedId: structuralId('prompts') ?? undefined })
-
-  // Prompt de ejemplo 1 — Diario del día (activación automática en notas diarias)
-  const diario = store.createNode({ text: 'Diario del día', parentId: root.id, predefinedId: structuralId('prompt.diario') ?? undefined })
-  store.updateNode(diario.id, {
-    extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'diary', _promptIcon: '📔', _promptGroup: 'Diario' }),
-    isCollapsed: false,
-  })
-  for (const line of [
-    'Eres mi compañero de diario. Hoy es {{fecha}}.',
-    'Cuando te cuente cómo ha ido mi día, escúchame de verdad: responde con calma, sin juzgar, con frases cortas.',
-    'Haz como mucho una pregunta que me ayude a profundizar o a cerrar el día.',
-    'No me des listas ni consejos no pedidos. No crees tareas salvo que te lo pida explícitamente.',
-    'Al final, si te lo pido, resume el día en 3 líneas: lo bueno, lo aprendido y lo pendiente.',
-  ]) store.createNode({ text: line, parentId: diario.id })
-
-  // Prompt de ejemplo 2 — Brainstorming (manual)
-  const brainstorm = store.createNode({ text: 'Brainstorming', parentId: root.id, predefinedId: structuralId('prompt.brainstorm') ?? undefined })
-  store.updateNode(brainstorm.id, {
-    extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'manual', _promptIcon: '💡' }),
-    isCollapsed: false,
-  })
-  for (const line of [
-    'Actúa como un facilitador creativo de ideación.',
-    'Cuando te dé un tema, genera ideas sin filtrar: convencionales, disruptivas y combinaciones inesperadas.',
-    'No critiques ninguna idea en esta fase: solo expande y propone.',
-    'Agrupa las ideas por enfoque y termina sugiriendo cuál exploraría yo primero.',
-  ]) store.createNode({ text: line, parentId: brainstorm.id })
-
-  // Prompt de ejemplo 3 — Resumen ejecutivo (manual)
-  const resumen = store.createNode({ text: 'Resumen ejecutivo', parentId: root.id, predefinedId: structuralId('prompt.resumen-ejecutivo') ?? undefined })
-  store.updateNode(resumen.id, {
-    extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'manual', _promptIcon: '📋' }),
-    isCollapsed: false,
-  })
-  for (const line of [
-    'Actúa como un editor que condensa texto largo en un resumen ejecutivo.',
-    'Cuando te pegue un texto (notas, un artículo, una transcripción), entrega: la idea central en una frase, los 3-5 puntos clave, y qué decisión o acción se desprende si la hay.',
-    'Sin relleno ni introducciones ("aquí tienes un resumen..."). Directo al contenido.',
-    'Si el texto no tiene una decisión clara que tomar, dilo — no inventes una conclusión que no está.',
-  ]) store.createNode({ text: line, parentId: resumen.id })
-
-  // Prompt de ejemplo 4 — Próximos pasos (manual)
-  const proximosPasos = store.createNode({ text: 'Próximos pasos', parentId: root.id, predefinedId: structuralId('prompt.proximos-pasos') ?? undefined })
-  store.updateNode(proximosPasos.id, {
-    extraData: JSON.stringify({ _promptDef: '1', _promptActivation: 'manual', _promptIcon: '✅' }),
-    isCollapsed: false,
-  })
-  for (const line of [
-    'Actúa como un asistente que convierte pensamientos desordenados en acciones concretas.',
-    'Cuando te cuente algo (una idea, un problema, notas sueltas de una reunión), extrae únicamente las tareas accionables: qué hay que hacer, no un resumen de lo que dije.',
-    'Cada acción en una línea, empezando por un verbo, sin explicaciones largas.',
-    'Si detectas una tarea con fecha o urgencia implícita, márcala. Si no hay ninguna acción real, dilo en vez de inventar una.',
-  ]) store.createNode({ text: line, parentId: proximosPasos.id })
+  store.createNode({ text: PROMPTS_ROOT_NAME, parentId: null, siblingOrder: 9996, predefinedId: structuralId('prompts') ?? undefined })
 }
 
 /**
- * migratePromptifiedAgentPrompts — "Investigar un tema" y "Resumen de un enlace"
- * pasaron de agentes a prompts (13 ago 2026: son manuales, sin horario ni
- * conversación — se lanzan escribiendo/pegando algo, así que encajan mejor en el
- * catálogo de Prompts). `migratePromptifiedAgents` (agentesHelper.ts) los quita
- * del árbol de Agentes; esta función los añade aquí, una sola vez, si el usuario
- * no tiene ya un prompt con el mismo nombre (evita duplicar si los creó a mano).
+ * migratePromptifiedAgentPrompts — hasta el 24 ago 2026 sembraba "Investigar un
+ * tema" y "Resumen de un enlace" (elaboración larga, encajaban en Prompts tras
+ * dejar de ser agentes). Se retira: la app es solo para Rápidos, sin categoría
+ * de elaboración (Alberto: "para eso está la web"). No-op, se conserva con el
+ * mismo flag por si algún día hay algo más que migrar en su lugar.
  */
 export function migratePromptifiedAgentPrompts(): void {
   try { if (localStorage.getItem('from_prompts_promptify_v1') === '1') return } catch { /* */ }
-  const root = getOrCreatePromptsRoot()
-  const existingNames = new Set(listAllPrompts().map(p => (p.text || '').trim().toLowerCase()))
-
-  if (!existingNames.has('investigar un tema')) {
-    createPromptUnder({
-      parentId: root.id, label: 'Investigar un tema', icon: '🔎', activation: 'manual', group: 'Investigación',
-      predefinedId: structuralId('prompt.investigar-tema') ?? undefined,
-      content: [
-        'Actúa como un investigador que prepara un briefing estructurado sobre un tema.',
-        'Te voy a indicar el tema (o pasarte enlaces). Consulta las fuentes necesarias y entrega: qué es / por qué importa, los 3-4 puntos clave, datos o cifras relevantes, y una conclusión con próximos pasos.',
-        'Si te paso enlaces, básate en ellos.',
-      ].join('\n'),
-    })
-  }
-  if (!existingNames.has('resumen de un enlace')) {
-    createPromptUnder({
-      parentId: root.id, label: 'Resumen de un enlace', icon: '🧾', activation: 'manual', group: 'Investigación',
-      predefinedId: structuralId('prompt.resumen-enlace') ?? undefined,
-      content: [
-        'Actúa como un asistente que resume páginas web de forma fiel y útil.',
-        'Te voy a pasar una URL. Léela y entrega: resumen en 3 líneas, los puntos clave en bullets, y si procede, acciones o ideas que se desprenden.',
-        'No inventes nada que no esté en la página.',
-      ].join('\n'),
-    })
-  }
   try { localStorage.setItem('from_prompts_promptify_v1', '1') } catch { /* */ }
 }
 

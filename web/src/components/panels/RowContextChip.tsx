@@ -9,7 +9,7 @@ import ContextChip from './ContextChip'
 import type { Node } from '../../types'
 import { useTranslation } from 'react-i18next'
 
-export default function RowContextChip({ node }: { node: Node }) {
+export default function RowContextChip({ node, flat }: { node: Node; flat?: boolean }) {
   const { t } = useTranslation()
   const [menu, setMenu] = useState<{ x: number; y: number; up: boolean } | null>(null)
   const ref = useRef<HTMLSpanElement>(null)
@@ -43,7 +43,7 @@ export default function RowContextChip({ node }: { node: Node }) {
   return (
     <span className="dc-ctx-chip-wrap" ref={ref}>
       {current ? (
-        <ContextChip context={current} title={t('noteColumn.changeContext')} onClick={open}
+        <ContextChip context={current} title={t('noteColumn.changeContext')} onClick={open} flat={flat}
           onRemove={() => setNodeContext(node.id, null)} />
       ) : (
         <span className="dc-ctx-chip dc-ctx-chip--empty" title={t('rowContextChip.assign')} onClick={open}>?</span>

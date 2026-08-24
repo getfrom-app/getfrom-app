@@ -349,6 +349,8 @@ export function nextRecurrence(from: Date, rec: RecurrenceConfig): Date {
 // ── Detección de fecha al final del texto de una tarea ───────────────────────
 
 const TIME_PATTERN = /\s+a\s+las?\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i
+// Rango horario al final: "de 12 a 14", "de 9 a 11 horas", "de 12:00 a las 14:30"
+const RANGE_TIME_PATTERN = /\s+de\s+(\d{1,2})(?::(\d{2}))?\s*(?:a|-|hasta)\s*(?:las?\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?\s*(?:h\.?|hs\.?|horas?)?$/i
 const EVENT_KEYWORDS = ['reunión', 'reunion', 'llamada', 'cita', 'meeting', 'evento', 'entrevista', 'clase', 'visita', 'presentación', 'presentacion']
 
 export interface DateExtraction {
@@ -360,8 +362,14 @@ export interface DateExtraction {
   parsed: ParsedDate
   /** Hora extraída si la hay ("13:00", "09:30") */
   timeStr?: string
+  /** Hora de fin extraída si el texto define un rango ("de 12 a 14" → "14:00") */
+  endTimeStr?: string
   /** Si se detecta como evento (tiene hora o keyword de reunión) */
   isEvent?: boolean
+}
+
+function fmtHM(h: number, m: number): string {
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
 }
 
 /**
@@ -372,20 +380,40 @@ export function extractDateFromEnd(text: string): DateExtraction | null {
   const trimmed = text.trim()
   if (!trimmed) return null
 
-  // Buscar hora al final primero
+  // Buscar hora al final primero (rango "de 12 a 14" tiene prioridad sobre "a las X")
   let timeStr: string | undefined
+  let endTimeStr: string | undefined
+  let timeMatchStr = '' // texto completo consumido por el matcher de hora, para reconstruir dateText
   let textWithoutTime = trimmed
-  const timeMatch = trimmed.match(TIME_PATTERN)
-  if (timeMatch) {
-    let h = parseInt(timeMatch[1])
-    const m = timeMatch[2] ? parseInt(timeMatch[2]) : 0
-    const ampm = timeMatch[3]?.toLowerCase()
-    if (ampm === 'pm' && h < 12) h += 12
-    if (ampm === 'am' && h === 12) h = 0
-    // Heurística: si no hay am/pm y h <= 8, asumir pm (reunión a la 1 = 13:00)
-    if (!ampm && h >= 1 && h <= 8) h += 12
-    timeStr = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
-    textWithoutTime = trimmed.slice(0, trimmed.length - timeMatch[0].length).trim()
+  const rangeMatch = trimmed.match(RANGE_TIME_PATTERN)
+  if (rangeMatch) {
+    let h1 = parseInt(rangeMatch[1])
+    const m1 = rangeMatch[2] ? parseInt(rangeMatch[2]) : 0
+    let h2 = parseInt(rangeMatch[3])
+    const m2 = rangeMatch[4] ? parseInt(rangeMatch[4]) : 0
+    const ampm = rangeMatch[5]?.toLowerCase()
+    if (ampm === 'pm') { if (h1 < 12) h1 += 12; if (h2 < 12) h2 += 12 }
+    if (ampm === 'am') { if (h1 === 12) h1 = 0; if (h2 === 12) h2 = 0 }
+    // "de 9 a 5" (sin especificar) → asumir que el fin es por la tarde, si no el rango sería invertido
+    if (h2 <= h1 && h2 <= 12) h2 += 12
+    timeStr = fmtHM(h1, m1)
+    endTimeStr = fmtHM(h2, m2)
+    timeMatchStr = rangeMatch[0]
+    textWithoutTime = trimmed.slice(0, trimmed.length - rangeMatch[0].length).trim()
+  } else {
+    const timeMatch = trimmed.match(TIME_PATTERN)
+    if (timeMatch) {
+      let h = parseInt(timeMatch[1])
+      const m = timeMatch[2] ? parseInt(timeMatch[2]) : 0
+      const ampm = timeMatch[3]?.toLowerCase()
+      if (ampm === 'pm' && h < 12) h += 12
+      if (ampm === 'am' && h === 12) h = 0
+      // Heurística: si no hay am/pm y h <= 8, asumir pm (reunión a la 1 = 13:00)
+      if (!ampm && h >= 1 && h <= 8) h += 12
+      timeStr = fmtHM(h, m)
+      timeMatchStr = timeMatch[0]
+      textWithoutTime = trimmed.slice(0, trimmed.length - timeMatch[0].length).trim()
+    }
   }
 
   // Intentar parsear 1-6 palabras del final del texto (sin la hora)
@@ -416,7 +444,7 @@ export function extractDateFromEnd(text: string): DateExtraction | null {
           recurrence: rec,
           label: `${dateOnly.label} · ↻ ${rec.display}`,
         }
-        return { cleanText, dateText: `${datePart} ${recPart}`, parsed, timeStr, isEvent: false }
+        return { cleanText, dateText: `${datePart} ${recPart}`, parsed, timeStr, endTimeStr, isEvent: false }
       }
     }
 
@@ -426,7 +454,7 @@ export function extractDateFromEnd(text: string): DateExtraction | null {
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const nextDate = nextRecurrence(today, rec)
     const parsed: ParsedDate = { date: nextDate, recurrence: rec, label: `↻ ${rec.display}` }
-    return { cleanText, dateText: recPart, parsed, timeStr: undefined, isEvent: false }
+    return { cleanText, dateText: recPart, parsed, timeStr, endTimeStr, isEvent: false }
   }
 
   // ── Paso 2: solo fecha (sin recurrencia) ────────────────────────────────────
@@ -436,10 +464,10 @@ export function extractDateFromEnd(text: string): DateExtraction | null {
     if (parsed) {
       const cleanText = words.slice(0, words.length - n).join(' ')
       if (!cleanText.trim()) return null
-      const fullDateText = datePart + (timeMatch ? timeMatch[0] : '')
+      const fullDateText = datePart + timeMatchStr
       const lowerClean = norm(cleanText)
       const isEvent = !!timeStr || EVENT_KEYWORDS.some(kw => lowerClean.includes(norm(kw)))
-      return { cleanText, dateText: fullDateText, parsed, timeStr, isEvent }
+      return { cleanText, dateText: fullDateText, parsed, timeStr, endTimeStr, isEvent }
     }
   }
 

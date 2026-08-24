@@ -5,6 +5,7 @@ export type Tab =
   | 'cuenta' | 'google'
   | 'apariencia'
   | 'ia' | 'magic'
+  | 'asistente'
   | 'atajos'
   | 'exportar' | 'importar' | 'backups'
   | 'captura'
@@ -31,6 +32,12 @@ export const NAV: NavSection[] = [
     items: [
       { id: 'ia', label: 'Inteligencia Artificial' },
       { id: 'magic', label: 'Magic' },
+    ],
+  },
+  {
+    title: 'Asistente',
+    items: [
+      { id: 'asistente', label: 'Informe del día y recordatorios' },
     ],
   },
   {
@@ -63,6 +70,7 @@ export const SUBTITLES: Partial<Record<Tab, string>> = {
   apariencia: 'Tema, color de acento y horario del día.',
   ia: 'Proveedor de IA, tokens e integración con Claude.',
   magic: 'Sugerencias automáticas y acciones inteligentes.',
+  asistente: 'Informe del día, repaso al final del día y recordatorios.',
   atajos: 'Atajos de teclado y expansión de texto.',
   backups: 'Snapshots automáticos cada 2h. Restaura tu vault a cualquier punto.',
   exportar: 'Exporta una copia de tus datos en JSON o Markdown.',

@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import {
   contextColor, contextParent, isContextClosed, setContextClosed,
-  isContextFollowed, setContextFollowed,
   getOrCreateContextKnowledgeDoc, nodesInContext,
   reparentContext, clearContextParent,
   firstContextOf,
@@ -39,20 +38,15 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
   const { t, i18n } = useTranslation()
   useStore()
   // General = sin contexto asignado (ctxId null). No es un nodo real: no tiene
-  // padre, no se archiva, no se sigue, no tiene documento de conocimiento propio
-  // — pero sí sus propias tareas/elementos (todo lo que no cuelga de ningún
-  // contexto), que es lo mínimo que pidió Alberto (17 jul).
+  // padre, no se archiva, no tiene documento de conocimiento propio — pero sí
+  // sus propias tareas/elementos (todo lo que no cuelga de ningún contexto),
+  // que es lo mínimo que pidió Alberto (17 jul).
+  // (Retirado 24 ago 2026: el botón «Seguir»/sección Seguimiento de contextos.)
   const isGeneral = ctxId === null
   const node = isGeneral ? null : store.getNode(ctxId)
   const parent = isGeneral ? null : contextParent(ctxId)
   const closed = node ? isContextClosed(node) : false
-  const followed = node ? isContextFollowed(node) : false
   const canArchive = !isGeneral && !!parent // solo subcontextos (las áreas no se archivan)
-  // Mismo alcance que Archivar: solo subcontextos. Un contexto nace neutro (ni
-  // seguido ni archivado) — «Seguir» es el opt-in explícito para que aparezca en
-  // Seguimiento (tab Hoy). Sin él, es un simple contenedor de elementos (Alberto,
-  // 15 jul: "Documentos personales" no necesita seguimiento; "Radio Elche" sí).
-  const canFollow = !isGeneral && !!parent
 
   // Contexto PADRE — picker inline (mismo patrón que «Cambiar contexto» de nota/tarea).
   const [parentPickerOpen, setParentPickerOpen] = useState(false)
@@ -263,16 +257,8 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           )}
         </div>
         {!parent && <span className="v2-el-meta">{t('v2.context.noParent', 'Sin contexto padre')}</span>}
-        {(canFollow || canArchive) && (
+        {canArchive && (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-            {canFollow && (
-              <button className="v2-ctx-archive-btn-inline" onClick={() => setContextFollowed(ctxId, !followed)}
-                title={followed
-                  ? t('v2.context.unfollowHint', 'Dejar de mostrarlo en Seguimiento (tab Hoy)')
-                  : t('v2.context.followHint', 'Mostrarlo en Seguimiento (tab Hoy) para revisarlo día a día')}>
-                {followed ? t('v2.context.unfollow', 'Dejar de seguir') : t('v2.context.follow', 'Seguir')}
-              </button>
-            )}
             {canArchive && (
               <button className="v2-ctx-archive-btn-inline" onClick={() => setContextClosed(ctxId, !closed)}
                 title={closed ? t('v2.context.restoreToTree', 'Devolver al árbol de contextos') : t('v2.context.removeFromTree', 'Sacar del árbol (sigue buscable y en el RAG)')}>

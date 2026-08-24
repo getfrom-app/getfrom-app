@@ -99,3 +99,32 @@ export async function assistantRunAgent(agentNodeId: string): Promise<void> {
 export async function assistantUpdateAgent(nodeId: string, enabled: boolean): Promise<void> {
   await apiRequest(`/assistant/node/${nodeId}`, { method: 'PUT', body: JSON.stringify({ agentEnabled: enabled }) })
 }
+
+// ── Ajustes de asistente (Informe del día / Repasa el día conmigo) ─────────
+// Misma fila de `assistantPrefs` por userId que ya lee/escribe iOS
+// (`IOSSettingsView.swift`, sección Asistente) — una sola fuente de verdad
+// servidor, sin nada nuevo que sincronizar (24 ago 2026).
+
+export interface AssistantPrefs {
+  timezone: string
+  briefEnabled: boolean
+  briefHour: number
+  eveningEnabled: boolean
+  eveningHour: number
+  remindersEnabled: boolean
+  reminderLeadMin: number
+  telegramLinked: boolean
+  lastBriefOn: string | null
+  plan: { pro: boolean; trialDaysLeft: number; hasAccess: boolean }
+}
+
+export async function assistantGetPrefs(): Promise<AssistantPrefs> {
+  return apiRequest<AssistantPrefs>('/assistant/prefs')
+}
+
+export type AssistantPrefsPatch = Partial<Pick<AssistantPrefs,
+  'briefEnabled' | 'briefHour' | 'eveningEnabled' | 'eveningHour' | 'remindersEnabled' | 'reminderLeadMin'>>
+
+export async function assistantUpdatePrefs(patch: AssistantPrefsPatch): Promise<AssistantPrefs> {
+  return apiRequest<AssistantPrefs>('/assistant/prefs', { method: 'PUT', body: JSON.stringify(patch) })
+}

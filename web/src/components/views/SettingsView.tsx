@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { assistantGetPrefs, assistantUpdatePrefs, type AssistantPrefs, type AssistantPrefsPatch } from '../../api/assistant'
 import {
   CuentaPane,
   AparienciaPane,
@@ -110,6 +112,92 @@ function CuentaViewPane() {
   return <CuentaPane />
 }
 
+// ── AsistentePane ─────────────────────────────────────────────────────────
+// Informe del día / Repasa el día conmigo / Recordatorios — misma fila de
+// `assistantPrefs` por usuario que ya lee/escribe iOS (`IOSSettingsView.swift`,
+// sección Asistente). Antes solo existía ahí; la web no tenía ningún ajuste
+// para esto (24 ago 2026, paridad web/iOS).
+
+function AsistentePane() {
+  const { t } = useTranslation()
+  const [prefs, setPrefs] = useState<AssistantPrefs | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => { assistantGetPrefs().then(setPrefs).catch(() => {}) }, [])
+
+  async function patch(p: AssistantPrefsPatch) {
+    if (!prefs) return
+    setPrefs({ ...prefs, ...p }) // optimista — la UI no espera al servidor
+    setSaving(true)
+    try { setPrefs(await assistantUpdatePrefs(p)) }
+    catch { /* deja el valor optimista; el próximo fetch de ajustes lo corrige */ }
+    finally { setSaving(false) }
+  }
+
+  if (!prefs) return <div className="st-pane" />
+
+  return (
+    <div className="st-pane">
+      <div className="st-section-title">{t('settingsView.assistantMorningTitle', 'Cada mañana')}</div>
+      <div className="st-row">
+        <div className="st-row-info">
+          <div className="st-row-label">{t('settingsView.assistantBriefLabel', 'Escríbeme al empezar el día')}</div>
+          <div className="st-row-hint">{t('settingsView.assistantBriefHint', 'Tu informe del día: tareas, eventos y a qué prestar atención.')}</div>
+        </div>
+        <div className="st-row-action" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {prefs.briefEnabled && (
+            <select value={prefs.briefHour} onChange={e => patch({ briefHour: parseInt(e.target.value) })}
+              style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+              {Array.from({ length: 8 }, (_, i) => i + 5).map(h => <option key={h} value={h}>{h}:00</option>)}
+            </select>
+          )}
+          <input type="checkbox" checked={prefs.briefEnabled} onChange={e => patch({ briefEnabled: e.target.checked })}
+            style={{ width: 16, height: 16, cursor: 'pointer' }} />
+        </div>
+      </div>
+
+      <div className="st-section-title" style={{ marginTop: 24 }}>{t('settingsView.assistantEveningTitle', 'Al final del día')}</div>
+      <div className="st-row">
+        <div className="st-row-info">
+          <div className="st-row-label">{t('settingsView.assistantEveningLabel', 'Repasa el día conmigo')}</div>
+          <div className="st-row-hint">{t('settingsView.assistantEveningHint', 'Lo que queda sin hacer, lo de mañana y si quieres añadir algo.')}</div>
+        </div>
+        <div className="st-row-action" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {prefs.eveningEnabled && (
+            <select value={prefs.eveningHour} onChange={e => patch({ eveningHour: parseInt(e.target.value) })}
+              style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+              {Array.from({ length: 6 }, (_, i) => i + 18).map(h => <option key={h} value={h}>{h}:00</option>)}
+            </select>
+          )}
+          <input type="checkbox" checked={prefs.eveningEnabled} onChange={e => patch({ eveningEnabled: e.target.checked })}
+            style={{ width: 16, height: 16, cursor: 'pointer' }} />
+        </div>
+      </div>
+
+      <div className="st-section-title" style={{ marginTop: 24 }}>{t('settingsView.assistantRemindersTitle', 'Recordatorios')}</div>
+      <div className="st-row">
+        <div className="st-row-info">
+          <div className="st-row-label">{t('settingsView.assistantRemindersLabel', 'Avísame de lo que vence')}</div>
+          <div className="st-row-hint">{t('settingsView.assistantRemindersHint', 'Tareas y eventos con hora.')}</div>
+        </div>
+        <div className="st-row-action" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {prefs.remindersEnabled && (
+            <select value={prefs.reminderLeadMin} onChange={e => patch({ reminderLeadMin: parseInt(e.target.value) })}
+              style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+              {[0, 5, 10, 15, 30, 60].map(m => (
+                <option key={m} value={m}>{m === 0 ? t('settingsView.assistantReminderExact', 'justo a la hora') : t('settingsView.assistantReminderBefore', '{{m}} min antes', { m })}</option>
+              ))}
+            </select>
+          )}
+          <input type="checkbox" checked={prefs.remindersEnabled} onChange={e => patch({ remindersEnabled: e.target.checked })}
+            style={{ width: 16, height: 16, cursor: 'pointer' }} />
+        </div>
+      </div>
+      {saving && <div className="st-row-hint">{t('settingsView.saving', 'Guardando…')}</div>}
+    </div>
+  )
+}
+
 // ── Contenido compartido ──────────────────────────────────────────────────────
 // Extraído para que v2 (a pantalla completa, estado local — sin ruta) y v1 (aquí
 // abajo, dirigido por ?tab= de la URL) usen EXACTAMENTE el mismo contenido por
@@ -124,6 +212,7 @@ export function SettingsPaneContent({ activeTab }: { activeTab: Tab }) {
       case 'apariencia':  return <AparienciaViewPane />
       case 'ia':          return <IAPane />
       case 'magic':       return <MagicPane />
+      case 'asistente':   return <AsistentePane />
       case 'atajos':      return <AtajosPane />
       case 'backups':     return <BackupsPane />
       case 'exportar':    return <ExportarPane />

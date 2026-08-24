@@ -1090,6 +1090,7 @@ export class NodeStore {
     types?: string[]
     extraData?: Record<string, string>
     isAtomic?: boolean
+    isResource?: boolean
     /** ID determinista para nodos únicos (raíces, Perfil, diario…). Si el nodo
      *  ya existe con ese id, se devuelve el existente (no se duplica). */
     predefinedId?: string
@@ -1129,6 +1130,7 @@ export class NodeStore {
       diaryDate: params.diaryDate || null,
       extraData: params.extraData ? JSON.stringify(params.extraData) : null,
       isAtomic: params.isAtomic || false,
+      isResource: params.isResource || false,
       publicSlug: null,
       deletedAt: null,
       createdAt: now,

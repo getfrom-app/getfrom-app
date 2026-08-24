@@ -20,16 +20,18 @@
 // sitio que limpia `centerElementId` recuerde resetear `rightSubTab`): si
 // `rightSubTab==='chat'` pero ya no hay `elementId`, cae a `'primary'` sola.
 //
-// ⚠️ REDISEÑO 5 ago 2026 (5ª parte) — Día y Agenda son DOS destinos separados de la
-// sidebar otra vez (Alberto: "es mucho más simple hacer clic en agenda y que aparezca
-// la columna derecha de planner y en el centro planificador, y hacer clic en día y que
-// aparezca la columna derecha con el timeline diario y la nota diaria en el centro").
-// Con eso, ninguno de los dos necesita tabs fijas propias: cada uno usa el mecanismo
-// genérico Tab1/Tab2 de arriba. Se retiran `agendaView`/`onAgendaViewChange` (la
-// fusión con tabs internas duró unas horas del mismo día).
-//   · `mode='dia'`    → Tab 1 = timeline horario del día · centro = nota diaria.
-//   · `mode='agenda'` → Tab 1 = atrasadas/sin fecha/seguimiento · centro = calendario.
-// La nota diaria nunca tiene Tab 2 "Chat" (`centerIsDiary`, ver V2ElementView.tsx).
+// ⚠️ REDISEÑO 24 ago 2026 — Día se fusiona en Agenda de forma definitiva (no
+// duraba: ver el historial arriba de idas y venidas del 5 ago). El timeline de
+// un día ya vive en el CENTRO de Agenda (PlannerPanel semana, ahora 3 columnas
+// con la elegida siempre en el centro — V2App.tsx), así que un destino «Día»
+// aparte con su propia rejilla horaria de una sola columna era la MISMA vista
+// duplicada. La nota diaria (antes el centro exclusivo de «Día») pasa a vivir
+// al pie de esta misma columna derecha, debajo de DailyCockpit:
+//   · `mode='agenda'` → Tab 1 = atrasadas/sin fecha/futuro + nota diaria (al
+//     pie) · centro = planner.
+// La nota diaria nunca tiene Tab 2 "Chat" (`centerIsDiary`, ver V2ElementView.tsx)
+// — aquí no aplica porque no vive en `elementId`/centro, sino embebida abajo.
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
@@ -37,11 +39,13 @@ import DailyCockpit from '../../components/views/DailyCockpit'
 import V2ContextView from './V2ContextView'
 import V2Chat from './V2Chat'
 import V2ElementChat from './V2ElementChat'
-import PlannerPanel from '../../components/panels/PlannerPanel'
+import V2ElementView from './V2ElementView'
 import V2ContextBrowser from './V2ContextBrowser'
 import Icon from './Icon'
+import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
+import { markAgentResultSeen } from '../../store/aiChatStore'
 
-export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda' | 'dia'
+export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda'
 
 /** Sub-tab activa de la columna derecha.
  *  · `primary`   — el contenido del destino activo (Tab 1).
@@ -69,11 +73,6 @@ interface Props {
    *  limpia `centerElementId`). */
   rightSubTab: RightSubTab
   onSubTabChange: (t: RightSubTab) => void
-  /** Bumped por V2App en cada clic en la fila Día de la sidebar (incluso
-   *  si ya estaba activa) para forzar un remount limpio del timeline — mismo
-   *  mecanismo que antes vivía aquí mismo, movido arriba porque ahora el clic
-   *  ocurre en V2Sidebar, no en esta columna (Alberto, 4 y 5 ago 2026). */
-  diaResetKey: number
   onOpenConversation: (id: string) => void
   /** Empezar una conversación nueva dentro de un contexto, desde el Historial. */
   onNewChatInCtx: (id: string | null) => void
@@ -93,7 +92,7 @@ function fmtTimer(sec: number): string {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 }
 
-export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, diaResetKey, onOpenConversation, onNewChatInCtx, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped }: Props) {
+export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, onOpenConversation, onNewChatInCtx, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped }: Props) {
   useStore()
   const { t } = useTranslation()
 
@@ -114,12 +113,18 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
   // nota diaria, porque ya no tiene el icono que lo dispara).
   const centerIsDiary = !!elementId && !!store.getNode(elementId)?.isDiaryEntry
 
+  // Nota diaria de HOY, al pie del destino Agenda (fusión de «Día», 24 ago 2026).
+  let todayDiaryId: string | null = null
+  try { todayDiaryId = getTodayDiaryUnderAgenda().id } catch { /* store aún no listo */ }
+  useEffect(() => {
+    if (mode === 'agenda' && todayDiaryId) markAgentResultSeen(todayDiaryId)
+  }, [mode, todayDiaryId])
+
   const TAB1_LABEL: Record<RightMode, string> = {
     contexto: t('v2.rightColumn.tabContext', 'Contexto'),
     chat: t('v2.rightColumn.tabChat', 'Chat'),
     elementos: t('v2.rightColumn.tabElements', 'Elementos'),
     agenda: t('v2.rightColumn.tabAgenda', 'Agenda'),
-    dia: t('v2.rightColumn.tabDay', 'Día'),
   }
 
   // Arrastrar el borde izquierdo para ensanchar/estrechar la columna derecha.
@@ -258,26 +263,24 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
         </div>
       )}
 
-      {/* Destino Día: timeline horario del día activo — EXACTAMENTE el contenido
-          de siempre (antes botón TIMELINE dentro de Agenda, Alberto 22 jul: "así
-          se puede ver rápidamente el día de un vistazo en modo timeline"). Mismo
-          patrón de fuga de padding que Elementos, para que la rejilla llene todo
-          el alto disponible. */}
-      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'dia' && (
-        <div className="v2-right-fill v2-agenda-timeline">
-          <PlannerPanel key={diaResetKey} initialView="day" initialDays={1} viewTabs={['day']} dayOnlyHeader onClose={() => {}} />
-        </div>
-      )}
-
-      {/* Destino Agenda: el centro ya muestra el calendario completo
-          (V2App.tsx) — aquí solo lo que NO cubre ese calendario: atrasadas,
-          sin fecha y contextos en seguimiento (hoy/futuras ya están en el
-          planner central, Alberto 5 ago 2026). Reutiliza DailyCockpit tal
-          cual — su menú contextual "Dejar de seguir" en Seguimiento viaja
-          gratis, no hace falta reconstruir nada. */}
+      {/* Destino Agenda: el centro ya muestra el calendario completo (V2App.tsx)
+          — aquí, arriba, lo que NO cubre ese calendario (atrasadas, sin fecha,
+          futuro — hoy/futuras ya están en el planner central, Alberto 5 ago
+          2026) y, al PIE, la nota diaria de hoy (fusión de la tab «Día»,
+          retirada el 24 ago 2026 — su timeline quedó duplicado con el planner
+          central en 3 columnas; la nota es lo único que «Día» aportaba de más).
+          `key={todayDiaryId}`: mismo motivo que el visor central — sin
+          desmontar al cambiar de día no hay ventana de solape entre notas. */}
       {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (
-        <div className="v2-right-fill">
-          <DailyCockpit bare disablePlanner hideToday hideFuture />
+        <div className="v2-right-fill v2-agenda-col">
+          <div className="v2-agenda-cockpit-scroll">
+            <DailyCockpit bare disablePlanner hideToday hideFuture />
+          </div>
+          {todayDiaryId && (
+            <div className="v2-agenda-daynote">
+              <V2ElementView key={todayDiaryId} nodeId={todayDiaryId} onClose={() => {}} onSelectCtx={onSelectCtx} />
+            </div>
+          )}
         </div>
       )}
 

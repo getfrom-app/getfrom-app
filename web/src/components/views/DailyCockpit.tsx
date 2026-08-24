@@ -3,8 +3,7 @@
 // referencias a los nodos reales (nunca copia/materializa nada).
 // Las filas se arrastran al planificador (dataTransfer 'nodeId') para ponerles hora,
 // y al interactuar con el bloque la columna derecha cambia a planificador.
-import { useState, useRef, useLayoutEffect, type CSSProperties } from 'react'
-import { openNodeDetail } from '../../utils/canvasNav'
+import { useState, useRef, useLayoutEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import { collectDailyCockpit, collectUpcomingTasks } from '../../utils/dailyCockpit'
@@ -13,25 +12,14 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import TaskRow from '../panels/TaskRow'
 import NewTaskModal from '../modals/NewTaskModal'
-import { listActiveContexts, contextColor, contextParent, isContextClosed, setContextClosed, isContextFollowed, setContextFollowed, firstContextOf, clearContextParent, convertToTask } from '../../utils/cajones'
-import ContextChip from '../panels/ContextChip'
 import type { Node } from '../../types'
 
 const COLLAPSE_KEY = 'from_daily_cockpit_collapsed'
-
-const ctxMenuItem: CSSProperties = {
-  display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none',
-  cursor: 'pointer', font: 'inherit', fontSize: 13, color: 'var(--text-primary)',
-  padding: '7px 10px', borderRadius: 6,
-}
 
 export default function DailyCockpit({ disablePlanner = false, bare = false, hideToday = false, hideFuture = false }: { disablePlanner?: boolean; bare?: boolean; hideToday?: boolean; hideFuture?: boolean } = {}) {
   useStore() // suscripción: re-render con cada cambio del store
   const { t, i18n } = useTranslation()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === '1')
-  // Menú contextual de las filas de CONTEXTO + animación de salida.
-  const [ctxMenu, setCtxMenu] = useState<{ id: string; x: number; y: number } | null>(null)
-  const [ctxClosing, setCtxClosing] = useState<{ id: string; action: 'close' | 'delete' } | null>(null)
   // Modal de fecha+recurrencia al tocar el badge de fecha de una tarea
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
   // Modal de nueva tarea — «+» de la cabecera «Para hacer». Siempre HOY (esta
@@ -41,13 +29,8 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
   const [collapsedG, setCollapsedG] = useState<Set<string>>(() => {
     let set: Set<string>
     try { set = new Set(JSON.parse(localStorage.getItem('from_dc_groups_collapsed') || '[]')) } catch { set = new Set() }
-    // SEGUIMIENTO y ALGÚN DÍA colapsados por defecto (una sola vez): lo diferido no
-    // debe molestar. Después se respeta la preferencia del usuario al desplegar/plegar.
-    if (localStorage.getItem('from_dc_seg_collapsed_init') !== '1') {
-      set.add('seguimiento')
-      localStorage.setItem('from_dc_groups_collapsed', JSON.stringify([...set]))
-      localStorage.setItem('from_dc_seg_collapsed_init', '1')
-    }
+    // ALGÚN DÍA colapsado por defecto (una sola vez): lo diferido no debe
+    // molestar. Después se respeta la preferencia del usuario al desplegar/plegar.
     if (localStorage.getItem('from_dc_algundia_collapsed_init') !== '1') {
       set.add('algundia')
       localStorage.setItem('from_dc_groups_collapsed', JSON.stringify([...set]))
@@ -160,71 +143,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
     />
   )
 
-  // ── Reparto de contextos ───────────────────────────────────────────────────
-  // «Para hacer» = contextos con tareas de hoy/atrasadas. «Seguimiento» = SOLO
-  // subcontextos abiertos sin tareas de hoy (los RAÍZ son entidad superior y nunca
-  // salen salvo que tengan tareas de hoy → «Para hacer»). Los contextos en estado
-  // «Algún día» viven en su árbol, no en la columna del día.
-  const activeCtxs = listActiveContexts()
-  // Solo los contextos EN SEGUIMIENTO explícito (botón «Seguir» en su ficha) — un
-  // contexto que nace neutro (p.ej. un contenedor de documentos sin más) no debe
-  // aparecer aquí solo por estar abierto (Alberto, 15 jul).
-  // Ya NO se excluyen los contextos que tienen tareas de hoy/atrasadas: «Para hacer»
-  // es una lista PLANA de tareas desde hace tiempo, no pinta filas de contexto, así
-  // que ese filtro (resto del diseño anterior) hacía DESAPARECER de la columna a un
-  // contexto seguido en cuanto tenía una tarea atrasada — no salía en ningún bloque
-  // (Alberto, 5 ago 2026: "este contexto se está siguiendo, pero luego, cuando voy a
-  // agenda planner, no aparece en seguimiento"). Seguimiento = lo que el usuario
-  // sigue explícitamente, sin más condiciones.
-  const seguimientoCtxs = activeCtxs.filter(c => !!contextParent(c.id) && isContextFollowed(c))
-
-  // Fila de un contexto — mismo estilo dos-líneas que TaskRow (Alberto, 5 ago 2026:
-  // "seguimiento tiene contextos en lugar de tareas, pero guarda el mismo estilo con
-  // las tareas del resto de bloques"): dot + título arriba, contexto PADRE alineado a
-  // la derecha abajo (mismo sitio que el chip de contexto de una tarea) en vez de
-  // pegado al título. Quitados los contadores numéricos (nº de tareas del contexto /
-  // nº de nodos que contiene) — "irrelevantes", según Alberto viéndolos en vivo.
-  // Reutilizada en «Para hacer» y «Seguimiento».
-  const renderCtxRow = (c: Node) => {
-    const color = contextColor(c.id)
-    const parent = contextParent(c.id)
-    const closing = ctxClosing?.id === c.id
-    return (
-      <div key={c.id}>
-        <div className={`dc-row dc-row--cajon${closing ? ' dc-row--closing' : ''}`}
-          draggable
-          onDragStart={e => { e.dataTransfer.setData('nodeId', c.id); e.dataTransfer.effectAllowed = 'copy' }}
-          onClick={() => openNodeDetail(c.id)}
-          onContextMenu={e => { e.preventDefault(); e.stopPropagation(); setCtxMenu({ id: c.id, x: e.clientX, y: e.clientY }) }}
-          onAnimationEnd={closing ? () => {
-            if (ctxClosing!.action === 'close') setContextClosed(c.id, true)
-            else trashNode(c.id)
-            setCtxClosing(null)
-          } : undefined}>
-          {/* Dot del color del contexto — mismo estilo/grosor/alineamiento
-              que los dots del bloque «Eventos de hoy» (.dc-event-dot). */}
-          <span className="dc-event-dot" style={{ background: color }} aria-label={t('common.context')} />
-          <div className="dc-row-main">
-            <div className="dc-row-l1">
-              <span className="dc-text dc-text--wrap">{c.text || 'Contexto'}</span>
-            </div>
-            <div className="dc-row-l2">
-              <span style={{ flex: 1 }} />
-              {parent && (
-                <ContextChip context={parent} title={t('dailyCockpit.goParentContext')}
-                  removeTitle="Quitar del contexto padre"
-                  onClick={e => { e.stopPropagation(); openNodeDetail(parent.id) }}
-                  onRemove={() => clearContextParent(c.id)} />
-              )}
-            </div>
-          </div>
-        </div>
-        {/* Sin lista de tareas anidada bajo el contexto: esas MISMAS tareas ya
-            salen, con su chip de contexto, en la lista plana de «Para hacer». */}
-      </div>
-    )
-  }
-
   const gHeader = (k: string, label: string, cls = '') => (
     <button
       className={`dc-group-label dc-group-toggle ${cls}`}
@@ -262,14 +180,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
           </div>
         )
       })()}
-      {/* SEGUIMIENTO — solo contextos abiertos sin tareas de hoy (las tareas sin
-          fecha ya NO viven aquí: bajan a «Por planificar»). */}
-      {seguimientoCtxs.length > 0 && (
-        <div className="dc-group">
-          {gHeader('seguimiento', `${t('daily.followup')} · ${seguimientoCtxs.length}`, 'dc-group-label--followup')}
-          {!collapsedG.has('seguimiento') && seguimientoCtxs.map(renderCtxRow)}
-        </div>
-      )}
       {/* FUTURO — tareas aparcadas explícitamente (status='future') PRIMERO, y debajo
           las tareas con fecha en próximos días en orden cronológico (Alberto, 22 jul:
           "así, realmente, el bloque futuro se completa"). Colapsado por defecto. */}
@@ -289,41 +199,6 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
           {!collapsedG.has('algundia') && data.seguimiento.map(n => renderTaskRow(n, {}))}
         </div>
       )}
-
-      {/* Menú contextual de una fila de contexto: abrir/cerrar · eliminar */}
-      {ctxMenu && (() => {
-        const c = store.getNode(ctxMenu.id)
-        if (!c) return null
-        const closed = isContextClosed(c)
-        const canClose = !!contextParent(c.id) // SOLO subcontextos cambian de estado (los raíz no)
-        return (
-          <>
-            <div onClick={() => setCtxMenu(null)} onContextMenu={e => { e.preventDefault(); setCtxMenu(null) }}
-              style={{ position: 'fixed', inset: 0, zIndex: 1998 }} />
-            <div style={{ position: 'fixed', top: ctxMenu.y, left: ctxMenu.x, zIndex: 1999, minWidth: 170,
-              background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 10, padding: 5, boxShadow: '0 8px 28px rgba(0,0,0,0.16)' }}>
-              {canClose && (
-                <button className="dc-ctxmenu-item" style={ctxMenuItem}
-                  onClick={() => { if (closed) { setContextClosed(ctxMenu.id, false); setCtxMenu(null) } else { setCtxClosing({ id: ctxMenu.id, action: 'close' }); setCtxMenu(null) } }}>
-                  {closed ? t('dailyCockpit.reopenContext', 'Reabrir contexto') : t('dailyCockpit.closeContext', 'Cerrar contexto')}
-                </button>
-              )}
-              <button className="dc-ctxmenu-item" style={ctxMenuItem}
-                onClick={() => { setContextFollowed(ctxMenu.id, false); setCtxMenu(null) }}>
-                {t('v2.context.unfollow', 'Dejar de seguir')}
-              </button>
-              <button className="dc-ctxmenu-item" style={ctxMenuItem}
-                onClick={() => { convertToTask(ctxMenu.id); setCtxMenu(null) }}>
-                {t('rightColMenu.convertToTask', 'Convertir en tarea')}
-              </button>
-              <button className="dc-ctxmenu-item" style={{ ...ctxMenuItem, color: 'var(--danger,#e03131)' }}
-                onClick={() => { setCtxClosing({ id: ctxMenu.id, action: 'delete' }); setCtxMenu(null) }}>
-                {t('common.delete', 'Eliminar')}
-              </button>
-            </div>
-          </>
-        )
-      })()}
     </>
   )
 

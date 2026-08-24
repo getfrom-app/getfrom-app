@@ -774,6 +774,14 @@
 
 .v2-right-empty { color: var(--text-tertiary); font-size: 12.5px; text-align: center; padding: 30px 12px; line-height: 1.6; }
 
+/* Destino Agenda (24 ago 2026): atrasadas/sin fecha/futuro arriba (scroll propio,
+   nunca ocupa más de la mitad) + nota diaria de hoy al pie (fusión de la tab
+   «Día» retirada) — dos bloques con scroll independiente dentro de la misma
+   columna derecha, separados por un borde fino. */
+.v2-agenda-col { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.v2-agenda-cockpit-scroll { flex: 0 1 auto; max-height: 50%; overflow-y: auto; padding: 0 16px; }
+.v2-agenda-daynote { flex: 1; min-height: 120px; display: flex; flex-direction: column; overflow-y: auto; border-top: 1px solid var(--border); }
+
 /* Miniaturas de archivos en la derecha */
 .v2-thumb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .v2-thumb {

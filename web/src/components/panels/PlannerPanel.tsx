@@ -224,16 +224,15 @@ interface Props {
   initialView?: ViewMode
   initialDays?: number
   /** Qué pestañas día/semana/mes/año se muestran en el selector. Por defecto, las 4
-      (v1 y el overlay embebido del planner). El tab «Día» de la columna derecha v2
-      pasa solo ['day'] (Alberto, 21 jul: «quitamos Día del planificador, va a su
-      propio tab») y el overlay del planificador (v2, abierto desde el tab Agenda)
-      pasa ['week','month','year'] — Día ya no vive ahí. */
+      (solo relevante para v1, código muerto sin ruta que lo monte). El destino
+      Agenda de v2 (único consumidor vivo) pasa ['week','month','year'] — el tab
+      «Día» (rejilla de una sola columna) se retiró del todo el 24 ago 2026: su
+      timeline quedó duplicado en cuanto la vista semana pasó a 3 columnas con
+      la elegida siempre en el centro (ver V2App.tsx). `dayOnlyHeader`/viewMode
+      'day' siguen existiendo aquí por si v1 se reactivara, pero nada en v2 los usa ya. */
   viewTabs?: ViewMode[]
-  /** Tab «Día» de la columna derecha: cabecera simplificada, igual que Agenda
-   *  (título del día + HOY/CAL), en vez de ‹/›+Hoy+resetZoom — duplicaba el
-   *  título del día que ya muestra `pp-col-head` (Alberto, 22 jul: "aparece
-   *  dos veces miércoles... todo esto no es necesario"). CAL reutiliza la
-   *  vista Año que el planificador ya tiene (renderYear). */
+  /** Cabecera simplificada de la (ya retirada) tab «Día» de v2 — código muerto
+   *  desde el 24 ago 2026, se deja intacto por si hiciera falta reintroducirla. */
   dayOnlyHeader?: boolean
   /** Centra la columna de HOY en el scroll horizontal en vez de pegarla al
    *  borde derecho (comportamiento por defecto, ver `todayScrollPos()` — v1

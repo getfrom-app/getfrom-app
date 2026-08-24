@@ -123,6 +123,11 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
               title={t('dailyCockpit.editDateRecurrence')}
               onClick={e => { e.stopPropagation(); onOpenDate(node) }}>{due}</span>
           )}
+          {/* Hashtag junto a la fecha, sin píldora (24 ago 2026, paridad iOS:
+              "quita los bordes... inclúyelos junto a la fecha"). Sigue siendo
+              clicable para reasignar — a diferencia de iOS, la web no tiene
+              swipe, así que aquí el clic es la ÚNICA forma de cambiarlo. */}
+          <RowContextChip node={node} flat />
           {/* Sin fecha: badge para ponerla, mismo patrón que el «?» de contexto — un
               solo glifo, sin texto (así no necesita traducción en los 12 idiomas)
               (Alberto, 5 ago 2026: "que no tienen fecha, podrían tener debajo del
@@ -147,7 +152,6 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
           )}
           <span style={{ flex: 1 }} />
           <TaskHoverActions node={node} onOpenDate={onOpenDate} />
-          <RowContextChip node={node} />
         </div>
       </div>
     </div>

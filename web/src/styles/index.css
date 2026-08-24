@@ -13687,6 +13687,15 @@ textarea:focus-visible,
 .ctx-chip-name {
   cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
+/* Sin píldora, junto a la fecha en la fila de tarea (24 ago 2026, paridad iOS:
+   "quita los bordes de los hashtags"). Sigue siendo clicable — la web no tiene
+   swipe, así que el clic es la única forma de reasignar contexto desde la fila. */
+.ctx-chip--flat {
+  border: none; background: none; padding: 0; text-transform: none;
+  font-weight: 500; font-size: 11px; letter-spacing: normal;
+}
+.ctx-chip--flat::before { display: none; }
+.ctx-chip--flat .ctx-chip-x { display: none; }
 /* Tag anidado: los tramos padre de la ruta van atenuados; el propio, en color pleno. */
 .ctx-chip-path { color: var(--text-tertiary, #9a9a9a); }
 .ctx-chip-x {

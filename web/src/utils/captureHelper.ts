@@ -112,6 +112,12 @@ export function createNodeFromText(rawTextInput: string, opts: CreateFromTextOpt
       d.setHours(h, m, 0, 0)
       updates.due = d.toISOString()
       updates.isEvent = true
+      if (dp.endTimeStr) {
+        const [eh, em] = dp.endTimeStr.split(':').map(Number)
+        const dEnd = new Date(dp.parsed.date)
+        dEnd.setHours(eh, em, 0, 0)
+        updates.dueEnd = dEnd.toISOString()
+      }
     } else {
       updates.due = dp.parsed.date.toISOString()
       if (isTask) updates.status = 'pending'

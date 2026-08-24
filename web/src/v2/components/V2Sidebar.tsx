@@ -37,12 +37,13 @@ function setContextAccentColor(id: string, color: string) {
 interface Props {
   selectedCtxId: string | null
   onSelectCtx: (id: string | null) => void
-  // Destinos globales (rediseño 5 ago 2026): Chat/Agenda/Elementos/Día viven al
-  // mismo nivel que un contexto en vez de tabs de la columna derecha — no
-  // describen "lo seleccionado", son vistas de toda la app. `activeGeneralDest`
-  // resalta la fila activa (null = ninguno, p.ej. hay un contexto real elegido).
-  onSelectGeneral: (dest: 'dia' | 'agenda' | 'chat' | 'elementos') => void
-  activeGeneralDest: 'dia' | 'agenda' | 'chat' | 'elementos' | null
+  // Destinos globales (rediseño 5 ago 2026, Día fusionado en Agenda el 24 ago
+  // 2026): Chat/Agenda/Elementos viven al mismo nivel que un contexto en vez de
+  // tabs de la columna derecha — no describen "lo seleccionado", son vistas de
+  // toda la app. `activeGeneralDest` resalta la fila activa (null = ninguno,
+  // p.ej. hay un contexto real elegido).
+  onSelectGeneral: (dest: 'agenda' | 'chat' | 'elementos') => void
+  activeGeneralDest: 'agenda' | 'chat' | 'elementos' | null
   // id=null desde el menú GLOBAL (bajo "Nueva conversación") crea sin contexto
   // (General) — Alberto, 22 jul: "todos ellos se deben poder crear desde aquí".
   onNewChatInCtx: (id: string | null) => void
@@ -238,9 +239,10 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
     setStack(prev => prev.slice(0, -1))
   }
 
-  /** Inicio de la app: día de hoy, su nota en el centro y su columna derecha. Es
-   *  exactamente el reset duro del destino Día — no se duplica aquí. */
-  const goHome = () => onSelectGeneral('dia')
+  /** Inicio de la app: destino Agenda (planner en el centro, nota diaria de hoy
+   *  al pie de la columna derecha) — es exactamente su reset duro, no se
+   *  duplica aquí. (Antes iba al destino Día, fusionado en Agenda el 24 ago 2026.) */
+  const goHome = () => onSelectGeneral('agenda')
 
   return (
     <aside
@@ -286,27 +288,20 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         ))}
       </div>
 
-      {/* Destinos globales (rediseño 5 ago 2026, fusión Agenda+Día el mismo día) —
-          Día/Agenda/Chat/Elementos, al mismo nivel que un contexto, sin etiqueta de
-          sección propia (la palabra "General" ya la usa la fila pseudo-contexto de
-          más abajo; repetirla aquí confundiría cuál es cuál). Mismo estilo visual
-          que una fila de contexto.
-          ⚠️ Día y Agenda vuelven a ser DOS filas (Alberto, 5 ago 2026, 5ª parte:
-          "es mucho más simple hacer clic en agenda y que aparezca la columna
-          derecha de planner y en el centro planificador, y hacer clic en día y que
-          aparezca la columna derecha con el timeline diario y la nota diaria en el
-          centro"). Antes, ese mismo día, se habían fusionado en un destino con 2
-          tabs internas — un clic de más para la misma decisión. Día va PRIMERA y es
-          el destino por defecto al abrir la app. */}
+      {/* Destinos globales — Agenda/Chat/Elementos, al mismo nivel que un contexto,
+          sin etiqueta de sección propia (la palabra "General" ya la usa la fila
+          pseudo-contexto de más abajo; repetirla aquí confundiría cuál es cuál).
+          Mismo estilo visual que una fila de contexto.
+          ⚠️ Día se fusionó definitivamente en Agenda el 24 ago 2026: su timeline
+          quedó duplicado con el planner central (semana en 3 columnas, la
+          elegida siempre en el centro) y su nota diaria pasó al pie de la
+          columna derecha de Agenda (V2RightColumn.tsx) — Agenda es ahora el
+          destino por defecto al abrir la app. */}
       {/* `flex: 'none'`: sin esto hereda `flex:1` de `.v2-ctx-list` (misma clase que
           la lista de Contextos, de abajo) y se estira ocupando todo el espacio
           libre — con solo 3 filas cortas, eso dejaba un hueco en blanco enorme
           entre "Elementos" y "Contextos" (Alberto, 5 ago 2026). */}
       <div className="v2-ctx-list" style={{ marginBottom: 8, flex: 'none' }}>
-        <div className={`v2-ctx-row ${activeGeneralDest === 'dia' ? 'active' : ''}`} onClick={() => onSelectGeneral('dia')}>
-          <Icon name="sun" size={16} className="v2-ctx-glyph" />
-          <span className="v2-el-title">{t('v2.rightColumn.tabDay', 'Día')}</span>
-        </div>
         <div className={`v2-ctx-row ${activeGeneralDest === 'agenda' ? 'active' : ''}`} onClick={() => onSelectGeneral('agenda')}>
           <Icon name="calendar" size={16} className="v2-ctx-glyph" />
           <span className="v2-el-title">{t('v2.rightColumn.tabAgenda', 'Agenda')}</span>

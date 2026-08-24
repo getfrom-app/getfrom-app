@@ -18,7 +18,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { renderChatContent } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
-import { listAllPromptsGrouped, resolvePrompt, createPromptUnder, listPromptGroups, getOrCreatePromptsRoot, DEFAULT_PROMPT_GROUP } from '../../utils/promptsHelper'
+import { listAllPrompts, resolvePrompt, createPromptUnder, getOrCreatePromptsRoot } from '../../utils/promptsHelper'
 import { listAllAgents } from '../../utils/agentesHelper'
 import { displayTitle } from '../../utils/displayText'
 import { isMentionable } from '../elementKind'
@@ -198,7 +198,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   // usuario puede crear su prompt (con carpeta) directamente aquí (13 ago 2026).
   const [newPromptOpen, setNewPromptOpen] = useState(false)
   const [newPromptTitle, setNewPromptTitle] = useState('')
-  const [newPromptGroup, setNewPromptGroup] = useState('')
   const [newPromptContent, setNewPromptContent] = useState('')
   const [isRecording, setIsRecording] = useState(false)
   const recognitionRef = useRef<unknown>(null)
@@ -462,27 +461,34 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                 ))}
               </div>
             )}
+            <button
+              className="v2-iconbtn"
+              title={t('v2.chat.newConversation', 'Nueva conversación')}
+              onClick={() => {
+                // El hilo se apilaba sin fin (avisos y turnos de semanas atrás
+                // seguían ahí) — un botón claro para vaciarlo, en vez de que
+                // solo exista un gesto oculto (Alberto, 24 ago 2026).
+                if (window.confirm(t('v2.chat.newConversationConfirm', '¿Empezar de cero? Se borra el historial de esta conversación.'))) {
+                  assistantStore.clear()
+                }
+              }}
+            ><Icon name="trash" /></button>
             <div style={{ position: 'relative' }} ref={promptMenuRef}>
               <button className="v2-iconbtn" title={t('v2.chat.promptsTitle', 'Prompts')} onClick={() => { setPromptMenu(o => !o); setNewPromptOpen(false) }}><Icon name="prompt" /></button>
               {promptMenu && !newPromptOpen && (
                 <div className="v2-doc-menu v2-doc-menu-up" style={{ maxHeight: 320, overflowY: 'auto' }}>
-                  {listAllPromptsGrouped().map(({ group, prompts }) => (
-                    <div key={group}>
-                      <div className="v2-usermenu-label" style={{ padding: '6px 10px 2px', fontWeight: 600 }}>{group}</div>
-                      {prompts.map(p => (
-                        <button key={p.id} onClick={() => {
-                          const text = resolvePrompt(p.id, { currentNodeId: currentNodeId || undefined })
-                          doSend(text)
-                          setPromptMenu(false)
-                        }}><Icon name="prompt" size={14} /> {p.text || t('common.noTitle', 'Sin título')}</button>
-                      ))}
-                    </div>
+                  {[...listAllPrompts()].sort((a, b) => (a.text || '').localeCompare(b.text || '')).map(p => (
+                    <button key={p.id} onClick={() => {
+                      const text = resolvePrompt(p.id, { currentNodeId: currentNodeId || undefined })
+                      doSend(text)
+                      setPromptMenu(false)
+                    }}><Icon name="prompt" size={14} /> {p.text || t('common.noTitle', 'Sin título')}</button>
                   ))}
-                  {listAllPromptsGrouped().length === 0 && (
+                  {listAllPrompts().length === 0 && (
                     <div className="v2-usermenu-label" style={{ padding: '4px 10px 2px' }}>{t('v2.chat.noPrompts', 'Sin prompts todavía')}</div>
                   )}
                   <div className="v2-doc-menu-sep" />
-                  <button onClick={() => { setNewPromptOpen(true); setNewPromptTitle(''); setNewPromptGroup(''); setNewPromptContent('') }}>
+                  <button onClick={() => { setNewPromptOpen(true); setNewPromptTitle(''); setNewPromptContent('') }}>
                     <Icon name="plus" size={14} /> {t('v2.chat.newPrompt', 'Nuevo prompt')}
                   </button>
                 </div>
@@ -496,16 +502,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                     value={newPromptTitle}
                     onChange={e => setNewPromptTitle(e.target.value)}
                   />
-                  <input
-                    className="ctx-pick-search"
-                    list="v2-prompt-groups"
-                    placeholder={t('v2.chat.newPromptGroup', 'Carpeta (opcional)')}
-                    value={newPromptGroup}
-                    onChange={e => setNewPromptGroup(e.target.value)}
-                  />
-                  <datalist id="v2-prompt-groups">
-                    {listPromptGroups().map(g => <option key={g} value={g} />)}
-                  </datalist>
                   <textarea
                     placeholder={t('v2.chat.newPromptContent', 'Qué debe decir/hacer al enviarlo…')}
                     value={newPromptContent}
@@ -522,7 +518,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                         const created = createPromptUnder({
                           parentId: root.id,
                           label: newPromptTitle,
-                          group: newPromptGroup.trim() || DEFAULT_PROMPT_GROUP,
                           content: newPromptContent,
                         })
                         setPromptMenu(false); setNewPromptOpen(false)

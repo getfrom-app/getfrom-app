@@ -11,12 +11,17 @@ export default function ContextChip({
   onRemove,
   title = 'Contexto',
   removeTitle = 'Quitar contexto',
+  /** Sin píldora — texto plano de color, junto a la fecha (24 ago 2026,
+   *  paridad iOS: "quita los bordes de los hashtags"). Sigue siendo clicable:
+   *  la web no tiene swipe, así que el clic es la única forma de reasignar. */
+  flat = false,
 }: {
   context: Node
   onClick?: (e: React.MouseEvent) => void
   onRemove?: (e: React.MouseEvent) => void
   title?: string
   removeTitle?: string
+  flat?: boolean
 }) {
   const color = contextColor(context.id)
   // Tag anidado: `#tag/subtag`. Los tramos padre van atenuados y el propio en
@@ -34,7 +39,7 @@ export default function ContextChip({
     : parents.length === 1 ? parents[0]
     : '…/' + parents[parents.length - 1]
   return (
-    <span className="ctx-chip" style={{ ['--chip' as string]: color }}>
+    <span className={`ctx-chip${flat ? ' ctx-chip--flat' : ''}`} style={{ ['--chip' as string]: color }}>
       <span className="ctx-chip-name" title={path ? `#${path}` : title} onClick={onClick}>
         <span className="ctx-chip-path">#{parentPath ? parentPath + '/' : ''}</span>{leaf}
       </span>

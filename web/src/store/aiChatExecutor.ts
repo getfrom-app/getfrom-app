@@ -215,6 +215,14 @@ function createTask(a: Record<string, unknown>, sessionId?: string, currentNodeI
   if (due) updates.due = due
   if (priority) updates.priority = priority
   if (recurrence) updates.recurrence = recurrenceToString(recurrence)
+  // Rango horario detectado en el título ("de 12 a 14") — solo si el propio
+  // modelo no trajo ya un due con hora distinto del parseo local.
+  if (dp?.endTimeStr && dp.parsed.date) {
+    const [eh, em] = dp.endTimeStr.split(':').map(Number)
+    const dEnd = new Date(dp.parsed.date)
+    dEnd.setHours(eh, em, 0, 0)
+    updates.dueEnd = dEnd.toISOString()
+  }
   store.updateNode(created.id, updates)
   // Contexto explícito: una tarea con `due` futuro cuelga del diario de ese día
   // (árbol completamente separado del de contextos), así que heredar por

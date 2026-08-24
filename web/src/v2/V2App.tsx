@@ -103,7 +103,7 @@ export default function V2App() {
     }
   }, [ownAccent])
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
-  const [rightMode, setRightMode] = useState<RightMode>('dia')
+  const [rightMode, setRightMode] = useState<RightMode>('agenda')
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
   // «Adjuntar» (V2AttachModal): archivo / enlace / Drive en un único sitio. Guarda
   // el contexto desde el que se abrió — lo que se adjunte nace ahí.
@@ -135,13 +135,15 @@ export default function V2App() {
   // `agendaResetKey`/`diaResetKey` el 4 ago, ahora vivo aquí en vez de en
   // V2RightColumn porque el clic ya no ocurre ahí).
   //
-  // ⚠️ REDISEÑO 5 ago 2026 (5ª parte) — Día y Agenda vuelven a ser DOS destinos
-  // de la sidebar, cada uno con su par columna-derecha + centro (Alberto: "en
-  // lugar de tener solo agenda en el Sidebar, tendremos agenda y encima de
-  // agenda tendremos día"). Se retira `agendaView` (la fusión con 2 tabs
-  // internas duró unas horas de este mismo día):
-  //   · 'dia'    → derecha = timeline horario · centro = nota diaria de hoy.
-  //   · 'agenda' → derecha = atrasadas/sin fecha/seguimiento · centro = planner.
+  // ⚠️ REDISEÑO 24 ago 2026 — Día vuelve a fusionarse en Agenda, esta vez para
+  // quedarse: el timeline de un día ya se ve en el centro de Agenda (PlannerPanel
+  // en semana, ahora 3 columnas con la elegida siempre en el centro — ver
+  // `centerToday`/`initialDays` más abajo), así que un destino «Día» aparte con
+  // su propia rejilla horaria era la MISMA vista duplicada. La nota diaria (antes
+  // el centro exclusivo de «Día») pasa a vivir al pie de la columna derecha de
+  // Agenda (V2RightColumn.tsx), debajo de atrasadas/sin fecha/futuro.
+  //   · 'agenda' → centro = planner (semana 3 días/mes/año) · derecha =
+  //     atrasadas/sin fecha/futuro + nota diaria al final.
   const [centerElementId, setCenterElementId] = useState<string | null>(null)
   // Ids del último lote de archivos subidos a la vez (2+) — para poder
   // asignarles un contexto compartido en un solo gesto (Alberto, 13 ago: "al
@@ -156,11 +158,6 @@ export default function V2App() {
   // algo revela su propio chat (abrir un elemento con "Hablar de esto", un
   // artifact recién creado por el chat general, etc.) — ver cada sitio abajo.
   const [rightSubTab, setRightSubTab] = useState<RightSubTab>('primary')
-  // Bumped en cada clic en la fila Día de la sidebar (incluso si ya estaba
-  // activa) — fuerza un remount limpio del timeline (PlannerPanel) en
-  // V2RightColumn. Vivía en V2RightColumn.tsx hasta el 4 ago; sube aquí porque
-  // ahora el clic que lo dispara ocurre en V2Sidebar, no en la columna derecha.
-  const [diaResetKey, setDiaResetKey] = useState(0)
   // Ajustes a pantalla completa: null = modo normal; si no, la pestaña activa.
   // Sustituye al modal — nav a la izquierda (donde van los contextos), contenido
   // al centro, columna derecha vacía.
@@ -261,16 +258,12 @@ export default function V2App() {
       .catch(() => setReady(true)) // no bloquear el shell aunque falle la carga
   }, [])
 
-  // Arranque en frío: Día es el destino por defecto (`rightMode` ya nace así),
-  // pero fijar `centerElementId` a la nota de hoy en el `useState`
-  // inicial no es seguro — el store puede seguir vacío en ese instante (antes de
-  // que `initialLoad`/`runStartupMigrations` terminen). Se difiere a que `ready`
-  // sea `true`; en cualquier otro caso (usuario ya navegó a otro sitio) no hace nada.
+  // Arranque en frío: Agenda es el destino por defecto (`rightMode` ya nace
+  // así) — su centro es el planner, sin elemento que fijar (la nota diaria
+  // vive al pie de la columna derecha, ver V2RightColumn.tsx). Se difiere a que
+  // `ready` sea `true` solo para lo que sigue: ofrecer ampliar el perfil.
   useEffect(() => {
     if (!ready) return
-    if (rightMode === 'dia' && !centerElementId) {
-      try { const diaryId = getTodayDiaryUnderAgenda().id; setCenterElementId(diaryId); markAgentResultSeen(diaryId) } catch { /* noop */ }
-    }
     // Fromly ofrece ampliar el perfil por su cuenta cada cierto tiempo. NO abre
     // nada: crea la conversación con `_pendingReply`, que la sidebar ya pinta como
     // aviso («1 conversación esperando») — el usuario entra cuando quiere. Todas
@@ -313,26 +306,23 @@ export default function V2App() {
     }
   }
 
-  // Handler de las 4 filas del bloque General de la sidebar (Día/Agenda/Chat/
+  // Handler de las 3 filas del bloque General de la sidebar (Agenda/Chat/
   // Elementos) — hermano de `onSelectCtx`, para los destinos que NO son un
   // contexto real. Siempre limpia `selectedCtxId` (estos destinos son "sin
   // contexto" por definición — mutuamente excluyentes con la selección de un
   // contexto real en la sidebar) y vuelve a la Tab 1 de la columna derecha.
-  const onSelectGeneral = (dest: 'dia' | 'agenda' | 'chat' | 'elementos') => {
+  // (Día se fusionó en Agenda el 24 ago 2026 — ver el comentario de
+  // `centerElementId` más arriba.)
+  const onSelectGeneral = (dest: 'agenda' | 'chat' | 'elementos') => {
     setShowProfile(false)
     setSelectedCtxId(null)
     setFocusNodeId(null)
     setRightSubTab('primary')
     setRightMode(dest)
-    if (dest === 'dia') {
-      // Reset duro a HOY: nota diaria en el centro + timeline remontado (su día
-      // es estado LOCAL de PlannerPanel). Pulsarlo de nuevo siempre vuelve aquí,
-      // cierre lo que cierre en el centro.
-      try { const diaryId = getTodayDiaryUnderAgenda().id; setCenterElementId(diaryId); markAgentResultSeen(diaryId) } catch { /* noop */ }
-      setDiaResetKey(k => k + 1)
-    } else if (dest === 'agenda') {
+    if (dest === 'agenda') {
       // El centro ES el planificador (semana/mes/año), así que no hay elemento
-      // abierto — igual que el destino Chat.
+      // abierto — igual que el destino Chat. La nota diaria de hoy vive al pie
+      // de la columna derecha (V2RightColumn.tsx), no en el centro.
       setCenterElementId(null)
     } else if (dest === 'chat') {
       // Retoma la conversación general que hubiera — igual que un contexto
@@ -349,10 +339,10 @@ export default function V2App() {
       // `setRightMode` directamente (no a este handler), así que no compite con esto.
       setElementsFilter(null)
       // El centro arranca VACÍO — era el único destino general que no lo tocaba, así
-      // que heredaba lo que hubiera antes (el chat general, o la nota diaria si venías
-      // de Día) y parecía aleatorio (Alberto, 5 ago 2026: "aparece el chat, nueva
-      // conversación, o la nota diaria... lo cual no tiene sentido"). En Elementos el
-      // centro es el elemento que abras de la lista; hasta entonces, hueco propio.
+      // que heredaba lo que hubiera antes y parecía aleatorio (Alberto, 5 ago 2026:
+      // "aparece el chat, nueva conversación... lo cual no tiene sentido"). En
+      // Elementos el centro es el elemento que abras de la lista; hasta entonces,
+      // hueco propio.
       setCenterElementId(null)
     }
   }
@@ -441,15 +431,28 @@ export default function V2App() {
   const isTextFile = (f: File) => /\.(md|markdown|txt)$/i.test(f.name) || f.type === 'text/markdown' || f.type === 'text/plain'
 
   // Sube un archivo a R2 y crea su nodo-recurso bajo `parentId`. Devuelve el id o null.
+  //
+  // ⚠️ Antes: `createNode` (sin extraData) y LUEGO `updateNode` con la clave R2 —
+  // dos ops de sync distintas (`create` + `set`) en dos POST /ops/push separados,
+  // con debounce propio cada una. Al subir varias fotos/PDFs seguidos, la ráfaga
+  // de pushes podía hacer que el `set` de un nodo llegase y se aplicara ANTES de
+  // que su `create` hubiera materializado en el servidor — el `UPDATE` de
+  // `materializeOps` no comprueba filas afectadas, así que el nodo se quedaba sin
+  // fila real en `sync_nodes` para siempre (visible solo en el dispositivo que lo
+  // subió, por el estado local optimista — nunca sincronizaba a otros, ver
+  // FROM.md). Ahora se sube PRIMERO y se crea el nodo UNA sola vez, con la clave
+  // R2 ya dentro: una única op `create` con todo el dato, sin ventana de carrera.
   const uploadResourceNode = async (f: File, parentId: string | null): Promise<string | null> => {
-    const node = store.createNode({ text: f.name.replace(/\.[^.]+$/, ''), parentId })
     try {
       const { key, publicUrl } = await uploadFile(f)
       const resourceType = f.type.startsWith('image/') ? 'image' : f.type === 'application/pdf' ? 'pdf' : 'file'
-      store.updateNode(node.id, { isResource: true, extraData: JSON.stringify({ _resourceUrl: publicUrl, _resourceKey: key, _resourceType: resourceType }) })
+      const node = store.createNode({
+        text: f.name.replace(/\.[^.]+$/, ''), parentId,
+        isResource: true,
+        extraData: { _resourceUrl: publicUrl, _resourceKey: key, _resourceType: resourceType },
+      })
       return node.id
     } catch {
-      store.deleteNode(node.id)
       toast(t('v2.uploadFailed', 'No se pudo subir {{name}}', { name: f.name }), 'error')
       return null
     }
@@ -951,10 +954,16 @@ export default function V2App() {
         // completa (Alberto, 5 ago 2026: "Planner sería un lugar solamente para
         // organizar"). `centerToday` centra la columna de hoy en vez de pegarla
         // al borde derecho (comportamiento por defecto de PlannerPanel, que sigue
-        // intacto para v1). Sin `onClose` propio: se sale pulsando «Día» u otra
-        // fila de la sidebar, como el resto de vistas centrales.
+        // intacto para v1). Sin `onClose` propio: se sale pulsando otra fila de
+        // la sidebar, como el resto de vistas centrales.
+        // `initialDays={3}` (antes 7, 24 ago 2026): solo 3 columnas — el día
+        // elegido/hoy SIEMPRE en el centro (`centerToday`), una a cada lado como
+        // contexto — cada columna más ancha, con sitio real para leer un bloque
+        // con hora. Esto ya ES el timeline de un día (con margen), así que el
+        // destino «Día» aparte (rejilla horaria de una sola columna) se retiró
+        // por duplicado — ver el comentario de `centerElementId` más arriba.
         <main className="v2-col v2-center">
-          <PlannerPanel initialView="week" initialDays={7} viewTabs={['week', 'month', 'year']} onClose={() => {}} centerToday />
+          <PlannerPanel initialView="week" initialDays={3} viewTabs={['week', 'month', 'year']} onClose={() => {}} centerToday />
         </main>
       ) : (
         <V2Chat
@@ -976,7 +985,6 @@ export default function V2App() {
         rightSubTab={rightSubTab}
         onSubTabChange={setRightSubTab}
         onNewChatInCtx={onNewChatInCtx}
-        diaResetKey={diaResetKey}
         onOpenConversation={onOpenConversation}
         importDragOver={importDragOver}
         elementsFilter={elementsFilter}
