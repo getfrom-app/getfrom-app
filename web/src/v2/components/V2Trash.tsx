@@ -4,8 +4,8 @@
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
-import { store, useStore } from '../../store/nodeStore'
-import { getPapeleraNode, restoreNode, emptyTrash } from '../../utils/papeleraHelper'
+import { useStore } from '../../store/nodeStore'
+import { trashItems, restoreNode, emptyTrash } from '../../utils/papeleraHelper'
 import Icon from './Icon'
 import { displayTitle } from '../../utils/displayText'
 
@@ -13,8 +13,9 @@ export default function V2Trash({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   useStore()
   const [, force] = useState(0)
-  const papelera = getPapeleraNode()
-  const items = papelera ? store.children(papelera.id).filter(n => !n.deletedAt) : []
+  // Los nodos en papelera llevan lápida (`deletedAt`): es lo que hace que el resto
+  // de la app no los vea. Aquí se listan a propósito.
+  const items = trashItems()
 
   const restore = (id: string) => { restoreNode(id); force(x => x + 1) }
   const empty = () => {

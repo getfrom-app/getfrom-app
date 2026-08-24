@@ -80,7 +80,12 @@ export function trashNode(nodeId: string): void {
   store.updateNode(nodeId, {
     parentId:  newParentId,
     extraData: JSON.stringify(ed),
-    // No ponemos deletedAt — el nodo sigue "vivo" pero bajo Papelera
+    // LÁPIDA. Antes el nodo seguía "vivo" bajo la Papelera y cada lista tenía que
+    // acordarse de subir por los padres para descartarlo; la que se olvidaba —la
+    // agenda del iPhone— enseñaba tareas borradas hace meses (Alberto, 24 ago 2026:
+    // "que NADA en papelera se filtre en ningún lugar"). Ahora estar en la papelera
+    // ES estar borrado: el `deletedAt == null` que ya filtra en todas partes basta.
+    deletedAt: new Date().toISOString(),
   })
 
   // ── Reconectar hijos ya en Papelera que pertenecían a este nodo ─────────
@@ -118,7 +123,7 @@ export function restoreNode(nodeId: string): string | null {
     ? originalParentId!
     : (findRootByKey('agenda', '📅 Agenda')?.id ?? null)
 
-  store.updateNode(nodeId, { parentId: targetParent, extraData: JSON.stringify(ed) })
+  store.updateNode(nodeId, { parentId: targetParent, extraData: JSON.stringify(ed), deletedAt: null })
   window.dispatchEvent(new CustomEvent('from:node-restored', { detail: { id: nodeId, parentId: targetParent } }))
   return targetParent
 }
@@ -129,15 +134,29 @@ export function restoreNode(nodeId: string): string | null {
 export function emptyTrash(): void {
   const papelera = getPapeleraNode()
   if (!papelera) return
+  const now = new Date().toISOString()
 
-  function deleteRecursive(id: string) {
-    const children = store.children(id)
-    for (const child of children) deleteRecursive(child.id)
-    store.updateNode(id, { deletedAt: new Date().toISOString() })
+  // Con la papelera-por-lápida, "borrar" y "vaciar" escriben el mismo `deletedAt`.
+  // Lo que los distingue es `_purgedAt`: vaciado = ya no se puede restaurar y deja
+  // de listarse en la papelera. El nodo se conserva en la base por si hace falta
+  // recuperarlo desde un backup, pero para la app no existe.
+  function purgeRecursive(id: string) {
+    for (const child of store.children(id)) purgeRecursive(child.id)
+    const n = store.getNode(id)
+    if (!n) return
+    const ed = parseExtraData(n.extraData)
+    ed._purgedAt = now
+    store.updateNode(id, { deletedAt: n.deletedAt ?? now, extraData: JSON.stringify(ed) })
   }
 
-  const children = store.children(papelera.id)
-  for (const child of children) deleteRecursive(child.id)
+  for (const child of store.children(papelera.id)) purgeRecursive(child.id)
+}
+
+/** Lo que debe verse en la Papelera: con lápida y todavía recuperable. */
+export function trashItems(): Node[] {
+  const papelera = getPapeleraNode()
+  if (!papelera) return []
+  return store.children(papelera.id).filter(n => !!n.deletedAt && !parseExtraData(n.extraData)._purgedAt)
 }
 
 /** Comprueba si un nodo está en la Papelera (él o algún ancestro) */
