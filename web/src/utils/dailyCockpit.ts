@@ -15,8 +15,6 @@ export interface DailyCockpitData {
   /** SEGUIMIENTO: tareas abiertas SIN fecha (sustituye a los «bucles»; incluye
    *  los bucles antiguos por compatibilidad). Permanecen hasta hechas/borradas. */
   seguimiento: Node[]
-  /** Tareas con status='future' — aparcadas explícitamente para más adelante. */
-  future: Node[]
 }
 
 /** Fecha local YYYY-MM-DD de hoy — formato de extraData._doneAt. */
@@ -179,10 +177,9 @@ export function collectDayTasks(date: Date): Node[] {
 }
 
 /** Tareas pendientes con `due` en un día FUTURO (después de hoy), en orden
- *  cronológico — completan el bloque «Futuro» de la agenda junto a las
- *  aparcadas explícitamente (status='future'): Alberto, 22 jul: "incluiría
- *  además, debajo, las tareas de los próximos días en orden cronológico". No
- *  duplica las de status='future' (esas ya se listan aparte). */
+ *  cronológico — completan el bloque «Futuro» de la agenda: Alberto, 22 jul:
+ *  "incluiría además, debajo, las tareas de los próximos días en orden
+ *  cronológico". */
 export function collectUpcomingTasks(): Node[] {
   const today0 = startOfToday()
   const out: Node[] = []
@@ -207,18 +204,11 @@ export function collectDailyCockpit(): DailyCockpitData {
   const overdue: Node[] = []
   const todayTasks: Node[] = []
   const seguimiento: Node[] = []
-  const future: Node[] = []
 
   for (const n of store.allActive()) {
     if (n.isDiaryEntry) continue
     if (n.isEvent) continue // los eventos GCal tienen su propio bloque, no son tareas
 
-    // FUTURO: tarea aparcada explícitamente (status='future'), con o sin fecha.
-    if (n.status === 'future') {
-      if (isInPapelera(n.id)) continue
-      future.push(n)
-      continue
-    }
     const legacyBucle = (n.types || []).includes('bucle')
 
     // SEGUIMIENTO: tarea ABIERTA y SIN fecha (incluye los bucles antiguos).
@@ -251,7 +241,6 @@ export function collectDailyCockpit(): DailyCockpitData {
   overdue.sort(byDue)
   todayTasks.sort(byDue)
   seguimiento.sort((a, b) => (a.text || '').localeCompare(b.text || ''))
-  future.sort((a, b) => (a.text || '').localeCompare(b.text || ''))
 
-  return { overdue, today: todayTasks, seguimiento, future }
+  return { overdue, today: todayTasks, seguimiento }
 }

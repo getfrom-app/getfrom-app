@@ -6,7 +6,7 @@ export interface Node {
   siblingOrder: number
   types: string[]
   collections: string[]
-  status: 'pending' | 'done' | 'future' | null
+  status: 'pending' | 'done' | null
   isActive: boolean
   isEvent: boolean
   /** @deprecated Eliminado. Una tarea de seguimiento es solo una tarea (status) sin fecha (due). */

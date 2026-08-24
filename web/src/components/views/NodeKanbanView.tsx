@@ -61,7 +61,6 @@ export default function NodeKanbanView({ parentId }: Props) {
       return [
         { key: '__null', label: t('kanban.noStatus') },
         { key: 'pending', label: t('status.pending'), color: '#fcd34d' },
-        { key: 'future',  label: t('status.future'),  color: '#93c5fd' },
         { key: 'done',    label: t('status.done'),    color: '#86efac' },
       ]
     }
@@ -120,7 +119,7 @@ export default function NodeKanbanView({ parentId }: Props) {
 
   function setValueForCol(nodeId: string, colKey: string) {
     if (groupBy === '__status') {
-      const status = colKey === '__null' ? null : (colKey as 'pending' | 'future' | 'done')
+      const status = colKey === '__null' ? null : (colKey as 'pending' | 'done')
       store.updateNode(nodeId, { status })
       return
     }

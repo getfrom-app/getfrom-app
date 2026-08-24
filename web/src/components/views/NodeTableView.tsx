@@ -789,7 +789,6 @@ export default function NodeTableView({ parentId }: Props) {
                     {node.status === null ? <span className="node-table-empty-cell">—</span>
                       : node.status === 'pending' ? <span className="node-table-status node-table-status--pending">○ {t('status.pending')}</span>
                       : node.status === 'done' ? <span className="node-table-status node-table-status--done">✓ {t('status.done')}</span>
-                      : node.status === 'future' ? <span className="node-table-status">◆ {t('status.future')}</span>
                       : <span className="node-table-status">{node.status}</span>}
                     {isBuiltinEditing('__status') && (
                       <div className="node-table-cell-overlay">
@@ -800,13 +799,12 @@ export default function NodeTableView({ parentId }: Props) {
                           onBlur={() => setEditingCell(null)}
                           onChange={e => {
                             const v = e.target.value
-                            store.updateNode(node.id, { status: v === '' ? null : (v as 'pending' | 'future' | 'done') })
+                            store.updateNode(node.id, { status: v === '' ? null : (v as 'pending' | 'done') })
                             setEditingCell(null)
                           }}
                         >
                           <option value="">{t('kanban.noStatus')}</option>
                           <option value="pending">{t('status.pending')}</option>
-                          <option value="future">{t('status.future')}</option>
                           <option value="done">{t('status.done')}</option>
                         </select>
                       </div>
@@ -994,7 +992,7 @@ export default function NodeTableView({ parentId }: Props) {
 function getCompareValue(node: Node, colId: string, customCols: PropDef[]): string | number | null {
   if (colId === '__title') return (node.text || '').toLowerCase()
   if (colId === '__status') {
-    const order: Record<string, number> = { pending: 1, future: 2, done: 3, null: 0 }
+    const order: Record<string, number> = { pending: 1, done: 2, null: 0 }
     return order[String(node.status ?? 'null')] ?? 99
   }
   if (colId === '__due') return node.due ? new Date(node.due).getTime() : Number.MAX_SAFE_INTEGER
@@ -1023,7 +1021,6 @@ function getGroupLabel(key: string, colId: string, customCols: PropDef[], t: (k:
   if (key === '__null') return t('table.noValueLabel')
   if (colId === '__status') {
     return key === 'pending' ? t('status.pending')
-      : key === 'future' ? t('status.future')
       : key === 'done' ? t('status.done')
       : key
   }

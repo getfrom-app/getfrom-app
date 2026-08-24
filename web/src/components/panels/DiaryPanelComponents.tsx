@@ -303,7 +303,6 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
         {([
           { v: 'pending' as const, l: `○ ${t('status.pending')}` },
           { v: 'done'    as const, l: `✓ ${t('status.done')}` },
-          { v: 'future'  as const, l: `◆ ${t('status.future')}` },
           { v: null,               l: `– ${t('status.none')}` },
         ] as { v: Node['status']; l: string }[]).map(opt => (
           <button key={String(opt.v)}

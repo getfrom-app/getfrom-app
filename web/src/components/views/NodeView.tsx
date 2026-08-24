@@ -1902,7 +1902,6 @@ export default function NodeView() {
                   return new Date(node.due!) < new Date(now.getFullYear(), now.getMonth(), now.getDate())
                 })()
                 const sqClass = node.status === 'done' ? 'task-sq--done'
-                  : node.status === 'future' ? 'task-sq--future'
                   : isOverdue ? 'task-sq--overdue'
                   : 'task-sq--pending'
                 return (

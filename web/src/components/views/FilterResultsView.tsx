@@ -85,7 +85,6 @@ function TableView({ matchIds }: { matchIds: Set<string> }) {
 // ── Vista kanban ───────────────────────────────────────────────────────────
 const KANBAN_COLS = [
   { id: 'pending', label: 'Pendiente', color: '#fbbf24' },
-  { id: 'future',  label: 'Futuro',    color: '#60a5fa' },
   { id: 'done',    label: 'Hecho',     color: '#22c55e' },
   { id: 'other',   label: 'Sin estado',color: '#6b7280' },
 ]
@@ -103,7 +102,6 @@ function KanbanView({ matchIds }: { matchIds: Set<string> }) {
   function getCol(n: Node) {
     if (n.status === 'done') return 'done'
     if (n.status === 'pending') return 'pending'
-    if (n.status === 'future') return 'future'
     if (n.status !== null && n.status !== undefined) return 'pending'
     return 'other'
   }

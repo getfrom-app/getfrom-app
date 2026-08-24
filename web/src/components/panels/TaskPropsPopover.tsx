@@ -139,7 +139,6 @@ export default function TaskPropsPopover({ node, onClose, anchorRef }: TaskProps
         {([
           { v: 'pending' as const, l: `○ ${t('nodeRightPanel.statusPending')}` },
           { v: 'done'    as const, l: `✓ ${t('taskProps.statusDoneF')}` },
-          { v: 'future'  as const, l: `◆ ${t('taskProps.statusFutureF')}` },
           { v: null,               l: `– ${t('nodeRightPanel.statusNone')}` },
         ] as { v: Node['status']; l: string }[]).map(opt => (
           <button key={String(opt.v)}

@@ -105,7 +105,6 @@ interface TaskBlock {
 
 function blockColor(n: Node): string {
   if (n.status === 'done')    return 'var(--green)'
-  if (n.status === 'future')  return 'var(--accent)'
   if (n.due && new Date(n.due) < new Date()) return 'var(--red)'
   return 'var(--accent)'
 }

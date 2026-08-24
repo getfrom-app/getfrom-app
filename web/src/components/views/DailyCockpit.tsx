@@ -54,7 +54,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
 
   // Recalculado en cada render — un pase O(n) sobre el store, barato (~6k nodos)
   const data = collectDailyCockpit()
-  // Tareas con fecha en próximos días (completan «Futuro» junto a status='future').
+  // Tareas con fecha en próximos días (completan el bloque «Futuro»).
   const upcoming = collectUpcomingTasks()
 
   // (Aquí se agrupaban las tareas de hoy/atrasadas por contexto. «Para hacer» pasó a
@@ -180,19 +180,15 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
           </div>
         )
       })()}
-      {/* FUTURO — tareas aparcadas explícitamente (status='future') PRIMERO, y debajo
-          las tareas con fecha en próximos días en orden cronológico (Alberto, 22 jul:
-          "así, realmente, el bloque futuro se completa"). Colapsado por defecto. */}
-      {!hideFuture && (data.future.length > 0 || upcoming.length > 0) && (
+      {/* FUTURO — tareas con fecha en próximos días en orden cronológico.
+          Colapsado por defecto. */}
+      {!hideFuture && upcoming.length > 0 && (
         <div className="dc-group">
-          {gHeader('futuro', `Futuro · ${data.future.length + upcoming.length}`)}
-          {!collapsedG.has('futuro') && data.future.map(n => renderTaskRow(n, { showDue: true }))}
+          {gHeader('futuro', `Futuro · ${upcoming.length}`)}
           {!collapsedG.has('futuro') && upcoming.map(n => renderTaskRow(n, { showDue: true }))}
         </div>
       )}
-      {/* SIN FECHA — SIEMPRE el último bloque de la columna, colapsado por defecto.
-          Tareas abiertas sin fecha (excluye status='future', que ya vive en Futuro —
-          Alberto, 22 jul: "excluye aquí las tareas con estado futuro"). */}
+      {/* SIN FECHA — SIEMPRE el último bloque de la columna, colapsado por defecto. */}
       {data.seguimiento.length > 0 && (
         <div className="dc-group">
           {gHeader('algundia', `${t('daily.noDate', 'Sin fecha')} · ${data.seguimiento.length}`)}
@@ -204,7 +200,7 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
 
   // Modal de fecha+recurrencia (al tocar el badge de fecha de una tarea).
   const propsNode = propsNodeId
-    ? [...data.overdue, ...data.today, ...data.seguimiento, ...data.future, ...upcoming].find(n => n.id === propsNodeId)
+    ? [...data.overdue, ...data.today, ...data.seguimiento, ...upcoming].find(n => n.id === propsNodeId)
     : null
   const propsModal = propsNode
     ? <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />

@@ -22,7 +22,6 @@ function checkboxClassForNode(n: Node, todayStart: Date, todayEnd: Date): string
   if (n.status === 'done') return 'diary-agenda-checkbox diary-agenda-checkbox--done'
   // Recurso: cian (mantiene su identidad de recurso aunque tenga o no fecha)
   if (isResourceNode(n)) return 'diary-agenda-checkbox diary-agenda-checkbox--resource'
-  if (n.status === 'future') return 'diary-agenda-checkbox diary-agenda-checkbox--future'
   if (n.due) {
     const d = new Date(n.due)
     if (d < todayStart) return 'diary-agenda-checkbox diary-agenda-checkbox--overdue'  // naranja
@@ -35,7 +34,6 @@ function getResourceStatus(n: Node): string {
   // Modelo unificado: node.status manda. Si no hay, leemos legacy _resourceStatus
   // y mapeamos: pending→pending, consuming→pending, done→done, archived→done
   if (n.status === 'done') return 'done'
-  if (n.status === 'future') return 'future'
   if (n.status === 'pending') return 'pending'
   try {
     const legacy = JSON.parse(n.extraData || '{}')._resourceStatus
@@ -127,7 +125,6 @@ function TaskRow({ node, indented, onOpenProps }: { node: Node; checkColor?: str
   const variant: 'today' | 'overdue' | 'done' | 'future' | 'event' = (() => {
     if (node.status === 'done') return 'done'
     if (node.isEvent) return 'event'
-    if (node.status === 'future') return 'future'
     if (node.due) {
       const d = new Date(node.due)
       if (d < todayStart) return 'overdue'
@@ -265,7 +262,7 @@ export default function CalendarSidePanel({ periodStart, periodEnd, view }: Prop
   // Tareas SUELTAS (no descendientes de un container vivo) por categoría
   const looseSchedulable = allNodes.filter(n =>
     !n.isDiaryEntry &&
-    (n.status === 'pending' || n.status === 'future') &&
+    n.status === 'pending' &&
     !hasLiveContainerAncestor(n.id)
   )
 

@@ -127,9 +127,6 @@ function matchesToken(token: string, node: Node, nodes: Map<string, Node>): bool
     case 'hecho':
     case 'done':
     case 'completed':   return node.status === 'done'
-    case 'futuro-tarea':
-    case 'programada':
-    case 'scheduled':   return node.status === 'future'
     case 'vencido':
     case 'overdue':     return node.status === 'pending' && isOverdue(node.due)
     case 'sin-fecha':
@@ -356,7 +353,7 @@ const SMART_OPERATORS = [
   'documento', 'pdf', 'imagen',
   // English
   'today', 'tomorrow', 'week', 'month', 'past', 'future',
-  'task', 'pending', 'done', 'completed', 'scheduled', 'undated', 'dated',
+  'task', 'pending', 'done', 'completed', 'undated', 'dated',
   'note', 'favorite', 'journal', 'diary', 'resource', 'file', 'link', 'event',
   'document', 'doc', 'image', 'img',
 ]

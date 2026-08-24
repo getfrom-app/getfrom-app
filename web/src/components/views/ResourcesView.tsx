@@ -4,9 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import type { ResourceType } from '../panels/ResourcePanel'
-// Estados unificados con el resto de Fromly: null/pending/future/done
+// Estados unificados con el resto de Fromly: null/pending/done
 // "Sin estado" se trata como pendiente para filtros
-type StatusKey = 'all' | 'pending' | 'future' | 'done'
+type StatusKey = 'all' | 'pending' | 'done'
 
 const TYPE_ICONS: Record<string, string> = {
   youtube: '▶️', url: '🔗', book: '📚', podcast: '🎙', document: '📄',
@@ -17,22 +17,19 @@ const TYPE_LABELS: Record<string, string> = {
 // Colores pastel iguales al panel del calendario/agenda
 const STATUS_COLORS: Record<string, string> = {
   pending: '#fcd34d',   // amarillo pastel
-  future:  '#93c5fd',   // azul pastel
   done:    '#86efac',   // verde pastel
 }
 const STATUS_LABELS: Record<string, string> = {
-  pending: 'common.pending', future: 'resourcesView.statusFuture', done: 'common.done',
+  pending: 'common.pending', done: 'common.done',
 }
 
-function effectiveStatus(node: Node): 'pending' | 'future' | 'done' {
+function effectiveStatus(node: Node): 'pending' | 'done' {
   // 1. Columna promovida resourceStatus (v8.29+)
   if (node.resourceStatus === 'done') return 'done'
   if (node.resourceStatus === 'consuming') return 'pending' // consuming → pendiente en UI
-  if (node.resourceStatus === 'future') return 'future'
   if (node.resourceStatus === 'pending') return 'pending'
   // 2. Status de tarea
   if (node.status === 'done') return 'done'
-  if (node.status === 'future') return 'future'
   if (node.status === 'pending') return 'pending'
   // 3. Legacy extraData._resourceStatus
   try {
@@ -114,10 +111,10 @@ export default function ResourcesView() {
 
   const hasActiveFilters = typeFilter !== 'all' || statusFilter !== 'all' || selectedTags.size > 0
 
-  function setStatus(node: Node, status: 'pending' | 'future' | 'done') {
-    // Atadura: future/done limpian due
+  function setStatus(node: Node, status: 'pending' | 'done') {
+    // Atadura: done limpia due
     const updates: Partial<Node> = { status }
-    if (status === 'future' || status === 'done') updates.due = null
+    if (status === 'done') updates.due = null
     store.updateNode(node.id, updates)
     // Limpiar legacy _resourceStatus si existe (no se vuelve a usar)
     try {
@@ -208,10 +205,9 @@ export default function ResourcesView() {
                         style={{ borderColor: STATUS_COLORS[status], color: '#333', background: STATUS_COLORS[status] }}
                         value={status}
                         onClick={e => e.stopPropagation()}
-                        onChange={e => { e.stopPropagation(); setStatus(node, e.target.value as 'pending' | 'future' | 'done') }}
+                        onChange={e => { e.stopPropagation(); setStatus(node, e.target.value as 'pending' | 'done') }}
                       >
                         <option value="pending">{t('common.pending')}</option>
-                        <option value="future">{t('resourcesView.statusFuture')}</option>
                         <option value="done">{t('common.done')}</option>
                       </select>
                       <div className="resource-card-actions">
@@ -267,7 +263,7 @@ export default function ResourcesView() {
         {/* Estado */}
         <div className="resources-sidebar-section">
           <div className="resources-sidebar-label">{t('resourcesView.status')}</div>
-          {(['all', 'pending', 'future', 'done'] as const).map(st => (
+          {(['all', 'pending', 'done'] as const).map(st => (
             <button
               key={st}
               className={`resources-sidebar-btn${statusFilter === st ? ' active' : ''}`}
