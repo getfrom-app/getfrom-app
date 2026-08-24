@@ -16,9 +16,10 @@
 // de los dos necesitaba duplicarse aquí. Posponer sí era un hueco real: la
 // única forma de mover una fecha ya puesta era abrir el popover completo
 // (`onOpenDate`/TaskPropsPopover). Reutiliza `postponeTask` (`dailyCockpit.ts`,
-// ya cubierto por tests) y el markup `.dc-postpone-wrap`/`.dc-postpone-menu`
-// que ya existía en `index.css` sin ningún componente que lo usara.
-import { useEffect, useRef, useState } from 'react'
+// ya cubierto por tests).
+// ⚠️ Simplificado (24 ago 2026, misma tarde): el desplegable Mañana/+7d/Quitar
+// fecha se quita — Alberto: "es más simple" un botón directo "Mañana", igual
+// que el swipe de iOS (que ya era una única acción, sin menú).
 import type { Node } from '../../types'
 import { useTranslation } from 'react-i18next'
 import { scheduleTask, postponeTask } from '../../utils/dailyCockpit'
@@ -32,43 +33,25 @@ export default function TaskHoverActions({ node, onOpenDate }: {
 }) {
   const { t } = useTranslation()
   const done = node.status === 'done'
-  const [postponeOpen, setPostponeOpen] = useState(false)
-  const wrapRef = useRef<HTMLSpanElement>(null)
-
-  useEffect(() => {
-    if (!postponeOpen) return
-    const onDoc = (e: PointerEvent) => { if (!wrapRef.current?.contains(e.target as globalThis.Node)) setPostponeOpen(false) }
-    window.addEventListener('pointerdown', onDoc, true)
-    return () => window.removeEventListener('pointerdown', onDoc, true)
-  }, [postponeOpen])
 
   return (
     <span className="dc-actions">
       {/* «Hoy» SOLO para tareas sin fecha (Por planificar): las programa para hoy.
           Las tareas que ya tienen fecha no llevan este botón — para esas está
-          «Posponer», justo debajo. */}
+          «Mañana», justo debajo. */}
       {!done && !node.due && (
         <button className="dc-action dc-action--hoy" title={t('taskHover.scheduleToday')}
           onClick={e => { e.stopPropagation(); scheduleTask(node, 0) }}>
           Hoy
         </button>
       )}
-      {/* «Posponer» SOLO para tareas abiertas que YA tienen fecha — mover una
+      {/* «Mañana» SOLO para tareas abiertas que YA tienen fecha — mover una
           tarea sin fecha «al futuro» no tiene sentido, para eso está «Hoy». */}
       {!done && node.due && (
-        <span className="dc-postpone-wrap" ref={wrapRef}>
-          <button className="dc-action" title={t('daily.postpone')}
-            onClick={e => { e.stopPropagation(); setPostponeOpen(o => !o) }}>
-            <Icon name="clock" size={13} />
-          </button>
-          {postponeOpen && (
-            <div className="dc-postpone-menu" onClick={e => e.stopPropagation()}>
-              <button onClick={() => { postponeTask(node, 1); setPostponeOpen(false) }}>{t('common.tomorrow')}</button>
-              <button onClick={() => { postponeTask(node, 7); setPostponeOpen(false) }}>{t('daily.nextWeek')}</button>
-              <button onClick={() => { postponeTask(node, null); setPostponeOpen(false) }}>{t('taskHover.unschedule')}</button>
-            </div>
-          )}
-        </span>
+        <button className="dc-action" title={t('common.tomorrow')}
+          onClick={e => { e.stopPropagation(); postponeTask(node, 1) }}>
+          {t('common.tomorrow')}
+        </button>
       )}
       <button className="dc-action dc-action--del" title={t('common.delete')}
         onClick={e => { e.stopPropagation(); trashNode(node.id) }}>
