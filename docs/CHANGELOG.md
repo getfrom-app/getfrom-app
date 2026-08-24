@@ -4,6 +4,27 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## iOS v2.16.159 — 24 agosto 2026 · Barra de navegación fija y tareas siempre al día
+
+- **Barra de navegación nueva**: siempre visible, mismo orden en todas las pantallas — Chat, Agenda, Planificador, Contextos, Elementos y Ajustes (siempre el último). Ya no hay botón de atrás ni de cerrar en ningún sitio, solo tocar otro botón.
+- **Ajustes y Planificador ya no se abren "desde abajo"**: son una pantalla más, igual que el resto.
+- **Pulsación larga en cualquier elemento** para renombrar o eliminar — antes solo funcionaba en algunos tipos.
+- **Deslizar una tarea a la izquierda la marca para hoy** en vez de borrarla — borrar se mueve a la pulsación larga.
+- **Arreglado**: imágenes y archivos que se veían rotos al subirlos desde el chat.
+- **Informe del día** y **Repasa el día conmigo** dejan de ser agentes configurables y pasan a ser funciones propias de Fromly, con menos repetición y una conversación real por la noche.
+
+---
+
+## Web v9.6.971 — 24 agosto 2026 · Planificador de 3 días y tareas que entienden fecha y hora
+
+- **Planificador semanal a 3 columnas**, con el día elegido siempre en el centro — antes eran 7 columnas apretadas.
+- **La vista "Día" se fusiona con Agenda**: tu nota diaria aparece ahora al pie de la columna derecha de Agenda, sin duplicar el timeline en dos sitios.
+- **Crear una tarea escribiendo en lenguaje natural ya entiende fecha, hora y recurrencia** — incluidos rangos horarios ("de 12 a 14"), no solo horas sueltas.
+- **Prompts rápidos, sin carpetas**: la lista de prompts se simplifica a solo accesos rápidos.
+- Quitado el "seguimiento" de contextos (el botón "Seguir" y su sección) — mezclar contexto y tarea generaba confusión.
+
+---
+
 ## Web v9.6.961 — 13 agosto 2026 · Notificaciones reales, tema Solar y un chat más claro
 
 - **Notificaciones aunque tengas la pestaña cerrada**: hasta ahora, si un agente terminaba con la web cerrada, no te enterabas hasta volver a abrirla. Nuevo aviso "Avisarme aunque tenga la pestaña cerrada" en el menú de usuario.
