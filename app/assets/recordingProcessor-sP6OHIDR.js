@@ -1,4 +1,4 @@
-import{aC as m,bw as r,aT as f,i as y,f as h}from"./outliner-CJFk3dpz.js";import"./react-vendor-DeWpAztq.js";async function p(s,c){const d=Math.round(c/60),l=c>=180,o=f.buildPromptBlock(),t=`Analiza esta transcripción de audio de ${d} ${d===1?"minuto":"minutos"}.
+import{aC as m,bw as r,aT as f,i as y,f as h}from"./outliner-CVD7qVZa.js";import"./react-vendor-DeWpAztq.js";async function p(s,c){const d=Math.round(c/60),l=c>=180,o=f.buildPromptBlock(),t=`Analiza esta transcripción de audio de ${d} ${d===1?"minuto":"minutos"}.
 ${o?`
 ${o}
 `:""}
