@@ -329,10 +329,15 @@ function V2CitationView({ node, onSelectCtx }: { node: Node; onSelectCtx: (id: s
   )
 }
 
-export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFiltered, hideContext }: { nodeId: string; onSelectCtx: (id: string) => void; onOpenElementsFiltered?: (kind: 'agent' | 'prompt') => void
+export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFiltered, hideContext, hideToolbar }: { nodeId: string; onSelectCtx: (id: string) => void; onOpenElementsFiltered?: (kind: 'agent' | 'prompt') => void
   /** Oculta el selector de contexto del editor. Lo usa la MEMORIA de un contexto:
    *  pertenece a ese contexto por definición, no se le puede cambiar (V2ElementView). */
-  hideContext?: boolean }) {
+  hideContext?: boolean
+  /** Uso embebido/compacto (V2ElementView `compact`, nota diaria al pie de
+   *  Agenda) — oculta la fila de acciones de `V2NoteBody` (favorito/MD/HTML/
+   *  PDF/publicar/eliminar/contexto/switch nota-lienzo). Solo tiene efecto en
+   *  la rama final (nota genérica); la nota diaria siempre cae ahí. */
+  hideToolbar?: boolean }) {
   useStore()
   const { t } = useTranslation()
   const node = store.getNode(nodeId)
@@ -375,5 +380,5 @@ export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFilter
   if (node.status != null || node.isEvent) return <V2TaskDetailView node={node} onSelectCtx={onSelectCtx} />
   // CITA de un párrafo de otra nota — vista propia con «Ir a la nota» (ver arriba).
   if (ed._docSelection != null) return <V2CitationView node={node} onSelectCtx={onSelectCtx} />
-  return <V2NoteBody node={node} onSelectCtx={onSelectCtx} hideContext={hideContext} />
+  return <V2NoteBody node={node} onSelectCtx={onSelectCtx} hideContext={hideContext} hideToolbar={hideToolbar} />
 }

@@ -278,7 +278,7 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
           </div>
           {todayDiaryId && (
             <div className="v2-agenda-daynote">
-              <V2ElementView key={todayDiaryId} nodeId={todayDiaryId} onClose={() => {}} onSelectCtx={onSelectCtx} />
+              <V2ElementView key={todayDiaryId} nodeId={todayDiaryId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
             </div>
           )}
         </div>

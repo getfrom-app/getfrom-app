@@ -47,11 +47,20 @@ function EditableTitle({ nodeId }: { nodeId: string }) {
   )
 }
 
-export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElementsFiltered }: {
+export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElementsFiltered, compact }: {
   nodeId: string
   onClose: () => void
   onSelectCtx: (id: string) => void
   onOpenElementsFiltered?: (kind: ElemKind) => void
+  /** Uso embebido y minimalista (nota diaria al pie de Agenda, `V2RightColumn`,
+   *  rediseño 24 ago 2026: Alberto: "no es necesario el título... ni el
+   *  favorito, ni el md, ni el resto de botones de esa fila"). Oculta toda la
+   *  cabecera (título editable, publicar/eliminar de recurso, fechas) y la fila
+   *  de acciones de `V2NoteBody` (favorito/MD/HTML/PDF/publicar/eliminar/
+   *  contexto) — deja solo la barra de formato + el área de escritura. SOLO lo
+   *  pasa ese call site: el resto (abrir un elemento en el centro, V2App.tsx)
+   *  no lo pasa y sigue viendo la cabecera completa. */
+  compact?: boolean
 }) {
   useStore()
   const { t, i18n } = useTranslation()
@@ -87,8 +96,8 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
     activeDocEditor.chain().focus('end').run()
   }
   return (
-    <div className="v2-right-fill">
-      {!isCtxMemory && (
+    <div className={compact ? 'v2-right-fill v2-element-compact' : 'v2-right-fill'}>
+      {!compact && !isCtxMemory && (
       <div className="v2-detail-head">
         <div className="v2-detail-head-top">
           <EditableTitle nodeId={nodeId} />
@@ -123,7 +132,7 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
         )}
       </div>
       )}
-      <div className="v2-detail-body" onMouseDown={focusDocEnd}><V2DetailView nodeId={nodeId} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideContext={isCtxMemory} /></div>
+      <div className="v2-detail-body" onMouseDown={focusDocEnd}><V2DetailView nodeId={nodeId} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideContext={isCtxMemory} hideToolbar={compact} /></div>
     </div>
   )
 }
