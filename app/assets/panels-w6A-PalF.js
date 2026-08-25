@@ -1,0 +1,1 @@
+import"./outliner-D0mhb6zb.js";import"./react-vendor-DeWpAztq.js";function n(t){t&&window.dispatchEvent(new CustomEvent("from:open-detail",{detail:{nodeId:t}}))}function o(t){return t.status!=null||!!t.isEvent||(t.types||[]).includes("tarea")}export{o as i,n as o};
