@@ -78,17 +78,36 @@ export function renameGroup(groupId: string, name: string): void {
 }
 
 // ── Publicación (mismo mecanismo que una nota, endpoint propio) ─────────────
+//
+// `node.publicSlug` guarda el PATH completo que va tras `/g/` (así el enlace
+// se construye igual en toda la web sin conocer el formato en dos partes):
+// - formato viejo (grupos publicados antes del 25 ago 2026): un solo tramo,
+//   el `slug` aleatorio de 8 caracteres — `abc12345`.
+// - formato nuevo: `userSlug/customSlug` — `alberto/diabeticos-alicante`.
+// El servidor identifica una publicación existente por su `customSlug` (o el
+// `slug` viejo si el grupo es de antes), nunca por el path con barra —
+// `identifierOf` extrae justo eso.
+function identifierOf(node: Node): string | undefined {
+  const raw = node.publicSlug || undefined
+  if (!raw) return undefined
+  const parts = raw.split('/')
+  return parts[parts.length - 1] || undefined
+}
 
-export async function publishGroupPublicly(node: Node): Promise<string> {
-  const existingSlug = node.publicSlug || undefined
-  const result = await publishGroup(node.id, existingSlug)
+/** customSlug opcional elegido por el usuario en el campo de "nombre
+ *  personalizado" del enlace — si se omite, el servidor genera uno a partir
+ *  del nombre del grupo. */
+export async function publishGroupPublicly(node: Node, customSlug?: string): Promise<string> {
+  const existingSlug = identifierOf(node)
+  const result = await publishGroup(node.id, existingSlug, customSlug)
   const url = `https://fromly.app/g/${result.slug}`
   if (node.publicSlug !== result.slug) store.updateNode(node.id, { publicSlug: result.slug })
   return url
 }
 
 export async function unpublishGroupPublicly(node: Node): Promise<void> {
-  if (!node.publicSlug) return
-  await unpublishGroup(node.publicSlug)
+  const identifier = identifierOf(node)
+  if (!identifier) return
+  await unpublishGroup(identifier)
   store.updateNode(node.id, { publicSlug: null })
 }

@@ -207,6 +207,9 @@ export interface UserProfile {
   /** true si la cuenta tiene contraseña (login email). false = solo Google.
    * Determina cómo confirmar acciones sensibles (borrar cuenta). */
   hasPassword?: boolean
+  /** Namespace público de la cuenta (`/g/:userSlug/:customSlug`) — para
+   * previsualizar el enlace de un grupo mientras se escribe el nombre. */
+  userSlug?: string | null
   /** Cuota de chat IA del plan gratis (2.0) — conversaciones nuevas usadas este
    * mes natural / próximo reseteo / límite. Solo relevante si no es Pro. */
   freeChatsUsed?: number
@@ -358,11 +361,12 @@ export async function unpublishNote(slug: string): Promise<{ ok: boolean }> {
 
 export async function publishGroup(
   nodeId: string,
-  existingSlug?: string
-): Promise<{ slug: string; url: string }> {
+  existingSlug?: string,
+  customSlug?: string
+): Promise<{ slug: string; userSlug: string; customSlug: string; url: string }> {
   return apiRequest('/groups/publish', {
     method: 'POST',
-    body: JSON.stringify({ nodeId, slug: existingSlug }),
+    body: JSON.stringify({ nodeId, slug: existingSlug, customSlug }),
   })
 }
 

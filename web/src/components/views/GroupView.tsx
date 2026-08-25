@@ -6,7 +6,7 @@
  * cualquier otro elemento) — aquí NO se repite ese control.
  * Ver landing/web/src/utils/groups.ts para el modelo de datos.
  */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
@@ -26,10 +26,33 @@ export default function GroupView({ node }: { node: Node }) {
   const [copied, setCopied] = useState(false)
   const [adding, setAdding] = useState(false)
   const [q, setQ] = useState('')
+  const [slugError, setSlugError] = useState<string | null>(null)
 
   const members = useMemo(() => groupMembers(node), [node, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   const memberIds = useMemo(() => new Set(members.map(m => m.id)), [members])
   const published = !!node.publicSlug
+
+  // Nombre personalizado del enlace (`/g/:userSlug/:nombre`). Se parte del
+  // customSlug ya publicado (último tramo de node.publicSlug) o, si aún no se
+  // ha publicado, de una normalización del nombre del grupo — igual que hace
+  // el servidor por defecto, para que la previsualización no mienta.
+  const currentCustomSlug = useMemo(() => {
+    if (!node.publicSlug) return ''
+    const parts = node.publicSlug.split('/')
+    return parts[parts.length - 1] || ''
+  }, [node.publicSlug])
+  const [slugInput, setSlugInput] = useState(currentCustomSlug)
+  // Al cambiar de grupo (no en cada re-render del mismo), releer el nombre
+  // actual — así no se pisa lo que el usuario esté escribiendo a mitad de edición.
+  useEffect(() => { setSlugInput(currentCustomSlug) }, [node.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  const userSlug = userStore.user?.userSlug || t('group.yourUsername', 'tu-usuario')
+
+  function normalizePreview(v: string): string {
+    return v
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+  }
+  const previewSlug = normalizePreview(slugInput) || normalizePreview(elementDisplayTitle(node) || '') || 'grupo'
 
   function open(id: string) {
     openNodeDetail(id)
@@ -60,14 +83,22 @@ export default function GroupView({ node }: { node: Node }) {
       window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'publish_limit' } }))
       return
     }
+    setSlugError(null)
     setBusy(true)
     try {
-      const url = await publishGroupPublicly(node)
+      const url = await publishGroupPublicly(node, slugInput.trim() || undefined)
       await navigator.clipboard.writeText(url).catch(() => {})
       setCopied(true); setTimeout(() => setCopied(false), 2000)
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('group.publishedToast', 'Grupo publicado — enlace copiado'), type: 'success' } }))
-    } catch {
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('common.error', 'Ha ocurrido un error'), type: 'error' } }))
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      if (msg === 'custom_slug_taken') {
+        setSlugError(t('group.slugTaken', 'Ya tienes un grupo publicado con ese nombre — prueba otro.'))
+      } else if (msg === 'invalid_custom_slug') {
+        setSlugError(t('group.slugInvalid', 'Usa solo letras, números, guiones y guiones bajos.'))
+      } else {
+        window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('common.error', 'Ha ocurrido un error'), type: 'error' } }))
+      }
     } finally { setBusy(false) }
   }
 
@@ -85,6 +116,11 @@ export default function GroupView({ node }: { node: Node }) {
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
+  function onSlugInputChange(v: string) {
+    setSlugError(null)
+    setSlugInput(v)
+  }
+
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '8px 24px 80px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--text-tertiary,#999)', marginBottom: 22 }}>
@@ -94,33 +130,63 @@ export default function GroupView({ node }: { node: Node }) {
 
       {/* ── Publicar ── */}
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 10,
+        display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 14px', borderRadius: 10,
         background: 'var(--bg-elevated,#f7f7fa)', border: '1px solid var(--border,#e2e2e2)', marginBottom: 24,
       }}>
-        <span style={{ color: published ? '#22c55e' : 'var(--text-tertiary,#999)', display: 'flex' }}><Icon name="external" size={16} /></span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {published ? (
-            <>
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text,#222)' }}>{t('group.published', 'Publicado')}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-tertiary,#999)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                fromly.app/g/{node.publicSlug}
-              </div>
-            </>
-          ) : (
-            <div style={{ fontSize: 13, color: 'var(--text-secondary,#666)' }}>{t('group.notPublished', 'Este grupo no tiene enlace público todavía.')}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ color: published ? '#22c55e' : 'var(--text-tertiary,#999)', display: 'flex' }}><Icon name="external" size={16} /></span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {published ? (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text,#222)' }}>{t('group.published', 'Publicado')}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-tertiary,#999)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  fromly.app/g/{node.publicSlug}
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: 13, color: 'var(--text-secondary,#666)' }}>{t('group.notPublished', 'Este grupo no tiene enlace público todavía.')}</div>
+            )}
+          </div>
+          {published && (
+            <button onClick={copyLink} disabled={busy} style={btnSecondary}>{copied ? t('common.copied', '¡Copiado!') : t('group.copyLink', 'Copiar enlace')}</button>
           )}
         </div>
-        {published ? (
-          <>
-            <button onClick={copyLink} disabled={busy} style={btnSecondary}>{copied ? t('common.copied', '¡Copiado!') : t('group.copyLink', 'Copiar enlace')}</button>
-            <button onClick={doPublish} disabled={busy} style={btnSecondary}>{t('group.refresh', 'Actualizar')}</button>
-            <button onClick={doUnpublish} disabled={busy} style={btnDanger}>{t('group.unpublish', 'Despublicar')}</button>
-          </>
-        ) : (
-          <button onClick={doPublish} disabled={busy || members.length === 0} style={btnPrimary}>
-            {copied ? t('common.copied', '¡Copiado!') : t('group.publish', 'Crear enlace público')}
-          </button>
-        )}
+
+        {/* Nombre personalizado del enlace — vivo mientras se escribe */}
+        <div>
+          <label style={{ fontSize: 12, color: 'var(--text-tertiary,#999)', display: 'block', marginBottom: 4 }}>
+            {t('group.customSlugLabel', 'Nombre personalizado del enlace')}
+          </label>
+          <input
+            value={slugInput}
+            onChange={e => onSlugInputChange(e.target.value)}
+            placeholder={t('group.customSlugPlaceholder', 'p.ej. diabeticos-alicante')}
+            style={{
+              width: '100%', boxSizing: 'border-box', padding: '7px 10px', borderRadius: 8,
+              border: `1px solid ${slugError ? '#dc2626' : 'var(--border,#e2e2e2)'}`,
+              background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontSize: 13, outline: 'none',
+            }}
+          />
+          <div style={{ fontSize: 11.5, color: 'var(--text-tertiary,#999)', marginTop: 4, overflowWrap: 'anywhere' }}>
+            fromly.app/g/{userSlug}/{previewSlug}
+          </div>
+          {slugError && (
+            <div style={{ fontSize: 11.5, color: '#dc2626', marginTop: 4 }}>{slugError}</div>
+          )}
+        </div>
+
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          {published ? (
+            <>
+              <button onClick={doPublish} disabled={busy} style={btnSecondary}>{t('group.refresh', 'Actualizar')}</button>
+              <button onClick={doUnpublish} disabled={busy} style={btnDanger}>{t('group.unpublish', 'Despublicar')}</button>
+            </>
+          ) : (
+            <button onClick={doPublish} disabled={busy || members.length === 0} style={btnPrimary}>
+              {copied ? t('common.copied', '¡Copiado!') : t('group.publish', 'Crear enlace público')}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── Miembros ── */}
