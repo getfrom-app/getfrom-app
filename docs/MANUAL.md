@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 25 agosto 2026 (Web v9.6.982)
+> Web · Mac · iPhone · fromly.app · Última actualización: 25 agosto 2026 (Web v9.6.984)
 
 ---
 
@@ -283,6 +283,14 @@ Clic en cualquier contexto de la columna izquierda para centrar la conversación
 abre su Memoria y la columna derecha su Ficha (tareas y elementos de ese contexto). Elementos, en
 cambio, es un buscador global: para verlo filtrado por un contexto concreto, elige ese contexto en
 el propio filtro del buscador.
+
+**Cada contexto tiene su propio chat**, independiente del chat general: la pestaña Chat de su Ficha
+empieza vacía y solo guarda lo que hables ahí, sin mezclarse con ninguna otra conversación (lo mismo
+pasa al abrir el chat de cualquier nota o tarea concreta — cada una tiene la suya).
+
+**Seleccionar varios elementos y agruparlos**: dentro de la pestaña Elementos de un contexto (o en
+la pantalla global de Elementos) puedes marcar varios y crear un **Grupo** con un solo enlace
+público — ver sección 6, "Grupo".
 
 ### Asignar un contexto
 
