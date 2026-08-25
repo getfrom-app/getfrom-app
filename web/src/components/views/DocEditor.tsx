@@ -1075,7 +1075,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         ), document.body)}
       </div>
       {editor && <DocMention editor={editor} selfId={node.id} />}
-      {editor && <DocContextMention editor={editor} selfId={node.id} />}
+      {editor && <DocContextMention editor={editor} selfId={node.id} onAssign={setCitationContext} />}
 
       {/* Menú "/" — inserta Tabla/Kanban/Calendario, mismo modelo de datos que el
           outliner clásico (ver detectSlash/selectSlashOption arriba). */}

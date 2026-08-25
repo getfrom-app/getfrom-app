@@ -2,16 +2,23 @@
 // contextos/tags anidados que ya usa el outliner (`OutlinerNode.tsx`, picker
 // tipo '#'): al escribir `#nombre` aparece un popup con los contextos
 // existentes que coinciden; al elegir uno (o pulsar Enter sin coincidencia)
-// el nodo del documento queda REALMENTE asignado a ese contexto vía
-// `assignContext` (`extraData._ctxRefs`), igual que la asignación por tag
-// habitual — no es un token de texto suelto. Si no hay coincidencia y el
-// usuario confirma, se crea el contexto en la raíz (`ensureContextPath`,
-// misma función que usa el outliner para `#la-isla/marketing/emails`).
+// el PÁRRAFO donde se escribió queda REALMENTE citado a ese contexto, vía
+// `onAssign` (= `setCitationContext` de DocEditor.tsx — la misma función que
+// usa el botón hover «?»): crea/reasigna la cita de ese párrafo y deja el
+// indicador visual PERSISTENTE en la línea (`applyCiteIndicators`), igual que
+// el flujo «?». Antes esto llamaba a `assignContext(selfId, ctxId)`, que
+// asignaba el contexto al NODO DEL DOCUMENTO ENTERO (no al párrafo) y no
+// tocaba ningún indicador visual — de ahí que solo se viera el toast verde
+// efímero y la línea nunca quedara citada (Alberto, 24 ago: "pone en verde
+// #biblioteca... pero luego desaparece todo y la línea no se cita"). Si no
+// hay coincidencia y el usuario confirma, se crea el contexto en la raíz
+// (`ensureContextPath`, misma función que usa el outliner para
+// `#la-isla/marketing/emails`).
 //
 // Hermano de DocMention.tsx (mismo patrón: popup flotante en portal,
 // detección por regex antes del cursor, teclado ↑/↓/Enter/Esc), pero el `#`
-// nunca deja rastro en el texto — solo asigna contexto, igual que el picker
-// '#' del outliner.
+// nunca deja rastro en el texto — solo cita el párrafo, igual que el picker
+// '#' del outliner asigna contexto en vez de insertar un token.
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Editor } from '@tiptap/react'
@@ -31,9 +38,23 @@ const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCa
 
 type Item = { id: string; label: string; contextLabel?: string; create?: string }
 
-export default function DocContextMention({ editor, selfId }: { editor: Editor; selfId: string }) {
+// pid del párrafo/heading/blockquote que contiene `pos` (ver ParagraphId en
+// tiptapParagraphId.ts) — sube por los ancestros del doc hasta encontrar uno
+// con el atributo, igual que hace `getOrderedBlocks`/`data-pid` para el hover.
+function pidAtPos(editor: Editor, pos: number): string | null {
+  try {
+    const $pos = editor.state.doc.resolve(pos)
+    for (let d = $pos.depth; d >= 0; d--) {
+      const pid = $pos.node(d).attrs?.pid
+      if (typeof pid === 'string' && pid) return pid
+    }
+  } catch { /* posición inválida */ }
+  return null
+}
+
+export default function DocContextMention({ editor, selfId, onAssign }: { editor: Editor; selfId: string; onAssign: (pid: string, contextId: string) => void }) {
   useStore()
-  const [m, setM] = useState<{ query: string; start: number; from: number; top: number; left: number } | null>(null)
+  const [m, setM] = useState<{ query: string; start: number; from: number; top: number; left: number; pid: string | null } | null>(null)
   const [sel, setSel] = useState(0)
 
   // Detectar «#query» justo antes del cursor. Mismo criterio que el picker
@@ -51,7 +72,7 @@ export default function DocContextMention({ editor, selfId }: { editor: Editor; 
       const start = from - query.length - 1
       let coords
       try { coords = editor.view.coordsAtPos(from) } catch { return }
-      setM({ query, start, from, top: coords.bottom + 4, left: coords.left })
+      setM({ query, start, from, top: coords.bottom + 4, left: coords.left, pid: pidAtPos(editor, from) })
       setSel(0)
     }
     editor.on('update', detect)
@@ -88,11 +109,20 @@ export default function DocContextMention({ editor, selfId }: { editor: Editor; 
       if (!created) { setM(null); return }
       ctxId = created.id
     }
+    const pid = m.pid
     editor.chain().focus().deleteRange({ from: m.start, to: m.from }).run()
-    assignContext(selfId, ctxId)
-    window.dispatchEvent(new CustomEvent('from:toast', {
-      detail: { message: `#${contextPath(ctxId) || ''}`, type: 'success' },
-    }))
+    if (pid) {
+      // Cita el PÁRRAFO (mismo mecanismo que el hover «?»): deja un indicador
+      // visual persistente en la línea, no solo un toast efímero.
+      onAssign(pid, ctxId)
+    } else {
+      // Sin párrafo detectable (caso raro, p.ej. doc vacío): fallback al
+      // contexto del documento entero, con confirmación explícita.
+      assignContext(selfId, ctxId)
+      window.dispatchEvent(new CustomEvent('from:toast', {
+        detail: { message: `#${contextPath(ctxId) || ''}`, type: 'success' },
+      }))
+    }
     setM(null)
   }
 
