@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.980 — 25 agosto 2026 · Contextos con # y eventos sin checkbox
+
+- **Escribe `#nombre` en cualquier nota** (incluida tu nota diaria) para vincularla a un contexto — con sugerencias en vivo, y crea uno nuevo automáticamente si no existe.
+- **Los eventos con hora ya no tienen casilla de completar**: un evento simplemente pasa, no es una tarea pendiente. Conviértelo a tarea (o al revés) con el clic derecho.
+- **Posponer una tarea es ahora un solo clic** ("Mañana"), sin desplegable.
+- **La nota diaria embebida en Agenda** ya no se sale de su sitio: barra de formato en una línea, y sigue al día que tengas seleccionado en el Planificador.
+
+---
+
 ## iOS v2.16.159 — 24 agosto 2026 · Barra de navegación fija y tareas siempre al día
 
 - **Barra de navegación nueva**: siempre visible, mismo orden en todas las pantallas — Chat, Agenda, Planificador, Contextos, Elementos y Ajustes (siempre el último). Ya no hay botón de atrás ni de cerrar en ningún sitio, solo tocar otro botón.
