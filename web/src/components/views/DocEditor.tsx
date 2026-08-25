@@ -25,6 +25,7 @@ import { parseExtraData } from '../../utils/papeleraHelper'
 import { firstLineTitle, DOC } from '../../utils/docNode'
 import { markdownToHtml } from '../../utils/importMarkdown'
 import DocMention from './DocMention'
+import DocContextMention from './DocContextMention'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { uploadFile } from '../../api/client'
@@ -1074,6 +1075,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         ), document.body)}
       </div>
       {editor && <DocMention editor={editor} selfId={node.id} />}
+      {editor && <DocContextMention editor={editor} selfId={node.id} />}
 
       {/* Menú "/" — inserta Tabla/Kanban/Calendario, mismo modelo de datos que el
           outliner clásico (ver detectSlash/selectSlashOption arriba). */}

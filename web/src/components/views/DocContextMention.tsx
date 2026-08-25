@@ -1,0 +1,127 @@
+// Trigger «#» para el editor de documento (TipTap) — mismo mecanismo de
+// contextos/tags anidados que ya usa el outliner (`OutlinerNode.tsx`, picker
+// tipo '#'): al escribir `#nombre` aparece un popup con los contextos
+// existentes que coinciden; al elegir uno (o pulsar Enter sin coincidencia)
+// el nodo del documento queda REALMENTE asignado a ese contexto vía
+// `assignContext` (`extraData._ctxRefs`), igual que la asignación por tag
+// habitual — no es un token de texto suelto. Si no hay coincidencia y el
+// usuario confirma, se crea el contexto en la raíz (`ensureContextPath`,
+// misma función que usa el outliner para `#la-isla/marketing/emails`).
+//
+// Hermano de DocMention.tsx (mismo patrón: popup flotante en portal,
+// detección por regex antes del cursor, teclado ↑/↓/Enter/Esc), pero el `#`
+// nunca deja rastro en el texto — solo asigna contexto, igual que el picker
+// '#' del outliner.
+import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+import type { Editor } from '@tiptap/react'
+import { useStore } from '../../store/nodeStore'
+import {
+  listContextTags,
+  findContextByPath,
+  ensureContextPath,
+  assignContext,
+  normalizeContextPath,
+  contextPath,
+  type ContextTag,
+} from '../../utils/cajones'
+import Icon from '../../v2/components/Icon'
+
+const norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+
+type Item = { id: string; label: string; contextLabel?: string; create?: string }
+
+export default function DocContextMention({ editor, selfId }: { editor: Editor; selfId: string }) {
+  useStore()
+  const [m, setM] = useState<{ query: string; start: number; from: number; top: number; left: number } | null>(null)
+  const [sel, setSel] = useState(0)
+
+  // Detectar «#query» justo antes del cursor. Mismo criterio que el picker
+  // '#' del outliner: pegado a inicio de palabra (o inicio de párrafo), sin
+  // espacios ni otro `#` dentro — pero sí permite `/` para rutas anidadas.
+  useEffect(() => {
+    const detect = () => {
+      const { state } = editor
+      const { from, empty } = state.selection
+      if (!empty) { setM(null); return }
+      const before = state.doc.textBetween(Math.max(0, from - 60), from, '\n', '￼')
+      const match = /(^|\s)#([^\s#]{0,60})$/.exec(before)
+      if (!match) { setM(null); return }
+      const query = match[2]
+      const start = from - query.length - 1
+      let coords
+      try { coords = editor.view.coordsAtPos(from) } catch { return }
+      setM({ query, start, from, top: coords.bottom + 4, left: coords.left })
+      setSel(0)
+    }
+    editor.on('update', detect)
+    editor.on('selectionUpdate', detect)
+    return () => { editor.off('update', detect); editor.off('selectionUpdate', detect) }
+  }, [editor])
+
+  const matches = useMemo((): Item[] => {
+    if (!m) return []
+    const q = norm(m.query.trim())
+    const tags: ContextTag[] = listContextTags()
+      .filter(tg => !q || norm(tg.path).includes(q) || norm(tg.label).includes(q))
+      .slice(0, 8)
+    const items: Item[] = tags.map(tg => ({
+      id: tg.node.id,
+      label: tg.path,
+      contextLabel: tg.depth > 1 ? tg.label.split('/').slice(0, -1).join('/') : undefined,
+    }))
+    // Ofrecer «crear» solo si la ruta escrita no existe tal cual (igual que
+    // buildCajonPickerItems en OutlinerNode.tsx).
+    const typed = normalizeContextPath(m.query)
+    if (typed && !findContextByPath(typed)) {
+      items.push({ id: '__create__', label: typed, create: m.query.trim() })
+    }
+    return items
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m])
+
+  const pick = (item: Item) => {
+    if (!m) return
+    let ctxId = item.id
+    if (item.create) {
+      const created = ensureContextPath(item.create)
+      if (!created) { setM(null); return }
+      ctxId = created.id
+    }
+    editor.chain().focus().deleteRange({ from: m.start, to: m.from }).run()
+    assignContext(selfId, ctxId)
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: { message: `#${contextPath(ctxId) || ''}`, type: 'success' },
+    }))
+    setM(null)
+  }
+
+  // Teclado (captura para adelantarse a TipTap): flechas, Enter/Tab, Esc.
+  useEffect(() => {
+    if (!m || matches.length === 0) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); e.stopPropagation(); setSel(s => Math.min(s + 1, matches.length - 1)) }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); e.stopPropagation(); setSel(s => Math.max(s - 1, 0)) }
+      else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); e.stopPropagation(); if (matches[sel]) pick(matches[sel]) }
+      else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setM(null) }
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [m, matches, sel])
+
+  if (!m || matches.length === 0) return null
+
+  return createPortal((
+    <div className="doc-mention-pop" style={{ position: 'fixed', top: Math.min(m.top, window.innerHeight - 300), left: Math.min(m.left, window.innerWidth - 280) }}
+      onMouseDown={e => e.preventDefault()}>
+      {matches.map((item, i) => (
+        <button key={item.id} className={`doc-mention-item${i === sel ? ' active' : ''}`}
+          onMouseEnter={() => setSel(i)} onMouseDown={e => { e.preventDefault(); pick(item) }}>
+          <span className="doc-mention-icon"><Icon name={item.create ? 'plus' : 'folder'} size={13} /></span>
+          <span className="doc-mention-title">{item.create ? `Crear "${item.label}"` : item.label}</span>
+        </button>
+      ))}
+    </div>
+  ), document.body)
+}
