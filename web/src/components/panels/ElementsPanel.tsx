@@ -22,6 +22,7 @@ import { isInPapelera } from '../../utils/papeleraHelper'
 import { isTaskNode } from '../../utils/taskNode'
 import { createAgentUnder } from '../../utils/agentesHelper'
 import { createPromptUnder } from '../../utils/promptsHelper'
+import { createGroup } from '../../utils/groups'
 import NewNamedItemModal from '../modals/NewNamedItemModal'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
 import type { FilterView } from '../views/FilterResultsView'
@@ -35,7 +36,7 @@ import { displayTitle } from '../../utils/displayText'
 //   · contexto  → es un LUGAR, no un elemento: se navega desde la sidebar, y la ficha
 //                 del contexto ya lista lo suyo. Aquí era un segundo camino redundante.
 //   · memoria   → memoria IA antigua, pieza interna de Fromly. Fuera de la vista.
-export type ElemKind = 'text' | 'canvas' | 'task' | 'link' | 'pdf' | 'image' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'cita'
+export type ElemKind = 'text' | 'canvas' | 'task' | 'link' | 'pdf' | 'image' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'cita' | 'group'
 type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
 interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; due?: string | null; status?: string | null }
@@ -67,6 +68,7 @@ function classify(n: Node): ElemKind | null {
   if (e._docSelection != null) return 'cita'        // párrafo de otra nota asignado a este contexto
   if (e._agentDef === '1') return 'agent'           // agente (v2: puede colgar de cualquier contexto)
   if (e._promptDef === '1') return 'prompt'         // prompt (v2: puede colgar de cualquier contexto)
+  if (e._group === '1') return 'group'              // grupo de elementos (varios ids en _groupRefs)
   if (isMarkedContext(n)) return null   // contexto = lugar, no elemento (ver ElemKind)
   if (isTaskNode(n)) return 'task'      // evento = tarea con día y hora (utils/taskNode.ts)
   const rt = e._resourceType as string | undefined
@@ -104,7 +106,7 @@ const KIND_ICON: Record<ElemKind, IconName> = {
   text: 'document', canvas: 'canvas', task: 'task', link: 'link',
   pdf: 'pdf', image: 'image',
   highlight: 'highlight', agent: 'agent', conversation: 'conversation',
-  prompt: 'prompt', cita: 'quote',
+  prompt: 'prompt', cita: 'quote', group: 'folder',
 }
 const ROW_H = 46
 // Fila de TAREA (TaskRow) es más alta desde que pasó a dos líneas (Alberto, 4 ago
@@ -235,6 +237,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     { key: 'all',      label: t('elements.all') },
     { key: 'favorite', label: t('elements.favorites', 'Favoritos') },
     { key: 'text',    label: t('elements.texts') },
+    { key: 'group',   label: t('elements.groups', 'Grupos') },
     { key: 'canvas',  label: t('elements.canvases', 'Lienzos') },
     { key: 'task',    label: t('elements.tasks') },
     { key: 'link',    label: t('elements.links') },
@@ -334,6 +337,17 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   // Salir de selección si cambia el filtro/búsqueda — evita seleccionar a ciegas
   // sobre filas que ya no se ven.
   useEffect(() => { if (selectMode) exitSelectMode() }, [filter, taskSub, nq]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Crear GRUPO con los elementos seleccionados (2+) — mismo patrón que "los grupos
+  // del brain de La Isla" (Alberto, 24 ago 2026): agrupar notas/imágenes/PDFs/mezcla
+  // bajo un solo enlace público. Ver utils/groups.ts.
+  function createGroupFromSelection() {
+    const ids = [...selected]
+    if (ids.length < 2) return
+    const created = createGroup(t('group.defaultName', 'Grupo nuevo'), ids)
+    exitSelectMode()
+    open(created.id)
+  }
   function moveToContext(id: string, ctxId: string) {
     // Mover a otro contexto: asignación lógica (_ctxRefs) + si NO está fijado con pin, lo
     // reparentamos para que fluya dentro de la caja del contexto en el lienzo.
@@ -465,6 +479,14 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
               <button onClick={exitSelectMode} style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-tertiary,#999)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', fontFamily: 'inherit' }}>
                 {t('common.cancel', 'Cancelar')}
+              </button>
+              <button
+                title={selected.size < 2 ? t('group.needTwo', 'Selecciona al menos 2 elementos') : undefined}
+                onClick={createGroupFromSelection}
+                disabled={selected.size < 2}
+                style={{ fontSize: 12.5, fontWeight: 600, color: selected.size < 2 ? 'var(--text-tertiary,#bbb)' : '#fff', background: selected.size < 2 ? 'var(--bg,#fff)' : 'var(--accent,#6c5ce7)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 6, cursor: selected.size < 2 ? 'default' : 'pointer', padding: '5px 12px', fontFamily: 'inherit' }}
+              >
+                {t('group.createGroup', 'Crear grupo')} {selected.size >= 2 ? `(${selected.size})` : ''}
               </button>
               <button
                 onClick={bulkDelete}

@@ -354,6 +354,22 @@ export async function unpublishNote(slug: string): Promise<{ ok: boolean }> {
   return apiRequest(`/notes/unpublish/${slug}`, { method: 'POST' })
 }
 
+// ── Public groups (varios elementos con un solo enlace) ─────────────────────
+
+export async function publishGroup(
+  nodeId: string,
+  existingSlug?: string
+): Promise<{ slug: string; url: string }> {
+  return apiRequest('/groups/publish', {
+    method: 'POST',
+    body: JSON.stringify({ nodeId, slug: existingSlug }),
+  })
+}
+
+export async function unpublishGroup(slug: string): Promise<{ ok: boolean }> {
+  return apiRequest(`/groups/unpublish/${slug}`, { method: 'POST' })
+}
+
 // ── AI inline ────────────────────────────────────────────────────────────
 
 export async function aiInlineStream(

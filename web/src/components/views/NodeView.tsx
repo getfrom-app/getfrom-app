@@ -20,6 +20,7 @@ import { createPortal } from 'react-dom'
 import Outliner from '../outliner/Outliner'
 import { getDayColumnData } from '../../utils/dayColumn'
 import DocEditor from './DocEditor'
+import GroupView from './GroupView'
 import InlineRenderer, { detectBlockType, renderInlineToHtml } from '../outliner/InlineRenderer'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
@@ -262,6 +263,12 @@ export default function NodeView() {
   // ¿Es un nodo-DOCUMENTO? (texto rico en el body, se edita con DocEditor, no outliner)
   const isDoc = useMemo(() => {
     try { return JSON.parse(node?.extraData || '{}')._doc === '1' } catch { return false }
+  }, [node?.extraData])
+
+  // ¿Es un nodo-GRUPO? (varios elementos agrupados, ver utils/groups.ts) — mismo
+  // patrón que isDoc: reemplaza pizarra/outliner por su propia vista (GroupView).
+  const isGroup = useMemo(() => {
+    try { return JSON.parse(node?.extraData || '{}')._group === '1' } catch { return false }
   }, [node?.extraData])
 
   function setViewBlock(mode: string) {
@@ -1852,7 +1859,7 @@ export default function NodeView() {
           )}
 
 
-          <div className="node-title-row" style={(isDoc || isCanvasRoot(node) || isAgendaRoot || temporalCalendar) ? { display: 'none' } : undefined}>
+          <div className="node-title-row" style={(isDoc || isGroup || isCanvasRoot(node) || isAgendaRoot || temporalCalendar) ? { display: 'none' } : undefined}>
             {node.isEvent ? (
               // Icono calendario para eventos
               <div style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginRight: 4 }}>
@@ -2214,7 +2221,7 @@ export default function NodeView() {
               {/* Selector de vistas — SIEMPRE arriba a la derecha de la nota.
                   Pizarra es la vista por defecto; Lista/Tabla/Kanban/Calendario son
                   opt-in. Oculto en la estructura de Agenda y en documentos. */}
-              {!isDoc && (() => {
+              {!isDoc && !isGroup && (() => {
                 const hasMultiViews = store.getViews(node.id).length > 0
                 if (hasMultiViews) return null  // los tabs abajo se encargan
                 const isAgendaStructure = (() => {
@@ -2408,8 +2415,12 @@ export default function NodeView() {
             </div>
           )}
 
+          {/* ── Grupo de elementos — reemplaza toda la view-body igual que un
+                documento. Ver utils/groups.ts / GroupView.tsx. ── */}
+          {isGroup && <GroupView node={node} />}
+
           {/* ── Pizarra digital ── */}
-          {!isDoc && (() => {
+          {!isDoc && !isGroup && (() => {
             try {
               const ed = JSON.parse(node.extraData || '{}')
               if (ed._isWhiteboard === '1') return <WhiteboardContainer nodeId={node.id} />
@@ -2866,7 +2877,7 @@ export default function NodeView() {
                 {/* ── Pizarra: lienzo infinito. En la nota diaria se abre con su
                        COLUMNA DERECHA («Tu día»: tareas), dejando el lienzo
                        libre — como en iPad. En notas normales ocupa todo. ── */}
-                {viewKind === 'pizarra' && !isAgendaRoot && !isDoc && !temporalCalendar && !(nodeResourceMeta?.url && (nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url))) && <PizarraView parentId={node.id} flowUnpositioned globalCanvas={isCanvasRoot(node)} />}
+                {viewKind === 'pizarra' && !isAgendaRoot && !isDoc && !isGroup && !temporalCalendar && !(nodeResourceMeta?.url && (nodeResourceMeta.type === 'pdf' || /\.pdf$/i.test(nodeResourceMeta.url))) && <PizarraView parentId={node.id} flowUnpositioned globalCanvas={isCanvasRoot(node)} />}
 
                 {/* ── Agenda / Año / Mes: la PÁGINA MENSUAL se eliminó (v9.6.714). Los días se
                        navegan con el timeline de la columna diaria. Abrir la Agenda o un nodo
@@ -2880,13 +2891,14 @@ export default function NodeView() {
                   || viewKind === 'pizarra'
                   || isAgendaRoot
                   || temporalCalendar
+                  || isGroup
                     ? ' outliner-section--hidden'
                     : ''
                 }`}>
                   {/* En pizarra el Outliner del día se monta en la columna derecha
                       (abajo) — aquí NO, para no duplicar instancias. En la Agenda
                       (calendario-lienzo) tampoco se monta. */}
-                  {viewKind !== 'pizarra' && !isAgendaRoot && !temporalCalendar && (
+                  {viewKind !== 'pizarra' && !isAgendaRoot && !temporalCalendar && !isGroup && (
                     <Outliner
                       parentId={node.id}
                       autoFocusEmpty

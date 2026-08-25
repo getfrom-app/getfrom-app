@@ -33,6 +33,8 @@ import V2AgentDetailView from './V2AgentDetailView'
 import V2PromptDetailView from './V2PromptDetailView'
 import { isAgentNode } from '../../utils/agentesHelper'
 import { isPromptNode } from '../../utils/promptsHelper'
+import { isGroupNode } from '../../utils/groups'
+import GroupView from '../../components/views/GroupView'
 import { useRef, useEffect } from 'react'
 import type { Node } from '../../types'
 import Icon from './Icon'
@@ -356,6 +358,12 @@ export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFilter
   // propiedades reales de PromptPropertiesPanel de v1). Se comprueba junto al agente,
   // antes que el resto de ramas.
   if (isPromptNode(node)) return <V2PromptDetailView node={node} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
+
+  // GRUPO: varios elementos agrupados (notas/imágenes/PDFs/mezcla) con su propio
+  // enlace público — vista propia (lista de miembros + publicar), nunca como nota
+  // genérica. Se comprueba junto a agente/prompt, antes que el resto de ramas.
+  // Ver utils/groups.ts / components/views/GroupView.tsx.
+  if (isGroupNode(node)) return <GroupView node={node} />
 
   // Cualquier tipo de RECURSO (audio, PDF/imagen, o el resto — enlaces, podcasts,
   // libros…) muestra su contexto arriba (chip + cambiar), igual que nota/tarea.
