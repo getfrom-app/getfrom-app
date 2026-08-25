@@ -4,6 +4,7 @@
 // El chat es el centro; la columna derecha reacciona; los contextos = proyectos.
 // ══════════════════════════════════════════════════════════════════════
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../store/nodeStore'
 import { userStore } from '../store/userStore'
@@ -149,8 +150,17 @@ export default function V2App() {
   // asignarles un contexto compartido en un solo gesto (Alberto, 13 ago: "al
   // subir varios elementos... deberían agruparse para poder añadir contexto",
   // estilo la selección múltiple + "Agrupar" del proyecto hermano "brain").
-  const [batchUploadIds, setBatchUploadIds] = useState<string[] | null>(null)
+  // `needsContext` = se subieron a General/sin contexto (no había `selectedCtxId`
+  // en el momento de soltar) — solo ENTONCES hace falta el botón "Asignar contexto
+  // a todos": si ya se soltaron DENTRO de un contexto concreto, cada elemento nace
+  // con ese contexto (via `captureParentId`) y preguntar de nuevo es redundante
+  // (Alberto, 24 ago: "cuando subes varios elementos a un contexto ya tienen que
+  // tener ese contexto por tanto no es necesario que aparezca. si se sube a
+  // General sí que debe aparecer").
+  const [batchUploadIds, setBatchUploadIds] = useState<{ ids: string[]; needsContext: boolean } | null>(null)
   const [batchPickerOpen, setBatchPickerOpen] = useState(false)
+  const batchAddBtnRef = useRef<HTMLButtonElement>(null)
+  const [batchPickerUp, setBatchPickerUp] = useState(false)
   // Cuál de las 1-2 tabs de la columna derecha está activa — 'chat' solo tiene
   // efecto real si hay algo en `centerElementId` (V2RightColumn lo calcula de
   // forma defensiva, `effectiveSubTab`). Se resetea a 'primary' cada vez que
@@ -524,12 +534,15 @@ export default function V2App() {
       }
     } else {
       // Sin conversación → importar a Fromly (RAG), sin iniciar chat.
+      const needsContext = !selectedCtxId
       const ids = await importFilesToFromly(otherFiles, captureParentId())
       if (ids.length) setCenterElementId(ids[ids.length - 1])
       // Varios a la vez → ofrecer agruparlos con un contexto compartido en un
       // solo gesto, en vez de abrir cada uno y asignárselo por separado
-      // (estilo brain: seleccionar varios → una acción de grupo).
-      if (ids.length > 1) setBatchUploadIds(ids)
+      // (estilo brain: seleccionar varios → una acción de grupo). Solo hace
+      // falta el botón de asignar cuando fueron a General (`needsContext`);
+      // dentro de un contexto concreto ya nacen con él.
+      if (ids.length > 1) setBatchUploadIds({ ids, needsContext })
     }
   }
 
@@ -1021,24 +1034,44 @@ export default function V2App() {
       {paywallReason && <PaywallModal reason={paywallReason} onClose={() => setPaywallReason(null)} />}
       {batchUploadIds && (
         <div className="v2-batchupload-bar">
-          <span>{t('v2.batchUploadCount', '{{count}} elementos añadidos', { count: batchUploadIds.length })}</span>
-          <div className="v2-ctxpick-wrap">
-            <button className="v2-ctx-add-btn" onClick={() => setBatchPickerOpen(o => !o)}>
-              ＋ {t('v2.assignContextToAll', 'Asignar contexto a todos')}
-            </button>
-            {batchPickerOpen && (
-              <div className="v2-ctxpick-pop">
-                <ContextPicker
-                  currentId={null}
-                  onPick={id => {
-                    if (id) { for (const nid of batchUploadIds) assignContext(nid, id) }
-                    setBatchPickerOpen(false)
-                    setBatchUploadIds(null)
-                  }}
-                />
-              </div>
-            )}
-          </div>
+          <span>{t('v2.batchUploadCount', '{{count}} elementos añadidos', { count: batchUploadIds.ids.length })}</span>
+          {batchUploadIds.needsContext && (
+            <div className="v2-ctxpick-wrap">
+              <button
+                ref={batchAddBtnRef}
+                className="v2-ctx-add-btn"
+                onClick={() => {
+                  // Misma detección de espacio que RowContextChip: si no cabe
+                  // hacia abajo (la barra vive pegada al borde inferior de la
+                  // ventana), el desplegable se abre hacia ARRIBA en su lugar.
+                  const r = batchAddBtnRef.current?.getBoundingClientRect()
+                  setBatchPickerUp(!!r && window.innerHeight - r.bottom < 320)
+                  setBatchPickerOpen(o => !o)
+                }}
+              >
+                ＋ {t('v2.assignContextToAll', 'Asignar contexto a todos')}
+              </button>
+              {batchPickerOpen && batchAddBtnRef.current && createPortal((() => {
+                const r = batchAddBtnRef.current!.getBoundingClientRect()
+                const left = Math.max(8, Math.min(r.left, window.innerWidth - 268))
+                const style: React.CSSProperties = batchPickerUp
+                  ? { position: 'fixed', bottom: window.innerHeight - r.top + 4, left, zIndex: 3000 }
+                  : { position: 'fixed', top: r.bottom + 4, left, zIndex: 3000 }
+                return (
+                  <div className="v2-ctxpick-pop" style={style} onClick={e => e.stopPropagation()}>
+                    <ContextPicker
+                      currentId={null}
+                      onPick={id => {
+                        if (id) { for (const nid of batchUploadIds.ids) assignContext(nid, id) }
+                        setBatchPickerOpen(false)
+                        setBatchUploadIds(null)
+                      }}
+                    />
+                  </div>
+                )
+              })(), document.body)}
+            </div>
+          )}
           <button className="v2-batchupload-dismiss" onClick={() => { setBatchUploadIds(null); setBatchPickerOpen(false) }} aria-label={t('common.close', 'Cerrar')}>✕</button>
         </div>
       )}
