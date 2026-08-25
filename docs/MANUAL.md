@@ -560,11 +560,18 @@ diario con el mismo formato cada vez.
 ### Grupo
 
 Un grupo reúne varios elementos ya existentes (notas, imágenes, PDFs, o una mezcla) para compartirlos
-juntos con un solo enlace público. Selecciona 2 o más en **Elementos** (el buscador global) y pulsa
-**Crear grupo**; ábrelo para renombrarlo, añadir o quitar elementos, y generar/copiar su enlace
-público desde ahí. El enlace muestra siempre el contenido EN VIVO: si quitas o añades algo al grupo,
-la página pública se actualiza al instante, sin tener que volver a publicar. Es buscable como
-cualquier otro elemento, y se borra igual que el resto (a la papelera).
+juntos con un solo enlace público. Selecciona 2 o más en **Elementos** (el buscador global, en web
+también dentro de un contexto) y pulsa **Crear grupo**; ábrelo para renombrarlo, añadir o quitar
+elementos, y generar/copiar su enlace público desde ahí — con share sheet nativo en iOS. El enlace
+muestra siempre el contenido EN VIVO: si quitas o añades algo al grupo, la página pública se
+actualiza al instante, sin tener que volver a publicar. Es buscable como cualquier otro elemento, y
+se borra igual que el resto (a la papelera).
+
+El enlace público puede personalizarse: en vez del código aleatorio de 8 caracteres, puedes escribir
+un nombre propio (p. ej. `fromly.app/g/tu-usuario/diabeticos-alicante`) desde el campo "Nombre
+personalizado del enlace" al publicar. Cada cuenta tiene su propio espacio de nombres, así que dos
+personas pueden usar el mismo nombre de grupo sin chocar entre sí. Los enlaces ya compartidos con el
+formato antiguo (sin nombre de usuario) siguen funcionando igual que siempre.
 
 ---
 

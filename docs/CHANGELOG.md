@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.985 — 25 agosto 2026 · Enlace de grupo personalizable y PDFs arreglados
+
+- **Personaliza el enlace de un grupo**: en vez del código aleatorio, pon el nombre que quieras — `fromly.app/g/tu-usuario/nombre-del-grupo`. Los enlaces ya compartidos con el formato anterior siguen funcionando igual.
+- **Arreglados los PDFs e imágenes en enlaces de grupo publicados hace tiempo**: dejaban de verse pasada una hora ("Expired...") — ahora se sirven sin caducidad.
+- **Grupos también desde iOS**: selección múltiple, publicar/despublicar y compartir con el menú nativo, igual que en web.
+
+---
+
 ## Web v9.6.984 — 25 agosto 2026 · Enlaces públicos y chats por contexto
 
 - **Los enlaces públicos ya funcionan de verdad**: publicar una nota o un grupo con "/p/" o "/g/" antes se quedaba en una página en blanco — arreglado a nivel de infraestructura.
