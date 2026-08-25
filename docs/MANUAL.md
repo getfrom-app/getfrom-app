@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 24 agosto 2026 (Web v9.6.971)
+> Web · Mac · iPhone · fromly.app · Última actualización: 25 agosto 2026 (Web v9.6.980)
 
 ---
 
@@ -288,8 +288,10 @@ el propio filtro del buscador.
 
 Cada nota o tarea tiene un único contexto, y puedes asignarlo de dos formas equivalentes:
 
-- **`#` en el chat o en el título de un elemento**: escribe `#` y aparece un selector; confirma
-  para asignarlo (o crea uno nuevo si no existe todavía).
+- **`#` dentro del texto de cualquier nota o documento** (incluida tu nota diaria): escribe `#` y el
+  nombre y aparece un desplegable con tus contextos existentes; elige uno para vincularlo de verdad
+  a esa línea, o si no coincide con ninguno, pulsa Enter para crearlo nuevo en la raíz. No está
+  disponible dentro del chat (un mensaje de chat no es un documento al que asignar contexto).
 - **El chip de contexto** en la ficha de cualquier elemento: si no tiene contexto verás un
   indicador para asignarlo; si ya lo tiene, el chip muestra su nombre y te deja cambiarlo con un
   clic. El mismo chip te lleva directamente a ese contexto.
@@ -332,11 +334,12 @@ interrumpe nada: entras cuando quieras, o lo ignoras.
 
 ---
 
-## 5. Navegación — Día, Agenda, Chat, Elementos y tus Contextos
+## 5. Navegación — Agenda, Chat, Elementos y tus Contextos
 
-Arriba de tus Contextos, en la columna izquierda, tienes cuatro accesos generales que no dependen de
-ningún contexto concreto: **Día**, **Agenda**, **Chat** y **Elementos**. Clic en cualquiera de los
-cuatro, o en un contexto de más abajo, cambia lo que ves en el centro y en la columna derecha.
+Arriba de tus Contextos, en la columna izquierda, tienes tres accesos generales que no dependen de
+ningún contexto concreto: **Agenda**, **Chat** y **Elementos** (ya no existe un destino "Día" aparte,
+se fusionó con Agenda). Clic en cualquiera de los tres, o en un contexto de más abajo, cambia lo que
+ves en el centro y en la columna derecha.
 
 ### Agenda — el Planificador completo, con tu día abajo
 
@@ -636,8 +639,13 @@ Lo que puedes dar por seguro hoy en iPhone:
   abre automáticamente para que veas dónde ha quedado.
 - **Sincronización en tiempo real** con la misma cuenta que web y Mac, viajando solo los cambios
   (deltas), no la base de datos completa.
-- **Compartir a Fromly** desde otras apps (ver sección anterior).
+- **Compartir a Fromly** desde otras apps (ver sección anterior) — y también al revés: comparte
+  cualquier PDF, imagen o nota (como Markdown o PDF) desde Fromly hacia cualquier otra app con el
+  botón de compartir nativo de iPhone.
 - **Google Calendar**, si lo tienes conectado.
+- **Contextos con pestañas**: al abrir un contexto en iPhone, tienes tres pestañas — Contexto (su
+  nota propia, con la misma barra de formato que cualquier nota), Elementos (notas y documentos, sin
+  tareas) y Tareas.
 
 La app de iPhone está en un proceso de paridad progresiva con la interfaz de chat de la web y Mac:
 si buscas específicamente la experiencia de tres columnas (Agenda/Chat/Elementos + Contextos,
