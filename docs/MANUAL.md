@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 25 agosto 2026 (Web v9.6.980)
+> Web · Mac · iPhone · fromly.app · Última actualización: 25 agosto 2026 (Web v9.6.982)
 
 ---
 
@@ -548,6 +548,15 @@ elegir una resuelve sus variables (fecha, contexto actual, etc.) y la envía dir
 
 Útil para: "resume esto en 3 bullets", "extrae las tareas", "mejora el tono formal", un informe
 diario con el mismo formato cada vez.
+
+### Grupo
+
+Un grupo reúne varios elementos ya existentes (notas, imágenes, PDFs, o una mezcla) para compartirlos
+juntos con un solo enlace público. Selecciona 2 o más en **Elementos** (el buscador global) y pulsa
+**Crear grupo**; ábrelo para renombrarlo, añadir o quitar elementos, y generar/copiar su enlace
+público desde ahí. El enlace muestra siempre el contenido EN VIVO: si quitas o añades algo al grupo,
+la página pública se actualiza al instante, sin tener que volver a publicar. Es buscable como
+cualquier otro elemento, y se borra igual que el resto (a la papelera).
 
 ---
 

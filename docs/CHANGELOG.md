@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.982 — 25 agosto 2026 · Grupos con enlace público
+
+- **Nuevo: Grupos**. Selecciona varias notas, imágenes o PDFs en Elementos y crea un grupo — un solo enlace público que los muestra todos juntos, siempre actualizado en vivo.
+- **El asistente ya no confirma cosas que no ha hecho**: si dice "actualizado" o "creado", es porque de verdad lo hizo.
+- Arreglado el aviso "Asignar contexto a todos" al subir varios archivos: solo aparece si subes a General (si subes dentro de un contexto, ya lo tienen), y el desplegable ya no se sale de la pantalla.
+
+---
+
 ## Web v9.6.980 — 25 agosto 2026 · Contextos con # y eventos sin checkbox
 
 - **Escribe `#nombre` en cualquier nota** (incluida tu nota diaria) para vincularla a un contexto — con sugerencias en vivo, y crea uno nuevo automáticamente si no existe.
