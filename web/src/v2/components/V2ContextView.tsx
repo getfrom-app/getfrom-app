@@ -25,6 +25,7 @@ import { isPromptNode } from '../../utils/promptsHelper'
 import { fmtDate, fmtRelative } from '../../utils/formatDate'
 import Icon, { type IconName } from './Icon'
 import { displayTitle } from '../../utils/displayText'
+import { useGroupSelection } from '../../hooks/useGroupSelection'
 import type { Node } from '../../types'
 
 interface Props {
@@ -209,6 +210,15 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
   useEffect(() => { if (elFilter !== 'all' && !elCounts[elFilter]) setElFilter('all') }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
   const filteredElements = elFilter === 'all' ? elements : elements.filter(e => e.kind === elFilter)
 
+  // Selección múltiple + «Crear grupo (N)» — mismo mecanismo que la tab global
+  // Elementos (ElementsPanel.tsx), hook compartido (Alberto, 25 ago 2026: "lo de
+  // seleccionar elementos también debe poder hacerse en la lista de elementos de
+  // un contexto concreto"). El grupo creado aquí es idéntico en todo (modelo,
+  // enlace público) al creado desde la página global — ver utils/groups.ts.
+  const { selectMode, selected, toggleSelect, toggleSelectMode, exitSelectMode, selectAll, createGroupFromSelection } =
+    useGroupSelection(created => onOpenNode(created.id))
+  useEffect(() => { exitSelectMode() }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Migración de notas antiguas → documento del contexto (no aplica a General).
   const legacyCount = ctxId === null ? 0 : legacyNotesOf(ctxId).length
   const doMigrate = () => {
@@ -304,7 +314,42 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           uno con su icono. */}
       {elements.length > 0 && (
         <>
-          <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>{t('v2.context.elements', 'Elementos')} ({elements.length})</div>
+          <div className="v2-section-label" style={{ padding: '16px 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>{t('v2.context.elements', 'Elementos')} ({elements.length})</span>
+            <button
+              title={selectMode ? t('elements.exitSelect', 'Salir de selección') : t('elements.selectMultiple', 'Seleccionar varios')}
+              onClick={toggleSelectMode}
+              style={{ marginLeft: 'auto', flexShrink: 0, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid var(--border,#e2e2e2)', background: selectMode ? 'var(--accent,#3E5C76)' : 'var(--bg,#fff)', color: selectMode ? '#fff' : 'var(--text-secondary,#666)', cursor: 'pointer' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l2.5 2.5L16 9"/></svg>
+            </button>
+          </div>
+          {selectMode && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6, padding: '4px 2px' }}>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-secondary,#666)' }}>
+                {t('elements.selectedCount', '{{count}} seleccionados', { count: selected.size })}
+              </span>
+              <button
+                onClick={() => selectAll(filteredElements.map(el => el.node.id))}
+                style={{ fontSize: 12, fontWeight: 500, color: 'var(--accent,#3E5C76)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+              >
+                {t('elements.selectAllVisible', 'Seleccionar los {{count}} visibles', { count: filteredElements.length })}
+              </button>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 8 }}>
+                <button onClick={exitSelectMode} style={{ fontSize: 12.5, fontWeight: 500, color: 'var(--text-tertiary,#999)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', fontFamily: 'inherit' }}>
+                  {t('common.cancel', 'Cancelar')}
+                </button>
+                <button
+                  title={selected.size < 2 ? t('group.needTwo', 'Selecciona al menos 2 elementos') : undefined}
+                  onClick={createGroupFromSelection}
+                  disabled={selected.size < 2}
+                  style={{ fontSize: 12.5, fontWeight: 600, color: selected.size < 2 ? 'var(--text-tertiary,#bbb)' : '#fff', background: selected.size < 2 ? 'var(--bg,#fff)' : 'var(--accent,#3E5C76)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 6, cursor: selected.size < 2 ? 'default' : 'pointer', padding: '5px 12px', fontFamily: 'inherit' }}
+                >
+                  {t('group.createGroup', 'Crear grupo')} {selected.size >= 2 ? `(${selected.size})` : ''}
+                </button>
+              </div>
+            </div>
+          )}
           {elKindChips.length > 1 && (
             <div className="el-filterbar" style={{ marginBottom: 4 }}>
               {[{ key: 'all', label: t('elements.all', 'Todos') }, ...elKindChips].map(c => {
@@ -326,15 +371,27 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
           )}
           {filteredElements.map(({ node: n, icon, isConversation }) => {
             const agentData = isAgentNode(n) ? getAgentData(n.id) : null
+            const isSelected = selected.has(n.id)
             return (
-              <V2ElementRow
-                key={n.id}
-                node={n}
-                icon={icon}
-                onOpen={id => (isConversation && onOpenConversation ? onOpenConversation(id) : onOpenNode(id))}
-                hideContext
-                extraMeta={agentData ? (agentData.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')) : fmtDate(n.createdAt, i18n.language)}
-              />
+              <div key={n.id} style={{ position: 'relative' }}>
+                <V2ElementRow
+                  node={n}
+                  icon={icon}
+                  onOpen={id => (isConversation && onOpenConversation ? onOpenConversation(id) : onOpenNode(id))}
+                  hideContext
+                  extraMeta={agentData ? (agentData.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')) : fmtDate(n.createdAt, i18n.language)}
+                />
+                {/* Overlay de selección — mismo patrón que ElementsPanel: intercepta el
+                    clic sin tocar V2ElementRow, el contenido de debajo sigue visible. */}
+                {selectMode && (
+                  <div
+                    onClick={() => toggleSelect(n.id)}
+                    style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center', paddingLeft: 6, cursor: 'pointer', background: isSelected ? 'rgba(62,92,118,0.10)' : 'transparent' }}
+                  >
+                    <input type="checkbox" checked={isSelected} readOnly style={{ pointerEvents: 'none', width: 15, height: 15 }} />
+                  </div>
+                )}
+              </div>
             )
           })}
         </>

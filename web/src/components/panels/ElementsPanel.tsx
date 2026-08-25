@@ -22,7 +22,7 @@ import { isInPapelera } from '../../utils/papeleraHelper'
 import { isTaskNode } from '../../utils/taskNode'
 import { createAgentUnder } from '../../utils/agentesHelper'
 import { createPromptUnder } from '../../utils/promptsHelper'
-import { createGroup } from '../../utils/groups'
+import { useGroupSelection } from '../../hooks/useGroupSelection'
 import NewNamedItemModal from '../modals/NewNamedItemModal'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
 import type { FilterView } from '../views/FilterResultsView'
@@ -313,12 +313,10 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   // huérfanos uno a uno vía base de datos porque no hay forma nativa"). Un overlay
   // transparente por fila intercepta el clic (checkbox) sin tocar TaskRow ni el resto
   // de tipos de fila — funciona igual para tareas, eventos y filas genéricas.
-  const [selectMode, setSelectMode] = useState(false)
-  const [selected, setSelected] = useState<Set<string>>(new Set())
-  function toggleSelect(id: string) {
-    setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next })
-  }
-  function exitSelectMode() { setSelectMode(false); setSelected(new Set()) }
+  // Selección + «Crear grupo» — hook COMPARTIDO con la lista de Elementos dentro de
+  // un contexto (V2ContextView.tsx), ver hooks/useGroupSelection.ts.
+  const { selectMode, selected, toggleSelect, toggleSelectMode, exitSelectMode, selectAll, createGroupFromSelection } =
+    useGroupSelection(created => open(created.id))
   function bulkDelete() {
     const ids = [...selected]
     if (ids.length === 0) return
@@ -338,16 +336,6 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   // sobre filas que ya no se ven.
   useEffect(() => { if (selectMode) exitSelectMode() }, [filter, taskSub, nq]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Crear GRUPO con los elementos seleccionados (2+) — mismo patrón que "los grupos
-  // del brain de La Isla" (Alberto, 24 ago 2026): agrupar notas/imágenes/PDFs/mezcla
-  // bajo un solo enlace público. Ver utils/groups.ts.
-  function createGroupFromSelection() {
-    const ids = [...selected]
-    if (ids.length < 2) return
-    const created = createGroup(t('group.defaultName', 'Grupo nuevo'), ids)
-    exitSelectMode()
-    open(created.id)
-  }
   function moveToContext(id: string, ctxId: string) {
     // Mover a otro contexto: asignación lógica (_ctxRefs) + si NO está fijado con pin, lo
     // reparentamos para que fluya dentro de la caja del contexto en el lienzo.
@@ -381,7 +369,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
           </button>
           <button
             title={selectMode ? t('elements.exitSelect', 'Salir de selección') : t('elements.selectMultiple', 'Seleccionar varios')}
-            onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+            onClick={toggleSelectMode}
             style={{ flexShrink: 0, width: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: selectMode ? 'var(--accent,#6c5ce7)' : 'var(--bg,#fff)', color: selectMode ? '#fff' : 'var(--text-secondary,#666)', cursor: 'pointer' }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l2.5 2.5L16 9"/></svg>
@@ -471,7 +459,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
               {t('elements.selectedCount', '{{count}} seleccionados', { count: selected.size })}
             </span>
             <button
-              onClick={() => setSelected(new Set(filtered.map(r => r.id)))}
+              onClick={() => selectAll(filtered.map(r => r.id))}
               style={{ fontSize: 12, fontWeight: 500, color: 'var(--accent,#6c5ce7)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
             >
               {t('elements.selectAllVisible', 'Seleccionar los {{count}} visibles', { count: filtered.length })}
