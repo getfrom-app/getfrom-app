@@ -6,9 +6,16 @@
 // "quiero que la misma inteligencia y magia del chat de iOS lo apliquemos al
 // chat de la web").
 //
-// Un hilo continuo global, como iOS — no una sesión por contexto (el viejo
-// motor sí las tenía, pero /assistant/chat no tiene noción de "contexto
-// activo"; es una sola conversación con el segundo cerebro).
+// Un hilo continuo GENERAL, como iOS (destino Chat sin nada abierto). Pero
+// cada ELEMENTO o CONTEXTO abierto (V2ElementChat, Tab "Chat" de una ficha)
+// tiene su PROPIO hilo, aislado del general — `/assistant/chat` no tiene
+// noción de servidor de "sesión" (es stateless, cada turno manda su propio
+// `history`), así que el aislamiento vive aquí: un hilo por `threadKey`
+// (nodeId, o `'general'` para el destino Chat sin elemento), cada uno con su
+// propio almacenamiento local (`setThread`). Antes había un ÚNICO hilo para
+// TODO — abrir el chat de cualquier documento o contexto enseñaba literalmente
+// la misma conversación que el destino Chat general (Alberto, 25 ago 2026:
+// "no tiene sentido que esté el chat general ahí" al abrir un contexto nuevo).
 import {
   assistantChat, assistantInbox, assistantComplete, assistantPostpone, assistantTrash,
   assistantSetContext, assistantContexts, assistantRunAgent, assistantUpdateAgent,
@@ -52,6 +59,10 @@ class AssistantStore {
   private allMessages: AssistantMsg[] = []
   private visibleCount = 0
   private listeners: Set<Listener> = new Set()
+  /** Hilo cargado actualmente en memoria — `'general'` o el id del elemento/
+   *  contexto abierto (ver `setThread`). Determina qué storage local se lee/
+   *  escribe en `load()`/`save()`. */
+  private threadKey = 'general'
 
   isThinking = false
   /** Última acción deshacible — paridad iOS AssistantUndo (13 ago 2026). Solo
@@ -79,6 +90,26 @@ class AssistantStore {
 
   get messages(): AssistantMsg[] {
     return this.allMessages.slice(Math.max(0, this.allMessages.length - this.visibleCount))
+  }
+
+  /** true si el hilo cargado es el destino Chat general (no un elemento/contexto). */
+  get isGeneralThread(): boolean {
+    return this.threadKey === 'general'
+  }
+
+  /** Cambia de hilo — se llama al montar el chat de un elemento/contexto
+   *  concreto (`nodeId`) o al volver al destino Chat general (`null`).
+   *  Persiste el hilo anterior antes de soltarlo y carga el nuevo desde su
+   *  propio storage (vacío la primera vez, como cualquier conversación
+   *  nueva) — así cada elemento/contexto recuerda SU conversación, sin
+   *  mezclarse con la de otro ni con la general. No-op si ya es el activo. */
+  setThread(nodeId: string | null) {
+    const key = nodeId || 'general'
+    if (key === this.threadKey) return
+    this.save()
+    this.threadKey = key
+    this.load()
+    this.notify()
   }
 
   get hasMoreHistory(): boolean {
@@ -320,9 +351,16 @@ class AssistantStore {
 
   // ── Persistencia ─────────────────────────────────────────────────────────
 
+  /** Clave de storage del hilo — `'general'` conserva la clave histórica
+   *  (`STORAGE_KEY`, sin sufijo) para no perder el hilo general ya guardado
+   *  de antes de que existieran hilos por elemento/contexto. */
+  private storageKeyFor(key: string): string {
+    return key === 'general' ? STORAGE_KEY : `${STORAGE_KEY}.node.${key}`
+  }
+
   private load() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY)
+      const raw = localStorage.getItem(this.storageKeyFor(this.threadKey))
       this.allMessages = raw ? JSON.parse(raw) : []
     } catch { this.allMessages = [] }
     // Solo se pinta el último bloque — el resto queda listo para "cargar más"
@@ -334,7 +372,7 @@ class AssistantStore {
   private save() {
     try {
       const slice = this.allMessages.slice(-SAVE_CAP)
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(slice))
+      localStorage.setItem(this.storageKeyFor(this.threadKey), JSON.stringify(slice))
     } catch { /* localStorage lleno o no disponible — el hilo sigue funcionando en memoria */ }
   }
 }

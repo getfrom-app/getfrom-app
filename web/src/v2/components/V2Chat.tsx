@@ -9,7 +9,7 @@
 // El equivalente al "deslizar" de iOS son las acciones que YA existen en la
 // web: clic derecho (from:open-rowmenu → RightColMenu) y los botones de hover
 // de TaskRow — se reutilizan tal cual, no se reinventa nada.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAssistantStore, assistantStore } from '../../store/assistantStore'
 import type { AssistantMsg } from '../../store/assistantStore'
@@ -189,6 +189,15 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   const scoped = elementScoped ?? embedded
   const chat = useAssistantStore()
   useStore()
+  // Carga el hilo PROPIO de este elemento/contexto (o el general si
+  // `currentNodeId` es null) ANTES de pintar — mismo patrón que el
+  // `useLayoutEffect` de V2ElementChat con `aiChatStore.getOrCreateElementSession`:
+  // sin esto se vería un instante el hilo anterior mientras el efecto normal
+  // (que corre después del commit) todavía no ha cambiado de hilo. El padre ya
+  // monta esto con `key={elementId}` para cada nodo distinto, así que en la
+  // práctica es un montaje limpio por hilo (Alberto, 25 ago: el chat de un
+  // contexto no debe enseñar el hilo general).
+  useLayoutEffect(() => { assistantStore.setThread(currentNodeId) }, [currentNodeId])
   const [input, setInput] = useState('')
   const [dragOver, setDragOver] = useState(false)
   const [promptMenu, setPromptMenu] = useState(false)
@@ -234,21 +243,27 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
 
   // Trae el brief/avisos que hayan llegado mientras la pestaña no estaba
   // delante, igual que hace iOS al abrir — el hilo web es también el
-  // registro completo de lo que el asistente ha dicho por su cuenta.
+  // registro completo de lo que el asistente ha dicho por su cuenta. Solo el
+  // hilo GENERAL recibe avisos de fondo (brief del día, informes de agentes) —
+  // el chat de un elemento/contexto concreto es una conversación sobre ESO,
+  // no el buzón general.
   useEffect(() => {
+    if (currentNodeId) return
     assistantStore.fetchInbox().catch(() => {})
-  }, [])
+  }, [currentNodeId])
 
   // Línea "No leído" (13 ago 2026, estilo WhatsApp) — se congela el id al
   // ABRIR el chat (no en cada render: si se recalculara en vivo, la línea
   // desaparecería sola en cuanto markRead() corriera). Se marca todo como
   // leído poco después de abrir — igual que WhatsApp, "abrir el chat" ya
-  // cuenta como haberlo visto, sin esperar más gesto del usuario.
-  const [unreadId] = useState(() => assistantStore.firstUnreadId)
+  // cuenta como haberlo visto, sin esperar más gesto del usuario. Solo aplica
+  // al hilo general (ver comentario de `fetchInbox` arriba).
+  const [unreadId] = useState(() => (currentNodeId ? null : assistantStore.firstUnreadId))
   useEffect(() => {
+    if (currentNodeId) return
     const t = setTimeout(() => assistantStore.markRead(), 1500)
     return () => clearTimeout(t)
-  }, [])
+  }, [currentNodeId])
 
   // Al abrir, directo al final del hilo — sin depender de que cambie el
   // recuento (que también crece al pedir histórico hacia arriba).

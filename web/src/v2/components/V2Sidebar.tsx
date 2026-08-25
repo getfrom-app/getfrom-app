@@ -472,8 +472,17 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
             <button className="v2-ctx-menu-item" onClick={() => { onNewCanvasInCtx(addMenu.id); setAddMenu(null) }}><Icon name="canvas" size={14} /> {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
             <button className="v2-ctx-menu-item" onClick={() => { onOpenAttach(addMenu.id); setAddMenu(null) }}><Icon name="attachment" size={14} /> {t('v2.attach.title', 'Adjuntar')}</button>
             <button className="v2-ctx-menu-item" onClick={() => { onRecordInCtx(addMenu.id); setAddMenu(null) }}><Icon name="mic" size={14} /> {t('v2.chat.record', 'Grabar')}</button>
+            {/* Sin entrada «Nueva conversación» (quitada 25 ago 2026, Alberto: "hay
+                que quitar lo de 'nueva conversación en este contexto'"). Ya no tiene
+                sentido tal como estaba: el contexto tiene AHORA su propia conversación
+                real y persistente en su propia tab «Chat» (`assistantStore.setThread`,
+                ver aiChatStore.ts/V2Chat.tsx) — no una que haya que "crear" cada vez.
+                Este botón, además, pasaba por el motor VIEJO (`aiChatStore` +
+                `_aiSession`), que ya no alimenta ningún chat visible: solo dejaba un
+                nodo «Conversación» huérfano colgado en Elementos del contexto, sin
+                función real. El botón "Chat" de la barra superior sigue abriendo la
+                tab Chat del contexto activo (`onNewChatInCtx`, ver V2App.tsx). */}
             <div className="v2-ctx-menu-sep" />
-            <button className="v2-ctx-menu-item" onClick={() => { onNewChatInCtx(addMenu.id); setAddMenu(null) }}><Icon name="conversation" size={14} /> {t('v2.newConversationInThisContext', 'Nueva conversación')}</button>
             <button className="v2-ctx-menu-item" onClick={() => { setNewSubCtxParent({ id: addMenu.id }); setAddMenu(null) }}><Icon name="context" size={14} /> {t('v2.newSubcontext', 'Subcontexto')}</button>
             {/* Solo en el menú GLOBAL: raíz sin importar el contexto activo — el
                 «Subcontexto» de arriba ya cubre crear bajo el contexto seleccionado. */}
