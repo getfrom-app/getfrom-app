@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.984 — 25 agosto 2026 · Enlaces públicos y chats por contexto
+
+- **Los enlaces públicos ya funcionan de verdad**: publicar una nota o un grupo con "/p/" o "/g/" antes se quedaba en una página en blanco — arreglado a nivel de infraestructura.
+- **Cada contexto (y cada nota o tarea) tiene ahora su propio chat**, independiente del chat general — antes se mezclaban.
+- **Grupos también desde dentro de un contexto**: selecciona varios elementos en la pestaña Elementos de un contexto y crea el enlace público sin salir de ahí.
+- Quitado el botón "Nueva conversación en este contexto" del menú "+" — ya no hacía falta.
+
+---
+
 ## Web v9.6.982 — 25 agosto 2026 · Grupos con enlace público
 
 - **Nuevo: Grupos**. Selecciona varias notas, imágenes o PDFs en Elementos y crea un grupo — un solo enlace público que los muestra todos juntos, siempre actualizado en vivo.
