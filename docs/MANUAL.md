@@ -221,6 +221,9 @@ aprender: escribes como piensas.
 - **Adjuntar contenido**: arrastra un PDF, una imagen o un archivo de texto directamente al chat —
   se incorpora a la conversación y queda indexado para preguntarle por su contenido cuando quieras
   (ver «Archivos y RAG» más abajo).
+- **Solo anotar**: cuando solo quieres dejar constancia rápida de algo, sin que el asistente
+  conteste ni interprete nada, usa el botón de anotar rápido (el icono junto a Enviar) en vez de
+  Enviar — el texto va tal cual a tu nota diaria y el chat responde solo "Anotado".
 
 ### Crear elementos — la barra de iconos de la columna izquierda
 
@@ -501,6 +504,11 @@ de voz larga:
 3. El resultado queda como una nota con la transcripción, lista para que le pidas al chat que la
    resuma o extraiga tareas de ella.
 
+**Dictar directamente en una nota**: distinto de la grabadora anterior (que crea una nota nueva),
+cualquier nota que abras — incluida tu nota diaria — tiene un botón de micrófono en su barra de
+formato. Lo dictado se transcribe directamente en el texto, en el punto donde tengas el cursor,
+sin crear nada aparte.
+
 ### Conversaciones
 
 Cada conversación que mantienes con el chat es en sí misma un elemento: aparece en Elementos con
@@ -672,8 +680,12 @@ Cuando ves un vídeo en redes y quieres quedarte con **lo que dice, no con el v�
   automáticos (en el idioma del vídeo) y la **transcripción** completa.
 - Ocurre **en segundo plano**: la nota aparece al instante y la transcripción se rellena sola en
   unos segundos. No tienes que esperar.
-- Funciona con **TikTok, YouTube, Instagram, X y muchos más**. Si compartes un enlace normal o un
-  texto, se guarda tal cual (sin transcribir).
+- Funciona con **TikTok, YouTube, Instagram, X y muchos más**. Si compartes un enlace sin texto
+  (por ejemplo, "compartir esta página" desde Safari), se guarda tal cual.
+- Si compartes **texto suelto** (seleccionado de cualquier app, sin archivo), Fromly lo interpreta
+  igual que si lo hubieras escrito en el chat: si dice algo como una tarea, la crea; si no, lo
+  anota sin más. Al volver a la app verás el intercambio real en tu chat, no solo un aviso de
+  "guardado".
 - **La primera vez**, activa Fromly en la hoja de compartir: desliza la fila de apps hasta el
   final → **Más / Editar** → activa **Fromly**.
 - La transcripción usa tus **tokens de IA** (plan de pago).
