@@ -590,7 +590,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               disabled={!input.trim() || thinking}
               title={t('v2.chat.quickNote', 'Solo anotar en la nota diaria (sin respuesta)')}
               onClick={() => doSend(input, true)}
-            ><Icon name="pin" size={15} /></button>
+            ><Icon name="pencil" size={15} /></button>
             <button className="v2-send" disabled={!input.trim() || thinking} onClick={() => doSend(input)} title={t('v2.chat.send', 'Enviar')}><Icon name="arrow-up" size={16} strokeWidth={2} /></button>
           </div>
           <div className="v2-composer-hint">

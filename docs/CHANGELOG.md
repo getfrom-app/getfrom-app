@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.995 — 26 agosto 2026 · Icono de "Solo anotar" corregido
+
+- El botón de "Solo anotar" en el chat pasa de una chincheta (📌, sin relación con anotar) a un lápiz — mismo comportamiento, solo el icono.
+
+---
+
 ## Web v9.6.994 — 26 agosto 2026 · Solo anotar, dictado en cualquier nota, tareas de hoy por defecto
 
 - **"Solo anotar" en el chat**: un nuevo botón (📌) junto a Enviar guarda el mensaje tal cual en tu nota diaria, sin que el asistente conteste nada más que "Anotado" — para cuando solo quieres dejar constancia rápida, sin conversación.
