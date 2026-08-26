@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.993 — 26 agosto 2026 · TimeBlocks y la barra "Lo próximo"
+
+- **Nuevo: TimeBlocks.** Un espacio reservado en el planificador para algo que no es obligatorio (no es un evento) ni completable (no es una tarea) — solo se ve en el planificador, nunca en ninguna lista de tareas ni en Elementos. En el planificador, clic normal sigue creando una tarea con hora; botón derecho en un hueco vacío ofrece crear un TimeBlock (rayado diagonal para distinguirlo). Se sincroniza con Google Calendar igual que cualquier bloque.
+- **Nuevo: barra "Lo próximo".** Esquina inferior derecha, discreta: siempre muestra el siguiente elemento con hora (tarea, evento o TimeBlock). Se pone en rojo bajo 1 hora, parpadea bajo 15 minutos (un toque detiene el parpadeo), se mantiene resaltada mientras está en curso y desaparece sola al terminar, dando paso al siguiente. Un botón la expande para ver varios a la vez. Activable/desactivable en Ajustes → Apariencia.
+
+---
+
 ## Web v9.6.992 — 26 agosto 2026 · El chat de un contexto ya conoce de verdad sus elementos
 
 - **El chat de un contexto ahora sí "ve" sus elementos y los de sus subcontextos** en el motor real de conversación (el mismo que usan iOS y Telegram) — la versión de ayer solo llegaba a un motor viejo que el chat de contexto ya no usa. Antes podía negar que algo existiera aunque estuviera ahí mismo, en la lista de la izquierda.

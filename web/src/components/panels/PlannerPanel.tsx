@@ -31,6 +31,7 @@ import {
   type CalendarEvent,
 } from '../../api/googleCalendar'
 import { getGcalEventId, gcalIdCore, linkedGcalIdCores } from '../../utils/gcalNodesSync'
+import { isTimeBlockNode } from '../../utils/taskNode'
 import { GCalEventEditor } from './DiaryRightPanel'
 import { useUserStore } from '../../store/userStore'
 import { useToast } from '../Toast'
@@ -129,7 +130,7 @@ type ViewMode = 'day' | 'week' | 'month' | 'year'
 
 // Bloque con hora en el timeline
 interface Block {
-  kind: 'task' | 'standalone' | 'gcal'
+  kind: 'task' | 'standalone' | 'gcal' | 'timeblock'
   id: string          // nodeId para task/standalone; gcalId para gcal
   text: string
   start: Date
@@ -171,7 +172,7 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
     if (!hasTime(n.due)) continue
     const end = n.dueEnd ? new Date(n.dueEnd) : new Date(start.getTime() + 3600000)
     blocks.push({
-      kind: 'task',
+      kind: isTimeBlockNode(n) ? 'timeblock' : 'task',
       id: n.id,
       text: n.text,
       start, end,
@@ -327,7 +328,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const [gcalEvents,  setGcalEvents]  = useState<CalendarEvent[]>([])
   const [editingGcal, setEditingGcal] = useState<CalendarEvent | null>(null)
   const [ctxMenu, setCtxMenu]         = useState<{x:number;y:number;b:Block}|null>(null)
-  const [newBlock, setNewBlock]       = useState<{day:Date;start:Date;top:number;text:string}|null>(null)
+  const [newBlock, setNewBlock]       = useState<{day:Date;start:Date;top:number;text:string;isTimeBlock?: boolean}|null>(null)
   const newBlockRef                   = useRef<HTMLInputElement>(null)
   const [newAllDay, setNewAllDay]     = useState<{day:Date;text:string}|null>(null)
   const newAllDayRef                  = useRef<HTMLInputElement>(null)
@@ -692,22 +693,54 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     setTimeout(() => newBlockRef.current?.focus(), 20)
   }
 
+  // Botón derecho sobre el hueco vacío → crear un TimeBlock en vez de una tarea
+  // con hora (26 ago 2026, Alberto: "cuando estoy en el planificador y hago
+  // clic, crea por defecto un evento [tarea con hora]... si le doy botón
+  // derecho me da opción de timeblock"). Mismo composer inline que el clic
+  // normal — solo cambia el flag que lee `commitNewBlock` al guardar.
+  function handleSlotContextMenu(e: React.MouseEvent, day: Date, colEl: HTMLElement) {
+    if ((e.target as HTMLElement).closest('.pp-block')) return
+    e.preventDefault()
+    const rawY  = e.clientY - colEl.getBoundingClientRect().top
+    const start = pxToTime(rawY, day)
+    if (start.getHours() < HOUR_START || start.getHours() >= HOUR_END) return
+    newBlockCommittedRef.current = false
+    setNewBlock({ day, start, top: snapPx(rawY), text: '', isTimeBlock: true })
+    setTimeout(() => newBlockRef.current?.focus(), 20)
+  }
+
   function commitNewBlock() {
     if (!newBlock || newBlockCommittedRef.current) return
     newBlockCommittedRef.current = true
     if (newBlock.text.trim()) {
       const start = newBlock.start
       const end   = new Date(start.getTime() + 3600000)
-      // Crear nodo standalone con due+hora (sin _timeBlock)
-      const newNode = store.createNode({
-        text:     newBlock.text.trim(),
-        parentId: ensureDayPath(newBlock.day).id,
-        due:      start.toISOString(),
-        isTask:   true,
-      })
-      store.updateNode(newNode.id, { dueEnd: end.toISOString() })
-      syncNodeToGcal(newNode.id, start, end)
-      showToast(t('ai.actionTaskCreated', 'Tarea creada'))
+      if (newBlock.isTimeBlock) {
+        // TimeBlock: SIN `isTask` (no es una tarea, no lleva checkbox ni
+        // aparece en ninguna lista de tareas/agenda) — solo due+hora y la
+        // marca `_timeblock`. Se sincroniza con Google Calendar igual que
+        // cualquier bloque del planificador (`syncNodeToGcal`, no depende de
+        // `isEvent`). Ver `utils/taskNode.ts::isTimeBlockNode`.
+        const newNode = store.createNode({
+          text:     newBlock.text.trim(),
+          parentId: ensureDayPath(newBlock.day).id,
+          due:      start.toISOString(),
+        })
+        store.updateNode(newNode.id, { dueEnd: end.toISOString(), extraData: JSON.stringify({ _timeblock: '1' }) })
+        syncNodeToGcal(newNode.id, start, end)
+        showToast(t('planner.timeBlockCreated', 'Bloque de tiempo creado'))
+      } else {
+        // Crear nodo standalone con due+hora (sin _timeBlock)
+        const newNode = store.createNode({
+          text:     newBlock.text.trim(),
+          parentId: ensureDayPath(newBlock.day).id,
+          due:      start.toISOString(),
+          isTask:   true,
+        })
+        store.updateNode(newNode.id, { dueEnd: end.toISOString() })
+        syncNodeToGcal(newNode.id, start, end)
+        showToast(t('ai.actionTaskCreated', 'Tarea creada'))
+      }
     }
     setNewBlock(null)
   }
@@ -907,6 +940,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           onDragLeave={e=>{ e.currentTarget.classList.remove('pp-col--drag-over'); setSnapLine(null) }}
           onDrop={e=>{ e.currentTarget.classList.remove('pp-col--drag-over'); setSnapLine(null); handleDrop(e, day, e.currentTarget) }}
           onClick={e=>handleSlotClick(e, day, e.currentTarget)}
+          onContextMenu={e=>handleSlotContextMenu(e, day, e.currentTarget)}
         >
           {Array.from({length: TOTAL_HOURS*4}, (_,i) => (
             <div key={i} className={`pp-slot ${i%4===0?'pp-slot--hr':i%2===0?'pp-slot--half':'pp-slot--qtr'}`} style={{top: i*(slotH/2)}} />
@@ -918,13 +952,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           {layoutBlocks(getTimedBlocks(day, gcalEvents)).map(renderBlock)}
 
           {newBlock && sameDay(newBlock.day, day) && (
-            <div className="pp-new-block" style={{ top: newBlock.top, left: 2, right: 2 }}>
+            <div className={`pp-new-block${newBlock.isTimeBlock ? ' pp-new-block--timeblock' : ''}`} style={{ top: newBlock.top, left: 2, right: 2 }}>
               <div className="pp-block-time">{fmtHH(newBlock.start)}</div>
               <input
                 ref={newBlockRef}
                 className="pp-new-block-input"
                 value={newBlock.text}
-                placeholder={t('ph.nameEllipsis')}
+                placeholder={newBlock.isTimeBlock ? t('planner.timeBlockPlaceholder', 'Bloque de tiempo…') : t('ph.nameEllipsis')}
                 onChange={e => setNewBlock(b => b ? {...b, text: e.target.value} : null)}
                 onKeyDown={e => {
                   if (e.key === 'Enter') { e.preventDefault(); commitNewBlock() }

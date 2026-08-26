@@ -13139,6 +13139,26 @@ textarea:focus-visible,
 .pp-block--task:active,.pp-block--standalone:active { cursor: grabbing; }
 .pp-block--gcal { cursor: grab; }  /* GCal también arrastrable */
 .pp-block--gcal:active { cursor: grabbing; }
+.pp-block--timeblock { cursor: grab; }
+.pp-block--timeblock:active { cursor: grabbing; }
+/* TimeBlock: espacio reservado, NO obligatorio como un evento — rayado diagonal
+   sutil en vez del borde+barra sólida de una tarea, para que se lea de un
+   vistazo como "algo distinto" sin competir visualmente con tareas/eventos
+   (26 ago 2026). Sin checkbox (ver `checkable` en PlannerPanel.tsx — no tiene
+   `status`, así que ya no lo lleva por sí solo). */
+.pp-block--timeblock {
+  background: repeating-linear-gradient(135deg, rgba(128,128,128,.10), rgba(128,128,128,.10) 4px, transparent 4px, transparent 9px) !important;
+  border-style: dashed !important;
+}
+.pp-block--timeblock .pp-block-text { opacity: .85; }
+/* Composer inline en modo TimeBlock — mismo rayado que el bloque ya creado,
+   para que el usuario vea desde el primer instante qué está creando. */
+.pp-new-block--timeblock {
+  background: repeating-linear-gradient(135deg, var(--bg-secondary), var(--bg-secondary) 4px, var(--border) 4px, var(--border) 9px) !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,.2);
+}
+.pp-new-block--timeblock .pp-new-block-input { color: var(--text-primary); }
+.pp-new-block--timeblock .pp-new-block-input::placeholder { color: var(--text-tertiary); }
 /* Color por defecto: tema (--text-primary/secondary) — cubre las tareas, que van
    con fondo transparente (border-only) y por tanto muestran el fondo de la página
    detrás; un rgba oscuro fijo se volvía invisible en modo oscuro (Alberto, 17 jul).

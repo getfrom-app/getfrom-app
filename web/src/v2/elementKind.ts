@@ -5,7 +5,7 @@
 import { parseExtraData } from '../utils/papeleraHelper'
 import { isDocNode } from '../utils/docNode'
 import { isContextMemoryNode } from '../utils/knowledgeNodes'
-import { isTaskNode } from '../utils/taskNode'
+import { isTaskNode, isTimeBlockNode } from '../utils/taskNode'
 import type { IconName } from './components/Icon'
 import type { Node } from '../types'
 
@@ -65,6 +65,11 @@ export function classifyElement(n: Node): { kind: ElKind; icon: IconName; label:
   // Tarea (los eventos son tareas con día y hora — utils/taskNode.ts): tienen su
   // propia lista con checkbox y fecha, no se listan como «elemento».
   if (isTaskNode(n) || (n.types || []).includes('evento')) return null
+  // TimeBlock (26 ago 2026): NO es una tarea (isTaskNode ya lo deja pasar, no
+  // tiene `status`) pero tampoco debe aparecer como «documento»/«nota» genérica
+  // en Elementos — solo vive en el planificador (Alberto: "no aparece en la
+  // lista de tareas, simplemente se ve en el planificador").
+  if (isTimeBlockNode(n)) return null
 
   const rt = (e._resourceType as string) || (n.resourceType || '')
   if (rt === 'image' || e._imageUrl) return { kind: 'image', icon: 'image', label: 'Imagen' }

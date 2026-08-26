@@ -19,7 +19,7 @@ import { openNodeDetail } from '../../utils/canvasNav'
 import TaskRow from './TaskRow'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import { isInPapelera } from '../../utils/papeleraHelper'
-import { isTaskNode } from '../../utils/taskNode'
+import { isTaskNode, isTimeBlockNode } from '../../utils/taskNode'
 import { createAgentUnder } from '../../utils/agentesHelper'
 import { createPromptUnder } from '../../utils/promptsHelper'
 import { useGroupSelection } from '../../hooks/useGroupSelection'
@@ -71,6 +71,7 @@ function classify(n: Node): ElemKind | null {
   if (e._group === '1') return 'group'              // grupo de elementos (varios ids en _groupRefs)
   if (isMarkedContext(n)) return null   // contexto = lugar, no elemento (ver ElemKind)
   if (isTaskNode(n)) return 'task'      // evento = tarea con día y hora (utils/taskNode.ts)
+  if (isTimeBlockNode(n)) return null   // TimeBlock: solo vive en el planificador, no en Elementos
   const rt = e._resourceType as string | undefined
   if (rt === 'image' || e._imageUrl) return 'image'
   if (rt === 'pdf') return 'pdf'

@@ -614,6 +614,23 @@ Arrastra cualquier tarea (desde Agenda → Planner, o desde Elementos) al timeli
 para darle hora — la tarea sigue en su contexto, solo gana un chip con la hora asignada. También
 puedes hacer clic en una hora vacía para crear una tarea nueva directamente ahí.
 
+### TimeBlocks — un espacio reservado que no es tarea ni evento
+
+Para algo que necesitas bloquear en tu agenda pero que no es una tarea que marcar como hecha ni una
+reunión a la que asistir obligatoriamente (por ejemplo, "estudiar" o "tiempo para escribir"), usa un
+**TimeBlock**: botón derecho sobre un hueco vacío del Planificador (en el móvil, mantener pulsado).
+Se ve con un rayado diagonal distinto al de una tarea o un evento, no lleva casilla de completar, y
+no aparece en ninguna lista de tareas de Fromly — solo en el Planificador. Se sincroniza con Google
+Calendar igual que cualquier otro bloque.
+
+### "Lo próximo" — siempre a la vista
+
+Una franja discreta (esquina inferior derecha en web, bajo la barra de pestañas en el móvil) te
+recuerda siempre cuál es tu próximo compromiso con hora — tarea, evento o TimeBlock. Se pone en
+rojo cuando falta menos de una hora, y parpadea cuando falta menos de un cuarto de hora (toca la
+franja para que deje de parpadear). Puedes desactivarla en Ajustes → Apariencia si prefieres no
+verla.
+
 ### Sincronización con Google Calendar al planificar
 
 Si tienes Google Calendar conectado, el Planificador crea y actualiza eventos automáticamente:

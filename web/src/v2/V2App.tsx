@@ -46,6 +46,7 @@ import { runStartupMigrations } from '../utils/appInit'
 import PaywallModal from '../components/paywall/PaywallModal'
 import type { PaywallReason } from '../components/paywall/PaywallModal'
 import V2UpgradeBanner from './components/V2UpgradeBanner'
+import NextEventBar from './components/NextEventBar'
 import './styles/v2.css'
 
 export const V2_VERSION = 'v2.0.0-beta.1'
@@ -929,6 +930,7 @@ export default function V2App() {
         </main>
         <aside className="v2-col v2-right" />
         <span className="v2-version">{WEB_VERSION}</span>
+        <NextEventBar />
       </div>
       </ToastProvider>
     )
@@ -1116,6 +1118,7 @@ export default function V2App() {
         </div>
       )}
       <span className="v2-version">{WEB_VERSION}</span>
+      <NextEventBar />
     </div>
     </ToastProvider>
   )

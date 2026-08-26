@@ -31,3 +31,25 @@ export function hasTimeOfDay(n: Node): boolean {
   const d = new Date(n.due)
   return d.getHours() !== 0 || d.getMinutes() !== 0
 }
+
+/**
+ * ¿Es un TimeBlock? (26 ago 2026, Alberto: "un timeblock no es un evento porque
+ * no es obligatorio asistir... tampoco es una tarea, es un espacio reservado
+ * para hacer algo... no aparece en la lista de tareas, simplemente se ve en el
+ * planificador"). Marca propia (`extraData._timeblock`, minúscula a propósito —
+ * NO confundir con el `_timeBlock` legacy de `PlannerPanel.getTimedBlocks`, un
+ * concepto viejo y distinto de nodo standalone/enlazado). Nace SIN `status`
+ * (no es una tarea: no cuenta en `isTaskNode`, no lleva checkbox, no aparece en
+ * ninguna lista de tareas/agenda) y con `isEvent: false` (no es un evento: no
+ * entra en el bloque "Eventos" de un contexto ni en las reglas pensadas para
+ * eventos) — solo `due`+`dueEnd` y esta marca. El planificador lo busca
+ * explícitamente (`getTimedBlocks`) y la sincronización con Google Calendar es
+ * directa (`syncNodeToGcal`), sin pasar por el camino gateado por `isEvent`.
+ */
+export function isTimeBlockNode(n: Node): boolean {
+  try {
+    return JSON.parse(n.extraData || '{}')._timeblock === '1'
+  } catch {
+    return false
+  }
+}

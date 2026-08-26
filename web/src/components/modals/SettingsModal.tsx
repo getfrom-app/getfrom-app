@@ -17,6 +17,7 @@ import { getGoogleOAuthUrl, disconnectGoogle } from '../../api/googleCalendar'
 import { apiRequest } from '../../api/client'
 import { downloadFullTextExport } from '../../utils/bulkTextExport'
 import { openExternalUrl } from '../../utils/openExternal'
+import { isNextEventBarEnabled, setNextEventBarEnabled } from '../../utils/nextEvent'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -394,6 +395,7 @@ function PlannerColorRow() {
 export function AparienciaPane() {
   const { t } = useTranslation()
   const { theme, setTheme, accent, setAccent } = useTheme()
+  const [nextEventBar, setNextEventBarState] = useState(isNextEventBarEnabled())
 
   // Franja horaria visible (calendario + timeline diario)
   const [dayStart, setDayStartState] = useState<number>(() => {
@@ -454,6 +456,17 @@ export function AparienciaPane() {
             <option key={h} value={h} disabled={h <= dayStart}>{String(h).padStart(2, '0')}:00</option>
           ))}
         </select>
+      </Row>
+      <Row
+        label={t('appearance.nextEventBarLabel', 'Barra "Lo próximo"')}
+        hint={t('appearance.nextEventBarHint', 'Franja discreta abajo a la derecha con el siguiente evento, tarea con hora o bloque de tiempo.')}
+      >
+        <input
+          type="checkbox"
+          checked={nextEventBar}
+          onChange={e => { setNextEventBarState(e.target.checked); setNextEventBarEnabled(e.target.checked) }}
+          style={{ width: 16, height: 16, cursor: 'pointer' }}
+        />
       </Row>
 
       <SectionTitle>{t('settingsView.accentColor')}</SectionTitle>
