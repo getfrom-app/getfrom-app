@@ -4,6 +4,12 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.992 — 26 agosto 2026 · El chat de un contexto ya conoce de verdad sus elementos
+
+- **El chat de un contexto ahora sí "ve" sus elementos y los de sus subcontextos** en el motor real de conversación (el mismo que usan iOS y Telegram) — la versión de ayer solo llegaba a un motor viejo que el chat de contexto ya no usa. Antes podía negar que algo existiera aunque estuviera ahí mismo, en la lista de la izquierda.
+
+---
+
 ## Web v9.6.991 — 26 agosto 2026 · Arreglo real de "Nueva conversación" en el chat de un contexto
 
 - **"Nueva conversación" del chat de un contexto ahora abre de verdad un hilo propio y vacío**, en vez del histórico general de Fromly — el arreglo de v9.6.990 no llegaba a corregirlo del todo en cuentas con historial real. Cada contexto tiene ahora UN hilo persistente y aislado (como el de cualquier documento o tarea), con su propio botón de papelera para reiniciarlo; el chat general del sidebar sigue siendo el mismo de siempre.

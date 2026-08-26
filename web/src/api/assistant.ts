@@ -45,10 +45,11 @@ export interface AssistantChatReply {
 export async function assistantChat(
   message: string,
   history: { role: 'user' | 'assistant'; content: string }[],
+  currentNodeId?: string | null,
 ): Promise<AssistantChatReply> {
   return apiRequest<AssistantChatReply>('/assistant/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, history }),
+    body: JSON.stringify({ message, history, currentNodeId: currentNodeId ?? null }),
   })
 }
 

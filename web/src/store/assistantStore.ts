@@ -149,7 +149,7 @@ class AssistantStore {
 
     try {
       const history = this.recentHistory()
-      const reply = await assistantChat(clean, history)
+      const reply = await assistantChat(clean, history, this.threadKey === 'general' ? null : this.threadKey)
       this.appendVisible({
         id: uid(), role: 'assistant', text: reply.reply, date: new Date().toISOString(),
         created: reply.created.map(c => ({ id: c.id, text: c.text, due: c.due, isTask: c.isTask })),
