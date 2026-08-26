@@ -10,7 +10,7 @@
 // índice: se recorre el árbol activo, que ya está en memoria.
 import { store } from '../store/nodeStore'
 import { parseExtraData, isInPapelera } from '../utils/papeleraHelper'
-import { firstContextOf, isContextClosed, isMarkedContext, isRootContext } from '../utils/cajones'
+import { firstContextOf, isContextClosed, isMarkedContext, isRootContext, contextParent, listContextsForParent } from '../utils/cajones'
 import { displayTitle } from '../utils/displayText'
 import type { Node } from '../types'
 
@@ -39,6 +39,44 @@ export function listConversations(contextId?: string | null, limit?: number): No
       const ctx = firstContextOf(n)
       if (contextId === null ? !!ctx : ctx?.id !== contextId) continue
     }
+    out.push(n)
+  }
+  out.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
+  return limit != null ? out.slice(0, limit) : out
+}
+
+/** Este contexto + TODOS sus subcontextos, recursivo (26 ago 2026 — la tab
+ *  «Chat» de un contexto muestra también las conversaciones de sus
+ *  subcontextos, ver `listConversationsWithSubcontexts`). Barrido por
+ *  capas sobre `listContextsForParent()` en vez de recorrer children()
+ *  directamente: un contexto puede colgar de otro por `_ctxRefs`/estructura
+ *  variada, y `contextParent` ya sabe resolver eso de forma consistente con
+ *  el resto de la app (mismo criterio que el picker de contexto padre). */
+export function contextAndDescendantIds(contextId: string): string[] {
+  const all = listContextsForParent()
+  const out = new Set<string>([contextId])
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const c of all) {
+      if (out.has(c.id)) continue
+      const p = contextParent(c.id)
+      if (p && out.has(p.id)) { out.add(c.id); changed = true }
+    }
+  }
+  return [...out]
+}
+
+/** Conversaciones de un contexto Y de todos sus subcontextos, más recientes
+ *  primero (Alberto, 26 ago 2026: "un contexto puede tener varias
+ *  conversaciones y además mostrará todas las de sus subcontextos"). */
+export function listConversationsWithSubcontexts(contextId: string, limit?: number): Node[] {
+  const ids = new Set(contextAndDescendantIds(contextId))
+  const out: Node[] = []
+  for (const n of store.allActive()) {
+    if (!isConversationNode(n)) continue
+    const ctx = firstContextOf(n)
+    if (!ctx || !ids.has(ctx.id)) continue
     out.push(n)
   }
   out.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))

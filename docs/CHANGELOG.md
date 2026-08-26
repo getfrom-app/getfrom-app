@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.987 — 26 agosto 2026 · Ajustes tras probarlo en vivo: pestaña correcta según contexto, conversaciones en Chat
+
+- **Al abrir una tarea con contexto, la columna derecha muestra la ficha del contexto** (como antes) — el ajuste de esta mañana solo se aplica ahora a tareas SIN contexto, que van directas al Chat.
+- **Las conversaciones ya no aparecen mezcladas en Elementos**: cada contexto tiene su propio histórico de conversaciones en su pestaña "Chat" — incluidas las de sus subcontextos.
+
+---
+
 ## Web v9.6.986 — 26 agosto 2026 · Planificador sin solapes, grupos en tu contexto y contraseña opcional
 
 - **El planificador ya no solapa eventos a la misma hora**: si tienes un evento de Google Calendar y otro de Fromly a la vez, ahora se ven uno al lado del otro en vez de tapados.

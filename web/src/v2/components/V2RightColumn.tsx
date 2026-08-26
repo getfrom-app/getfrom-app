@@ -31,7 +31,7 @@
 //     pie) · centro = planner.
 // La nota diaria nunca tiene Tab 2 "Chat" (`centerIsDiary`, ver V2ElementView.tsx)
 // — aquí no aplica porque no vive en `elementId`/centro, sino embebida abajo.
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
@@ -41,8 +41,11 @@ import V2Chat from './V2Chat'
 import V2ElementChat from './V2ElementChat'
 import V2ElementView from './V2ElementView'
 import V2ContextBrowser from './V2ContextBrowser'
+import { listConversations, listConversationsWithSubcontexts, conversationTitle } from '../conversations'
+import { fmtRelative } from '../../utils/formatDate'
 import Icon from './Icon'
 import { ensureDayPath } from '../../utils/agendaHelper'
+import { containerNotesNode } from '../../utils/cajones'
 import { markAgentResultSeen } from '../../store/aiChatStore'
 
 export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda'
@@ -107,10 +110,13 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
   // `centerElementId` volvió a null desde CUALQUIER sitio sin que ese sitio se
   // acordara de resetear `rightSubTab`, esto lo corrige solo en vez de dejar la
   // Tab 2 "fantasma" (activa pero sin contenido que mostrar).
-  //  · 'chat' sin nada centrado → no hay conversación que enseñar.
+  //  · 'chat' sin nada centrado → no hay conversación que enseñar, SALVO en
+  //    el destino Contexto, donde la Tab 2 "Chat" es el HISTORIAL de
+  //    conversaciones del contexto (26 ago 2026, ver más abajo) — ahí sigue
+  //    teniendo contenido aunque no haya ningún elemento abierto en el centro.
   //  · 'historial' fuera del destino Chat → esa tab ni siquiera existe ahí.
   const effectiveSubTab: RightSubTab =
-    rightSubTab === 'chat' ? (elementId ? 'chat' : 'primary')
+    rightSubTab === 'chat' ? ((elementId || mode === 'contexto') ? 'chat' : 'primary')
     : rightSubTab === 'historial' ? (mode === 'chat' ? 'historial' : 'primary')
     : 'primary'
 
@@ -119,6 +125,20 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
   // exista (defensivo: en la práctica `rightSubTab` nunca llega a 'chat' para una
   // nota diaria, porque ya no tiene el icono que lo dispara).
   const centerIsDiary = !!elementId && !!store.getNode(elementId)?.isDiaryEntry
+
+  // ¿El centro es la nota LIBRE del propio contexto (`getOrCreateContainerNotes`,
+  // la que `V2App.onSelectCtx` abre SOLA al entrar en un contexto) y no algo que
+  // el usuario haya abierto explícitamente (una tarea, un documento suyo)? En
+  // ese caso el centro no cuenta como "hay un elemento abierto" para decidir
+  // qué muestra la Tab 2 "Chat" — si contara, esa tab NUNCA podría enseñar el
+  // historial del contexto (26 ago 2026, ver `showCtxHistorial` más abajo):
+  // entrar en cualquier contexto real deja siempre esa nota centrada.
+  const ctxDefaultNoteId = mode === 'contexto' && selectedCtxId ? containerNotesNode(selectedCtxId)?.id : null
+  // Tab 2 "Chat" del destino Contexto → historial de conversaciones (26 ago
+  // 2026) en vez del chat propio de un elemento, salvo que el usuario haya
+  // abierto de verdad un elemento concreto (una tarea, un documento) — ahí sí
+  // gana su chat propio (V2ElementChat), como siempre.
+  const showCtxHistorial = mode === 'contexto' && (!elementId || centerIsDiary || elementId === ctxDefaultNoteId)
 
   // Nota diaria al pie del destino Agenda (fusión de «Día», 24 ago 2026) — del
   // día CENTRADO en el Planner (`agendaDayNoteDate`), no siempre hoy (Alberto,
@@ -183,8 +203,11 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
            entre 1 opción (Alberto, 5 ago 2026). Reaparece en cuanto hay algo
            abierto en el centro y la Tab 2 "Chat" es una alternativa real. La nota
            diaria no cuenta: no tiene chat propio (`centerIsDiary`), así que el
-           destino Día se queda con una sola tab, sin cabecera. */
-        elementId && !centerIsDiary && (
+           destino Día se queda con una sola tab, sin cabecera. El destino
+           Contexto es la EXCEPCIÓN: su Tab 2 "Chat" siempre tiene sentido (el
+           historial de conversaciones del contexto, ver más abajo), así que
+           sus 2 tabs se muestran siempre, aunque no haya nada centrado. */
+        (mode === 'contexto' || (elementId && !centerIsDiary)) && (
           <div className="v2-right-tabs">
             <button
               className={`v2-right-tab ${effectiveSubTab === 'primary' ? 'active' : ''}`}
@@ -229,11 +252,25 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
           mientras está activa: nunca en paralelo con la Tab 1 (V2ElementChat
           cambia la sesión GLOBAL activa en un efecto de layout — montarla oculta
           por CSS le robaría la sesión al chat general de la Tab 1 sin avisar). */}
-      {!isRecordingActive && (effectiveSubTab === 'chat' || (mode === 'chat' && effectiveSubTab === 'primary')) && elementId && !centerIsDiary && (
+      {!isRecordingActive && (effectiveSubTab === 'chat' || (mode === 'chat' && effectiveSubTab === 'primary')) && elementId && !centerIsDiary && !showCtxHistorial && (
         // key={elementId}: mismo motivo que el visor central en V2App.tsx —
         // sin desmontar entre nodos distintos, el chat de uno se solapa con
         // el del otro durante la ventana de un render.
         <V2ElementChat key={elementId} nodeId={elementId} onFilesDropped={onFilesDropped} />
+      )}
+
+      {/* Destino Contexto · Tab 2 "Chat" SIN nada centrado: historial de
+          conversaciones de este contexto (26 ago 2026, Alberto: "el histórico
+          de conversaciones de un contexto debería estar en la pestaña Chat de
+          ese contexto... las conversaciones deben desaparecer de la zona de
+          elementos"). Incluye las de sus SUBCONTEXTOS (mismo Alberto: "un
+          contexto... mostrará todas las de sus subcontextos"). En "General"
+          (`selectedCtxId===null`) son las conversaciones sin ningún contexto
+          asignado — no hay subcontextos que sumar ahí. */}
+      {!isRecordingActive && effectiveSubTab === 'chat' && showCtxHistorial && (
+        <div className="v2-right-body">
+          <ContextConversationHistory ctxId={selectedCtxId} onOpenConversation={onOpenConversation} onNewChatInCtx={onNewChatInCtx} />
+        </div>
       )}
 
       {/* Tab 1 — destino «Chat» general: el composer completo, embebido en la
@@ -302,9 +339,53 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
         {/* SIEMPRE la ficha del contexto — selectedCtxId===null es «General» (sin
             contexto asignado), no «nada que mostrar» — también tiene ficha, con sus
             propias tareas y elementos sin contexto (Alberto, 17 jul). */}
-        <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} onOpenConversation={onOpenConversation} />
+        <V2ContextView ctxId={selectedCtxId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} />
       </div>
       )}
     </aside>
+  )
+}
+
+// ── Historial de conversaciones de un contexto (Tab 2 "Chat", ver arriba) ───
+// Lista plana, sin drill-down (a diferencia de V2ContextBrowser, que navega
+// entre TODOS los contextos): aquí el contexto ya está fijado por la columna
+// izquierda, así que basta con listar. Reusa las clases `.v2-hist-*` para que
+// las filas se vean idénticas a las del tab «Historial» del destino Chat.
+function ContextConversationHistory({ ctxId, onOpenConversation, onNewChatInCtx }: {
+  ctxId: string | null
+  onOpenConversation: (id: string) => void
+  onNewChatInCtx?: (id: string | null) => void
+}) {
+  const { t, i18n } = useTranslation()
+  useStore()
+  const list = useMemo(
+    () => ctxId === null ? listConversations(null) : listConversationsWithSubcontexts(ctxId),
+    [ctxId, store.nodesVersion], // eslint-disable-line react-hooks/exhaustive-deps
+  )
+  const untitled = t('v2.history.untitledConversation', 'Conversación sin título')
+  return (
+    <div className="v2-hist v2-hist--list">
+      {onNewChatInCtx && (
+        <button className="v2-hist-newchat" onClick={() => onNewChatInCtx(ctxId)}>
+          <Icon name="plus" size={14} />
+          {t('v2.newConversation', 'Nueva conversación')}
+        </button>
+      )}
+      {list.length === 0 ? (
+        <div className="v2-hist-empty">{t('v2.history.noConversationsInContext', 'Todavía no hay conversaciones aquí.')}</div>
+      ) : (
+        <div className="v2-hist-list">
+          {list.map(n => (
+            <button key={n.id} className="v2-hist-row" onClick={() => onOpenConversation(n.id)}>
+              <Icon name="conversation" size={15} className="v2-hist-row-icon" />
+              <span className="v2-hist-row-main">
+                <span className="v2-hist-row-title">{conversationTitle(n, untitled)}</span>
+                <span className="v2-hist-row-meta">{fmtRelative(n.updatedAt, i18n.language)}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

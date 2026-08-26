@@ -694,13 +694,16 @@ export default function V2App() {
       setRightSubTab('primary')
     }
 
-    // Tarea o evento: la columna derecha se va directa a su Chat — antes se
-    // quedaba en la tab del destino activo (p.ej. "Agenda"), así que abrir
-    // una tarea desde el planificador obligaba a un clic más para hablar de
-    // ella (Alberto, 26 ago 2026: "la columna de la derecha... debería ser
-    // el chat directamente"). Pisa el 'primary' de arriba a propósito: un
-    // evento/tarea con contexto también se abre en Chat, no en la ficha.
-    if (node && node.status != null) {
+    // Tarea o evento SIN contexto: la columna derecha se va directa a su Chat
+    // — antes se quedaba en la tab del destino activo (p.ej. "Agenda"), que
+    // para una tarea concreta no aporta nada (Alberto, 26 ago 2026: "la
+    // columna de la derecha... debería ser el chat directamente"). Si SÍ
+    // tiene contexto, la Tab 1 "Contexto" de arriba es la correcta y no se
+    // toca (Alberto, mismo día, corrigiendo el primer fix: "si la tarea
+    // tiene contexto, la pestaña contexto es correcta... cuando la tarea no
+    // tiene contexto, que pase a chat, porque si no se aplica la columna del
+    // contexto general y no tiene sentido").
+    if (node && node.status != null && !ctx) {
       setRightSubTab('chat')
     }
 

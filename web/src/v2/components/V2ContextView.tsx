@@ -33,10 +33,9 @@ interface Props {
   ctxId: string | null
   onSelectCtx: (id: string) => void
   onOpenNode: (id: string) => void
-  onOpenConversation?: (id: string) => void
 }
 
-export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenConversation }: Props) {
+export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props) {
   const { t, i18n } = useTranslation()
   useStore()
   // General = sin contexto asignado (ctxId null). No es un nodo real: no tiene
@@ -121,7 +120,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
   // llenar la columna) y las tareas tienen su propia lista arriba (con due/checkbox).
   const elements = useMemo(() => {
     void store.nodesVersion
-    const out: { node: Node; icon: IconName; kind: string; isConversation?: boolean }[] = []
+    const out: { node: Node; icon: IconName; kind: string }[] = []
     const seen = new Set<string>()
     const consider = (n: Node) => {
       if (seen.has(n.id) || n.deletedAt) return
@@ -142,19 +141,19 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
       seen.add(n.id)
       out.push({ node: n, icon: c.icon, kind: c.kind })
     }
+    // Las CONVERSACIONES (`_aiSession='1'`) ya NO aparecen aquí (26 ago 2026,
+    // Alberto: "el histórico de conversaciones de un contexto debería estar en
+    // la pestaña Chat de ese contexto... tiene más sentido que las
+    // conversaciones estén en Chat") — viven en la tab "Chat" de este mismo
+    // contexto (`V2RightColumn.tsx`, `listConversationsWithSubcontexts`), no
+    // mezcladas con notas/PDFs/imágenes. `consider()` ya las descarta solo:
+    // `classifyElement` devuelve `null` para un nodo `_aiSession='1'`.
     if (ctxId === null) {
       // General: todo lo que no pertenece a ningún contexto real, en un único
       // barrido (no hay "hijos directos" ni "miembros por referencia" que valgan
       // aquí — el criterio es puramente firstContextOf === null).
       for (const n of store.allActive()) {
         if (seen.has(n.id) || n.deletedAt || firstContextOf(n)) continue
-        const ed = parseExtraData(n.extraData)
-        if (ed._aiSession === '1') {
-          if (isInPapelera(n.id)) continue
-          seen.add(n.id)
-          out.push({ node: n, icon: 'conversation', kind: 'conversation', isConversation: true })
-          continue
-        }
         consider(n)
       }
     } else {
@@ -162,22 +161,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
       const members = nodesInContext(ctxId)
       for (const m of members) {
         consider(m)                                            // miembros por referencia
-        // Recursos dentro de una conversación-miembro (PDF/imagen subidos al chat).
+        // Recursos dentro de una conversación-miembro (PDF/imagen subidos al chat)
+        // — la conversación en sí no se lista aquí, pero lo que se le adjuntó sí.
         if (parseExtraData(m.extraData)._aiSession === '1') {
           for (const child of store.children(m.id)) consider(child)
         }
-      }
-      // Conversaciones del contexto: TODOS los chats (_aiSession='1', fuera de papelera,
-      // incluidas las sesiones de comando rápido — ya no se ocultan, 15 jul), filtradas a
-      // las que pertenecen a ESTE contexto (firstContextOf).
-      for (const n of store.allActive()) {
-        if (seen.has(n.id) || n.deletedAt) continue
-        const ed = parseExtraData(n.extraData)
-        if (ed._aiSession !== '1') continue
-        if (isInPapelera(n.id)) continue
-        if (firstContextOf(n)?.id !== ctxId) continue
-        seen.add(n.id)
-        out.push({ node: n, icon: 'conversation', kind: 'conversation', isConversation: true })
       }
     }
     // Por fecha de CREACIÓN, no de modificación (Alberto, 5 ago 2026): con
@@ -225,7 +213,6 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
     { key: 'cita',         label: t('elements.citas', 'Citas') },
     { key: 'agent',        label: t('elements.agents', 'Agentes') },
     { key: 'prompt',       label: t('elements.prompts', 'Prompts') },
-    { key: 'conversation', label: t('elements.conversations', 'Conversaciones') },
   ]
   const elCounts = useMemo(() => {
     const acc: Record<string, number> = {}
@@ -395,7 +382,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
               })}
             </div>
           )}
-          {filteredElements.map(({ node: n, icon, isConversation }) => {
+          {filteredElements.map(({ node: n, icon }) => {
             const agentData = isAgentNode(n) ? getAgentData(n.id) : null
             const isSelected = selected.has(n.id)
             return (
@@ -403,7 +390,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
                 <V2ElementRow
                   node={n}
                   icon={icon}
-                  onOpen={id => (isConversation && onOpenConversation ? onOpenConversation(id) : onOpenNode(id))}
+                  onOpen={onOpenNode}
                   hideContext
                   extraMeta={agentData ? (agentData.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')) : fmtDate(n.createdAt, i18n.language)}
                   group={groupByElementId.get(n.id)}
