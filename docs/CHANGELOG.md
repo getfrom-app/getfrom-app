@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.988 — 26 agosto 2026 · Desplegar contextos sin abrirlos, selector de contexto más legible
+
+- **En el sidebar, el chevron de un contexto con subcontextos ahora los despliega sin abrir su página** — antes clicar cualquier parte de la fila abría la ficha del contexto a la vez, y no había forma de solo mirar qué subcontextos tenía.
+- **El selector de "Cambiar contexto" ya no repite el contexto padre en cada subcontexto** — antes una ruta larga como "#media-sector/jordi/emisora-x" se cortaba con "…"; ahora solo se ve el nombre propio, con la sangría dejando claro que es un subcontexto.
+
+---
+
 ## Web v9.6.987 — 26 agosto 2026 · Ajustes tras probarlo en vivo: pestaña correcta según contexto, conversaciones en Chat
 
 - **Al abrir una tarea con contexto, la columna derecha muestra la ficha del contexto** (como antes) — el ajuste de esta mañana solo se aplica ahora a tareas SIN contexto, que van directas al Chat.

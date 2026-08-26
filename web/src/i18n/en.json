@@ -2249,6 +2249,7 @@
   "v2.context": "Context",
   "v2.newConversationInThisContext": "New conversation in this context",
   "v2.subcontexts": "Subcontexts",
+  "v2.expandSubcontexts": "View subcontexts",
   "v2.noSubcontexts": "No subcontexts.",
   "v2.noContextsYet": "You don't have any contexts yet.",
   "v2.settings": "Settings",

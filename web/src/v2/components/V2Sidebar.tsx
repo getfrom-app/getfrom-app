@@ -214,6 +214,12 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
     onSelectCtx(c.id)
     if (subContextsOf(c.id).length > 0) setStack(prev => [...prev, c]) // zoom-in solo si tiene subcontextos
   }
+  // Solo bajar un nivel (ver los subcontextos) SIN abrir la ficha del padre —
+  // antes esto solo pasaba pegado a `enter()`, así que no había forma de mirar
+  // los subcontextos sin cambiar de página (Alberto, 26 ago 2026: "quiero poder
+  // navegar sin que se abra la página del contexto padre"). Vive en el propio
+  // chevron de la fila, aparte del click del resto de la fila.
+  const drillInto = (c: Node) => { setStack(prev => [...prev, c]) }
   // Volver un nivel. Si el nivel al que se vuelve es la RAÍZ, no es solo "subir":
   // es SALIR de los contextos (Alberto, 5 ago 2026: "cuando vuelve a la raíz debería
   // poner otra vez los colores por defecto en la web y abrir la nota diaria, ese es
@@ -426,7 +432,13 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
                 title={t('v2.newElementInThisContext', 'Crear elemento en este contexto')}
                 onClick={(e) => openAddMenu(e, c.id)}
               ><Icon name="plus" size={14} /></button>
-              {hasSubs && <Icon name="chevron-right" size={13} className="v2-ctx-count" />}
+              {hasSubs && (
+                <button
+                  className="v2-ctx-chevron"
+                  title={t('v2.expandSubcontexts', 'Ver subcontextos')}
+                  onClick={(e) => { e.stopPropagation(); drillInto(c) }}
+                ><Icon name="chevron-right" size={13} /></button>
+              )}
             </div>
           )
         })}

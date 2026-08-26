@@ -432,6 +432,18 @@
 .v2-ctx-row:hover .v2-ctx-glyph, .v2-ctx-row.active .v2-ctx-glyph { color: currentColor; }
 .v2-ctx-row.child { padding-left: 26px; font-size: 13px; }
 .v2-ctx-count { margin-left: auto; font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; }
+/* Chevron de una fila con subcontextos — a diferencia de `.v2-ctx-count`
+   (decorativo), este SÍ es un botón: baja un nivel (ve los subcontextos) sin
+   abrir la ficha del contexto padre (26 ago 2026, ver `drillInto` en
+   V2Sidebar.tsx). Mismo tamaño/posición que antes, pero clicable de verdad. */
+.v2-ctx-chevron {
+  margin-left: auto; flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; padding: 0; border: none; border-radius: var(--v2-r-sm);
+  background: transparent; color: var(--text-tertiary); cursor: pointer;
+  transition: background var(--v2-fast), color var(--v2-fast);
+}
+.v2-ctx-add + .v2-ctx-chevron { margin-left: 2px; }
+.v2-ctx-chevron:hover { background: var(--v2-active); color: var(--text-primary); }
 /* «＋» de nueva conversación en un contexto — solo al pasar el ratón por la fila. */
 .v2-ctx-add {
   margin-left: auto; display: none; flex: 0 0 auto;

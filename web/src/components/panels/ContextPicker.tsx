@@ -85,10 +85,14 @@ export default function ContextPicker({ currentId, onPick, autoFocus = true, exc
             onMouseEnter={() => setActiveIdx(idx)} onClick={() => pick(tg)}>
             <span className="ctx-pick-dot" style={{ background: contextColor(tg.node.id) }} />
             <span className="ctx-pick-name" title={`#${tg.path}`}>
-              {/* Los tramos padre en gris, el tramo propio en el color del texto:
-                  se lee la jerarquía de un vistazo sin repetir toda la ruta. */}
-              <span className="ctx-pick-path">#{tg.path.split('/').slice(0, -1).map(p => p + '/').join('')}</span>
-              <span className="ctx-pick-leaf">{tg.path.split('/').slice(-1)[0]}</span>
+              {/* Sin el tramo padre repetido — el sangrado (`paddingLeft` arriba,
+                  según `tg.depth`) ya deja claro que es un subcontexto, así que
+                  escribirlo dos veces ("#media-sector/jordi/…") solo recortaba el
+                  espacio real para el nombre (Alberto, 26 ago 2026: "quita el
+                  contexto padre de los subcontextos para que haya más espacio de
+                  texto y mantén el sangrado"). Raíz con "#", subcontexto sin él
+                  (ya no es una ruta completa, es solo su propio nombre). */}
+              <span className="ctx-pick-leaf">{tg.depth <= 1 ? `#${tg.path}` : tg.path.split('/').slice(-1)[0]}</span>
             </span>
             {currentId === tg.node.id && <span className="ctx-pick-check"><Icon name="check" size={12} strokeWidth={2.4} /></span>}
           </button>
