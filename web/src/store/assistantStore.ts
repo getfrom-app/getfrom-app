@@ -134,7 +134,12 @@ class AssistantStore {
       .map(m => ({ role: m.role, content: m.text }))
   }
 
-  async send(text: string) {
+  /** `quickNote`: "Solo anotar" (26 ago 2026) — el mensaje va tal cual a la
+   *  nota diaria, sin que el modelo lo interprete ni conteste con nada más
+   *  que "Anotado". No manda historial (no hace falta contexto conversacional
+   *  para un atajo determinista) ni cuenta para el `recentHistory()` de
+   *  turnos normales — es una anotación suelta, no parte del hilo. */
+  async send(text: string, quickNote = false) {
     const clean = text.trim()
     if (!clean || this.isThinking) return
 
@@ -148,8 +153,8 @@ class AssistantStore {
     this.notify()
 
     try {
-      const history = this.recentHistory()
-      const reply = await assistantChat(clean, history, this.threadKey === 'general' ? null : this.threadKey)
+      const history = quickNote ? [] : this.recentHistory()
+      const reply = await assistantChat(clean, history, this.threadKey === 'general' ? null : this.threadKey, quickNote)
       this.appendVisible({
         id: uid(), role: 'assistant', text: reply.reply, date: new Date().toISOString(),
         created: reply.created.map(c => ({ id: c.id, text: c.text, due: c.due, isTask: c.isTask })),

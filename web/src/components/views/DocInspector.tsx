@@ -12,6 +12,7 @@ import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useActiveDocEditor, getDocImageInsert } from '../../utils/docEditorStore'
 import Icon from '../../v2/components/Icon'
+import { aiLangBCP47 } from '../../utils/aiLang'
 
 const COLORS = ['#222222', '#e03131', '#1971c2', '#2f9e44', '#f08c00', '#9c36b5', '#868e96']
 
@@ -20,7 +21,46 @@ export default function DocInspector({ compact, bar }: { compact?: boolean; bar?
   const editor = useActiveDocEditor()
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [barMode, setBarMode] = useState<'main' | 'colors' | 'headings'>('main')
+  const [isRecording, setIsRecording] = useState(false)
+  const recognitionRef = useRef<unknown>(null)
   if (!editor) return null
+
+  // Dictado en cualquier nota (26 ago 2026, Alberto: "un grabador de voz en
+  // todas las notas... que transcriba lo que se dicte") — MISMO motor que el
+  // chat (`V2Chat.tsx::toggleVoice`, Web Speech API nativa): inserta cada
+  // fragmento FINAL en el punto del cursor según llega, ignorando los
+  // interinos (evita rastrear qué rango sustituir en el documento rico —
+  // insertar solo lo definitivo es más simple y ya es lo que el usuario ve
+  // consolidarse al dictar).
+  const toggleDictate = () => {
+    if (isRecording) {
+      try { (recognitionRef.current as { stop?: () => void } | null)?.stop?.() } catch { /* ignore */ }
+      setIsRecording(false)
+      return
+    }
+    const SR = (window as unknown as Record<string, unknown>).webkitSpeechRecognition
+      || (window as unknown as Record<string, unknown>).SpeechRecognition
+    if (!SR) {
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('v2.chat.voiceUnsupported', 'Tu navegador no soporta dictado por voz. Prueba Chrome o Safari.'), type: 'warning' } }))
+      return
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const rec: any = new (SR as any)()
+    rec.lang = aiLangBCP47()
+    rec.continuous = true
+    rec.interimResults = true
+    rec.onresult = (event: { resultIndex: number; results: { length: number; [key: number]: { 0: { transcript: string }; isFinal: boolean } } }) => {
+      let finalChunk = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) finalChunk += event.results[i][0].transcript
+      }
+      if (finalChunk.trim()) editor.chain().focus().insertContent(finalChunk.trim() + ' ').run()
+    }
+    rec.onend = () => setIsRecording(false)
+    rec.start()
+    recognitionRef.current = rec
+    setIsRecording(true)
+  }
 
   const setLink = () => {
     const prev = editor.getAttributes('link').href || ''
@@ -73,6 +113,13 @@ export default function DocInspector({ compact, bar }: { compact?: boolean; bar?
             <button className="ft-btn" title={t('format.link')} onMouseDown={e => { e.preventDefault(); setLink() }}><Icon name="link" size={13} /></button>
             <button className="ft-btn" title={t('tip.image')} onMouseDown={e => { e.preventDefault(); fileRef.current?.click() }}><Icon name="image" size={13} /></button>
             <button className="ft-btn" title={t('tip.color')} onMouseDown={e => { e.preventDefault(); setBarMode('colors') }}><span style={{ fontWeight: 700, fontSize: 13, borderBottom: '2.5px solid #ef4444', lineHeight: 1 }}>A</span></button>
+            <div className="ft-sep" />
+            <button
+              className="ft-btn"
+              title={isRecording ? t('v2.chat.voiceStop', 'Detener dictado') : t('doc.dictate', 'Dictar por voz')}
+              onMouseDown={e => { e.preventDefault(); toggleDictate() }}
+              style={isRecording ? { color: '#ef4444' } : undefined}
+            ><Icon name={isRecording ? 'stop' : 'mic'} size={13} /></button>
             <div className="ft-sep" />
             <button className="ft-btn" title={t('tip.undo')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().undo().run() }}><span style={{ fontSize: 13 }}>↶</span></button>
             <button className="ft-btn" title={t('tip.redo')} onMouseDown={e => { e.preventDefault(); editor.chain().focus().redo().run() }}><span style={{ fontSize: 13 }}>↷</span></button>
@@ -178,6 +225,9 @@ export default function DocInspector({ compact, bar }: { compact?: boolean; bar?
       <div style={grid}>
         <Cell title={t('format.link')} on={editor.isActive('link')} act={setLink} wide><Icon name="link" size={13} /> {t('format.link')}</Cell>
         <Cell title={t('tip.image')} act={() => fileRef.current?.click()} wide><Icon name="image" size={13} /> {t('tip.image')}</Cell>
+        <Cell title={isRecording ? t('v2.chat.voiceStop', 'Detener dictado') : t('doc.dictate', 'Dictar por voz')} on={isRecording} act={toggleDictate} wide>
+          <Icon name={isRecording ? 'stop' : 'mic'} size={13} /> {isRecording ? t('v2.chat.voiceStop', 'Detener dictado') : t('doc.dictate', 'Dictar')}
+        </Cell>
       </div>
 
       <Label>{t('tip.editing')}</Label>

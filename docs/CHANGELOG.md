@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.994 — 26 agosto 2026 · Solo anotar, dictado en cualquier nota, tareas de hoy por defecto
+
+- **"Solo anotar" en el chat**: un nuevo botón (📌) junto a Enviar guarda el mensaje tal cual en tu nota diaria, sin que el asistente conteste nada más que "Anotado" — para cuando solo quieres dejar constancia rápida, sin conversación.
+- **Dictado por voz en cualquier nota**, incluida la nota diaria — un botón nuevo en la barra de formato transcribe lo que dictes directamente en el texto, en el punto del cursor.
+- **Las tareas creadas desde el chat ya no se quedan "sin fecha"**: si no dices cuándo, se anotan para hoy directamente, en vez de preguntarte.
+- **El chat ya no pregunta en qué contexto guardar algo** si no lo dices — lo crea igualmente (puedes asignarle contexto después desde la propia tarea).
+
+---
+
 ## Web v9.6.993 — 26 agosto 2026 · TimeBlocks y la barra "Lo próximo"
 
 - **Nuevo: TimeBlocks.** Un espacio reservado en el planificador para algo que no es obligatorio (no es un evento) ni completable (no es una tarea) — solo se ve en el planificador, nunca en ninguna lista de tareas ni en Elementos. En el planificador, clic normal sigue creando una tarea con hora; botón derecho en un hueco vacío ofrece crear un TimeBlock (rayado diagonal para distinguirlo). Se sincroniza con Google Calendar igual que cualquier bloque.

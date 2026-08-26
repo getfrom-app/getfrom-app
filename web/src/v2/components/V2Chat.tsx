@@ -319,11 +319,11 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     requestAnimationFrame(() => { ta.focus(); const p = start + title.length + 5; ta.setSelectionRange(p, p) })
   }
 
-  const doSend = (text: string) => {
+  const doSend = (text: string, quickNote = false) => {
     const trimmed = text.trim()
     if (!trimmed || thinking) return
     setInput('')
-    assistantStore.send(trimmed).catch(() => {})
+    assistantStore.send(trimmed, quickNote).catch(() => {})
   }
 
   useEffect(() => {
@@ -581,6 +581,16 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               onClick={toggleVoice}
               style={isRecording ? { color: '#ef4444' } : undefined}
             ><Icon name={isRecording ? 'stop' : 'mic'} /></button>
+            {/* "Solo anotar" (26 ago 2026, Alberto: "tiene que haber una forma de
+                solo anotar, que el chat no responda solo diga: anotado") — atajo
+                determinista al servidor, sin conversación: el texto va tal cual a
+                la nota diaria. Deshabilitado sin texto, igual que Enviar. */}
+            <button
+              className="v2-iconbtn"
+              disabled={!input.trim() || thinking}
+              title={t('v2.chat.quickNote', 'Solo anotar en la nota diaria (sin respuesta)')}
+              onClick={() => doSend(input, true)}
+            ><Icon name="pin" size={15} /></button>
             <button className="v2-send" disabled={!input.trim() || thinking} onClick={() => doSend(input)} title={t('v2.chat.send', 'Enviar')}><Icon name="arrow-up" size={16} strokeWidth={2} /></button>
           </div>
           <div className="v2-composer-hint">
