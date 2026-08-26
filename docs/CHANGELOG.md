@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.989 — 26 agosto 2026 · Sin saltos en el sidebar, grupos y eventos en su sitio
+
+- **El chevron de los contextos ya no salta al pasar el ratón** — antes se movía hacia la derecha al aparecer el botón "+".
+- **Un grupo ya no aparece duplicado en "Elementos"** de un contexto — solo en su propio apartado "Grupos".
+- **Los eventos de un contexto ahora tienen su propio apartado "Eventos"**, separado de las tareas de verdad.
+
+---
+
 ## Web v9.6.988 — 26 agosto 2026 · Desplegar contextos sin abrirlos, selector de contexto más legible
 
 - **En el sidebar, el chevron de un contexto con subcontextos ahora los despliega sin abrir su página** — antes clicar cualquier parte de la fila abría la ficha del contexto a la vez, y no había forma de solo mirar qué subcontextos tenía.

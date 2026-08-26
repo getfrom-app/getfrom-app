@@ -26,7 +26,7 @@ import { fmtDate, fmtRelative } from '../../utils/formatDate'
 import Icon, { type IconName } from './Icon'
 import { displayTitle } from '../../utils/displayText'
 import { useGroupSelection } from '../../hooks/useGroupSelection'
-import { allGroups, groupMemberIds, groupMembers } from '../../utils/groups'
+import { allGroups, groupMemberIds, groupMembers, isGroupNode } from '../../utils/groups'
 import type { Node } from '../../types'
 
 interface Props {
@@ -111,6 +111,13 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
     return out
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Eventos aparte de las tareas (26 ago 2026, Alberto: "si es evento debe
+  // aparecer en un grupo aparte de Eventos") — mismo criterio visual que el
+  // planificador (isEvent sin checkbox), separado aquí en su propia sección
+  // en vez de mezclado con las tareas de verdad bajo "Tareas".
+  const plainTasks = useMemo(() => tasks.filter(n => !n.isEvent), [tasks])
+  const events = useMemo(() => tasks.filter(n => n.isEvent), [tasks])
+
   // ELEMENTOS del contexto: TODO lo que cuelga de él — documentos, PDF, imágenes,
   // enlaces, audios, AGENTES y CONVERSACIONES — en una única lista, cada uno con su
   // icono, ordenada de más reciente a más antigua. Antes iban en bloques separados
@@ -132,6 +139,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
       // Defensa extra: un nodo movido a la papelera por una vía que no reparenta (además
       // del caso normal, ya cubierto porque deja de ser hijo directo) nunca debe listarse.
       if (isInPapelera(n.id)) return
+      // Un GRUPO ya tiene su propia sección "Grupos" más abajo (derivada del
+      // contexto de sus miembros, ver `contextGroups`) — listarlo también aquí
+      // sería duplicarlo (Alberto, 26 ago 2026: "los grupos van en el apartado
+      // grupos, por tanto ya no deben aparecer en la lista de elementos").
+      if (isGroupNode(n)) return
       // El emoji guardado en `_agentIcon`/`_promptIcon` es un DATO del usuario; la
       // UI ya no lo pinta — cada tipo tiene su icono del sistema, siempre el mismo.
       if (isAgentNode(n)) { seen.add(n.id); out.push({ node: n, icon: 'agent', kind: 'agent' }); return }
@@ -317,10 +329,21 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
       <div className="v2-section-label" style={{ padding: '18px 0 6px' }}>
         <span>{t('v2.context.tasks', 'Tareas')}</span>
       </div>
-      <V2TaskList tasks={tasks} />
+      <V2TaskList tasks={plainTasks} />
       {/* Añadir tarea rápida cuelga la tarea del contexto — en General no hay un
           nodo real del que colgarla, así que se omite (la lista sigue viéndose). */}
       {ctxId !== null && <V2QuickAddTask parentId={ctxId} />}
+
+      {/* Eventos del contexto — aparte de las tareas, sin mezclar (un evento no
+          lleva checkbox, ver PlannerPanel.tsx 26 ago 2026). */}
+      {events.length > 0 && (
+        <>
+          <div className="v2-section-label" style={{ padding: '16px 0 6px' }}>
+            <span>{t('v2.context.events', 'Eventos')}</span>
+          </div>
+          <V2TaskList tasks={events} />
+        </>
+      )}
 
       {/* Elementos del contexto: documentos, archivos, audios, enlaces, AGENTES y
           CONVERSACIONES — todo junto, ordenado de más reciente a más antigua, cada

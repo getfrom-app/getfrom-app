@@ -432,27 +432,43 @@
 .v2-ctx-row:hover .v2-ctx-glyph, .v2-ctx-row.active .v2-ctx-glyph { color: currentColor; }
 .v2-ctx-row.child { padding-left: 26px; font-size: 13px; }
 .v2-ctx-count { margin-left: auto; font-size: 11px; color: var(--text-tertiary); display: flex; align-items: center; }
+/* «＋» y chevron — reservan su hueco SIEMPRE (con `visibility`/`opacity`, no
+   `display:none`) y no al hover: con `display:none` el «＋» sale del flujo
+   flex mientras está oculto, así que el chevron (el único con
+   `margin-left:auto`) se queda pegado al texto; en cuanto el «＋» aparece de
+   verdad ocupa espacio y empuja al chevron un salto entero hacia la derecha
+   — el "salto incómodo" y el "＞ que se mueve" que reportó Alberto (26 ago
+   2026). Con el hueco siempre reservado, ninguno de los dos se mueve nunca:
+   el «＋» solo cambia de opacidad, el chevron permanece fijo. */
+.v2-ctx-row .v2-ctx-add {
+  visibility: hidden; opacity: 0;
+}
+.v2-ctx-row:hover .v2-ctx-add, .v2-ctx-row:focus-within .v2-ctx-add {
+  visibility: visible; opacity: 1;
+}
 /* Chevron de una fila con subcontextos — a diferencia de `.v2-ctx-count`
    (decorativo), este SÍ es un botón: baja un nivel (ve los subcontextos) sin
    abrir la ficha del contexto padre (26 ago 2026, ver `drillInto` en
-   V2Sidebar.tsx). Mismo tamaño/posición que antes, pero clicable de verdad. */
+   V2Sidebar.tsx). */
 .v2-ctx-chevron {
-  margin-left: auto; flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
   width: 20px; height: 20px; padding: 0; border: none; border-radius: var(--v2-r-sm);
   background: transparent; color: var(--text-tertiary); cursor: pointer;
   transition: background var(--v2-fast), color var(--v2-fast);
 }
-.v2-ctx-add + .v2-ctx-chevron { margin-left: 2px; }
 .v2-ctx-chevron:hover { background: var(--v2-active); color: var(--text-primary); }
-/* «＋» de nueva conversación en un contexto — solo al pasar el ratón por la fila. */
+/* «＋» de nueva conversación en un contexto. `margin-left:auto` en el PRIMERO
+   de los dos (＋/chevron) empuja al grupo entero contra el borde derecho de
+   la fila — constante, se vea o no el «＋». Si una fila no tiene chevron
+   (sin subcontextos), el «＋» es el único y sigue flush a la derecha igual. */
 .v2-ctx-add {
-  margin-left: auto; display: none; flex: 0 0 auto;
-  align-items: center; justify-content: center;
+  margin-left: auto; flex: 0 0 auto;
+  display: inline-flex; align-items: center; justify-content: center;
   width: 22px; height: 22px; padding: 0; border: none; border-radius: var(--v2-r-sm);
   background: transparent; color: var(--text-tertiary); cursor: pointer;
-  line-height: 1; transition: background var(--v2-fast), color var(--v2-fast);
+  line-height: 1; transition: background var(--v2-fast), color var(--v2-fast), opacity var(--v2-fast);
 }
-.v2-ctx-row:hover .v2-ctx-add { display: inline-flex; }
+.v2-ctx-add + .v2-ctx-chevron { margin-left: 2px; }
 .v2-ctx-add + .v2-ctx-count { margin-left: 4px; }
 .v2-ctx-add:hover { background: var(--v2-active); color: var(--text-primary); }
 
@@ -1194,8 +1210,11 @@
 .v2-createbtn:active { background: var(--v2-active); }
 
 /* Etiqueta de sección cuya acción («+») solo aparece con el ratón encima. */
-.v2-section-label--hoverable .v2-ctx-add { display: none; }
-.v2-section-label--hoverable:hover .v2-ctx-add { display: inline-flex; }
+/* `visibility`/`opacity`, no `display:none` — mismo motivo que `.v2-ctx-row
+   .v2-ctx-add` más arriba: el botón reserva su hueco siempre, así la
+   cabecera no da ningún salto al entrar/salir el ratón (26 ago 2026). */
+.v2-section-label--hoverable .v2-ctx-add { visibility: hidden; opacity: 0; }
+.v2-section-label--hoverable:hover .v2-ctx-add { visibility: visible; opacity: 1; }
 
 /* ── Modal «Adjuntar» (V2AttachModal) ─────────────────────────────────────── */
 .v2-attach { width: min(480px, 92vw); }

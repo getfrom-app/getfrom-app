@@ -2182,6 +2182,7 @@
   "v2.context.knowledgeUpdatedToast": "\"{{name}}\" actualizado",
   "v2.context.convertLegacyNotes": "Convertir {{count}} nota(s) antigua(s) en documento",
   "v2.context.tasks": "Tareas",
+  "v2.context.events": "Eventos",
   "v2.context.restoreToTree": "Devolver al árbol de contextos",
   "v2.context.removeFromTree": "Sacar del árbol (sigue buscable y en el RAG)",
   "v2.context.unarchive": "Desarchivar",
