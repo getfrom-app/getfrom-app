@@ -2251,6 +2251,7 @@
   "v2.newConversationInThisContext": "Nueva conversación en este contexto",
   "v2.subcontexts": "Subcontextos",
   "v2.expandSubcontexts": "Ver subcontextos",
+  "v2.collapseSubcontexts": "Ocultar subcontextos",
   "v2.noSubcontexts": "Sin subcontextos.",
   "v2.noContextsYet": "Aún no tienes contextos.",
   "v2.settings": "Ajustes",

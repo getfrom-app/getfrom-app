@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.990 — 26 agosto 2026 · Árbol de contextos desplegable, conversaciones con las mismas acciones que cualquier elemento
+
+- **Los contextos con subcontextos ahora se despliegan en el sitio**, sin perder de vista el resto de la lista — antes entrar en uno sustituía toda la columna.
+- **Grupos y eventos ya no aparecen mezclados en Elementos** de un contexto: cada uno tiene su propio apartado.
+- **Posponer un evento abre el selector de fecha completo** en vez del atajo directo "Mañana" (que sigue existiendo para tareas).
+- **Las conversaciones ya tienen las mismas acciones que cualquier otro elemento**: botón de eliminar al pasar el ratón, y clic derecho para renombrar, cambiar de contexto, etc.
+- **"Nueva conversación" en el chat de un contexto ya funciona** — antes no hacía nada; ahora abre una conversación nueva en esa misma columna, sin salir de donde estabas.
+
+---
+
 ## Web v9.6.989 — 26 agosto 2026 · Sin saltos en el sidebar, grupos y eventos en su sitio
 
 - **El chevron de los contextos ya no salta al pasar el ratón** — antes se movía hacia la derecha al aparecer el botón "+".

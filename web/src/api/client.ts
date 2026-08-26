@@ -464,6 +464,11 @@ export interface ChatPayload {
   actionResults?: ChatActionResult[]
   /** Contenido completo de la nota actualmente abierta (título + body + hijas). */
   currentNoteContent?: string
+  /** Índice (id + título + tipo) de TODOS los elementos del contexto en el que
+   *  se está chateando, y de sus subcontextos — ver utils/contextElements.ts.
+   *  Permite al modelo saber qué existe y pedir su contenido con read_node/
+   *  find_nodes en vez de ignorarlo o adivinar. */
+  contextElementsIndex?: string
   /** Contexto del diario de hoy: tareas, eventos, notas del día. Solo si el usuario está en la nota diaria. */
   dailyContext?: string
   /** Resumen de tareas pendientes: vencidas, hoy, próximas, sin fecha. */

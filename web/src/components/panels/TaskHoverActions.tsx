@@ -45,12 +45,25 @@ export default function TaskHoverActions({ node, onOpenDate }: {
           Hoy
         </button>
       )}
-      {/* «Mañana» SOLO para tareas abiertas que YA tienen fecha — mover una
-          tarea sin fecha «al futuro» no tiene sentido, para eso está «Hoy». */}
-      {!done && node.due && (
+      {/* «Mañana» SOLO para TAREAS abiertas que YA tienen fecha — mover una
+          tarea sin fecha «al futuro» no tiene sentido, para eso está «Hoy».
+          Un EVENTO no lleva este atajo directo (26 ago 2026, Alberto: "quitar
+          el hover que pone Mañana [en eventos]... ponemos Posponer y se abre
+          un modal para elegir nueva fecha") — un evento normalmente tiene
+          hora y lugar concretos, así que "mañana a la misma hora" no es un
+          valor por defecto razonable como sí lo es para una tarea; mejor
+          abrir el selector completo (`onOpenDate`, mismo popover que el
+          badge de fecha) que mover a ciegas. */}
+      {!done && node.due && !node.isEvent && (
         <button className="dc-action" title={t('common.tomorrow')}
           onClick={e => { e.stopPropagation(); postponeTask(node, 1) }}>
           {t('common.tomorrow')}
+        </button>
+      )}
+      {!done && node.due && node.isEvent && (
+        <button className="dc-action" title={t('daily.postpone', 'Posponer')}
+          onClick={e => { e.stopPropagation(); onOpenDate(node) }}>
+          {t('daily.postpone', 'Posponer')}
         </button>
       )}
       <button className="dc-action dc-action--del" title={t('common.delete')}

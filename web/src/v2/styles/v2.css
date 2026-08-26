@@ -905,7 +905,7 @@
   background: none; border: none; cursor: pointer; padding: 5px; border-radius: 5px;
   color: var(--text-tertiary, #999); display: flex; align-items: center;
 }
-.v2-el-row:hover .v2-el-del { opacity: 0.7; }
+.v2-el-row:hover .v2-el-del, .v2-hist-row:hover .v2-el-del { opacity: 0.7; }
 .v2-el-del:hover { opacity: 1 !important; color: #e03131; background: rgba(224,49,49,.1); }
 .v2-el-filter { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
 /* TAG de contexto clicable (añadir/ver contexto de la conversación). */

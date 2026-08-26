@@ -27,6 +27,7 @@ import { aiLangBase, aiLangBCP47 } from '../utils/aiLang'
 import { saveUserKnowledgeToProfile, readProfileLines } from '../api/userKnowledge'
 import { getAgentData, getAgentReferencedElements, readElementContent } from '../utils/agentesHelper'
 import { isInPapelera, parseExtraData } from '../utils/papeleraHelper'
+import { listContextElementsDeep } from '../utils/contextElements'
 
 export interface UndoBundle {
   createdIds: string[]        // node IDs to delete on undo
@@ -1255,6 +1256,22 @@ class AIChatStore {
     const styleBlock = 'No uses NUNCA emojis ni emoticonos en tus respuestas ni en los títulos o textos que crees. Fromly no los usa en ninguna parte.'
     const combinedProfile = [styleBlock, profileChatBlock, activePromptBlock, originAgentBlock, mentionedBlock, dateBlock, profile, learningsBlock].filter(Boolean).join('\n\n') || undefined
 
+    // Índice de TODOS los elementos del contexto en el que se está chateando
+    // (+ subcontextos) — no solo los hijos directos de la nota abierta (ver
+    // utils/contextElements.ts). Sin esto, el chat de un contexto solo "veía"
+    // la Memoria curada; pedirle algo sobre un documento concreto de ese
+    // contexto lo obligaba a adivinar en vez de saber que existe.
+    const contextElementsBlock = (() => {
+      if (!currentNodeId) return ''
+      const node = store.nodes.get(currentNodeId)
+      if (!node) return ''
+      const ctx = firstContextOf(node)
+      if (!ctx) return ''
+      const items = listContextElementsDeep(ctx.id)
+      if (!items.length) return ''
+      return items.map(it => `- [${it.id}] ${it.title} (${it.kind})`).join('\n')
+    })()
+
     return {
       messages: compactedMessages,
       userProfile: combinedProfile,
@@ -1263,6 +1280,7 @@ class AIChatStore {
       currentView,
       actionResults: actionResults.length > 0 ? actionResults : undefined,
       currentNoteContent,
+      contextElementsIndex: contextElementsBlock || undefined,
       dailyContext,
       pendingTasks,
       locale: userLocale,

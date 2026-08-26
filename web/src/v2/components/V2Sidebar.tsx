@@ -1,7 +1,12 @@
-// Sidebar de Fromly 2.0 — contextos (= proyectos) con navegación drill-down.
-// Nivel raíz = ÁREAS (hijos directos de 🧠 Contexto) + General. Clic en un
-// contexto: lo selecciona (la app reacciona) Y hace zoom-in a sus subcontextos
-// en la misma columna, con botón de volver.
+// Sidebar de Fromly 2.0 — contextos (= proyectos) en árbol SIEMPRE visible
+// (26 ago 2026 — antes era drill-down: entrar en un contexto sustituía la
+// lista entera por sus subcontextos, perdiendo de vista la raíz; Alberto:
+// "quiero que se desplieguen los hijos pero sin perder de vista la lista de
+// contextos"). Nivel raíz = ÁREAS (hijos directos de 🧠 Contexto) + General.
+// Clic en el NOMBRE de un contexto: lo selecciona (la app reacciona) y lo
+// despliega si tiene subcontextos. Clic en el CHEVRON: solo despliega/repliega
+// en el sitio, sin seleccionar ni cambiar de página — cualquier profundidad,
+// recursivo (`renderCtxRow`).
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -89,7 +94,12 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   const user = useUserStore()
   const { theme, setTheme } = useTheme()
   const webPush = useWebPush()
-  const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
+  // Árbol siempre visible: qué contextos tienen sus subcontextos desplegados
+  // ahí mismo, en vez de sustituir la lista raíz (26 ago 2026, Alberto: "quiero
+  // que se desplieguen los hijos pero sin perder de vista la lista de
+  // contextos. ahora... se pierden los contextos raíz"). Sustituye al modelo
+  // anterior de drill-down (`stack`, un solo nivel visible + «Volver»).
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [userMenu, setUserMenu] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
   // La v1 (donde antes había que crear contextos para que "aparecieran aquí") ya no
@@ -110,10 +120,11 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   // «＋ Subcontexto»/«＋ Contexto» desde el menú «＋» (Alberto, 22 jul: "el + de
   // los chips de contexto debe añadir además nuevo subcontexto... crea un
   // subcontexto bajo el contexto seleccionado, y se abre"). Distinto del botón
-  // de cabecera («Nuevo contexto», que usa `currentParent`, el nivel en el que
-  // se ha entrado): «Subcontexto» usa SIEMPRE el contexto concreto del que
-  // salió el menú «＋» como padre; «Contexto» (solo en el menú global) fuerza
-  // `id: null` = raíz, sea cual sea el contexto activo.
+  // de cabecera («Nuevo contexto», que SIEMPRE crea en la raíz — 26 ago 2026,
+  // el árbol ya no tiene "nivel en el que se ha entrado"): «Subcontexto» usa
+  // SIEMPRE el contexto concreto del que salió el menú «＋» como padre;
+  // «Contexto» (solo en el menú global) fuerza `id: null` = raíz, sea cual
+  // sea el contexto activo.
   const [newSubCtxParent, setNewSubCtxParent] = useState<{ id: string | null } | null>(null)
   const openAddMenu = (e: React.MouseEvent, id: string | null, isGlobal?: boolean) => {
     e.preventDefault(); e.stopPropagation()
@@ -182,59 +193,108 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   }, [onOpenSettings])
 
   // La izquierda sigue a `selectedCtxId` venga de donde venga (clic aquí, abrir una
-  // nota con contexto, un chip de contexto…): recompone el «pasillo» de drill-down
-  // hasta hacerlo visible. Si tiene subcontextos entra en él (se vuelve cabecera,
-  // igual que un clic manual); si es hoja, queda resaltado en la lista de su padre.
+  // nota con contexto, un chip de contexto…): despliega la rama de ANCESTROS
+  // hasta hacerlo visible en el árbol (nunca colapsa nada al deseleccionar —
+  // a diferencia del drill-down de antes, el árbol se queda como el usuario
+  // lo dejó).
   useEffect(() => {
-    if (!selectedCtxId) { setStack([]); return }
+    if (!selectedCtxId) return
     const n = store.getNode(selectedCtxId)
     if (!n) return
-    const chain: Node[] = []
+    const ancestorIds: string[] = []
     let cur = contextParent(selectedCtxId)
     let guard = 0
-    while (cur && guard++ < 40) { chain.unshift(cur); cur = contextParent(cur.id) }
-    if (subContextsOf(selectedCtxId).length > 0) chain.push(n)
-    setStack(chain)
+    while (cur && guard++ < 40) { ancestorIds.push(cur.id); cur = contextParent(cur.id) }
+    if (ancestorIds.length === 0) return
+    setExpanded(prev => {
+      const next = new Set(prev)
+      let changed = false
+      for (const id of ancestorIds) { if (!next.has(id)) { next.add(id); changed = true } }
+      return changed ? next : prev
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCtxId])
-
-  const currentParent = stack.length ? stack[stack.length - 1] : null
 
   // Nivel raíz = ÁREAS (hijos directos de 🧠 Contexto, sin el Perfil 🧠…).
   const areas: Node[] = store.allActive()
     .filter(n => isRootContext(n.id) && !(n.text || '').startsWith('🧠'))
     .sort(byName)
 
-  const items: Node[] = currentParent ? subContextsOf(currentParent.id) : areas
-
   const displayName = user.user?.name || user.user?.email || t('v2.guest', 'Invitado')
   const initial = (user.user?.name || user.user?.email || 'A').charAt(0).toUpperCase()
 
+  // Clic en la fila (el nombre): selecciona el contexto Y lo despliega si
+  // tiene subcontextos — sin colapsar nada más, la raíz sigue a la vista
+  // (26 ago 2026, ver comentario de `expanded` más arriba).
   const enter = (c: Node) => {
     onSelectCtx(c.id)
-    if (subContextsOf(c.id).length > 0) setStack(prev => [...prev, c]) // zoom-in solo si tiene subcontextos
+    if (subContextsOf(c.id).length > 0) setExpanded(prev => new Set(prev).add(c.id))
   }
-  // Solo bajar un nivel (ver los subcontextos) SIN abrir la ficha del padre —
-  // antes esto solo pasaba pegado a `enter()`, así que no había forma de mirar
-  // los subcontextos sin cambiar de página (Alberto, 26 ago 2026: "quiero poder
-  // navegar sin que se abra la página del contexto padre"). Vive en el propio
-  // chevron de la fila, aparte del click del resto de la fila.
-  const drillInto = (c: Node) => { setStack(prev => [...prev, c]) }
-  // Volver un nivel. Si el nivel al que se vuelve es la RAÍZ, no es solo "subir":
-  // es SALIR de los contextos (Alberto, 5 ago 2026: "cuando vuelve a la raíz debería
-  // poner otra vez los colores por defecto en la web y abrir la nota diaria, ese es
-  // el inicio de todo"). Los "colores por defecto" salen solos al deseleccionar el
-  // contexto: el tinte de acento de toda la app depende de `selectedCtxId`
-  // (efecto `ownAccent` en V2App.tsx), no de la sidebar.
-  const back = () => {
-    if (stack.length <= 1) { setStack([]); goHome(); return }
-    setStack(prev => prev.slice(0, -1))
+  // Clic en el chevron: solo despliega/repliega, SIN abrir la ficha (Alberto,
+  // 26 ago 2026: "quiero poder navegar sin que se abra la página del
+  // contexto padre") — a diferencia de `enter`, es un toggle real: vuelve a
+  // colapsar si ya estaba abierto.
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
   }
 
   /** Inicio de la app: destino Agenda (planner en el centro, nota diaria de hoy
    *  al pie de la columna derecha) — es exactamente su reset duro, no se
    *  duplica aquí. (Antes iba al destino Día, fusionado en Agenda el 24 ago 2026.) */
   const goHome = () => onSelectGeneral('agenda')
+
+  // Fila de un contexto + sus subcontextos desplegados EN EL SITIO (recursivo,
+  // cualquier profundidad) — reemplaza el drill-down de antes (Alberto, 26 ago
+  // 2026: "quiero que se desplieguen los hijos pero sin perder de vista la
+  // lista de contextos"). `depth` decide sangrado e indentación extra a
+  // partir del 2º nivel (`.v2-ctx-row.child` de la hoja de estilos ya cubre el
+  // primero con un valor fijo).
+  function renderCtxRow(c: Node, depth: number) {
+    const hasSubs = subContextsOf(c.id).length > 0
+    const isOpen = expanded.has(c.id)
+    return (
+      <div key={c.id}>
+        <div
+          className={`v2-ctx-row ${depth > 0 ? 'child' : ''} ${selectedCtxId === c.id ? 'active' : ''}`}
+          style={depth > 1 ? { paddingLeft: 26 + (depth - 1) * 16 } : undefined}
+          onClick={() => enter(c)}
+          onContextMenu={(e) => openCtxMenu(e, c.id)}
+        >
+          <span className="v2-ctx-dot" style={{ background: contextColor(c.id) }} />
+          {renaming === c.id ? (
+            <input
+              ref={renameRef}
+              className="v2-ctx-rename-input"
+              value={renameVal}
+              onChange={(e) => setRenameVal(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              onBlur={commitRename}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); else if (e.key === 'Escape') { setRenaming(null); setRenameVal('') } }}
+            />
+          ) : (
+            <span className="v2-el-title">{displayTitle(c.text, t('v2.untitled', 'Sin título'))}</span>
+          )}
+          <button
+            className="v2-ctx-add"
+            title={t('v2.newElementInThisContext', 'Crear elemento en este contexto')}
+            onClick={(e) => openAddMenu(e, c.id)}
+          ><Icon name="plus" size={14} /></button>
+          {hasSubs && (
+            <button
+              className="v2-ctx-chevron"
+              title={isOpen ? t('v2.collapseSubcontexts', 'Ocultar subcontextos') : t('v2.expandSubcontexts', 'Ver subcontextos')}
+              onClick={(e) => { e.stopPropagation(); toggleExpand(c.id) }}
+            ><Icon name="chevron-right" size={13} style={{ transform: isOpen ? 'rotate(90deg)' : undefined, transition: 'transform var(--v2-fast)' }} /></button>
+          )}
+        </div>
+        {hasSubs && isOpen && subContextsOf(c.id).map(sub => renderCtxRow(sub, depth + 1))}
+      </div>
+    )
+  }
 
   return (
     <aside className="v2-col v2-sidebar">
@@ -345,108 +405,31 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         )
       })()}
 
-      {/* Cabecera de nivel: raíz = «Contextos»; dentro = volver + nombre del contexto.
-          El «+» crea un contexto con el padre correcto ya preseleccionado (ninguno en
-          raíz, el contexto actual si hemos entrado en uno) — editable en el modal. */}
-      {currentParent ? (
-        <div className="v2-section-label v2-section-label--hoverable" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={back}>
-            <Icon name="chevron-left" size={13} /> {t('v2.back', 'Volver')}
-          </span>
-          <button className="v2-ctx-add" title={t('v2.newContext', 'Nuevo contexto')} onClick={() => setShowNewContext(true)}><Icon name="plus" size={14} /></button>
-        </div>
-      ) : (
-        /* El «+» aparece al pasar el ratón, igual que el de cada fila de contexto
-           (Alberto, 5 ago 2026) — en reposo la cabecera es solo una etiqueta. */
-        <div className="v2-section-label v2-section-label--hoverable" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          {t('v2.contexts', 'Contextos')}
-          <button className="v2-ctx-add" title={t('v2.newContext', 'Nuevo contexto')} onClick={() => setShowNewContext(true)}><Icon name="plus" size={14} /></button>
-        </div>
-      )}
+      {/* Cabecera única — el árbol entero está SIEMPRE visible (26 ago 2026: ya
+          no hay "dentro de X" que abandone la raíz, ver `expanded` arriba), así
+          que ya no hace falta un estado "Volver". El «+» crea siempre en la
+          raíz (sin padre preseleccionado) — para un subcontexto está el «+»
+          de cada fila. */}
+      <div className="v2-section-label v2-section-label--hoverable" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {t('v2.contexts', 'Contextos')}
+        <button className="v2-ctx-add" title={t('v2.newContext', 'Nuevo contexto')} onClick={() => setShowNewContext(true)}><Icon name="plus" size={14} /></button>
+      </div>
 
       <div className="v2-ctx-list">
-        {currentParent ? (
-          // Contexto en el que hemos entrado (seleccionable, resaltado como cabecera).
-          <div
-            className={`v2-ctx-row ${selectedCtxId === currentParent.id ? 'active' : ''}`}
-            onClick={() => onSelectCtx(currentParent.id)}
-            onContextMenu={(e) => openCtxMenu(e, currentParent.id)}
-          >
-            <span className="v2-ctx-dot" style={{ background: contextColor(currentParent.id) }} />
-            {renaming === currentParent.id ? (
-              <input
-                ref={renameRef}
-                className="v2-ctx-rename-input"
-                value={renameVal}
-                onChange={(e) => setRenameVal(e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                onBlur={commitRename}
-                onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); else if (e.key === 'Escape') { setRenaming(null); setRenameVal('') } }}
-              />
-            ) : (
-              <span className="v2-el-title" style={{ fontWeight: 600 }}>{displayTitle(currentParent.text, t('v2.context', 'Contexto'))}</span>
-            )}
-            <button
-              className="v2-ctx-add"
-              title={t('v2.newElementInThisContext', 'Crear elemento en este contexto')}
-              onClick={(e) => openAddMenu(e, currentParent.id)}
-            ><Icon name="plus" size={14} /></button>
+        <div
+          className={`v2-ctx-row ${selectedCtxId === null ? 'active' : ''}`}
+          onClick={() => onSelectCtx(null)}
+        >
+          <span className="v2-ctx-dot" style={{ background: 'var(--text-tertiary)' }} />
+          <span className="v2-el-title">{t('v2.general', 'General')}</span>
+        </div>
+
+        {areas.length === 0 ? (
+          <div className="v2-right-empty" style={{ padding: '16px 14px' }}>
+            {t('v2.noContextsYet', 'Aún no tienes contextos.')}
           </div>
         ) : (
-          <div
-            className={`v2-ctx-row ${selectedCtxId === null ? 'active' : ''}`}
-            onClick={() => onSelectCtx(null)}
-          >
-            <span className="v2-ctx-dot" style={{ background: 'var(--text-tertiary)' }} />
-            <span className="v2-el-title">{t('v2.general', 'General')}</span>
-          </div>
-        )}
-
-        {currentParent && <div className="v2-section-label" style={{ padding: '10px 16px 4px' }}>{t('v2.subcontexts', 'Subcontextos')}</div>}
-
-        {items.map(c => {
-          const hasSubs = subContextsOf(c.id).length > 0
-          return (
-            <div
-              key={c.id}
-              className={`v2-ctx-row ${currentParent ? 'child' : ''} ${selectedCtxId === c.id ? 'active' : ''}`}
-              onClick={() => enter(c)}
-              onContextMenu={(e) => openCtxMenu(e, c.id)}
-            >
-              <span className="v2-ctx-dot" style={{ background: contextColor(c.id) }} />
-              {renaming === c.id ? (
-                <input
-                  ref={renameRef}
-                  className="v2-ctx-rename-input"
-                  value={renameVal}
-                  onChange={(e) => setRenameVal(e.target.value)}
-                  onClick={(e) => e.stopPropagation()}
-                  onBlur={commitRename}
-                  onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); else if (e.key === 'Escape') { setRenaming(null); setRenameVal('') } }}
-                />
-              ) : (
-                <span className="v2-el-title">{displayTitle(c.text, t('v2.untitled', 'Sin título'))}</span>
-              )}
-              <button
-                className="v2-ctx-add"
-                title={t('v2.newElementInThisContext', 'Crear elemento en este contexto')}
-                onClick={(e) => openAddMenu(e, c.id)}
-              ><Icon name="plus" size={14} /></button>
-              {hasSubs && (
-                <button
-                  className="v2-ctx-chevron"
-                  title={t('v2.expandSubcontexts', 'Ver subcontextos')}
-                  onClick={(e) => { e.stopPropagation(); drillInto(c) }}
-                ><Icon name="chevron-right" size={13} /></button>
-              )}
-            </div>
-          )
-        })}
-
-        {items.length === 0 && (
-          <div className="v2-right-empty" style={{ padding: '16px 14px' }}>
-            {currentParent ? t('v2.noSubcontexts', 'Sin subcontextos.') : t('v2.noContextsYet', 'Aún no tienes contextos.')}
-          </div>
+          areas.map(a => renderCtxRow(a, 0))
         )}
       </div>
 
@@ -605,7 +588,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
       {showTrash && <V2Trash onClose={() => setShowTrash(false)} />}
       {showNewContext && (
         <NewContextModal
-          defaultParentId={currentParent?.id ?? null}
+          defaultParentId={null}
           onClose={() => setShowNewContext(false)}
           onCreated={id => onSelectCtx(id)}
         />
