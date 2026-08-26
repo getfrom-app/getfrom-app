@@ -27,7 +27,7 @@ export type IconName =
   | 'plus' | 'close' | 'check' | 'pencil' | 'send' | 'mic' | 'mic-off' | 'stop'
   | 'sparkle' | 'star' | 'clock' | 'repeat' | 'arrow-right' | 'arrow-up'
   | 'chevron-right' | 'chevron-left' | 'chevron-down' | 'more' | 'download'
-  | 'import' | 'archive' | 'eye' | 'copy' | 'external'
+  | 'import' | 'archive' | 'eye' | 'copy' | 'external' | 'lock'
   // Tema
   | 'sun' | 'moon' | 'auto'
 
@@ -105,6 +105,7 @@ const PATHS: Record<IconName, JSX.Element> = {
   eye: <><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" /><circle cx="12" cy="12" r="3" /></>,
   copy: <><rect x="8.5" y="8.5" width="12" height="12" rx="2.5" /><path d="M15.5 8.5v-2a2.5 2.5 0 0 0-2.5-2.5H6A2.5 2.5 0 0 0 3.5 6.5V13A2.5 2.5 0 0 0 6 15.5h2" /></>,
   external: <><path d="M14 4.5h5.5V10" /><path d="M19.5 4.5 11 13" /><path d="M18.5 14v4.5a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2H10" /></>,
+  lock: <><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5" /><circle cx="12" cy="15" r="1.4" /></>,
 
   // ── Tema ───────────────────────────────────────────────────────────────
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" /></>,

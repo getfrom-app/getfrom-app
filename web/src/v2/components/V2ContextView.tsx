@@ -26,6 +26,7 @@ import { fmtDate, fmtRelative } from '../../utils/formatDate'
 import Icon, { type IconName } from './Icon'
 import { displayTitle } from '../../utils/displayText'
 import { useGroupSelection } from '../../hooks/useGroupSelection'
+import { allGroups, groupMemberIds, groupMembers } from '../../utils/groups'
 import type { Node } from '../../types'
 
 interface Props {
@@ -183,6 +184,31 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
     // `updatedAt` la lista se reordenaba sola cada vez que se tocaba cualquier
     // elemento — imposible acordarse de dónde estaba nada.
     return out.sort((a, b) => (b.node.createdAt || '').localeCompare(a.node.createdAt || ''))
+  }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Grupo (si hay) de cada elemento — botón "editar grupo" al hover en su fila
+  // (26 ago 2026). Mapa único por render en vez de un `groupsContaining` por
+  // fila: evita recorrer todos los grupos una vez por elemento visible.
+  const groupByElementId = useMemo(() => {
+    void store.nodesVersion
+    const map = new Map<string, Node>()
+    for (const g of allGroups()) {
+      for (const id of groupMemberIds(g)) if (!map.has(id)) map.set(id, g)
+    }
+    return map
+  }, [store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // GRUPOS de este contexto (26 ago 2026, Alberto: "los grupos tendrán los
+  // contextos de sus elementos, y aparecerán en la columna derecha del
+  // contexto de los elementos"). Un grupo no tiene contexto propio — se
+  // DERIVA: aparece aquí si al menos uno de sus miembros pertenece a este
+  // contexto (o, en General, no tiene contexto asignado). Así un grupo con
+  // elementos de #autonomo y #inversion aparece en los dos sitios a la vez.
+  const contextGroups = useMemo(() => {
+    void store.nodesVersion
+    return allGroups()
+      .filter(g => groupMembers(g).some(m => (firstContextOf(m)?.id ?? null) === ctxId))
+      .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filtro por tipo de la lista de Elementos — mismo estilo que la tab Elementos
@@ -380,6 +406,8 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
                   onOpen={id => (isConversation && onOpenConversation ? onOpenConversation(id) : onOpenNode(id))}
                   hideContext
                   extraMeta={agentData ? (agentData.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')) : fmtDate(n.createdAt, i18n.language)}
+                  group={groupByElementId.get(n.id)}
+                  onOpenGroup={onOpenNode}
                 />
                 {/* Overlay de selección — mismo patrón que ElementsPanel: intercepta el
                     clic sin tocar V2ElementRow, el contenido de debajo sigue visible. */}
@@ -394,6 +422,28 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode, onOpenCo
               </div>
             )
           })}
+        </>
+      )}
+
+      {/* GRUPOS derivados: los que tienen al menos un elemento de este contexto
+          (ver `contextGroups` arriba) — no es la lista de grupos que "viven"
+          aquí (un grupo no tiene contexto propio), es dónde tiene sentido
+          encontrarlos mientras se trabaja en este contexto. */}
+      {contextGroups.length > 0 && (
+        <>
+          <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>
+            <span>{t('v2.context.groups', 'Grupos')} ({contextGroups.length})</span>
+          </div>
+          {contextGroups.map(g => (
+            <V2ElementRow
+              key={g.id}
+              node={g}
+              icon="folder"
+              onOpen={onOpenNode}
+              hideContext
+              extraMeta={t('group.memberCount', '{{count}} elemento(s)', { count: groupMemberIds(g).length })}
+            />
+          ))}
         </>
       )}
     </div>

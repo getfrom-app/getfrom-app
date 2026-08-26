@@ -16,6 +16,7 @@ import { elementDisplayTitle } from '../../utils/docNode'
 import { displayTitle } from '../../utils/displayText'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { userStore } from '../../store/userStore'
+import { parseExtraData } from '../../utils/papeleraHelper'
 import Icon from '../../v2/components/Icon'
 
 export default function GroupView({ node }: { node: Node }) {
@@ -27,6 +28,9 @@ export default function GroupView({ node }: { node: Node }) {
   const [adding, setAdding] = useState(false)
   const [q, setQ] = useState('')
   const [slugError, setSlugError] = useState<string | null>(null)
+  const [pwInput, setPwInput] = useState('')
+  // Pista visual — el hash real solo vive en el servidor, ver PublishButton.tsx.
+  const protectedNow = parseExtraData(node.extraData)._pubProtected === '1'
 
   const members = useMemo(() => groupMembers(node), [node, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   const memberIds = useMemo(() => new Set(members.map(m => m.id)), [members])
@@ -78,18 +82,23 @@ export default function GroupView({ node }: { node: Node }) {
     return out
   }, [adding, q, node.id, memberIds, t])
 
-  async function doPublish() {
+  // `explicitPassword`: undefined → deja la contraseña como estuviera, salvo
+  // que el usuario haya escrito algo en `pwInput` (se usa eso); null → la
+  // quita explícitamente (botón "Quitar contraseña", ignora `pwInput`).
+  async function doPublish(explicitPassword?: string | null) {
     if (!userStore.hasAccess) {
       window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'publish_limit' } }))
       return
     }
+    const password = explicitPassword !== undefined ? explicitPassword : (pwInput.trim() || undefined)
     setSlugError(null)
     setBusy(true)
     try {
-      const url = await publishGroupPublicly(node, slugInput.trim() || undefined)
+      const url = await publishGroupPublicly(node, slugInput.trim() || undefined, password)
       await navigator.clipboard.writeText(url).catch(() => {})
       setCopied(true); setTimeout(() => setCopied(false), 2000)
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('group.publishedToast', 'Grupo publicado — enlace copiado'), type: 'success' } }))
+      setPwInput('')
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: explicitPassword === null ? t('node.passwordRemoved', 'Contraseña quitada') : t('group.publishedToast', 'Grupo publicado — enlace copiado'), type: 'success' } }))
     } catch (err) {
       const msg = err instanceof Error ? err.message : ''
       if (msg === 'custom_slug_taken') {
@@ -175,14 +184,39 @@ export default function GroupView({ node }: { node: Node }) {
           )}
         </div>
 
+        {/* Contraseña opcional del enlace — por defecto sin ella (26 ago 2026,
+            Alberto: "poder proteger los enlaces... con una contraseña opcional
+            que el usuario ponga"). Mismo criterio que PublishButton.tsx: vacío
+            no la toca al "Actualizar", solo cambia si se escribe algo aquí. */}
+        <div>
+          <label style={{ fontSize: 12, color: 'var(--text-tertiary,#999)', display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+            <Icon name="lock" size={12} /> {protectedNow ? t('node.passwordProtected', 'Protegido con contraseña') : t('node.passwordOptional', 'Contraseña opcional')}
+          </label>
+          <input
+            type="password"
+            value={pwInput}
+            onChange={e => setPwInput(e.target.value)}
+            placeholder={protectedNow ? t('node.passwordChangePlaceholder', 'Escribe para cambiarla') : t('node.passwordSetPlaceholder', 'Sin contraseña')}
+            style={{
+              width: '100%', boxSizing: 'border-box', padding: '7px 10px', borderRadius: 8,
+              border: '1px solid var(--border,#e2e2e2)', background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontSize: 13, outline: 'none',
+            }}
+          />
+          {protectedNow && (
+            <button onClick={() => doPublish(null)} disabled={busy} style={{ ...btnDanger, marginTop: 6, padding: '2px 0' }}>
+              {t('node.removePassword', 'Quitar contraseña')}
+            </button>
+          )}
+        </div>
+
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
           {published ? (
             <>
-              <button onClick={doPublish} disabled={busy} style={btnSecondary}>{t('group.refresh', 'Actualizar')}</button>
+              <button onClick={() => doPublish()} disabled={busy} style={btnSecondary}>{t('group.refresh', 'Actualizar')}</button>
               <button onClick={doUnpublish} disabled={busy} style={btnDanger}>{t('group.unpublish', 'Despublicar')}</button>
             </>
           ) : (
-            <button onClick={doPublish} disabled={busy || members.length === 0} style={btnPrimary}>
+            <button onClick={() => doPublish()} disabled={busy || members.length === 0} style={btnPrimary}>
               {copied ? t('common.copied', '¡Copiado!') : t('group.publish', 'Crear enlace público')}
             </button>
           )}

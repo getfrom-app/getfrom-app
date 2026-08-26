@@ -6,6 +6,7 @@ import type { Node } from '../types'
 import { isDocNode } from './docNode'
 import { htmlToMarkdown, docStandaloneHtml } from './htmlMarkdown'
 import { publishNote, unpublishNote } from '../api/client'
+import { parseExtraData } from './papeleraHelper'
 
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
@@ -84,19 +85,34 @@ export function exportNodePdf(node: Node) {
 // Publicar/despublicar un nodo — MISMA lógica que la 🌐 de NodeView.tsx (nota clásica),
 // reaprovechada aquí para el panel del lienzo (texto) y, donde tenga sentido, recursos
 // (PDF/imagen). El contenido se serializa igual que MD/HTML: `nodeAsMarkdown`.
-export async function publishNodePublicly(node: Node): Promise<string> {
+// `password` — mismo criterio que publishNote: omitir (undefined) no toca la
+// protección existente; string vacío/null la quita; string no vacío la pone.
+// El HASH vive solo en el servidor (`publicNotes.passwordHash`) — el cliente
+// solo guarda `_pubProtected` como PISTA VISUAL (candado en PublishButton),
+// nunca la contraseña ni el hash; el servidor es quien de verdad la exige.
+export async function publishNodePublicly(node: Node, password?: string | null): Promise<string> {
   const content = nodeAsMarkdown(node) || node.text || ''
   const existingSlug = node.publicSlug || undefined
-  const result = await publishNote(node.text || 'Nota', content, existingSlug)
+  const result = await publishNote(node.text || 'Nota', content, existingSlug, password)
   const url = `https://fromly.app/p/${result.slug}`
-  if (node.publicSlug !== result.slug) store.updateNode(node.id, { publicSlug: result.slug })
+  const updates: Partial<Node> = {}
+  if (node.publicSlug !== result.slug) updates.publicSlug = result.slug
+  if (password !== undefined) {
+    const ed = parseExtraData(node.extraData)
+    if (password && password.trim()) ed._pubProtected = '1'
+    else delete ed._pubProtected
+    updates.extraData = JSON.stringify(ed)
+  }
+  if (Object.keys(updates).length) store.updateNode(node.id, updates)
   return url
 }
 
 export async function unpublishNodePublicly(node: Node): Promise<void> {
   if (!node.publicSlug) return
   await unpublishNote(node.publicSlug)
-  store.updateNode(node.id, { publicSlug: null })
+  const ed = parseExtraData(node.extraData)
+  delete ed._pubProtected
+  store.updateNode(node.id, { publicSlug: null, extraData: JSON.stringify(ed) })
 }
 
 export function copyNodeAsMarkdown(node: Node): Promise<void> {

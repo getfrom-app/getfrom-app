@@ -22,9 +22,25 @@ interface Props {
    *  elemento de este contenedor (p.ej. una conversación) sin borrarlo — sigue en
    *  Fromly y buscable, solo deja de estar «dentro» de este sitio concreto. */
   onDetach?: (id: string) => void
+  /** Grupo (nodo `_group='1'`) al que pertenece este elemento, si hay uno —
+   *  muestra un botón "editar grupo" al hover que abre esa ficha (26 ago
+   *  2026, Alberto: "cuando haya elementos en la barra derecha que estén en
+   *  grupos, deben tener en hover un botón para editar el grupo"). Si el
+   *  elemento está en varios grupos, el caller decide cuál pasar (primero
+   *  encontrado, ver `groupsContaining` en utils/groups.ts) — un solo botón,
+   *  no una lista, para no complicar la fila por un caso raro. */
+  group?: Node | null
+  /** Cómo abrir el GRUPO del botón de arriba — SIEMPRE como nodo normal, nunca
+   *  como conversación. No se puede reusar `onOpen` a pelo: para una fila cuyo
+   *  PROPIO nodo es una conversación, `onOpen` llama a `onOpenConversation`, y
+   *  aplicado al id del grupo abriría un chat inexistente en vez de la ficha
+   *  del grupo (bug real visto al probarlo: hover→editar grupo sobre una fila
+   *  de conversación abría el composer de chat). Si se omite, cae a `onOpen`
+   *  — correcto para cualquier caller cuya fila nunca sea una conversación. */
+  onOpenGroup?: (id: string) => void
 }
 
-export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext, onDetach }: Props) {
+export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext, onDetach, group, onOpenGroup }: Props) {
   const { t, i18n } = useTranslation()
   const ctx = hideContext ? null : firstContextOf(node)
   // `displayTitle` quita el emoji decorativo escrito en el propio dato («✦ …»,
@@ -67,7 +83,12 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
           </span>
         )}
       </span>
-      {/* Quitar de la conversación (no borra, solo desengancha) + Eliminar — al hover. */}
+      {/* Editar grupo + quitar de la conversación (no borra, solo desengancha) + Eliminar — al hover. */}
+      {group && (
+        <button className="v2-el-del" title={t('v2.elementRow.editGroup', 'Editar grupo "{{name}}"', { name: group.text || t('common.noTitle') })} onClick={e => { e.stopPropagation(); e.preventDefault(); (onOpenGroup || onOpen)(group.id) }}>
+          <Icon name="folder" size={14} />
+        </button>
+      )}
       {onDetach && (
         <button className="v2-el-del" title={t('v2.elementRow.detach', 'Quitar de esta conversación')} onClick={e => { e.stopPropagation(); e.preventDefault(); onDetach(node.id) }}>
           <Icon name="close" size={14} />

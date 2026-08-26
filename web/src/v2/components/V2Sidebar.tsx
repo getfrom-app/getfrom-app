@@ -56,11 +56,6 @@ interface Props {
   // Drive). Sustituye al antiguo `onDriveInCtx`, que solo cubría Drive.
   onOpenAttach: (id: string | null) => void
   onRecordInCtx: (id: string | null) => void
-  // Mismo handler que el chat (V2App.onFilesDropped): con conversación activa se
-  // adjunta ahí, si no se importa al contexto/día activo. Soltar en la sidebar ya
-  // NO tiene una ruta propia por-contexto (daba error al subir; una sola ruta).
-  onFilesDropped: (files: File[]) => void
-  onDragStateChange?: (active: boolean) => void
   // Ajustes ahora es un modo de V2App (pantalla completa: nav a la izquierda,
   // contenido al centro), no un modal — el estado vive arriba.
   onOpenSettings: () => void
@@ -87,20 +82,11 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral, activeGeneralDest, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onOpenAttach, onRecordInCtx, onFilesDropped, onDragStateChange, onOpenSettings, onOpenConversation, onOpenNode, onOpenProfile }: Props) {
+export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral, activeGeneralDest, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onOpenAttach, onRecordInCtx, onOpenSettings, onOpenConversation, onOpenNode, onOpenProfile }: Props) {
   useStore()
   const { t } = useTranslation()
   const navigate = useNavigate()
   const user = useUserStore()
-  const [dragOver, setDragOver] = useState(false) // resaltado visual mientras se arrastra (ya no por-contexto)
-  const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer.types || []).includes('Files')
-  const dropFiles = (e: React.DragEvent) => {
-    if (!hasFiles(e)) return
-    e.preventDefault(); e.stopPropagation()
-    setDragOver(false); onDragStateChange?.(false)
-    const files = Array.from(e.dataTransfer.files)
-    if (files.length) onFilesDropped(files)
-  }
   const { theme, setTheme } = useTheme()
   const webPush = useWebPush()
   const [stack, setStack] = useState<Node[]>([]) // ruta de drill-down (padres)
@@ -245,12 +231,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   const goHome = () => onSelectGeneral('agenda')
 
   return (
-    <aside
-      className={`v2-col v2-sidebar ${dragOver ? 'v2-sidebar--drag' : ''}`}
-      onDragOver={(e) => { if (hasFiles(e)) { e.preventDefault(); if (!dragOver) { setDragOver(true); onDragStateChange?.(true) } } }}
-      onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as HTMLElement)) { setDragOver(false); onDragStateChange?.(false) } }}
-      onDrop={dropFiles}
-    >
+    <aside className="v2-col v2-sidebar">
       {/* La marca es el BOTÓN DE INICIO (Alberto, 5 ago 2026: "pon el nombre de
           Fromly de arriba a la izquierda clicable para que vaya a la vista de día
           con la nota diaria y su columna derecha") — mismo destino que la fila

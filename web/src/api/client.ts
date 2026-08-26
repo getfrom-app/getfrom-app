@@ -342,14 +342,17 @@ export async function ragRelated(query: string, excludeIds: string[] = [], k = 6
 
 // ── Public notes ──────────────────────────────────────────────────────────
 
+// `password`: omitir (undefined) NO toca la que ya hubiera; string vacío/null
+// la QUITA; string no vacío la (re)establece. Ver server/src/routes/notes.ts.
 export async function publishNote(
   title: string,
   content: string,
-  existingSlug?: string
+  existingSlug?: string,
+  password?: string | null
 ): Promise<{ slug: string; url: string }> {
   return apiRequest('/notes/publish', {
     method: 'POST',
-    body: JSON.stringify({ title, content, slug: existingSlug }),
+    body: JSON.stringify({ title, content, slug: existingSlug, password }),
   })
 }
 
@@ -359,14 +362,17 @@ export async function unpublishNote(slug: string): Promise<{ ok: boolean }> {
 
 // ── Public groups (varios elementos con un solo enlace) ─────────────────────
 
+// `password`: mismo criterio que publishNote (undefined no toca, null/''
+// quita, string no vacío (re)establece). Ver server/src/routes/groups.ts.
 export async function publishGroup(
   nodeId: string,
   existingSlug?: string,
-  customSlug?: string
+  customSlug?: string,
+  password?: string | null
 ): Promise<{ slug: string; userSlug: string; customSlug: string; url: string }> {
   return apiRequest('/groups/publish', {
     method: 'POST',
-    body: JSON.stringify({ nodeId, slug: existingSlug, customSlug }),
+    body: JSON.stringify({ nodeId, slug: existingSlug, customSlug, password }),
   })
 }
 

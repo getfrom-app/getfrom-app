@@ -4,6 +4,18 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.986 — 26 agosto 2026 · Planificador sin solapes, grupos en tu contexto y contraseña opcional
+
+- **El planificador ya no solapa eventos a la misma hora**: si tienes un evento de Google Calendar y otro de Fromly a la vez, ahora se ven uno al lado del otro en vez de tapados.
+- **Los eventos con hora ya no llevan casilla de completar** en el planificador — solo las tareas.
+- **Se ven todas las tareas del día sin cortar**: antes, a partir de 5, se resumían en un "+N".
+- **Al abrir una tarea o evento, la columna derecha va directa al Chat**, con un botón "← Volver" para regresar al planificador.
+- **Arrastra un archivo a cualquier parte de la ventana** para importarlo — antes solo funcionaba soltándolo justo en la barra lateral.
+- **Los grupos aparecen en el contexto de sus elementos**: si un grupo mezcla notas de dos áreas distintas, aparece en las dos. Y cada nota que pertenece a un grupo tiene un botón para editarlo, al pasar el ratón por encima.
+- **Contraseña opcional en tus enlaces públicos**: protege con contraseña cualquier nota o grupo que publiques — por defecto no la llevan, tú decides cuándo ponerla.
+
+---
+
 ## Web v9.6.985 — 25 agosto 2026 · Enlace de grupo personalizable y PDFs arreglados
 
 - **Personaliza el enlace de un grupo**: en vez del código aleatorio, pon el nombre que quieras — `fromly.app/g/tu-usuario/nombre-del-grupo`. Los enlaces ya compartidos con el formato anterior siguen funcionando igual.

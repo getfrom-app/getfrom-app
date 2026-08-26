@@ -215,6 +215,48 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
   return [...byKey.values()].sort((a, b) => a.start.getTime() - b.start.getTime())
 }
 
+// ── Bloques solapados → columnas lado a lado ─────────────────────────────
+// Antes cada bloque ocupaba SIEMPRE el ancho completo de la columna del día
+// (left:2, right:2), así que dos eventos a la misma hora (p.ej. un evento de
+// Google Calendar y uno de Fromly) se pintaban uno encima del otro — el de
+// abajo quedaba invisible salvo por un borde asomando (Alberto, 26 ago 2026).
+// Algoritmo estándar de calendario: recorre los bloques ordenados por inicio,
+// agrupa los que se solapan transitivamente («racimo») y dentro de cada
+// racimo asigna cada bloque a la primera columna libre (greedy). El ancho de
+// TODOS los bloques del racimo es 1/nº-columnas-del-racimo, aunque un bloque
+// concreto no se solape con todos los demás — más simple que calcular
+// expansión por huecos y correcto para el caso real (2-3 solapes).
+function layoutBlocks(blocks: Block[]): Array<Block & { col: number; cols: number }> {
+  const out: Array<Block & { col: number; cols: number }> = []
+  let cluster: Block[] = []
+  let clusterCols: Block[][] = []
+  let clusterEnd = 0
+
+  function flush() {
+    if (!cluster.length) return
+    const numCols = clusterCols.length
+    for (const b of cluster) {
+      const col = clusterCols.findIndex(c => c.includes(b))
+      out.push({ ...b, col, cols: numCols })
+    }
+    cluster = []; clusterCols = []; clusterEnd = 0
+  }
+
+  for (const b of blocks) {
+    if (cluster.length && b.start.getTime() >= clusterEnd) flush()
+    cluster.push(b)
+    let placed = false
+    for (const col of clusterCols) {
+      const last = col[col.length - 1]
+      if (last.end.getTime() <= b.start.getTime()) { col.push(b); placed = true; break }
+    }
+    if (!placed) clusterCols.push([b])
+    clusterEnd = Math.max(clusterEnd, b.end.getTime())
+  }
+  flush()
+  return out
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 // PlannerPanel
 // ══════════════════════════════════════════════════════════════════════════
@@ -758,7 +800,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const taskPastel = pastelize(plannerBase)
 
   // ── Render bloque ─────────────────────────────────────────────────────────
-  function renderBlock(b: Block) {
+  function renderBlock(b: Block & { col?: number; cols?: number }) {
     // Solo los eventos de Google llevan relleno de color (gris propio → pastel base;
     // color propio → ese color en pastel). Las tareas NO son eventos: sin fondo,
     // solo borde fino + barra de acento a la izquierda para verlas y arrastrarlas.
@@ -777,20 +819,32 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const gridH = TOTAL_HOURS * hourH
     const blockTop = Math.max(0, Math.min(topPx(b.start), gridH - slotH / 2))
     const blockH = Math.max(slotH / 2, Math.min(heightPx(b.start.getTime(), b.end.getTime()), gridH - blockTop))
-    // Checkbox en todo nodo de Fromly con `status` — que desde el 5 ago 2026 son
-    // también los eventos (un evento es una tarea con día y hora, utils/taskNode.ts).
-    // Antes se excluían a propósito para distinguirlos de un vistazo (Alberto, 22
-    // jul: "las tareas deberán llevar checkbox, los eventos no"); lo que sigue
-    // distinguiéndose es lo que NO es un nodo: el evento crudo de Google (`isGcal`),
-    // que no se puede completar en Fromly. Reutiliza toggleTaskDone (mismo que
-    // DayColumn) para no romper el paso a «Atrasadas» al día siguiente.
-    const checkable = !isGcal && !!blockNode && blockNode.status != null
+    // Checkbox SOLO en tareas puras (con `status`, sin hora de evento). Los
+    // eventos (`isEvent`) NO llevan checkbox en el planificador — visualmente
+    // se distinguen de una tarea con hora (Alberto, 26 ago 2026: "el evento de
+    // la reunión con Alfredo... no debe llevar checkbox porque es un evento").
+    // Reemplaza la regla anterior (5 ago 2026) que SÍ los mostraba por ser
+    // "una tarea con día y hora" — decisión visual explícita, no toca el
+    // modelo de datos (un evento sigue teniendo `status` y se puede completar
+    // desde otros sitios). Lo que sigue distinguiéndose aparte es lo que NO es
+    // un nodo: el evento crudo de Google (`isGcal`), que no se puede completar
+    // en Fromly. Reutiliza toggleTaskDone (mismo que DayColumn) para no romper
+    // el paso a «Atrasadas» al día siguiente.
+    const checkable = !isGcal && !!blockNode && blockNode.status != null && !blockNode.isEvent
     const done = checkable && blockNode!.status === 'done'
+    // Solapes → columnas lado a lado (ver `layoutBlocks`). Sin solape, ocupa
+    // el ancho completo de la columna como siempre.
+    const cols = b.cols ?? 1
+    const col  = b.col ?? 0
+    const gap  = 2
+    const slotW = cols > 1 ? `calc((100% - ${gap}px) / ${cols})` : undefined
+    const leftPos  = cols > 1 ? `calc(${slotW} * ${col} + ${gap / 2}px)` : 2
+    const widthPos = cols > 1 ? `calc(${slotW} - ${gap}px)` : undefined
     return (
       <div key={b.id} data-pp-block={b.id}
         className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}`}
         style={{ top: blockTop, height: blockH,
-          background: bg, left: 2, right: 2,
+          background: bg, left: leftPos, ...(widthPos ? { width: widthPos } : { right: 2 }),
           ...(isGcal ? {} : { border: '1px solid var(--border)', borderLeft: `3px solid ${accentColor}` }) }}
         draggable
         onDragStart={e => handleBlockDragStart(e, b)}
@@ -861,7 +915,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           {snapLine?.dayKey === day.toISOString() && (
             <div className="pp-snap-line" style={{ top: snapLine.top }} />
           )}
-          {getTimedBlocks(day, gcalEvents).map(renderBlock)}
+          {layoutBlocks(getTimedBlocks(day, gcalEvents)).map(renderBlock)}
 
           {newBlock && sameDay(newBlock.day, day) && (
             <div className="pp-new-block" style={{ top: newBlock.top, left: 2, right: 2 }}>
@@ -1200,7 +1254,10 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                     onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}
                     title={t('tip.clickAddUntimed')}
                     onClick={e=>{ if ((e.target as HTMLElement).closest('.pp-allday-chip, input')) return; setNewAllDay({ day: d, text: '' }); setTimeout(()=>newAllDayRef.current?.focus(), 20) }}>
-                    {items.slice(0, 5).map(it => {
+                    {/* SIEMPRE todos los items — antes se cortaba en 5 con un "+N" que
+                        obligaba a adivinar qué faltaba (Alberto, 26 ago 2026: "deben
+                        caber todas por mucha que sean, es importante que se vean todas"). */}
+                    {items.map(it => {
                       if (it.kind === 'gcal') {
                         const ev = it.ev
                         return (
@@ -1215,10 +1272,10 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                       const n = it.node
                       const chipCtx = firstContextOf(n)
                       const chipAccent = chipCtx ? contextColor(chipCtx.id) : plannerBase
-                      // Checkbox en cualquier nodo con `status` — incluidos los eventos
-                      // de todo el día desde la unificación del 5 ago 2026 (ver el
-                      // comentario de `checkable` en renderBlock).
-                      const chipCheckable = n.status != null
+                      // Checkbox SOLO en tareas puras — los eventos de todo el día NO
+                      // llevan checkbox, mismo criterio visual que `checkable` en
+                      // renderBlock (Alberto, 26 ago 2026).
+                      const chipCheckable = n.status != null && !n.isEvent
                       const chipDone = chipCheckable && n.status === 'done'
                       return (
                       <div key={n.id} className={`pp-allday-chip ${chipDone?'pp-allday-chip--done':''}`}
@@ -1237,7 +1294,6 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                       </div>
                       )
                     })}
-                    {items.length > 5 && <div style={{ fontSize: 10, color: 'var(--text-tertiary)', padding: '0 4px' }}>+{items.length - 5}</div>}
                     {editing ? (
                       <input ref={newAllDayRef} className="pp-allday-new" value={newAllDay!.text}
                         placeholder={t('ph.newTaskEllipsis')}

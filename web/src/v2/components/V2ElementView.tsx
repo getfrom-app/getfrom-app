@@ -110,6 +110,19 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
       {!compact && !isCtxMemory && (
       <div className="v2-detail-head">
         <div className="v2-detail-head-top">
+          {/* Volver a lo que había en el centro antes de abrir este elemento
+              (el planificador, el chat…) — antes la única forma de salir de
+              un elemento abierto desde el planner era eliminarlo o navegar
+              por la sidebar (Alberto, 26 ago 2026: "debe haber un botón para
+              volver a la vista de planificador"). */}
+          <button
+            title={t('v2.rightColumn.back', 'Volver')}
+            onClick={onClose}
+            className="v2-iconbtn"
+            style={{ flexShrink: 0 }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          </button>
           <EditableTitle nodeId={nodeId} />
           {/* El globo «Hablar de esto» se QUITÓ del todo (Alberto, 5 ago 2026:
               "hay que quitar el globo de texto pequeño de la cabecera de la nota,

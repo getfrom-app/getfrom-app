@@ -573,6 +573,18 @@ personalizado del enlace" al publicar. Cada cuenta tiene su propio espacio de no
 personas pueden usar el mismo nombre de grupo sin chocar entre sí. Los enlaces ya compartidos con el
 formato antiguo (sin nombre de usuario) siguen funcionando igual que siempre.
 
+**Protege el enlace con una contraseña (opcional):** al publicar, escribe una contraseña en el campo
+correspondiente — por defecto ningún enlace la lleva, tú decides ponerla o quitarla. Con ella puesta,
+quien abra el enlace tiene que escribirla antes de ver el contenido; el navegador la recuerda durante
+30 días, así no hace falta repetirla en cada visita. Puedes cambiarla o quitarla del todo en
+cualquier momento sin perder el resto del enlace.
+
+**El grupo aparece donde tiene sentido, no solo en un sitio:** un grupo en sí no pertenece a ningún
+contexto (mezcla elementos de donde sea), pero en web aparece en la columna derecha de CADA contexto
+al que pertenezcan sus elementos — un grupo con notas de "Autónomo" y de "Inversión" se ve en los dos
+sitios a la vez. Además, cualquier elemento que forme parte de un grupo muestra al pasar el ratón por
+encima un botón para abrir y editar ese grupo directamente, sin tener que buscarlo.
+
 ---
 
 ## 7. El Planificador
@@ -1017,7 +1029,8 @@ de Markdown en general.
 
 **¿Puedo compartir una nota con alguien que no tiene Fromly?**
 Sí, en el plan Pro. Desde el detalle de la nota, "Publicar" genera una URL pública del tipo
-`fromly.app/p/...` con el contenido renderizado. Solo quienes tengan el enlace pueden verla.
+`fromly.app/p/...` con el contenido renderizado. Solo quienes tengan el enlace pueden verla — y si
+quieres una capa extra, puedes ponerle contraseña opcional desde el mismo menú de publicar.
 
 **¿Cómo funciona la sincronización entre dispositivos?**
 Los cambios se sincronizan en tiempo real por operaciones (op-log): solo viajan los cambios, no toda

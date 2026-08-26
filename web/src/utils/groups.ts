@@ -43,6 +43,22 @@ export function groupMembers(n: Node | null | undefined): Node[] {
     .filter((x): x is Node => !!x && !x.deletedAt)
 }
 
+/** Todos los grupos ACTIVOS del vault (nodos `_group='1'`, sin borrar). Barrido
+ *  O(n) sobre `allActive()` — barato para el volumen real de grupos (decenas,
+ *  no miles), y evita mantener un índice aparte que habría que sincronizar. */
+export function allGroups(): Node[] {
+  return store.allActive().filter(n => isGroupNode(n))
+}
+
+/** ¿A qué grupo(s) pertenece este elemento? (26 ago 2026 — botón "editar
+ *  grupo" en hover sobre una fila de ELEMENTOS, ver V2ContextView.tsx). Un
+ *  elemento puede estar en más de un grupo a la vez — no hay restricción de
+ *  "un solo grupo" en el modelo (`_groupRefs` vive en el GRUPO, no en el
+ *  miembro), así que se devuelven todos los que lo referencian. */
+export function groupsContaining(nodeId: string): Node[] {
+  return allGroups().filter(g => groupMemberIds(g).includes(nodeId))
+}
+
 /** Crea un grupo nuevo con los elementos indicados. Se cuelga a nivel raíz
  *  (parentId=null) — igual que agentes/prompts (createAgentUnder/createPromptUnder):
  *  un grupo no "vive dentro" de un elemento en concreto, es transversal. */
@@ -96,12 +112,23 @@ function identifierOf(node: Node): string | undefined {
 
 /** customSlug opcional elegido por el usuario en el campo de "nombre
  *  personalizado" del enlace — si se omite, el servidor genera uno a partir
- *  del nombre del grupo. */
-export async function publishGroupPublicly(node: Node, customSlug?: string): Promise<string> {
+ *  del nombre del grupo. `password` — mismo criterio que las notas (ver
+ *  `publishNodePublicly` en nodeExport.ts): undefined no la toca, null/''
+ *  la quita, string no vacío la (re)establece. Solo el HASH vive en el
+ *  servidor; aquí solo se guarda `_pubProtected` como pista visual. */
+export async function publishGroupPublicly(node: Node, customSlug?: string, password?: string | null): Promise<string> {
   const existingSlug = identifierOf(node)
-  const result = await publishGroup(node.id, existingSlug, customSlug)
+  const result = await publishGroup(node.id, existingSlug, customSlug, password)
   const url = `https://fromly.app/g/${result.slug}`
-  if (node.publicSlug !== result.slug) store.updateNode(node.id, { publicSlug: result.slug })
+  const e = ed(node)
+  const updates: Partial<Node> = {}
+  if (node.publicSlug !== result.slug) updates.publicSlug = result.slug
+  if (password !== undefined) {
+    if (password && password.trim()) e._pubProtected = '1'
+    else delete e._pubProtected
+    updates.extraData = JSON.stringify(e)
+  }
+  if (Object.keys(updates).length) store.updateNode(node.id, updates)
   return url
 }
 
@@ -109,5 +136,7 @@ export async function unpublishGroupPublicly(node: Node): Promise<void> {
   const identifier = identifierOf(node)
   if (!identifier) return
   await unpublishGroup(identifier)
-  store.updateNode(node.id, { publicSlug: null })
+  const e = ed(node)
+  delete e._pubProtected
+  store.updateNode(node.id, { publicSlug: null, extraData: JSON.stringify(e) })
 }

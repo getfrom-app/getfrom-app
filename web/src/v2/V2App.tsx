@@ -694,6 +694,16 @@ export default function V2App() {
       setRightSubTab('primary')
     }
 
+    // Tarea o evento: la columna derecha se va directa a su Chat — antes se
+    // quedaba en la tab del destino activo (p.ej. "Agenda"), así que abrir
+    // una tarea desde el planificador obligaba a un clic más para hablar de
+    // ella (Alberto, 26 ago 2026: "la columna de la derecha... debería ser
+    // el chat directamente"). Pisa el 'primary' de arriba a propósito: un
+    // evento/tarea con contexto también se abre en Chat, no en la ficha.
+    if (node && node.status != null) {
+      setRightSubTab('chat')
+    }
+
     // Elemento normal: se abre en el ESPACIO CENTRAL (visor/editor según su
     // tipo), sustituyendo al chat — mismo patrón que el Perfil (Alberto, 22 jul).
     setCenterElementId(id)
@@ -921,10 +931,37 @@ export default function V2App() {
     )
   }
 
+  // Arrastrar un archivo para importarlo — ya NO hace falta soltarlo justo
+  // encima de la sidebar (limitación heredada de cuando el lienzo infinito era
+  // el centro de la app y la sidebar era la única zona "segura" para soltar
+  // sin interferir con él; el lienzo ya no es el protagonista, ver
+  // `Pizarra y Documento` en FROM.md). Ahora vale cualquier punto de la
+  // ventana: el listener vive en la raíz de la app, no en la sidebar (Alberto,
+  // 26 ago 2026: "quiero que se pueda arrastrar a cualquier parte de la
+  // pantalla"). `hasFiles` descarta arrastres internos (nodos, bloques del
+  // planner…), que no llevan el tipo `Files` y no deben disparar la importación.
+  const hasFiles = (e: React.DragEvent) => Array.from(e.dataTransfer.types || []).includes('Files')
+  const onRootDragOver = (e: React.DragEvent) => {
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    if (!importDragOver) setImportDragOver(true)
+  }
+  const onRootDragLeave = (e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as HTMLElement)) setImportDragOver(false)
+  }
+  const onRootDrop = (e: React.DragEvent) => {
+    if (!hasFiles(e)) return
+    e.preventDefault()
+    setImportDragOver(false)
+    const files = Array.from(e.dataTransfer.files)
+    if (files.length) onFilesDropped(files)
+  }
+
   return (
     <ToastProvider>
-    <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onOpenAttach={onOpenAttach} onRecordInCtx={onRecordInCtx} onFilesDropped={onFilesDropped} onDragStateChange={setImportDragOver} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={onOpenProfile} />
+    <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}
+      onDragOver={onRootDragOver} onDragLeave={onRootDragLeave} onDrop={onRootDrop}>
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onOpenAttach={onOpenAttach} onRecordInCtx={onRecordInCtx} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={onOpenProfile} />
       {centerElementId ? (
         // ⚠️ `key` es OBLIGATORIO: sin él, al pasar de un elemento a otro (p.ej.
         // abrir una nota de Casa Alicante y luego la nota diaria de otro día
