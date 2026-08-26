@@ -10,7 +10,16 @@
 // contrato compartido, pero convierte una divergencia silenciosa en un fallo
 // de CI en vez de un bug de datos descubierto en producción.
 //
-// IMPORTANTE: si tocas esto, aplica el MISMO cambio al fixture del otro lado.
+// ⚠️ LÍMITE HONESTO (auditoría del 26 ago): esto NO compara las dos
+// implementaciones entre sí en el mismo proceso — cada lado corre el mismo
+// fixture contra SU PROPIO applyOp. Un bug idéntico presente en ambas
+// implementaciones no lo detecta este test. Se descartó un test cruzado real
+// (importar server/src/lib/ops.ts directamente desde aquí) porque el CI de
+// este repo (landing/.github/workflows/ci.yml) solo hace checkout de este
+// repo — server/ no existe como sibling ahí y el import rompería el pipeline.
+//
+// IMPORTANTE: si tocas esto, aplica el MISMO cambio (payload Y userId de cada
+// op) al fixture del otro lado.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { describe, expect, it } from "vitest"
@@ -25,23 +34,23 @@ function mk(wall: number, counter: number, node: string): string {
 // converger al mismo estado sin importar el orden de llegada (conmutatividad
 // por HLC total).
 const ops: Op[] = [
-  { opId: "1", nodeId: "n1", type: "create", deviceId: "devA", hlc: mk(1000, 0, "devA"),
+  { opId: "1", userId: "u1", nodeId: "n1", type: "create", deviceId: "devA", hlc: mk(1000, 0, "devA"),
     payload: { parentId: null, fields: { text: "hola" } } },
-  { opId: "2", nodeId: "n1", type: "set", deviceId: "devB", hlc: mk(1000, 1, "devB"),
+  { opId: "2", userId: "u1", nodeId: "n1", type: "set", deviceId: "devB", hlc: mk(1000, 1, "devB"),
     payload: { fields: { text: "mundo" } } }, // más reciente que #1 → gana
-  { opId: "3", nodeId: "n1", type: "set", deviceId: "devA", hlc: mk(999, 5, "devA"),
+  { opId: "3", userId: "u1", nodeId: "n1", type: "set", deviceId: "devA", hlc: mk(999, 5, "devA"),
     payload: { fields: { text: "descartado (hlc menor que la create)" } } }, // debe ignorarse
-  { opId: "4", nodeId: "folder1", type: "create", deviceId: "devA", hlc: mk(900, 0, "devA"),
+  { opId: "4", userId: "u1", nodeId: "folder1", type: "create", deviceId: "devA", hlc: mk(900, 0, "devA"),
     payload: { parentId: null, fields: {} } },
-  { opId: "5", nodeId: "n1", type: "move", deviceId: "devA", hlc: mk(1001, 0, "devA"),
+  { opId: "5", userId: "u1", nodeId: "n1", type: "move", deviceId: "devA", hlc: mk(1001, 0, "devA"),
     payload: { parentId: "folder1" } },
-  { opId: "6", nodeId: "folder1", type: "move", deviceId: "devB", hlc: mk(1002, 0, "devB"),
+  { opId: "6", userId: "u1", nodeId: "folder1", type: "move", deviceId: "devB", hlc: mk(1002, 0, "devB"),
     payload: { parentId: "n1" } }, // crearía un ciclo (n1 ya cuelga de folder1) → debe rechazarse
-  { opId: "7", nodeId: "n1", type: "delete", deviceId: "devA", hlc: mk(1010, 0, "devA"),
+  { opId: "7", userId: "u1", nodeId: "n1", type: "delete", deviceId: "devA", hlc: mk(1010, 0, "devA"),
     payload: {} },
-  { opId: "8", nodeId: "n1", type: "restore", deviceId: "devB", hlc: mk(1005, 0, "devB"),
+  { opId: "8", userId: "u1", nodeId: "n1", type: "restore", deviceId: "devB", hlc: mk(1005, 0, "devB"),
     payload: {} }, // anterior al delete → debe ignorarse, sigue borrado
-  { opId: "9", nodeId: "n1", type: "restore", deviceId: "devB", hlc: mk(1020, 0, "devB"),
+  { opId: "9", userId: "u1", nodeId: "n1", type: "restore", deviceId: "devB", hlc: mk(1020, 0, "devB"),
     payload: {} }, // posterior al delete → restaura de verdad
 ]
 
