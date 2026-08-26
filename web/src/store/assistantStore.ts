@@ -380,11 +380,20 @@ class AssistantStore {
 export const assistantStore = new AssistantStore()
 
 // React hook — mismo patrón que useStore() de nodeStore.ts.
-import { useState, useEffect } from 'react'
+import { useState, useLayoutEffect } from 'react'
 
 export function useAssistantStore(): AssistantStore {
   const [, forceUpdate] = useState(0)
-  useEffect(() => {
+  // useLayoutEffect, NO useEffect: tiene que suscribirse ANTES de que corra
+  // cualquier `useLayoutEffect` de un componente hijo que llame a
+  // `setThread()` (V2Chat) — si no, el primer `notify()` tras un montaje en
+  // frío (currentNodeId con hilo ya guardado, ej. el chat de un contexto) se
+  // pierde: no hay listener todavía, así que ese render nunca refleja el
+  // hilo recién cargado y se queda enseñando el contenido congelado del
+  // commit anterior (26 ago 2026 — el bug real detrás de "nueva conversación
+  // abre el chat histórico": no era un problema de aislamiento de hilos, el
+  // hilo SÍ se cargaba bien, solo que la pantalla no se enteraba a tiempo).
+  useLayoutEffect(() => {
     const unsub = assistantStore.subscribe(() => forceUpdate(n => n + 1))
     return unsub
   }, [])

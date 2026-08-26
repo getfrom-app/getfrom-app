@@ -31,7 +31,7 @@
 //     pie) · centro = planner.
 // La nota diaria nunca tiene Tab 2 "Chat" (`centerIsDiary`, ver V2ElementView.tsx)
 // — aquí no aplica porque no vive en `elementId`/centro, sino embebida abajo.
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
@@ -41,12 +41,11 @@ import V2Chat from './V2Chat'
 import V2ElementChat from './V2ElementChat'
 import V2ElementView from './V2ElementView'
 import V2ContextBrowser from './V2ContextBrowser'
-import { listConversations, listConversationsWithSubcontexts, conversationTitle } from '../conversations'
-import { fmtRelative } from '../../utils/formatDate'
 import Icon from './Icon'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { containerNotesNode } from '../../utils/cajones'
-import { markAgentResultSeen, aiChatStore } from '../../store/aiChatStore'
+import { markAgentResultSeen } from '../../store/aiChatStore'
+import { displayTitle } from '../../utils/displayText'
 
 export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda'
 
@@ -259,18 +258,27 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
         <V2ElementChat key={elementId} nodeId={elementId} onFilesDropped={onFilesDropped} />
       )}
 
-      {/* Destino Contexto · Tab 2 "Chat" SIN nada centrado: historial de
-          conversaciones de este contexto (26 ago 2026, Alberto: "el histórico
-          de conversaciones de un contexto debería estar en la pestaña Chat de
-          ese contexto... las conversaciones deben desaparecer de la zona de
-          elementos"). Incluye las de sus SUBCONTEXTOS (mismo Alberto: "un
-          contexto... mostrará todas las de sus subcontextos"). En "General"
-          (`selectedCtxId===null`) son las conversaciones sin ningún contexto
-          asignado — no hay subcontextos que sumar ahí. */}
+      {/* Destino Contexto · Tab 2 "Chat": UN hilo propio y persistente de este
+          contexto (26 ago 2026, Alberto: "nueva conversación abre el chat
+          histórico de fromly, debería abrir un chat propio de ese contexto,
+          uno vacío de cero... cada contexto debe poder abrir chats propios").
+          Mismo motor que el chat de cualquier elemento (`assistantStore`,
+          aislado por `threadKey` — ver V2Chat/V2ElementChat): al ser un
+          nodeId nunca visto antes, `setThread` carga un hilo vacío, y el
+          botón papelera del composer ("Nueva conversación", ya existente)
+          lo reinicia sin tocar el hilo general ni el de ningún otro contexto.
+          "Sin contexto" (`selectedCtxId===null`) usa una clave estable propia
+          para no compartir hilo con el destino Chat general (que si usara
+          `null` aquí, sería la MISMA clave 'general' — justo lo que no
+          queremos). */}
       {!isRecordingActive && effectiveSubTab === 'chat' && showCtxHistorial && (
-        <div className="v2-right-body">
-          <ContextConversationHistory ctxId={selectedCtxId} onFilesDropped={onFilesDropped} />
-        </div>
+        <V2Chat
+          key={selectedCtxId ?? '__ctx_sin_contexto__'}
+          embedded
+          currentNodeId={selectedCtxId ?? '__ctx_sin_contexto__'}
+          contextLabel={selectedCtxId ? displayTitle(store.getNode(selectedCtxId)?.text || '') : t('v2.general', 'General')}
+          onFilesDropped={onFilesDropped}
+        />
       )}
 
       {/* Tab 1 — destino «Chat» general: el composer completo, embebido en la
@@ -343,114 +351,5 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
       </div>
       )}
     </aside>
-  )
-}
-
-// ── Historial de conversaciones de un contexto (Tab 2 "Chat", ver arriba) ───
-// Lista plana, sin drill-down (a diferencia de V2ContextBrowser, que navega
-// entre TODOS los contextos): aquí el contexto ya está fijado por la columna
-// izquierda, así que basta con listar. Reusa las clases `.v2-hist-*` para que
-// las filas se vean idénticas a las del tab «Historial» del destino Chat.
-function ContextConversationHistory({ ctxId, onFilesDropped }: {
-  ctxId: string | null
-  onFilesDropped: (files: File[]) => void
-}) {
-  const { t, i18n } = useTranslation()
-  useStore()
-  const list = useMemo(
-    () => ctxId === null ? listConversations(null) : listConversationsWithSubcontexts(ctxId),
-    [ctxId, store.nodesVersion], // eslint-disable-line react-hooks/exhaustive-deps
-  )
-  // Conversación abierta INLINE, en esta misma columna — nueva o del
-  // historial, mismo mecanismo para las dos (Alberto, 26 ago 2026: "el botón
-  // de nueva conversación... no hace nada, debería abrir una nueva
-  // conversación en ESA MISMA COLUMNA"). No usamos el `onOpenConversation` de
-  // V2App (pensado para el destino Chat general, que pinta en el CENTRO vía
-  // `V2Chat`/`assistantStore` — un "cerebro" distinto del de estas
-  // conversaciones, `aiChatStore`; probado en vivo que ese camino no
-  // renderiza nada aquí) — en su lugar, el mismo `V2ElementChat` que ya usa
-  // cualquier elemento, con el id de la conversación como su propio nodeId
-  // (una conversación es su propio origen: `findOriginSession` se encuentra
-  // a sí misma).
-  const [openId, setOpenId] = useState<string | null>(null)
-  const startNewConversation = () => {
-    aiChatStore.startNewSession()
-    const sid = aiChatStore.ensureSession(t('v2.newConversation', 'Nueva conversación'), ctxId ?? undefined)
-    setOpenId(sid)
-  }
-  const openExisting = (id: string) => {
-    aiChatStore.loadSession(id)
-    setOpenId(id)
-  }
-  const untitled = t('v2.history.untitledConversation', 'Conversación sin título')
-
-  if (openId) {
-    return (
-      <div className="v2-hist v2-hist--list">
-        <button className="v2-hist-back" onClick={() => setOpenId(null)}>
-          <Icon name="chevron-left" size={15} /> {t('v2.back', 'Volver')}
-        </button>
-        <V2ElementChat key={openId} nodeId={openId} onFilesDropped={onFilesDropped} />
-      </div>
-    )
-  }
-
-  return (
-    <div className="v2-hist v2-hist--list">
-      <button className="v2-hist-newchat" onClick={startNewConversation}>
-        <Icon name="plus" size={14} />
-        {t('v2.newConversation', 'Nueva conversación')}
-      </button>
-      {list.length === 0 ? (
-        <div className="v2-hist-empty">{t('v2.history.noConversationsInContext', 'Todavía no hay conversaciones aquí.')}</div>
-      ) : (
-        <div className="v2-hist-list">
-          {/* Mismas acciones que cualquier otra fila (tarea, elemento): borrar al
-              hover + clic derecho con renombrar/cambiar contexto/etc. (26 ago
-              2026, Alberto: "las conversaciones de chat deben tener un botón de
-              hover para eliminar, y un botón derecho... al estilo de otros
-              elementos"). `from:open-rowmenu` es el mismo menú genérico que ya
-              usan TaskRow/V2ElementRow/PlannerPanel — nada nuevo que mantener. */}
-          {list.map(n => (
-            <div
-              key={n.id}
-              className="v2-hist-row"
-              role="button"
-              tabIndex={0}
-              onClick={() => openExisting(n.id)}
-              onKeyDown={e => { if (e.key === 'Enter') openExisting(n.id) }}
-              onContextMenu={e => {
-                e.preventDefault(); e.stopPropagation()
-                window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } }))
-              }}
-            >
-              <Icon name="conversation" size={15} className="v2-hist-row-icon" />
-              <span className="v2-hist-row-main">
-                <span className="v2-hist-row-title">{conversationTitle(n, untitled)}</span>
-                <span className="v2-hist-row-meta">{fmtRelative(n.updatedAt, i18n.language)}</span>
-              </span>
-              <button
-                className="v2-el-del"
-                title={t('tip.delete', 'Eliminar')}
-                onClick={e => {
-                  e.stopPropagation(); e.preventDefault()
-                  const deletedIds = store.deleteNode(n.id)
-                  if (deletedIds.length === 0) return
-                  window.dispatchEvent(new CustomEvent('from:toast', {
-                    detail: {
-                      message: t('v2.elementRow.movedToTrash', 'Movido a la papelera'),
-                      type: 'success',
-                      action: { label: t('tip.undo', 'Deshacer'), onClick: () => store.restoreDeleted(deletedIds) },
-                    },
-                  }))
-                }}
-              >
-                <Icon name="trash" size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
   )
 }

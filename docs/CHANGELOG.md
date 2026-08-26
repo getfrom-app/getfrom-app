@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.6.991 — 26 agosto 2026 · Arreglo real de "Nueva conversación" en el chat de un contexto
+
+- **"Nueva conversación" del chat de un contexto ahora abre de verdad un hilo propio y vacío**, en vez del histórico general de Fromly — el arreglo de v9.6.990 no llegaba a corregirlo del todo en cuentas con historial real. Cada contexto tiene ahora UN hilo persistente y aislado (como el de cualquier documento o tarea), con su propio botón de papelera para reiniciarlo; el chat general del sidebar sigue siendo el mismo de siempre.
+- Se corrige además la causa raíz, un fallo de sincronización entre el hilo cargado y la pantalla que también podía afectar al chat de cualquier elemento la primera vez que se abría con historial ya guardado.
+- Las conversaciones del tab "Historial" del Chat general ganan las mismas acciones que cualquier otro elemento: eliminar al pasar el ratón, clic derecho para cambiar de contexto/renombrar.
+
+---
+
 ## Web v9.6.990 — 26 agosto 2026 · Árbol de contextos desplegable, conversaciones con las mismas acciones que cualquier elemento
 
 - **Los contextos con subcontextos ahora se despliegan en el sitio**, sin perder de vista el resto de la lista — antes entrar en uno sustituía toda la columna.

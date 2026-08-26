@@ -75,10 +75,26 @@ export default function V2ContextBrowser({ variant, onOpenConversation, onNewCha
   // ── Fila de conversación (idéntica en ambos variants) ────────────────────
   // `ctx`: el contexto al que pertenece, para el chip de la 2ª línea. Solo se pasa
   // en la lista de Recientes (mezcla contextos); dentro de un contexto sobra.
+  // Mismas acciones que cualquier otra fila (tarea, elemento): borrar al hover +
+  // clic derecho con renombrar/cambiar contexto/etc. (26 ago 2026, Alberto: "las
+  // conversaciones de chat deben tener un botón de hover para eliminar, y un
+  // botón derecho... al estilo de otros elementos"). `from:open-rowmenu` es el
+  // mismo menú genérico que ya usan TaskRow/V2ElementRow/PlannerPanel.
   const convRow = (n: Node) => {
     const ctx = firstContextOf(n)
     return (
-      <button key={n.id} className="v2-hist-row" onClick={() => onOpenConversation(n.id)}>
+      <div
+        key={n.id}
+        className="v2-hist-row"
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpenConversation(n.id)}
+        onKeyDown={e => { if (e.key === 'Enter') onOpenConversation(n.id) }}
+        onContextMenu={e => {
+          e.preventDefault(); e.stopPropagation()
+          window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } }))
+        }}
+      >
         <Icon name="conversation" size={15} className="v2-hist-row-icon" />
         <span className="v2-hist-row-main">
           <span className="v2-hist-row-title">{conversationTitle(n, untitled)}</span>
@@ -89,7 +105,25 @@ export default function V2ContextBrowser({ variant, onOpenConversation, onNewCha
             {fmtRelative(n.updatedAt, i18n.language)}
           </span>
         </span>
-      </button>
+        <button
+          className="v2-el-del"
+          title={t('tip.delete', 'Eliminar')}
+          onClick={e => {
+            e.stopPropagation(); e.preventDefault()
+            const deletedIds = store.deleteNode(n.id)
+            if (deletedIds.length === 0) return
+            window.dispatchEvent(new CustomEvent('from:toast', {
+              detail: {
+                message: t('v2.elementRow.movedToTrash', 'Movido a la papelera'),
+                type: 'success',
+                action: { label: t('tip.undo', 'Deshacer'), onClick: () => store.restoreDeleted(deletedIds) },
+              },
+            }))
+          }}
+        >
+          <Icon name="trash" size={14} />
+        </button>
+      </div>
     )
   }
 
