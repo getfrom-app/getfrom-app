@@ -94,12 +94,20 @@ interface Props {
 
 export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, rowRef, extra, style }: Props) {
   const { t, i18n } = useTranslation()
-  // Un evento (isEvent, día+hora) no se "completa" en el sentido GTD (Alberto,
-  // 24 ago 2026: distinguir eventos de tareas en el chat) — nunca aplicamos la
-  // semántica de tachado/checkbox de una tarea a un evento, aunque su `status`
-  // tenga valor por herencia del modelo (ver taskNode.ts).
+  // El propio taskNode.ts lo deja dicho: "`status` dice que es una tarea;
+  // `isEvent` dice que va al timeline del día y a Google Calendar. No son dos
+  // tipos, son dos propiedades del mismo tipo." El 24 ago se introdujo aquí un
+  // punto (evento, sin checkbox) para CUALQUIER `isEvent`, tratándolo como
+  // excluyente de `status` — rompía justo esa ortogonalidad: una tarea a la
+  // que solo le pones una hora concreta ("Probar WhatsApp a las 16:00") se
+  // vuelve `isEvent` automáticamente (ver DiaryPanelComponents.setDue) y
+  // dejaba de poder completarse desde aquí (Alberto, 27 ago 2026: "eso no
+  // quiere decir que sean eventos... son tareas con hora"). Ahora el punto
+  // (sin checkbox, sin poder completarse) queda solo para lo que de verdad no
+  // tiene `status` — un evento crudo de Google nunca sincronizado como tarea.
   const isEvent = !!node.isEvent
-  const done = !isEvent && node.status === 'done'
+  const hasStatus = node.status != null
+  const done = hasStatus && node.status === 'done'
   const time = timeLabel(node, i18n.language)
   const due = showDue ? dueLabel(node, i18n.language) : ''
   const rec = recLabel(node, t)
@@ -107,17 +115,20 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
   return (
     <div
       ref={rowRef}
-      className={`dc-row ${isEvent ? 'dc-row--event' : ''} ${done ? 'dc-row--done' : ''}`}
+      className={`dc-row ${isEvent && !hasStatus ? 'dc-row--event' : ''} ${done ? 'dc-row--done' : ''}`}
       data-node-id={node.id}
       style={style}
       onClick={() => openNodeDetail(node.id)}
       onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: node.id, x: e.clientX, y: e.clientY } })) }}
       {...dragProps}
     >
-      {isEvent ? (
+      {!hasStatus ? (
         // Indicador de evento en vez de checkbox — mismo hueco visual que
         // .dc-check (ver comentario de .dc-event-dot en styles/index.css), pero
-        // sin acción de completar: un evento se reprograma, no se marca hecho.
+        // sin acción de completar: un evento SIN status (crudo, nunca
+        // sincronizado como tarea) se reprograma, no se marca hecho. Una
+        // tarea con hora concreta SÍ tiene `status` — lleva checkbox normal,
+        // aunque también sea `isEvent` (ver comentario arriba).
         <span className="dc-event-dot" title={t('search.chipEvent')} />
       ) : (
         <button

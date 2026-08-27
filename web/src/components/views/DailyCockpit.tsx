@@ -41,6 +41,11 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
       localStorage.setItem('from_dc_groups_collapsed', JSON.stringify([...set]))
       localStorage.setItem('from_dc_futuro_collapsed_init', '1')
     }
+    if (localStorage.getItem('from_dc_completadas_collapsed_init') !== '1') {
+      set.add('completadas')
+      localStorage.setItem('from_dc_groups_collapsed', JSON.stringify([...set]))
+      localStorage.setItem('from_dc_completadas_collapsed_init', '1')
+    }
     return set
   })
   function toggleG(k: string) {
@@ -56,6 +61,13 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
   const data = collectDailyCockpit()
   // Tareas con fecha en próximos días (completan el bloque «Futuro»).
   const upcoming = collectUpcomingTasks()
+  // Completadas HOY (siguen "calificando" en overdue/today — tachadas, hasta
+  // mañana — para no perderlas de vista, ver wasCompletedToday en
+  // dailyCockpit.ts) — aparte, en su propio desplegable, en vez de mezcladas
+  // con lo que aún queda pendiente.
+  const doneToday = [...data.overdue, ...data.today].filter(n => n.status === 'done')
+  const openOverdue = data.overdue.filter(n => n.status !== 'done')
+  const openToday = data.today.filter(n => n.status !== 'done')
 
   // (Aquí se agrupaban las tareas de hoy/atrasadas por contexto. «Para hacer» pasó a
   //  ser una lista plana con el contexto como chip en cada fila, así que el mapa solo
@@ -174,15 +186,15 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
         // «Tareas para hoy» (sigue SIEMPRE visible para poder crear la
         // primera con el «+»), «Atrasadas» vacía no aporta nada que crear:
         // una tarea nueva nace hoy o en el futuro, nunca ya atrasada.
-        if (hideToday && data.overdue.length === 0) return null
+        if (hideToday && openOverdue.length === 0) return null
         return (
           <div className="dc-group">
             <div className="dc-group-headrow">
               {gHeader('porhacer', hideToday ? t('daily.overdue', 'Atrasadas') : t('daily.tasksToday', 'Tareas para hoy'))}
               <button className="dc-group-add" onClick={() => setShowNewTask(true)} title={t('modal.newTask')}>+</button>
             </div>
-            {open && data.overdue.map(n => renderTaskRow(n, { showDue: true }))}
-            {open && !hideToday && data.today.map(n => renderTaskRow(n, { showDue: true }))}
+            {open && openOverdue.map(n => renderTaskRow(n, { showDue: true }))}
+            {open && !hideToday && openToday.map(n => renderTaskRow(n, { showDue: true }))}
           </div>
         )
       })()}
@@ -199,6 +211,15 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
         <div className="dc-group">
           {gHeader('algundia', `${t('daily.noDate', 'Sin fecha')} · ${data.seguimiento.length}`)}
           {!collapsedG.has('algundia') && data.seguimiento.map(n => renderTaskRow(n, {}))}
+        </div>
+      )}
+      {/* COMPLETADAS — tachadas hoy, aparte en vez de mezcladas con lo pendiente
+          (27 ago 2026, Alberto: "quiero un desplegable pequeño con
+          Completadas"). Colapsado por defecto, igual que Sin fecha/Futuro. */}
+      {doneToday.length > 0 && (
+        <div className="dc-group">
+          {gHeader('completadas', `${t('daily.completed', 'Completadas')} · ${doneToday.length}`)}
+          {!collapsedG.has('completadas') && doneToday.map(n => renderTaskRow(n, { showDue: true }))}
         </div>
       )}
     </>
