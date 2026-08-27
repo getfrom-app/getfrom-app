@@ -181,23 +181,12 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
     <aside className="v2-col v2-right">
       <div className="v2-resize-handle" onPointerDown={startResize} title={t('v2.rightColumn.dragToWiden', 'Arrastra para ensanchar')} />
       {importDragOver && <div className="v2-import-banner"><Icon name="import" size={15} /> {t('v2.chat.importToFromly', 'Importar a Fromly')}</div>}
-      {/* Destino Chat: 2 tabs FIJAS propias — «Chat» (la conversación: la del
-          elemento centrado si lo hay, si no la general) e «Historial» (contextos
-          al estilo «Proyectos» de Claude + últimas conversaciones). No usa el
-          mecanismo genérico Tab1/Tab2 de más abajo: aquí la Tab 1 YA es un chat,
-          así que una segunda tab «Chat» sería la misma etiqueta dos veces. */}
-      {mode === 'chat' ? (
-        <div className="v2-right-tabs">
-          <button
-            className={`v2-right-tab ${effectiveSubTab !== 'historial' ? 'active' : ''}`}
-            onClick={() => onSubTabChange('primary')}
-          >{t('v2.rightColumn.tabChat', 'Chat')}</button>
-          <button
-            className={`v2-right-tab ${effectiveSubTab === 'historial' ? 'active' : ''}`}
-            onClick={() => onSubTabChange('historial')}
-          >{t('v2.rightColumn.tabHistory', 'Historial')}</button>
-        </div>
-      ) : (
+      {/* Destino Chat: SIN cabecera de tabs propia (27 ago 2026 — se retiró la
+          tab «Historial»: navegar aquí ya arranca en vacío, ver `onSelectGeneral`
+          en V2App.tsx, y el propio `V2Chat` enseña su historial + "Nueva
+          conversación" en ese estado vacío, el mismo componente que los
+          contextos — una única columna, sin doble tab que la parta). */}
+      {mode === 'chat' ? null : (
         /* Sin cabecera de tabs cuando solo hay una — no aporta nada seleccionar
            entre 1 opción (Alberto, 5 ago 2026). Reaparece en cuanto hay algo
            abierto en el centro y la Tab 2 "Chat" es una alternativa real. La nota

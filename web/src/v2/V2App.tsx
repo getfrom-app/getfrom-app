@@ -341,10 +341,18 @@ export default function V2App() {
       // de la columna derecha (V2RightColumn.tsx), no en el centro.
       setCenterElementId(null)
     } else if (dest === 'chat') {
-      // Retoma la conversación general que hubiera — igual que un contexto
-      // retoma su documento. Descartarla y empezar de cero sigue siendo el
-      // trabajo explícito de empezar una nueva (onNewChat / icono de chat).
+      // YA NO retoma la conversación general que hubiera (27 ago 2026, Alberto:
+      // "en el caso de web creo que es mejor que sean chats individuales y que
+      // haya un histórico de chats igual que en los chats de los contextos" —
+      // a diferencia de un contexto, que sí retoma SU documento/hilo propio, el
+      // destino Chat general no tiene "un" hilo: cada conversación es su propio
+      // nodo (`_aiSession`) desde siempre, lo único que cambiaba era que aquí
+      // se re-abría la última sin preguntar. Con la sesión vacía, `V2Chat`
+      // enseña su propio estado vacío (contextos + "General" con historial y
+      // "Nueva conversación", el mismo componente que ya usan los contextos) en
+      // vez de continuar el hilo de la última vez.
       setCenterElementId(null)
+      aiChatStore.startNewSession()
     } else if (dest === 'elementos') {
       // Un clic normal en la fila Elementos siempre debe abrir «Todos» — sin esto,
       // `elementsFilter` se quedaba pegado al último filtro pedido por «← Agentes»/
