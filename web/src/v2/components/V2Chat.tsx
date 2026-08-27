@@ -25,7 +25,6 @@ import { isMentionable } from '../elementKind'
 import TaskRow from '../../components/panels/TaskRow'
 import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
 import Icon from './Icon'
-import V2ContextBrowser from './V2ContextBrowser'
 
 interface Props {
   currentNodeId: string | null
@@ -427,14 +426,12 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               <div className="v2-chat-empty-hint">
                 {t('v2.chat.elementEmptyHint', 'Pregunta por este documento, pídele que lo resuma, lo convierta en tareas, o lo mejore. Ya sabe de qué se trata.')}
               </div>
-            ) : onOpenConversation ? (
-              <V2ContextBrowser
-                variant="cards"
-                onOpenConversation={onOpenConversation}
-                onNewChatInCtx={onNewChatInCtx}
-                onSelectCtx={onSelectCtx}
-              />
             ) : null}
+            {/* Chat nuevo/vacío general: sin la rejilla de contextos que había aquí
+                antes (27 ago 2026, Alberto: "aparecen cuadrados con todos los
+                contextos... deja el chat limpio sencillamente. si luego ese chat
+                debe tener un contexto, se le puede añadir después") — arranca en
+                blanco, sin nada que elegir primero. */}
           </div>
         ) : (
           <div className="v2-chat-inner v2-assistant-inner">
@@ -482,10 +479,11 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               onClick={() => {
                 // El hilo se apilaba sin fin (avisos y turnos de semanas atrás
                 // seguían ahí) — un botón claro para vaciarlo, en vez de que
-                // solo exista un gesto oculto (Alberto, 24 ago 2026).
-                if (window.confirm(t('v2.chat.newConversationConfirm', '¿Empezar de cero? Se borra el historial de esta conversación.'))) {
-                  assistantStore.clear()
-                }
+                // solo exista un gesto oculto (Alberto, 24 ago 2026). Sin
+                // `window.confirm()` — el diálogo nativo del navegador desentona
+                // con el resto de la app (Alberto, 27 ago 2026: "sale el aviso
+                // de chrome feo... limpia el chat sin más").
+                assistantStore.clear()
               }}
             ><Icon name="trash" /></button>
             <div style={{ position: 'relative' }} ref={promptMenuRef}>

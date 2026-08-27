@@ -427,6 +427,13 @@ export default function V2App() {
     setShowProfile(false)
     markPendingConversationSeen(id) // quita el aviso "N esperando" al abrirla, no solo al responder
     aiChatStore.loadSession(id)
+    // La conversación se pinta en el destino Chat (Tab 1, `elementId===null`) —
+    // sin esto, abrirla desde Elementos/sidebar mientras se está en OTRO destino
+    // (p.ej. Elementos filtrado a Conversaciones) cargaba la sesión pero no se
+    // veía en ningún sitio: la columna derecha seguía mostrando lo de antes (27
+    // ago 2026, Alberto: "cuando selecciono una conversacion de la columna
+    // derecha no ocurre nada").
+    setRightMode('chat')
     // Mantener el contexto de la conversación en la barra lateral (antes se
     // limpiaba SIEMPRE — Alberto, 15 jul: "cuando se abre una conversación dentro
     // del contexto diario, se debería mantener ese contexto diario").

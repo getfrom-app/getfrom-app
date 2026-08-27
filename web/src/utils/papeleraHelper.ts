@@ -30,6 +30,16 @@ export function parseExtraData(raw: string | null | undefined): Record<string, u
   return v && typeof v === 'object' && !Array.isArray(v) ? v as Record<string, unknown> : {}
 }
 
+/** Hijos DIRECTOS de un nodo, incluidos los borrados (`deletedAt` presente) —
+ *  `store.children()` los excluye de su caché igual que a cualquier otro nodo
+ *  borrado, y dentro de la Papelera TODO tiene `deletedAt` (la "lápida", 24 ago
+ *  2026), así que ese helper nunca sirve aquí dentro. */
+function childrenIncludingDeleted(parentId: string): Node[] {
+  const out: Node[] = []
+  for (const n of store.nodes.values()) if (n.parentId === parentId) out.push(n)
+  return out
+}
+
 export function getPapeleraNode(): Node | undefined {
   // Papelera permanece en parentId=null (no se reparenta bajo 🏠 From), pero usamos
   // el lookup robusto por id determinista por consistencia.
@@ -141,7 +151,7 @@ export function emptyTrash(): void {
   // de listarse en la papelera. El nodo se conserva en la base por si hace falta
   // recuperarlo desde un backup, pero para la app no existe.
   function purgeRecursive(id: string) {
-    for (const child of store.children(id)) purgeRecursive(child.id)
+    for (const child of childrenIncludingDeleted(id)) purgeRecursive(child.id)
     const n = store.getNode(id)
     if (!n) return
     const ed = parseExtraData(n.extraData)
@@ -149,14 +159,19 @@ export function emptyTrash(): void {
     store.updateNode(id, { deletedAt: n.deletedAt ?? now, extraData: JSON.stringify(ed) })
   }
 
-  for (const child of store.children(papelera.id)) purgeRecursive(child.id)
+  for (const child of childrenIncludingDeleted(papelera.id)) purgeRecursive(child.id)
 }
 
-/** Lo que debe verse en la Papelera: con lápida y todavía recuperable. */
+/** Lo que debe verse en la Papelera: con lápida y todavía recuperable.
+ *  NO usa `store.children()` — desde que la papelera pasó a marcar `deletedAt`
+ *  en el propio nodo (24 ago 2026, la "lápida"), `children()` los excluye de su
+ *  caché como a cualquier otro nodo borrado, así que esta lista salía SIEMPRE
+ *  vacía aunque hubiera elementos recién eliminados (Alberto, 27 ago 2026:
+ *  "dice que la papelera esta vacia... he borrado elementos hace poco"). */
 export function trashItems(): Node[] {
   const papelera = getPapeleraNode()
   if (!papelera) return []
-  return store.children(papelera.id).filter(n => !!n.deletedAt && !parseExtraData(n.extraData)._purgedAt)
+  return childrenIncludingDeleted(papelera.id).filter(n => !!n.deletedAt && !parseExtraData(n.extraData)._purgedAt)
 }
 
 /** Comprueba si un nodo está en la Papelera (él o algún ancestro) */
@@ -184,7 +199,7 @@ function reconnectOrphanedChildren(parentId: string): void {
   if (!papelera) return
 
   // Buscar nodos en Papelera (hijos directos) que pertenecían a parentId
-  const papeleraChildren = store.children(papelera.id)
+  const papeleraChildren = childrenIncludingDeleted(papelera.id)
   for (const child of papeleraChildren) {
     const ed = parseExtraData(child.extraData)
     if (ed._trashedFromParentId === parentId) {
