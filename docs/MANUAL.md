@@ -44,6 +44,10 @@ navegador si algún día quieres repasarlo.
 
 ## Novedades (agosto 2026)
 
+- **Publicar un contexto entero**: además de compartir grupos, ahora puedes generar un enlace
+  público con TODO el contenido de un contexto (nota + elementos + los grupos que tenga dentro,
+  ver sección 4). Mismas opciones que un Grupo — nombre personalizado, contraseña opcional,
+  contenido siempre en vivo.
 - **Elementos, rediseñado**: el buscador y la lista viven ahora en el espacio central, mucho más
   ancho — con vista de **Tabla** por defecto (antes Lista) y **Kanban** siempre disponible, no solo
   filtrando tareas. Clic derecho sobre cualquier fila (en cualquier vista) abre el menú con
@@ -304,6 +308,13 @@ pasa al abrir el chat de cualquier nota o tarea concreta — cada una tiene la s
 **Seleccionar varios elementos y agruparlos**: dentro de la pestaña Elementos de un contexto (o en
 la pantalla global de Elementos) puedes marcar varios y crear un **Grupo** con un solo enlace
 público — ver sección 6, "Grupo".
+
+**Publicar un contexto entero**: igual que un Grupo, puedes generar un enlace público
+(`fromly.app/c/tu-usuario/nombre-del-contexto`) con TODO el contenido de un contexto — su nota
+principal y todos sus elementos (incluidos los grupos que contenga, que se ven con su propio
+apartado). Mismas opciones que un Grupo: nombre personalizado del enlace, contraseña opcional, y
+contenido siempre en vivo — si añades o quitas algo del contexto, la página pública se actualiza al
+instante sin volver a publicar. Se genera desde el mismo botón de compartir de la nota del contexto.
 
 ### Asignar un contexto
 
