@@ -177,6 +177,17 @@
 .v2-statusbar--urgent .v2-nextevent-text,
 .v2-statusbar--urgent .v2-nextevent-prefix { color: var(--danger, #e03131); }
 .v2-statusbar--blink .v2-nextevent-text { animation: v2-nextevent-blink 1s ease-in-out infinite; }
+/* "Después:" — solo aparece junto a "En curso:", nunca solo. Más discreto
+   que el principal (más pequeño, atenuado, con un separador) y NUNCA se
+   pinta en rojo aunque el principal lo esté — no es lo urgente, es de
+   contexto (27 ago 2026, Alberto: "siempre que esté en curso algo, debe
+   salir ya la siguiente también"). */
+.v2-nextevent-after {
+  flex: 0 1 auto; opacity: 0.6; font-size: 11px;
+  padding-left: 8px; border-left: 1px solid var(--v2-line);
+  color: var(--text-secondary) !important;
+}
+.v2-nextevent-after:hover { opacity: 1; }
 @keyframes v2-nextevent-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.25; }

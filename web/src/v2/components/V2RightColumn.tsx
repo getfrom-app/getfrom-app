@@ -239,8 +239,16 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
           centro (nunca un «artifact» aparte, ver V2ElementChat). Solo se monta
           mientras está activa: nunca en paralelo con la Tab 1 (V2ElementChat
           cambia la sesión GLOBAL activa en un efecto de layout — montarla oculta
-          por CSS le robaría la sesión al chat general de la Tab 1 sin avisar). */}
-      {!isRecordingActive && (effectiveSubTab === 'chat' || (mode === 'chat' && effectiveSubTab === 'primary')) && elementId && !centerIsDiary && !showCtxHistorial && (
+          por CSS le robaría la sesión al chat general de la Tab 1 sin avisar).
+          YA NO se activa sola con `mode === 'chat'` — antes, abrir CUALQUIER
+          elemento (p.ej. un agente recién creado, autoOpen) mientras se estaba
+          chateando sustituía la conversación general por el hilo propio (vacío)
+          del elemento, sin ninguna pestaña visible para volver (el destino Chat
+          no las muestra) — la conversación en curso "desaparecía" (27 ago
+          2026, Alberto: "no debe perder el chat de la derecha, debe mantenerse
+          el chat todo el tiempo"). El destino Chat general ahora SIEMPRE
+          enseña el mismo hilo general, abra lo que abra el centro. */}
+      {!isRecordingActive && effectiveSubTab === 'chat' && elementId && !centerIsDiary && !showCtxHistorial && (
         // key={elementId}: mismo motivo que el visor central en V2App.tsx —
         // sin desmontar entre nodos distintos, el chat de uno se solapa con
         // el del otro durante la ventana de un render.
@@ -272,10 +280,10 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
 
       {/* Tab 1 — destino «Chat» general: el composer completo, embebido en la
           derecha (Alberto, 5 ago 2026: "debe haber algún chat en algún lugar
-          fuera de contextos... que se abra en columna derecha"). El centro se
-          queda neutro mientras tanto (ver V2App.tsx) — crear algo lo lleva ahí,
-          la MISMA conversación sigue disponible luego en la Tab 2 de lo creado. */}
-      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'chat' && !elementId && (
+          fuera de contextos... que se abra en columna derecha"). Se mantiene
+          SIEMPRE visible en este destino, abra lo que abra el centro — ya no
+          exige `!elementId` (27 ago 2026, ver comentario de la Tab 2 arriba). */}
+      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'chat' && (
         <V2Chat
           embedded
           elementScoped={false}

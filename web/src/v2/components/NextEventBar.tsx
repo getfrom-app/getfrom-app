@@ -137,10 +137,16 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
     return () => clearInterval(id)
   }, [])
 
-  // Un solo elemento, siempre — el botón de "ver más" desplegaba el resto en
-  // el mismo hueco estrecho y quedaba todo truncado, ilegible (27 ago 2026,
-  // Alberto: "no despliega bien... que solo salga lo próximo, una cosa").
-  const items = useMemo(() => listUpcomingTimed(1, now), [now, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Un solo elemento a la vez, nunca una lista desplegable — el botón de "ver
+  // más" desplegaba el resto en el mismo hueco estrecho y quedaba todo
+  // truncado, ilegible (27 ago 2026, Alberto: "no despliega bien... que solo
+  // salga lo próximo, una cosa"). Se piden 2 igualmente: cuando el primero
+  // está EN CURSO, el segundo es "Después:" — para que se sepa qué viene
+  // justo detrás sin tener que desplegar nada (Alberto, mismo día, tercera
+  // vuelta: "siempre que esté en curso algo, debe salir ya la siguiente
+  // también... la excepción es si está en curso el último... entonces no
+  // saldrá nada después").
+  const items = useMemo(() => listUpcomingTimed(2, now), [now, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   const hasEvent = enabled && items.length > 0
 
   const first = items[0]
@@ -150,6 +156,8 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
 
   const label = hasEvent ? `${first!.text || t('common.noTitle', 'Sin título')} — ${fmtWhen(first!.due, now, t)}` : ''
   const prefix = state === 'ongoing' ? t('nextEvent.ongoing', 'En curso:') : t('nextEvent.next', 'Siguiente:')
+  const second = state === 'ongoing' ? items[1] : undefined
+  const afterLabel = second ? `${t('nextEvent.after', 'Después:')} ${second.text || t('common.noTitle', 'Sin título')} — ${fmtWhen(second.due, now, t)}` : ''
 
   const backupText = lastBackup
     ? `${t('statusbar.backup', 'Backup')} ${formatBackupAge(lastBackup.createdAt)}`
@@ -184,6 +192,15 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
           >
             <span className="v2-nextevent-prefix">{prefix}</span> {label}
           </button>
+          {second && (
+            <button
+              className="v2-nextevent-text v2-nextevent-after"
+              onClick={() => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: second.id } }))}
+              title={afterLabel}
+            >
+              <span className="v2-nextevent-prefix">{t('nextEvent.after', 'Después:')}</span> {second.text || t('common.noTitle', 'Sin título')} — {fmtWhen(second.due, now, t)}
+            </button>
+          )}
         </div>
       )}
     </div>
