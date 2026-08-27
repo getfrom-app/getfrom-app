@@ -439,6 +439,16 @@ contexto (siempre visible y editable) y quedan indexados para el chat y la búsq
 última modificación completas). En Elementos, el icono junto al buscador cambia el
 orden entre última modificación, fecha de creación o título.
 
+### Tipos personalizados
+
+Además de los tipos de elemento fijos de más abajo, puedes crear tus propios tipos — Libro, Persona,
+Película, Receta, o cualquier otro que te haga falta. Desde **Elementos → bloque "Tipos" → "+"**:
+ponle un nombre, elige un icono y define las propiedades que quieras, al estilo de una base de datos
+de Notion — texto, número, selección única o múltiple, fecha, casilla, enlace y **calificación**
+(estrellas de 1 a 5). Un elemento creado a partir de un tipo sigue siendo una nota normal (se edita
+igual, se busca igual, se comparte igual): solo lleva encima una ficha con sus propiedades, editable
+en el momento. Disponible en Mac, web y iPhone.
+
 ### Documento
 
 Un documento es una nota de texto enriquecido — el mismo editor tipo Notion en cualquier sitio

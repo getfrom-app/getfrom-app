@@ -1,7 +1,26 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-27 (Web v9.7.29)
+> Última actualización: 2026-08-27 (Web v9.7.32, iOS build 161)
+
+---
+
+## Sesión 2026-08-27 (sesión 9) — Tipos de elemento personalizados + fix de rendimiento en Elementos
+
+Web **v9.7.32**. iOS **build 161 (v2.18)**, enviada a revisión de Apple. Servidor: `GET/PUT
+/assistant/node/:id` amplía su contrato. Detalle completo en
+`logs/2026-08-27-sesion9-tipos-custom-elementos.md`.
+
+- **Elementos iba lenta** con muchos elementos: la función que clasifica cada nodo por tipo
+  reparseaba su JSON interno sin caché en cada evaluación. Arreglado reutilizando la caché que ya
+  existía para otro propósito en el store.
+- **Tipos de elemento personalizados**: desde Elementos → "Tipos" → "+", el usuario crea un tipo
+  propio (Persona, Libro, Película, Receta…) con icono y propiedades estilo Notion — texto, número,
+  selección (única o múltiple), fecha, casilla, enlace y el nuevo tipo **calificación** (estrellas de
+  1 a 5). Un elemento de ese tipo sigue siendo una nota normal, con su ficha de propiedades encima
+  del contenido. Disponible en web/Mac y en iOS (implementación completa en las dos plataformas, no
+  solo web — iOS no tenía nada parecido en producción, se construyó desde cero siguiendo el mismo
+  formato de datos que la web para no romper la sincronización entre dispositivos).
 
 ---
 

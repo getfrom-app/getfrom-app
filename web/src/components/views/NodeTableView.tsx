@@ -8,7 +8,7 @@ import Icon from '../../v2/components/Icon'
 
 interface Props { parentId: string }
 
-type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'tag' | 'task' | 'reminder'
+type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'tag' | 'task' | 'reminder' | 'rating'
 type SelectOption = { id: string; label: string; color?: string }
 type PropDef = { id: string; name: string; type: string; options?: SelectOption[] }
 type SortDir = 'asc' | 'desc' | null
@@ -16,6 +16,22 @@ type SortDir = 'asc' | 'desc' | null
 const COL_TYPE_LABEL_KEYS: Record<ColType, string> = {
   text: 'colType.text', number: 'colType.number', select: 'colType.select', multi_select: 'colType.multiSelect',
   date: 'colType.date', checkbox: 'colType.checkbox', url: 'colType.url', tag: 'colType.tag', task: 'colType.task', reminder: 'colType.reminder',
+  rating: 'colType.rating',
+}
+
+/** Estrellas 1-5 — click-to-set, mismo componente para editor y vista. */
+export function RatingStars({ value, onChange, size = 15 }: { value: number; onChange?: (v: number) => void; size?: number }) {
+  return (
+    <span style={{ display: 'inline-flex', gap: 1 }} onClick={e => e.stopPropagation()}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <span
+          key={n}
+          onClick={() => onChange?.(n === value ? 0 : n)}
+          style={{ cursor: onChange ? 'pointer' : 'default', color: n <= value ? '#f5a623' : 'var(--border,#d4d4d8)', lineHeight: 1, fontSize: size }}
+        >★</span>
+      ))}
+    </span>
+  )
 }
 
 const BUILTIN_COLS = [
@@ -239,7 +255,7 @@ function CellEditor({ node, def, parentId, onClose, onNav }: { node: Node; def: 
   useEffect(() => { ref.current?.focus(); if (ref.current && 'select' in ref.current && def.type !== 'select') ref.current.select() }, [def.type])
   function storeVal(v: string) {
     let stored: unknown = v
-    if (def.type === 'number') stored = v === '' ? null : Number(v)
+    if (def.type === 'number' || def.type === 'rating') stored = v === '' ? null : Number(v)
     if (def.type === 'checkbox') stored = v === 'true'
     store.setPropValue(node.id, def.id, stored)
   }
@@ -351,6 +367,13 @@ function CellEditor({ node, def, parentId, onClose, onNav }: { node: Node; def: 
   if (def.type === 'checkbox') {
     return <input type="checkbox" defaultChecked={!!current} onChange={e => commit(String(e.target.checked))} onBlur={onClose} className="node-table-cell-editor" />
   }
+  if (def.type === 'rating') {
+    return (
+      <div className="node-table-cell-editor" style={{ display: 'flex', alignItems: 'center', padding: '4px 6px' }} onMouseDown={e => e.preventDefault()}>
+        <RatingStars value={current ? Number(current) : 0} onChange={n => commit(String(n))} />
+      </div>
+    )
+  }
   if (def.type === 'date') {
     return (
       <input
@@ -446,6 +469,9 @@ function CellView({ node, def, onEdit }: { node: Node; def: PropDef; onEdit: () 
     )
   }
   const v = store.getPropValue(node.id, def.id)
+  if (def.type === 'rating') {
+    return <span onClick={onEdit} style={{ display: 'inline-flex', cursor: 'pointer' }}><RatingStars value={v ? Number(v) : 0} size={13} /></span>
+  }
   if (v === undefined || v === null || v === '') {
     return <span className="node-table-empty-cell" onClick={onEdit}>—</span>
   }
@@ -1004,7 +1030,7 @@ function getCompareValue(node: Node, colId: string, customCols: PropDef[]): stri
   if (!col) return null
   const v = store.getPropValue(node.id, colId)
   if (v === undefined || v === null) return null
-  if (col.type === 'number') return Number(v)
+  if (col.type === 'number' || col.type === 'rating') return Number(v)
   if (col.type === 'date') return v ? new Date(String(v)).getTime() : 0
   return String(v).toLowerCase()
 }

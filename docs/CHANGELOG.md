@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.7.32 · iOS v2.18 — 27 agosto 2026 · Tipos de elemento personalizados
+
+- **Nuevo: tipos de elemento personalizados.** Crea tus propios tipos (Libro, Persona, Película, Receta…) desde Elementos → "Tipos" → "+", con icono y propiedades estilo Notion: texto, número, selección única o múltiple, fecha, casilla, enlace y el nuevo tipo **calificación** (estrellas de 1 a 5). Disponible en Mac, web y iPhone.
+- **Elementos va más rápido** con muchos elementos guardados.
+
+---
+
 ## Web v9.6.995 — 26 agosto 2026 · Icono de "Solo anotar" corregido
 
 - El botón de "Solo anotar" en el chat pasa de una chincheta (📌, sin relación con anotar) a un lápiz — mismo comportamiento, solo el icono.

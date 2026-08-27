@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { store, useStore } from '../../store/nodeStore'
+import { store, useStore, nodeMeta } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { isDocNode, elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
@@ -31,6 +31,7 @@ import Icon, { type IconName } from '../../v2/components/Icon'
 import GroupAddButton from '../../v2/components/GroupAddButton'
 import { displayTitle } from '../../utils/displayText'
 import { elementsBrowserStore, useElementsBrowserStore } from '../../store/elementsBrowserStore'
+import { elementTypeId, createElementOfType, getTypeDef } from '../../utils/typeDefsHelper'
 
 // ⚠️ Ya NO existen los tipos 'event', 'context' ni 'memory' (Alberto, 5 ago 2026):
 //   · evento    → es una TAREA con día y hora, no un tipo aparte ("los eventos son
@@ -41,17 +42,24 @@ import { elementsBrowserStore, useElementsBrowserStore } from '../../store/eleme
 export type ElemKind = 'text' | 'canvas' | 'task' | 'link' | 'pdf' | 'image' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'cita' | 'group'
 export type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
-export interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; due?: string | null; status?: string | null }
+export interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; due?: string | null; status?: string | null; typeId?: string | null }
 type SortBy = 'updated' | 'created' | 'title' | 'kind'
 
-const ed = (n: Node): Record<string, unknown> => { try { return JSON.parse(n.extraData || '{}') } catch { return {} } }
+// Rendimiento (27 ago 2026 — Alberto: "en elementos va lenta porque hay
+// demasiados elementos"): antes `classify()` hacía su propio JSON.parse(extraData)
+// SIN caché en cada llamada — con miles de nodos, cada cambio de `nodesVersion`
+// (que salta con CUALQUIER escritura en CUALQUIER parte de la app, no solo aquí)
+// reparseaba el extraData de todo el árbol activo. `nodeMeta()` (nodeStore.ts) ya
+// cachea ese parse en un WeakMap por objeto Node, invalidado solo cuando el nodo
+// cambia de verdad (updateNode siempre crea un Node nuevo) — reusarlo aquí evita
+// duplicar la caché y elimina el reparseo repetido sin tocar el resto de la lógica.
 
 // Exportada: ElementsFilters.tsx (columna derecha) necesita los mismos
 // recuentos por tipo que el centro, sin duplicar la regla de qué ES un
 // elemento — 28 ago 2026.
 export function classify(n: Node): ElemKind | null {
   if (n.deletedAt) return null
-  const e = ed(n)
+  const e = nodeMeta(n) as unknown as Record<string, unknown>
   if (e._absorbedBy != null) return null       // oculto dentro de un bloque → no es elemento suelto
   // Mensajes/transcripciones DENTRO de una conversación no son elementos sueltos (solo
   // la sesión en sí lo es, como tipo 'conversation' — ver más abajo).
@@ -133,11 +141,18 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   // columna derecha (ElementsFilters) los edita, el centro (aquí) solo los
   // lee y pinta los resultados — mismo mando a distancia.
   const browser = useElementsBrowserStore()
-  const { filter, taskSub, sortBy } = browser
+  const { filter, taskSub, sortBy, customTypeId } = browser
   const q = browser.q
   // Si llegamos aquí ya con el panel montado (p.ej. «← Agentes» tras «← Prompts»
   // sin pasar por otro modo), re-aplica el filtro pedido en vez de ignorarlo.
-  useEffect(() => { if (initialFilter) elementsBrowserStore.setFilter(initialFilter) }, [initialFilter])
+  useEffect(() => {
+    // Guard: sin esto, si `initialFilter` llega ya igual al filtro activo,
+    // `setFilter` sigue notificando a los suscriptores (28 ago 2026, comportamiento
+    // previo) — normalmente inofensivo, pero si el padre (V2App) deriva el prop
+    // `elementsFilter` a partir del propio store, notificar sin cambiar nada real
+    // puede reentrar en un ciclo de renders. Evitarlo con una comprobación barata.
+    if (initialFilter && elementsBrowserStore.filter !== initialFilter) elementsBrowserStore.setFilter(initialFilter)
+  }, [initialFilter])
   const scrollRef = useRef<HTMLDivElement>(null)
   // Vista: Tabla por defecto, Lista secundaria (27 ago 2026 — Alberto: "en
   // elementos me gusta la vista de tabla por defecto, y la lista como
@@ -168,21 +183,25 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
       // `displayTitle` quita cualquier emoji decorativo que el nodo lleve escrito
       // como prefijo EN EL DATO (sesiones «✦ …», agentes «📈 …», raíces del sistema).
       const title = displayTitle(elementDisplayTitle(n) || snippet.slice(0, 60), t('common.noTitle'))
-      out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '', createdAt: n.createdAt || '', due: n.due, status: n.status })
+      out.push({ id: n.id, kind, title, snippet, updatedAt: n.updatedAt || '', createdAt: n.createdAt || '', due: n.due, status: n.status, typeId: elementTypeId(n) })
     }
     return out
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.nodesVersion, t])
 
   const nq = q.trim().toLowerCase()
-  const showTaskSub = filter === 'task'
+  const showTaskSub = filter === 'task' && !customTypeId
   const byTypeAndSearch = useMemo(() => rows.filter(r => {
-    if (filter === 'favorite') { if (!store.getNode(r.id)?.isFavorite) return false }
+    // Filtro por TIPO CUSTOM (creado por el usuario, ver typeDefsHelper.ts):
+    // exclusivo con el filtro por ElemKind — un tipo custom no es un `kind` fijo,
+    // es una etiqueta adicional (`_typeId`) sobre elementos que ya son 'text'.
+    if (customTypeId) { if (r.typeId !== customTypeId) return false }
+    else if (filter === 'favorite') { if (!store.getNode(r.id)?.isFavorite) return false }
     else if (filter !== 'all' && r.kind !== filter) return false
     if (showTaskSub && !matchesTaskSub(r, taskSub)) return false
     if (!nq) return true
     return r.title.toLowerCase().includes(nq) || r.snippet.toLowerCase().includes(nq)
-  }), [rows, filter, taskSub, showTaskSub, nq])
+  }), [rows, filter, customTypeId, taskSub, showTaskSub, nq])
 
   // ⚠️ RETIRADO el sub-filtro por CONTEXTO (fila de chips jerárquica con drill-down),
   // 5 ago 2026: era un SEGUNDO camino a lo que ya hace la sidebar → ficha del contexto
@@ -294,10 +313,25 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   // "Seleccionar varios" pintado en la columna derecha (ElementsFilters) sepa
   // si está activo y pueda alternarlo sin duplicar useGroupSelection allí.
   useEffect(() => { elementsBrowserStore.setSelectModeState(selectMode, selected.size) }, [selectMode, selected.size])
+  // BUG REAL (27 ago 2026, encontrado mientras se implementaban los tipos custom,
+  // sin relación con esa función): `toggleSelectMode` es una función NUEVA en cada
+  // render (useGroupSelection no la memoiza) — con ella en las deps, este efecto se
+  // disparaba en CADA render y `registerToggleSelectMode` hace `notify()`, que
+  // fuerza el re-render de todo suscriptor de `elementsBrowserStore` — incluido este
+  // mismo componente (`useElementsBrowserStore()` más abajo) → nuevo render → nueva
+  // función → el efecto vuelve a dispararse → bucle infinito ("Maximum update depth
+  // exceeded" en consola, `landing/web` — reproducible con CUALQUIER elemento
+  // abierto, no solo los de tipo custom). Fix: registrar una función ESTABLE (nunca
+  // cambia de referencia) que siempre llama a la versión más reciente de
+  // `toggleSelectMode` a través de un ref — el efecto pasa a depender de `[]`, se
+  // registra una sola vez por montaje/desmontaje, sin volver a notificar al store.
+  const toggleSelectModeRef = useRef(toggleSelectMode)
+  toggleSelectModeRef.current = toggleSelectMode
   useEffect(() => {
-    elementsBrowserStore.registerToggleSelectMode(toggleSelectMode)
+    const stableToggle = () => toggleSelectModeRef.current()
+    elementsBrowserStore.registerToggleSelectMode(stableToggle)
     return () => elementsBrowserStore.registerToggleSelectMode(null)
-  }, [toggleSelectMode])
+  }, [])
   function bulkDelete() {
     const ids = [...selected]
     if (ids.length === 0) return
@@ -351,6 +385,22 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             </button>
           </div>
         )}
+        {/* Filtrado por un TIPO CUSTOM del usuario (Libro, Persona…) → atajo de
+            crear un elemento nuevo de ese tipo, mismo patrón que agente/prompt. */}
+        {customTypeId && (() => {
+          const td = getTypeDef(customTypeId)
+          if (!td) return null
+          return (
+            <div style={{ marginBottom: 6 }}>
+              <button
+                onClick={() => { const created = createElementOfType(customTypeId, t('elements.newTypeDefault', 'Sin título')); open(created.id) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, border: '1px dashed var(--border,#e2e2e2)', background: 'transparent', borderRadius: 7, padding: '5px 10px', fontSize: 12.5, fontWeight: 500, color: 'var(--accent,#6c5ce7)', cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                + {t('elements.newOfType', 'Nuevo {{type}}', { type: td.name })}
+              </button>
+            </div>
+          )
+        })()}
         {filter === 'agent' && (
           <div style={{ marginBottom: 6, fontSize: 12, lineHeight: 1.4, color: 'var(--text-tertiary,#999)' }}>
             {t('elements.agentsDisabledHint', 'Los agentes predefinidos vienen desactivados. Ábrelos y activa el interruptor de Estado, o pulsa ▶ Ejecutar para probarlos primero.')}

@@ -780,7 +780,7 @@ export class NodeStore {
     const MONTHS_N = new Set(['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'])
     if (/^\d{4}$/.test(t) || MONTHS_N.has(t) || /^Semana \d+$/i.test(t)) return false
     // Raíces de sistema
-    if (/^(🏠 From|📅 Agenda|🧠 Contexto|⚡ Prompts|🤖 Agentes|📋 Plantillas|🗑 Papelera)$/.test(t)) return false
+    if (/^(🏠 From|🏠 Fromly|📅 Agenda|🧠 Contexto|⚡ Prompts|🤖 Agentes|📋 Plantillas|🗑 Papelera|Tipos)$/.test(t)) return false
     // La clave: una nota tiene al menos un hijo activo.
     return this.children(node.id).some(k => !k.deletedAt)
   }

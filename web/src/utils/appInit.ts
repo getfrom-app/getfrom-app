@@ -23,6 +23,7 @@ import { ensurePromptsNode, migratePromptifiedAgentPrompts, mergeDuplicatePrompt
 import { relocateRootDiariesToAgenda, cleanupYearMonthContexts, migrateDiaryEntriesToDoc } from './agendaHelper'
 import { revertContextReferenceOnce } from './migrateContextReference'
 import { migrateEventsToTasks } from './migrateEventsToTasks'
+import { ensureTiposNode } from './typeDefsHelper'
 
 let _ranInThisSession = false
 
@@ -55,6 +56,7 @@ export async function runStartupMigrations(): Promise<void> {
     if (dupMerged > 0) console.info(`[from] prompts duplicados fusionados: ${dupMerged}`)
   } catch (e) { console.warn('[from] mergeDuplicatePrompts falló:', e) }
   ensurePapeleraNode()
+  ensureTiposNode()
   ensureHomeRootAndReparent()
   await relocateRootDiariesToAgenda()
   migrateDiaryEntriesToDoc()

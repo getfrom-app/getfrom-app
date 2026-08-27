@@ -17,6 +17,8 @@ import { store, useStore } from '../../store/nodeStore'
 import { classify, type ElemKind, type ElemRow } from '../../components/panels/ElementsPanel'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { elementsBrowserStore, useElementsBrowserStore, type ElementsTaskSub, type ElementsSortBy } from '../../store/elementsBrowserStore'
+import { listTypeDefs, elementTypeId } from '../../utils/typeDefsHelper'
+import TypeDefModal from '../../components/modals/TypeDefModal'
 import Icon from './Icon'
 
 function stripHtml(html?: string | null): string {
@@ -35,6 +37,7 @@ export default function ElementsFilters() {
   const s = useStore()
   const browser = useElementsBrowserStore()
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
+  const [typeModal, setTypeModal] = useState<'new' | string | null>(null)
 
   // Mismo barrido que ElementsPanel (utils/panels/ElementsPanel.classify) —
   // solo para los RECUENTOS de cada chip, no se reutiliza la lista de filas.
@@ -44,13 +47,15 @@ export default function ElementsFilters() {
     for (const n of store.allActive()) {
       const kind = classify(n); if (!kind) continue
       if (isInPapelera(n.id)) continue
-      out.push({ id: n.id, kind, title: '', snippet: stripHtml(n.body), updatedAt: n.updatedAt || '', createdAt: n.createdAt || '', due: n.due, status: n.status })
+      out.push({ id: n.id, kind, title: '', snippet: stripHtml(n.body), updatedAt: n.updatedAt || '', createdAt: n.createdAt || '', due: n.due, status: n.status, typeId: elementTypeId(n) })
     }
     return out
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s.nodesVersion])
   const counts = useMemo(() => rows.reduce((acc, r) => { acc[r.kind] = (acc[r.kind] || 0) + 1; return acc }, {} as Record<ElemKind, number>), [rows])
   const favCount = useMemo(() => { void s.nodesVersion; return rows.filter(r => store.getNode(r.id)?.isFavorite).length }, [rows, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  const typeDefs = useMemo(() => { void s.nodesVersion; return listTypeDefs() }, [s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  const typeCounts = useMemo(() => rows.reduce((acc, r) => { if (r.typeId) acc[r.typeId] = (acc[r.typeId] || 0) + 1; return acc }, {} as Record<string, number>), [rows])
 
   const CHIPS: { key: ElemKind | 'all' | 'favorite'; label: string; icon: Parameters<typeof Icon>[0]['name'] }[] = [
     { key: 'all',      label: t('elements.all'), icon: 'layers' },
@@ -179,11 +184,23 @@ export default function ElementsFilters() {
         </div>
       </div>
 
-      {/* Filtro por tipo — píldoras con fondo, no texto subrayado (más presencia
-          ahora que la columna tiene el ancho real para respirar). Los tipos SIN
-          elementos no se pintan, salvo el activo y «Todos»/«Favoritos». */}
+      {/* Tipos — píldoras con fondo, no texto subrayado (más presencia ahora que
+          la columna tiene el ancho real para respirar). Los tipos SIN elementos
+          no se pintan, salvo el activo y «Todos»/«Favoritos». Junto al título,
+          «+» para crear un TIPO CUSTOM (Persona, Libro, Película…) — 27 ago 2026. */}
       <div>
-        <div className="v2-section-label" style={{ padding: '0 0 6px' }}>{t('elements.filterByType', 'Filtrar por tipo')}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0 6px' }}>
+          <div className="v2-section-label" style={{ padding: 0 }}>{t('elements.filterByType', 'Tipos')}</div>
+          <button
+            onClick={() => setTypeModal('new')}
+            title={t('types.newTitle', 'Nuevo tipo')}
+            style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: 'none', background: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)' }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover,#f4f4f5)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            <Icon name="plus" size={13} />
+          </button>
+        </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
           {CHIPS.map(c => {
             const active = browser.filter === c.key
@@ -199,6 +216,24 @@ export default function ElementsFilters() {
                 }}>
                 <Icon name={c.icon} size={12.5} />
                 {c.label} <span style={{ opacity: 0.55, fontWeight: 400 }}>{n}</span>
+              </button>
+            )
+          })}
+          {typeDefs.map(td => {
+            const active = browser.customTypeId === td.id
+            const n = typeCounts[td.id] || 0
+            return (
+              <button key={td.id} onClick={() => elementsBrowserStore.setCustomType(active ? null : td.id)}
+                onDoubleClick={() => setTypeModal(td.id)}
+                title={t('types.doubleClickToEdit', 'Doble clic para editar')}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid ' + (active ? 'var(--accent,#6c5ce7)' : 'var(--border,#e2e2e2)'),
+                  background: active ? 'var(--accent-soft,rgba(108,92,231,.1))' : 'var(--bg,#fff)', borderRadius: 999, cursor: 'pointer', padding: '6px 11px 6px 9px',
+                  fontSize: 12.5, fontWeight: active ? 650 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
+                  color: active ? 'var(--accent,#6c5ce7)' : 'var(--text-secondary,#666)',
+                }}>
+                <Icon name={td.icon} size={12.5} />
+                {td.name} <span style={{ opacity: 0.55, fontWeight: 400 }}>{n}</span>
               </button>
             )
           })}
@@ -221,6 +256,14 @@ export default function ElementsFilters() {
           </div>
         )}
       </div>
+
+      {typeModal && (
+        <TypeDefModal
+          onClose={() => setTypeModal(null)}
+          editingId={typeModal === 'new' ? undefined : typeModal}
+          onSaved={id => elementsBrowserStore.setCustomType(id)}
+        />
+      )}
     </div>
   )
 }

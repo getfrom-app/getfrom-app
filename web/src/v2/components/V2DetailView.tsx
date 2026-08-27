@@ -40,6 +40,8 @@ import { useRef, useEffect } from 'react'
 import type { Node } from '../../types'
 import Icon from './Icon'
 import { displayTitle } from '../../utils/displayText'
+import TypePropertiesBar from '../../components/panels/TypePropertiesBar'
+import { elementTypeId } from '../../utils/typeDefsHelper'
 
 const toast = (message: string, type: 'success' | 'warning' = 'success', action?: { label: string; onClick: () => void }) =>
   window.dispatchEvent(new CustomEvent('from:toast', { detail: { message, type, action } }))
@@ -257,6 +259,9 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
                     estado del asunto, no una nota al pie. Fuera de la nota diaria (sus
                     tareas ya son el cockpit del día) y de los usos incrustados. */}
                 {!isDayNote && !inlinePage && <V2DocTasks docId={node.id} />}
+                {/* Ficha de propiedades de un TIPO custom (Persona, Libro…) — solo si
+                    este documento nació de un tipo (utils/typeDefsHelper.ts). */}
+                {!inlinePage && elementTypeId(node) && <TypePropertiesBar nodeId={node.id} typeId={elementTypeId(node)!} />}
                 <div style={{ padding: '18px 20px 12px' }}><DocEditorBoundary compact><DocEditor node={node} compact registerActive autofocus={(!node.body || node.body === '<p></p>') ? 'start' : false} /></DocEditorBoundary></div>
                 <V2Backlinks nodeId={node.id} />
               </>

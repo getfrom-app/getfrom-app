@@ -19,6 +19,10 @@ const VIEW_KEY = 'from_v2_elements_view'
 class ElementsBrowserStore {
   q = ''
   filter: ElemKind | 'all' | 'favorite' = 'all'
+  /** Tipo CUSTOM activo (id del nodo-tipo bajo 🏷️ Tipos), si el usuario filtró por
+   *  uno de sus tipos en vez de por un ElemKind fijo. Mutuamente excluyente con
+   *  `filter` — fijar uno limpia el otro (ver setFilter/setCustomType). */
+  customTypeId: string | null = null
   taskSub: ElementsTaskSub = 'all'
   sortBy: ElementsSortBy = (localStorage.getItem(SORT_KEY) as ElementsSortBy) || 'created'
   view: FilterView = (localStorage.getItem(VIEW_KEY) as FilterView) || 'tabla'
@@ -41,7 +45,13 @@ class ElementsBrowserStore {
   setQ(v: string) { this.q = v; this.notify() }
   setFilter(v: ElemKind | 'all' | 'favorite') {
     this.filter = v
+    this.customTypeId = null
     if (v !== 'task') this.taskSub = 'all'
+    this.notify()
+  }
+  setCustomType(id: string | null) {
+    this.customTypeId = id
+    if (id) { this.filter = 'all'; this.taskSub = 'all' }
     this.notify()
   }
   setTaskSub(v: ElementsTaskSub) { this.taskSub = v; this.notify() }
@@ -65,7 +75,7 @@ class ElementsBrowserStore {
     this.notify()
   }
   /** Reinicia búsqueda+filtro (botón «Limpiar»). */
-  clear() { this.q = ''; this.filter = 'all'; this.taskSub = 'all'; this.notify() }
+  clear() { this.q = ''; this.filter = 'all'; this.customTypeId = null; this.taskSub = 'all'; this.notify() }
 }
 
 export const elementsBrowserStore = new ElementsBrowserStore()
