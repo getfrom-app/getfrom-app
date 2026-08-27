@@ -1,7 +1,44 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-13 (Web v9.6.961 · iOS v2.14 build 149, en revisión de Apple)
+> Última actualización: 2026-08-27 (Web v9.7.29)
+
+---
+
+## Sesión 2026-08-27 (sesión 7, tramo 3) — Publicar contexto entero, pulido de Elementos
+
+Web **v9.7.27 → v9.7.29**. Servidor: varios commits (sin migración de versión propia). Detalle
+completo en `logs/2026-08-27-sesion7-elementos-agentes-perfil.md` (sección "Tramo 3").
+
+### Publicar un contexto entero, con URL propia
+
+Igual mecanismo que ya existía para grupos (`routes/groups.ts`), extendido a contextos enteros
+(`routes/contexts.ts`, nuevo): tabla `public_contexts` (slug + `customSlug` editable, `passwordHash`
+opcional, `description`), `POST /contexts/publish` (requiere Pro), vista pública sin auth en
+`/c/:userSlug/:customSlug`. `contentOfContext(userId, contextId)` resuelve en una query tanto los
+elementos sueltos del contexto como los grupos que le pertenecen — SIEMPRE en vivo en cada visita,
+nunca snapshot. La plantilla HTML pública (`lib/sharedPublicPage.ts`) se comparte entre `/g/*` y
+`/c/*`: sidebar de elementos con scroll-to-anchor, y un grupo dentro de un contexto se pinta como su
+propio encabezado con sus elementos debajo (antes de esta sesión solo se veía el título, plano).
+Requirió una ruta nueva `/c/*` en el Worker de Cloudflare que ya servía `/g/*` y `/p/*`.
+
+**Bug real con datos de producción**: un grupo puede tener el contexto asignado a **sí mismo** (se
+arrastró/movió como bloque) en vez de a cada uno de sus miembros — `contentOfContext()` solo miraba
+el contexto de los miembros, así que ese grupo se colaba como elemento suelto sin su contenido
+debajo. Arreglado contando también el `_ctxRefs` propio del nodo-grupo. Server-only por ahora — el
+cliente (`V2ContextView.tsx::contextGroups`) sigue con la regla original a propósito (decisión de
+diseño del 26 ago: "un grupo no tiene contexto propio, se deriva de sus miembros").
+
+### Elementos — 3 arreglos más
+
+- **"‹ Volver" no restauraba Elementos**: un listener global (`from:open-detail`, `V2App.tsx`) tenía
+  el closure de `onOpenNode` congelado desde el primer render — leía siempre el `rightMode` inicial,
+  nunca el actual. Arreglado con refs siempre actualizados en vez de leer el `useState` directamente.
+- **"Seleccionar varios" no funcionaba en la vista Tabla** (la vista por defecto): `TableView` no
+  tenía ningún concepto de modo selección. Añadidos props + checkbox por fila.
+- El toggle de selección y el switcher Tabla/Lista se movieron del centro a la columna derecha
+  (`ElementsFilters.tsx`); el enlace "Limpiar" se quitó del centro (el chip "Todos" de la derecha
+  ya cumple esa función).
 
 ---
 
