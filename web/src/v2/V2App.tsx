@@ -147,6 +147,32 @@ export default function V2App() {
   //   · 'agenda' → centro = planner (semana 3 días/mes/año) · derecha =
   //     atrasadas/sin fecha/futuro + nota diaria al final.
   const [centerElementId, setCenterElementId] = useState<string | null>(null)
+  // De dónde se abrió el elemento actual — para que "‹ Volver" restaure el
+  // destino exacto de antes, no lo que sea que `onOpenNode` haya dejado
+  // puesto (28 ago 2026, Alberto: "le doy al botón atrás, no vuelve a
+  // Elementos sino aquí, una página que no es la correcta"). `onOpenNode`
+  // cambia `rightMode` a 'contexto' cuando el elemento tiene uno (excepción
+  // deliberada, ver más abajo) — sin este registro, cerrar el elemento dejaba
+  // ese cambio puesto para siempre en vez de deshacerlo. Solo se captura al
+  // pasar de "nada abierto" a "algo abierto" (no al saltar de un elemento a
+  // otro ya con algo centrado) — así el origen real no se pisa a medio camino.
+  const openOriginRef = useRef<{ rightMode: RightMode; selectedCtxId: string | null } | null>(null)
+  // Espejo SIEMPRE actualizado de `rightMode`/`selectedCtxId`/`centerElementId`
+  // para `onOpenNode` — este handler también se invoca desde un listener global
+  // de `from:open-detail` registrado una sola vez con deps `[]` (más abajo), que
+  // por tanto queda congelado con el cierre (closure) de su primer render: leer
+  // el `useState` directamente ahí siempre devolvía el valor INICIAL ('agenda'),
+  // nunca el actual. Sin esto, "‹ Volver" desde Elementos aterrizaba siempre en
+  // Agenda en vez de en Elementos, pese a que el registro del origen (arriba)
+  // parecía correcto — el bug estaba en qué valor se leía, no en la lógica de
+  // guardarlo. Se actualizan en cada render (no en un efecto): son solo un
+  // espejo de lectura, no disparan nada.
+  const rightModeRef = useRef(rightMode)
+  rightModeRef.current = rightMode
+  const selectedCtxIdRef = useRef(selectedCtxId)
+  selectedCtxIdRef.current = selectedCtxId
+  const centerElementIdRef = useRef(centerElementId)
+  centerElementIdRef.current = centerElementId
   // Ids del último lote de archivos subidos a la vez (2+) — para poder
   // asignarles un contexto compartido en un solo gesto (Alberto, 13 ago: "al
   // subir varios elementos... deberían agruparse para poder añadir contexto",
@@ -656,6 +682,12 @@ export default function V2App() {
   }
 
   const onOpenNode = (id: string) => {
+    // Registra de dónde se abre — solo en la transición "nada abierto" → "algo
+    // abierto" (no al saltar de un elemento a otro ya centrado, para no pisar
+    // el origen real con un destino intermedio).
+    if (centerElementIdRef.current === null) {
+      openOriginRef.current = { rightMode: rightModeRef.current, selectedCtxId: selectedCtxIdRef.current }
+    }
     setShowProfile(false)
     markAgentResultSeen(id) // deja de avisar en la sidebar en cuanto se abre (ver aiChatStore.ts)
     // Un CONTEXTO (marcado o área raíz) siempre abre su FICHA completa (tareas +
@@ -1020,7 +1052,15 @@ export default function V2App() {
         // tab día... ese texto de esa tarea se ha copiado en la nota diaria").
         // Con `key={centerElementId}` React desmonta y monta desde cero, sin
         // ventana de solape posible.
-        <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => setCenterElementId(null)} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
+        <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => {
+          setCenterElementId(null)
+          const origin = openOriginRef.current
+          if (origin) {
+            setRightMode(origin.rightMode)
+            setSelectedCtxId(origin.selectedCtxId)
+            openOriginRef.current = null
+          }
+        }} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
       ) : showProfile ? (
         <V2ProfileView onClose={() => setShowProfile(false)} />
       ) : rightMode === 'chat' ? (

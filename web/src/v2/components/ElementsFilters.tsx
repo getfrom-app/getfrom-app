@@ -102,6 +102,56 @@ export default function ElementsFilters() {
         )}
       </div>
 
+      {/* Vista (Tabla/Lista) + seleccionar varios — antes vivían en el centro,
+          «apretados» junto al resto de controles (28 ago 2026, Alberto: "el
+          boton de seleccionar y la vista tabla o lista podrian estar en la
+          columna derecha tambien, hay espacio... ponlos bonitos"). El estado
+          real de selección vive en ElementsPanel (useGroupSelection); aquí
+          solo se lee/alterna vía el puente en elementsBrowserStore. */}
+      <div>
+        <div className="v2-section-label" style={{ padding: '0 0 6px' }}>{t('elements.view', 'Vista')}</div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <div style={{ display: 'inline-flex', border: '1px solid var(--border,#e2e2e2)', borderRadius: 9, padding: 2, gap: 2, flex: 1 }}>
+            {(['tabla', 'lista'] as const).map(v => {
+              const active = browser.view === v
+              return (
+                <button key={v} onClick={() => elementsBrowserStore.setView(v)}
+                  style={{
+                    flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    border: 'none', borderRadius: 7, cursor: 'pointer', padding: '7px 8px',
+                    background: active ? 'var(--accent,#6c5ce7)' : 'transparent',
+                    color: active ? '#fff' : 'var(--text-secondary,#666)',
+                    fontSize: 12.5, fontWeight: active ? 650 : 500, fontFamily: 'inherit',
+                  }}>
+                  {v === 'tabla'
+                    ? <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="1" width="14" height="14" rx="1"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="1" y1="9" x2="15" y2="9"/><line x1="1" y1="13" x2="15" y2="13"/><line x1="5" y1="5" x2="5" y2="15"/><line x1="10" y1="5" x2="10" y2="15"/></svg>
+                    : <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><line x1="2" y1="4" x2="14" y2="4"/><line x1="2" y1="8" x2="14" y2="8"/><line x1="2" y1="12" x2="14" y2="12"/></svg>}
+                  {v === 'tabla' ? t('elements.viewTable', 'Tabla') : t('elements.viewList', 'Lista')}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            title={browser.selectMode ? t('elements.exitSelect', 'Salir de selección') : t('elements.selectMultiple', 'Seleccionar varios')}
+            onClick={() => elementsBrowserStore.onToggleSelectMode?.()}
+            disabled={!elementsBrowserStore.onToggleSelectMode}
+            style={{
+              flexShrink: 0, width: 36, borderRadius: 9, border: '1px solid ' + (browser.selectMode ? 'var(--accent,#6c5ce7)' : 'var(--border,#e2e2e2)'),
+              background: browser.selectMode ? 'var(--accent,#6c5ce7)' : 'var(--bg,#fff)',
+              color: browser.selectMode ? '#fff' : 'var(--text-secondary,#666)',
+              cursor: elementsBrowserStore.onToggleSelectMode ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l2.5 2.5L16 9"/></svg>
+          </button>
+        </div>
+        {browser.selectMode && browser.selectedCount > 0 && (
+          <div style={{ fontSize: 11.5, color: 'var(--text-tertiary,#999)', marginTop: 6 }}>
+            {t('elements.selectedCount', '{{count}} seleccionados', { count: browser.selectedCount })}
+          </div>
+        )}
+      </div>
+
       {/* Orden — su propia fila con etiqueta, no un icono suelto sin contexto. */}
       <div>
         <div className="v2-section-label" style={{ padding: '0 0 6px' }}>{t('elements.sortBy', 'Ordenar por')}</div>

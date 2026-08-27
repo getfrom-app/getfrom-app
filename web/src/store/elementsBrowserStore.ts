@@ -6,6 +6,7 @@
 // mutable con subscribe/notify, sin Redux ni Context.
 import { useLayoutEffect, useState } from 'react'
 import type { ElemKind } from '../components/panels/ElementsPanel'
+import type { FilterView } from '../components/views/FilterResultsView'
 
 export type ElementsSortBy = 'updated' | 'created' | 'title' | 'kind'
 export type ElementsTaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
@@ -13,12 +14,22 @@ export type ElementsTaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'no
 type Listener = () => void
 
 const SORT_KEY = 'from_v2_elements_sort'
+const VIEW_KEY = 'from_v2_elements_view'
 
 class ElementsBrowserStore {
   q = ''
   filter: ElemKind | 'all' | 'favorite' = 'all'
   taskSub: ElementsTaskSub = 'all'
   sortBy: ElementsSortBy = (localStorage.getItem(SORT_KEY) as ElementsSortBy) || 'created'
+  view: FilterView = (localStorage.getItem(VIEW_KEY) as FilterView) || 'tabla'
+  // Puente hacia el modo selección múltiple, cuyo estado real vive en
+  // ElementsPanel (useGroupSelection, atado a `open()`) — el centro lo publica
+  // aquí para que el toggle/contador vivan en la columna derecha (28 ago 2026,
+  // Alberto: "el boton de seleccionar... podrian estar en la columna derecha
+  // tambien"), sin duplicar la lógica de selección en dos sitios.
+  selectMode = false
+  selectedCount = 0
+  onToggleSelectMode: (() => void) | null = null
   private listeners: Set<Listener> = new Set()
 
   subscribe(l: Listener): () => void {
@@ -37,6 +48,20 @@ class ElementsBrowserStore {
   setSortBy(v: ElementsSortBy) {
     this.sortBy = v
     localStorage.setItem(SORT_KEY, v)
+    this.notify()
+  }
+  setView(v: FilterView) {
+    this.view = v
+    localStorage.setItem(VIEW_KEY, v)
+    this.notify()
+  }
+  setSelectModeState(active: boolean, count: number) {
+    this.selectMode = active
+    this.selectedCount = count
+    this.notify()
+  }
+  registerToggleSelectMode(fn: (() => void) | null) {
+    this.onToggleSelectMode = fn
     this.notify()
   }
   /** Reinicia búsqueda+filtro (botón «Limpiar»). */

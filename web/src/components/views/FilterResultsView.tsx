@@ -65,13 +65,19 @@ export type TableSortBy = 'created' | 'updated' | 'title' | 'kind'
 // decide el caller, p.ej. ElementsPanel) y las cabeceras se vuelven clicables
 // para cambiarlo. Sin ellos (WFHomeView, uso legado), sigue ordenando sola
 // por creación descendente, igual que siempre.
-function TableView({ matchIds, sortBy, onSortChange, onOpen }: { matchIds: Set<string>; sortBy?: TableSortBy; onSortChange?: (v: TableSortBy) => void
+function TableView({ matchIds, sortBy, onSortChange, onOpen, selectMode, selected, onToggleSelect }: { matchIds: Set<string>; sortBy?: TableSortBy; onSortChange?: (v: TableSortBy) => void
   /** Abre la fila — por defecto navega a `/node/:id` (react-router, uso legado
    *  de WFHomeView). ElementsPanel pasa su propio `open()` (28 ago 2026): en
    *  la app v2 los elementos se abren via `centerElementId`/`openNodeDetail`,
    *  no por ruta — sin esto el clic no llevaba a ningún sitio ("los enlaces
    *  no van", Alberto, visto en vivo). */
   onOpen?: (id: string) => void
+  /** Modo selección múltiple (28 ago 2026, Alberto: "el boton seleccionar no
+   *  funciona, al ir a seleccionar se navega al elemento") — con esto activo,
+   *  clicar una fila alterna su checkbox en vez de abrirla. */
+  selectMode?: boolean
+  selected?: Set<string>
+  onToggleSelect?: (id: string) => void
 }) {
   const s = useStore()
   const navigate = useNavigate()
@@ -101,6 +107,7 @@ function TableView({ matchIds, sortBy, onSortChange, onOpen }: { matchIds: Set<s
       <table className="filter-table">
         <thead>
           <tr>
+            {selectMode && <th className="filter-table-check" />}
             <Th col="title" label={t('panel.tasks')} />
             <Th col="kind" label={t('elements.type', 'Tipo')} />
             <th>{t('search.filterContext')}</th>
@@ -111,10 +118,17 @@ function TableView({ matchIds, sortBy, onSortChange, onOpen }: { matchIds: Set<s
         <tbody>
           {nodes.map(n => {
             const kind = kindOf(n)
+            const isSelected = !!selected?.has(n.id)
             return (
-              <tr key={n.id} onClick={() => onOpen ? onOpen(n.id) : navigate(`/node/${n.id}`)}
+              <tr key={n.id}
+                onClick={() => selectMode ? onToggleSelect?.(n.id) : (onOpen ? onOpen(n.id) : navigate(`/node/${n.id}`))}
                 onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
-                className="filter-table-row">
+                className={`filter-table-row${isSelected ? ' filter-table-row--selected' : ''}`}>
+                {selectMode && (
+                  <td className="filter-table-check" onClick={e => { e.stopPropagation(); onToggleSelect?.(n.id) }}>
+                    <input type="checkbox" checked={isSelected} onChange={() => onToggleSelect?.(n.id)} onClick={e => e.stopPropagation()} />
+                  </td>
+                )}
                 <td className="filter-table-text">{n.text || t('common.noTitle')}</td>
                 <td className="filter-table-kind"><span className="filter-table-kind-inner"><Icon name={kind.icon} size={13} /> {kind.label}</span></td>
                 <td className="filter-table-crumb" onClick={e => e.stopPropagation()}><RowContextChip node={n} /></td>

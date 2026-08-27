@@ -10937,6 +10937,10 @@ textarea:focus-visible,
 .filter-table-kind-inner { display: inline-flex; align-items: center; gap: 5px; vertical-align: middle; }
 .filter-table-kind-inner svg { flex-shrink: 0; display: block; }
 .filter-table-date { font-size: 11px; color: var(--text-secondary); white-space: nowrap; text-align: right; }
+.filter-table-check { width: 32px; padding-right: 0 !important; }
+.filter-table-check input[type="checkbox"] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent, #6c5ce7); }
+.filter-table-row--selected { background: var(--accent-bg-subtle, rgba(108,92,231,0.08)); }
+.filter-table-row--selected:hover { background: var(--accent-bg-subtle, rgba(108,92,231,0.12)); }
 
 /* ── Vista kanban de filtro ──────────────────────────────────────── */
 .filter-kanban-view { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; min-height: 200px; }

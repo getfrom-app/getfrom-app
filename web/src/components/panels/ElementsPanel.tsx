@@ -24,7 +24,7 @@ import { createAgentUnder } from '../../utils/agentesHelper'
 import { createPromptUnder } from '../../utils/promptsHelper'
 import { useGroupSelection } from '../../hooks/useGroupSelection'
 import NewNamedItemModal from '../modals/NewNamedItemModal'
-import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
+import { TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
 import type { FilterView, TableSortBy } from '../views/FilterResultsView'
 import PizarraThumbnail from '../views/PizarraThumbnail'
 import Icon, { type IconName } from '../../v2/components/Icon'
@@ -120,7 +120,6 @@ const ROW_H = 46
 // (nota, PDF, enlace…) siguen en una línea a ROW_H. Lista virtualizada: hay que
 // declarar la altura real por fila o las filas de tarea se solapan/recortan.
 const TASK_ROW_H = 58
-const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
 
 interface Props {
   /** Filtro inicial (p.ej. al llegar desde «← Agentes»/«← Prompts» en el detalle). */
@@ -146,13 +145,12 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   // "no quedan bien aquí"): agrupar por estado/fecha no encaja con una lista
   // de tipos tan mixta (notas, PDFs, agentes...) — siguen existiendo tal
   // cual en WFHomeView, que sí es solo texto/tareas.
-  const [view, setView] = useState<FilterView>(
-    () => (localStorage.getItem(ELEMENTS_VIEW_KEY) as FilterView) || 'tabla'
-  )
-  function changeView(v: FilterView) {
-    setView(v)
-    localStorage.setItem(ELEMENTS_VIEW_KEY, v)
-  }
+  // Vista y modo-selección viven ahora en el store compartido (28 ago 2026):
+  // el toggle y el selector Tabla/Lista se pintan en la columna derecha
+  // (ElementsFilters), este componente solo lee `view` y publica su estado
+  // de selección para que el botón de allí sepa qué mostrar.
+  const view = browser.view
+  const changeView = (v: FilterView) => elementsBrowserStore.setView(v)
   // Si quedó una vista kanban/calendario guardada de antes de quitarlas, cae a Tabla.
   useEffect(() => { if (view === 'kanban' || view === 'calendario') changeView('tabla') }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
   const changeSort = (v: SortBy) => elementsBrowserStore.setSortBy(v)
@@ -178,7 +176,6 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
 
   const nq = q.trim().toLowerCase()
   const showTaskSub = filter === 'task'
-  const filtersActive = !!nq || filter !== 'all' || taskSub !== 'all'
   const byTypeAndSearch = useMemo(() => rows.filter(r => {
     if (filter === 'favorite') { if (!store.getNode(r.id)?.isFavorite) return false }
     else if (filter !== 'all' && r.kind !== filter) return false
@@ -293,6 +290,14 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   // un contexto (V2ContextView.tsx), ver hooks/useGroupSelection.ts.
   const { selectMode, selected, toggleSelect, toggleSelectMode, exitSelectMode, selectAll, createGroupFromSelection } =
     useGroupSelection(created => open(created.id))
+  // Publica el estado real hacia el store compartido, para que el botón
+  // "Seleccionar varios" pintado en la columna derecha (ElementsFilters) sepa
+  // si está activo y pueda alternarlo sin duplicar useGroupSelection allí.
+  useEffect(() => { elementsBrowserStore.setSelectModeState(selectMode, selected.size) }, [selectMode, selected.size])
+  useEffect(() => {
+    elementsBrowserStore.registerToggleSelectMode(toggleSelectMode)
+    return () => elementsBrowserStore.registerToggleSelectMode(null)
+  }, [toggleSelectMode])
   function bulkDelete() {
     const ids = [...selected]
     if (ids.length === 0) return
@@ -330,19 +335,12 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{ padding: '14px 14px 6px', flexShrink: 0 }}>
-        {/* Buscador/filtro por tipo/orden viven ahora en la columna derecha
-            (ElementsFilters, 28 ago 2026) — aquí solo queda seleccionar-varios,
-            el atajo de crear agente/prompt (necesita `open()`, de aquí) y el
-            selector de vista. */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 10 }}>
-          <button
-            title={selectMode ? t('elements.exitSelect', 'Salir de selección') : t('elements.selectMultiple', 'Seleccionar varios')}
-            onClick={toggleSelectMode}
-            style={{ flexShrink: 0, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: selectMode ? 'var(--accent,#6c5ce7)' : 'var(--bg,#fff)', color: selectMode ? '#fff' : 'var(--text-secondary,#666)', cursor: 'pointer' }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l2.5 2.5L16 9"/></svg>
-          </button>
-        </div>
+        {/* Buscador/filtro/orden, seleccionar-varios y el selector de vista
+            viven ahora en la columna derecha (ElementsFilters, 28 ago 2026:
+            "el boton de seleccionar y la vista tabla o lista podrian estar
+            en la columna derecha tambien, hay espacio") — aquí solo queda el
+            atajo de crear agente/prompt (necesita `open()`, de aquí) y la
+            barra de acciones en bloque cuando hay selección activa. */}
         {(filter === 'agent' || filter === 'prompt') && (
           <div style={{ marginBottom: 6 }}>
             <button
@@ -358,17 +356,6 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
             {t('elements.agentsDisabledHint', 'Los agentes predefinidos vienen desactivados. Ábrelos y activa el interruptor de Estado, o pulsa ▶ Ejecutar para probarlos primero.')}
           </div>
         )}
-        {/* Selector de vista — Tabla / Lista únicamente (28 ago 2026: Kanban/Calendario
-            quitadas, "no quedan bien aquí"). Reutiliza FilterViewSwitcher tal cual, sobre
-            los ids ya filtrados. «Limpiar» solo aparece si hay algo que limpiar. */}
-        <FilterViewSwitcher
-          view={view}
-          onChange={changeView}
-          count={filtered.length}
-          onClear={() => elementsBrowserStore.clear()}
-          allowBoardViews={false}
-          canClear={filtersActive}
-        />
         {/* Barra de acciones en bloque — visible solo en modo selección. */}
         {selectMode && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 8, padding: '6px 2px' }}>
@@ -409,7 +396,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
         filtered.length === 0 ? (
           <div style={{ fontSize: 13, color: 'var(--text-tertiary,#999)', padding: '20px' }}>{t('elements.empty')}</div>
         ) : view === 'tabla' ? (
-          <TableView matchIds={filteredIds} sortBy={sortBy as TableSortBy} onSortChange={changeSort} onOpen={open} />
+          <TableView matchIds={filteredIds} sortBy={sortBy as TableSortBy} onSortChange={changeSort} onOpen={open} selectMode={selectMode} selected={selected} onToggleSelect={toggleSelect} />
         ) : view === 'kanban' ? (
           <KanbanView matchIds={filteredIds} />
         ) : (
