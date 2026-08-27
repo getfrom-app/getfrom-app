@@ -556,10 +556,22 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       return
     })
 
+    // Sin cita/contexto propio en el fragmento seleccionado, hereda el
+    // contexto del propio documento de origen — antes se quedaba sin
+    // `_ctxRefs` en ese caso (bug real, 27 ago 2026, Alberto: "se ha creado
+    // bien, se ha puesto el contexto del documento previo... pero no
+    // aparece en la lista de elementos del contexto"): el chip de la ficha
+    // SÍ mostraba el contexto correcto porque `firstContextOf` sube por los
+    // ancestros y encontraba el del padre, pero `nodesInContext` (la lista
+    // de Elementos) exige `_ctxRefs` en el propio nodo, no heredado — sin
+    // `assignContext` de verdad, el documento nuevo era invisible ahí.
+    const sourceNode = store.getNode(node.id)
+    const effectiveContextId = contextId ?? (sourceNode ? firstContextOf(sourceNode)?.id : undefined) ?? null
+
     const title = firstSentence(plainText)
     const created = store.createNode({ text: title, parentId: node.id, extraData: { [DOC]: '1' } })
     store.updateNode(created.id, { body: html || `<p>${plainText}</p>` })
-    if (contextId) assignContext(created.id, contextId)
+    if (effectiveContextId) assignContext(created.id, effectiveContextId)
     maybeUpdateContextKnowledge(store.getNode(created.id))
 
     ed.chain().focus().deleteRange({ from, to }).run()
