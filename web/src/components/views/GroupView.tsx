@@ -29,6 +29,7 @@ export default function GroupView({ node }: { node: Node }) {
   const [q, setQ] = useState('')
   const [slugError, setSlugError] = useState<string | null>(null)
   const [pwInput, setPwInput] = useState('')
+  const [descInput, setDescInput] = useState(() => (parseExtraData(node.extraData)._pubDescription as string) || '')
   // Pista visual — el hash real solo vive en el servidor, ver PublishButton.tsx.
   const protectedNow = parseExtraData(node.extraData)._pubProtected === '1'
 
@@ -91,10 +92,11 @@ export default function GroupView({ node }: { node: Node }) {
       return
     }
     const password = explicitPassword !== undefined ? explicitPassword : (pwInput.trim() || undefined)
+    const description = descInput.trim() || undefined
     setSlugError(null)
     setBusy(true)
     try {
-      const url = await publishGroupPublicly(node, slugInput.trim() || undefined, password)
+      const url = await publishGroupPublicly(node, slugInput.trim() || undefined, password, description)
       await navigator.clipboard.writeText(url).catch(() => {})
       setCopied(true); setTimeout(() => setCopied(false), 2000)
       setPwInput('')
@@ -182,6 +184,25 @@ export default function GroupView({ node }: { node: Node }) {
           {slugError && (
             <div style={{ fontSize: 11.5, color: '#dc2626', marginTop: 4 }}>{slugError}</div>
           )}
+        </div>
+
+        {/* Descripción opcional — subtítulo bajo el título en la página pública
+            (28 ago 2026, Alberto: "crea un campo de descripción que aparezca
+            como subtítulo debajo del título en la página compartida"). */}
+        <div>
+          <label style={{ fontSize: 12, color: 'var(--text-tertiary,#999)', display: 'block', marginBottom: 4 }}>
+            {t('group.descriptionLabel', 'Descripción (opcional)')}
+          </label>
+          <input
+            value={descInput}
+            onChange={e => setDescInput(e.target.value)}
+            placeholder={t('group.descriptionPlaceholder', 'Una frase que aparecerá bajo el título')}
+            maxLength={300}
+            style={{
+              width: '100%', boxSizing: 'border-box', padding: '7px 10px', borderRadius: 8,
+              border: '1px solid var(--border,#e2e2e2)', background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontSize: 13, outline: 'none',
+            }}
+          />
         </div>
 
         {/* Contraseña opcional del enlace — por defecto sin ella (26 ago 2026,

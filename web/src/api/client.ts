@@ -368,16 +368,37 @@ export async function publishGroup(
   nodeId: string,
   existingSlug?: string,
   customSlug?: string,
-  password?: string | null
+  password?: string | null,
+  description?: string | null
 ): Promise<{ slug: string; userSlug: string; customSlug: string; url: string }> {
   return apiRequest('/groups/publish', {
     method: 'POST',
-    body: JSON.stringify({ nodeId, slug: existingSlug, customSlug, password }),
+    body: JSON.stringify({ nodeId, slug: existingSlug, customSlug, password, description }),
   })
 }
 
 export async function unpublishGroup(slug: string): Promise<{ ok: boolean }> {
   return apiRequest(`/groups/unpublish/${slug}`, { method: 'POST' })
+}
+
+// ── Contextos publicables (28 ago 2026) — mismo mecanismo que grupos, ver
+// server/src/routes/contexts.ts. ──────────────────────────────────────────
+
+export async function publishContext(
+  nodeId: string,
+  existingSlug?: string,
+  customSlug?: string,
+  password?: string | null,
+  description?: string | null
+): Promise<{ slug: string; userSlug: string; customSlug: string; url: string }> {
+  return apiRequest('/contexts/publish', {
+    method: 'POST',
+    body: JSON.stringify({ nodeId, slug: existingSlug, customSlug, password, description }),
+  })
+}
+
+export async function unpublishContext(slug: string): Promise<{ ok: boolean }> {
+  return apiRequest(`/contexts/unpublish/${slug}`, { method: 'POST' })
 }
 
 // ── AI inline ────────────────────────────────────────────────────────────

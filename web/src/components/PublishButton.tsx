@@ -7,14 +7,24 @@ import type { Node } from '../types'
 import { publishNodePublicly, unpublishNodePublicly } from '../utils/nodeExport'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { userStore } from '../store/userStore'
+import { store } from '../store/nodeStore'
 import Icon from '../v2/components/Icon'
+import ContextShareModal from './modals/ContextShareModal'
 
-export default function PublishButton({ node }: { node: Node }) {
+export default function PublishButton({ node, contextId }: {
+  node: Node
+  /** Si se pasa (nota propia de un contexto, `_containerNotes`), el menú añade
+   *  "Compartir contexto completo" — publica el contexto ENTERO (nota +
+   *  elementos), no solo esta nota (28 ago 2026, Alberto: "si se pulsa en la
+   *  nota de un contexto, tiene que dar una opción extra de compartir contexto"). */
+  contextId?: string
+}) {
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [pwInput, setPwInput] = useState('')
+  const [shareContextOpen, setShareContextOpen] = useState(false)
   const published = !!node.publicSlug
   // Pista visual — el HASH real solo vive en el servidor (`publicNotes.passwordHash`);
   // esto es solo para pintar el candado, nunca lo que decide si el enlace pide
@@ -95,6 +105,11 @@ export default function PublishButton({ node }: { node: Node }) {
               <Icon name="external" size={13} /> {published ? t('node.refreshAndCopy', 'Actualizar y copiar enlace') : t('node.publishAndCopy')}
             </button>
             <button onClick={copyInternal} style={shareMenuItem}><Icon name="link" size={13} /> {t('node.copyInternalLink')}</button>
+            {contextId && (
+              <button onClick={() => { setMenuOpen(false); setShareContextOpen(true) }} style={shareMenuItem}>
+                <Icon name="folder" size={13} /> {t('context.shareWhole', 'Compartir contexto completo')}
+              </button>
+            )}
             {published && (
               <button onClick={doUnpublish} style={{ ...shareMenuItem, color: '#dc2626' }}>
                 <Icon name="close" size={13} /> {t('tip.unpublishNote')}
@@ -124,6 +139,10 @@ export default function PublishButton({ node }: { node: Node }) {
           </div>
         </>
       )}
+      {shareContextOpen && contextId && (() => {
+        const ctxNode = store.getNode(contextId)
+        return ctxNode ? <ContextShareModal contextNode={ctxNode} onClose={() => setShareContextOpen(false)} /> : null
+      })()}
     </div>
   )
 }

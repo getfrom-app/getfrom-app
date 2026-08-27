@@ -116,9 +116,14 @@ function identifierOf(node: Node): string | undefined {
  *  `publishNodePublicly` en nodeExport.ts): undefined no la toca, null/''
  *  la quita, string no vacío la (re)establece. Solo el HASH vive en el
  *  servidor; aquí solo se guarda `_pubProtected` como pista visual. */
-export async function publishGroupPublicly(node: Node, customSlug?: string, password?: string | null): Promise<string> {
+// `description` — igual criterio que `password`: undefined no la toca, null/''
+// la quita, string no vacío la (re)establece. Subtítulo bajo el título en la
+// página pública (28 ago 2026). Se guarda también en `extraData._pubDescription`
+// (solo pista local para rellenar el campo al reabrir el panel — la fuente de
+// verdad vive en `public_groups.description`, servidor).
+export async function publishGroupPublicly(node: Node, customSlug?: string, password?: string | null, description?: string | null): Promise<string> {
   const existingSlug = identifierOf(node)
-  const result = await publishGroup(node.id, existingSlug, customSlug, password)
+  const result = await publishGroup(node.id, existingSlug, customSlug, password, description)
   const url = `https://fromly.app/g/${result.slug}`
   const e = ed(node)
   const updates: Partial<Node> = {}
@@ -126,8 +131,12 @@ export async function publishGroupPublicly(node: Node, customSlug?: string, pass
   if (password !== undefined) {
     if (password && password.trim()) e._pubProtected = '1'
     else delete e._pubProtected
-    updates.extraData = JSON.stringify(e)
   }
+  if (description !== undefined) {
+    if (description && description.trim()) e._pubDescription = description.trim()
+    else delete e._pubDescription
+  }
+  if (password !== undefined || description !== undefined) updates.extraData = JSON.stringify(e)
   if (Object.keys(updates).length) store.updateNode(node.id, updates)
   return url
 }
