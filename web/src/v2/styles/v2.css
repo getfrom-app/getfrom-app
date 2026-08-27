@@ -106,22 +106,39 @@
 .v2-root.v2-right-collapsed { --v2-right: 0px; }
 .v2-root.v2-sidebar-collapsed { --v2-sidebar: 0px; }
 
-/* "Lo próximo" (26 ago 2026, rediseñada 27 ago — Alberto: "que sea una franja
-   real, que tenga su marco, como una barra de estado"). Franja fija de borde a
-   borde en la parte inferior — donde antes iba el número de versión, que ahora
-   vive junto al nombre "Fromly" en la cabecera del sidebar (.v2-brand-badge).
-   Colapsada: solo el más próximo. Un botón la expande, mostrando varios
-   separados por "·". Se pone en rojo bajo 1h, parpadea bajo 15min (un clic
-   detiene el parpadeo), y se mantiene resaltada mientras el elemento está en
-   curso. Activable/desactivable en Ajustes → Apariencia. */
-.v2-nextevent {
+/* Barra de estado inferior (26 ago 2026, rediseñada 27 ago — Alberto: "que sea
+   una franja real, con su marco... añadiendo un indicador de agentes activos,
+   último backup... y el siguiente evento alineado a la derecha"). Franja fija
+   de borde a borde — donde antes iba el número de versión, que ahora vive
+   junto al nombre "Fromly" en la cabecera del sidebar (.v2-brand-badge).
+   IZQUIERDA = salud del sistema (agentes/backup), solo icono/color, nunca
+   exige lectura activa. CENTRO = vacío a propósito. DERECHA = "Lo próximo",
+   lo único con texto — es lo único que sí pide leerse. */
+.v2-statusbar {
   position: fixed; left: var(--v2-sidebar, 0px); right: 0; bottom: 0; z-index: 6;
   display: flex; align-items: center; gap: 6px;
-  height: 26px; padding: 0 14px;
+  height: 26px; padding: 0 10px 0 14px;
   background: var(--v2-surface-sunken);
   border-top: 1px solid var(--border);
   transition: left var(--v2-fast);
 }
+.v2-statusbar-left { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.v2-statusbar-spacer { flex: 1; min-width: 0; }
+.v2-statusbar-right { display: flex; align-items: center; gap: 6px; min-width: 0; max-width: min(70vw, 520px); }
+
+.v2-statusbar-pill {
+  display: flex; align-items: center; gap: 3px;
+  background: none; border: none; padding: 2px 4px; margin: 0; cursor: pointer;
+  color: var(--text-tertiary); opacity: 0.7; font-size: 10.5px; font-weight: 600;
+  border-radius: 4px; transition: opacity .15s, background .15s;
+}
+.v2-statusbar-pill:hover { opacity: 1; background: var(--v2-hover); }
+.v2-statusbar-pill--dot { padding: 4px; }
+.v2-statusbar-dot { width: 6px; height: 6px; border-radius: 50%; display: block; }
+.v2-statusbar-dot--ok { background: #22c55e; }
+.v2-statusbar-dot--stale { background: #f59e0b; }
+.v2-statusbar-dot--old { background: var(--text-tertiary); }
+
 .v2-nextevent-text {
   flex: 1; min-width: 0;
   background: none; border: none; padding: 2px 4px; margin: 0; cursor: pointer;
@@ -138,10 +155,10 @@
   color: var(--text-tertiary); opacity: 0.6; display: flex; flex-shrink: 0;
 }
 .v2-nextevent-toggle:hover { opacity: 1; }
-.v2-nextevent--urgent { border-top-color: var(--danger, #e03131); }
-.v2-nextevent--urgent .v2-nextevent-text,
-.v2-nextevent--urgent .v2-nextevent-prefix { color: var(--danger, #e03131); opacity: 0.95; font-weight: 600; }
-.v2-nextevent--blink .v2-nextevent-text { animation: v2-nextevent-blink 1s ease-in-out infinite; }
+.v2-statusbar--urgent { border-top-color: var(--danger, #e03131); }
+.v2-statusbar--urgent .v2-nextevent-text,
+.v2-statusbar--urgent .v2-nextevent-prefix { color: var(--danger, #e03131); opacity: 0.95; font-weight: 600; }
+.v2-statusbar--blink .v2-nextevent-text { animation: v2-nextevent-blink 1s ease-in-out infinite; }
 @keyframes v2-nextevent-blink {
   0%, 100% { opacity: 0.95; }
   50% { opacity: 0.25; }

@@ -958,7 +958,7 @@ export default function V2App() {
           </div>
         </main>
         <aside className="v2-col v2-right" />
-        <NextEventBar />
+        <NextEventBar onOpenBackups={() => setSettingsTab('backups')} onOpenAgents={() => { setSettingsTab(null); onOpenElementsFiltered('agent') }} />
       </div>
       </ToastProvider>
     )
@@ -1145,7 +1145,7 @@ export default function V2App() {
           <button className="v2-batchupload-dismiss" onClick={() => { setBatchUploadIds(null); setBatchPickerOpen(false) }} aria-label={t('common.close', 'Cerrar')}>✕</button>
         </div>
       )}
-      <NextEventBar />
+      <NextEventBar onOpenBackups={() => setSettingsTab('backups')} onOpenAgents={() => onOpenElementsFiltered('agent')} />
     </div>
     </ToastProvider>
   )
