@@ -211,6 +211,63 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
       .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // GRUPOS dentro del propio bloque Elementos (28 ago 2026 — Alberto revierte la
+  // decisión del 26 ago: "los grupos ponlos dentro del bloque elementos, quitando
+  // el bloque de grupos... así estará más ordenado"). Se fusionan aquí, no en
+  // `elements` arriba: un grupo se DERIVA por sus miembros (`contextGroups`), no
+  // aparece nunca como hijo/miembro directo del propio contexto.
+  //
+  // Orden: MANUAL por defecto (28 ago 2026, Alberto: "quiero poder reordenar
+  // elementos... arrastrando con el ratón. y que se mantenga el orden que el
+  // usuario ha puesto"). Se guarda en `extraData._ctxOrder` (número, ascendente)
+  // — un campo propio, no `siblingOrder`: los elementos de un contexto no son
+  // hijos reales suyos (muchos llegan por `_ctxRefs`), así que no comparten
+  // padre para que `siblingOrder` tuviera sentido. Sin orden manual guardado,
+  // cae al criterio de siempre (creación, más reciente primero). Los otros 3
+  // modos (nombre/fecha/modificación) son vistas alternativas explícitas —
+  // volver a arrastrar cualquier fila vuelve a "manual" con el nuevo orden.
+  const ctxOrderOf = (n: Node): number => {
+    const v = parseExtraData(n.extraData)._ctxOrder
+    return typeof v === 'number' ? v : Number.POSITIVE_INFINITY
+  }
+  const [elSortBy, setElSortBy] = useState<'manual' | 'title' | 'created' | 'updated'>('manual')
+  const [elSortMenuOpen, setElSortMenuOpen] = useState(false)
+  const elementsWithGroups = useMemo(() => {
+    const combined: { node: Node; icon: IconName; kind: string }[] = [...elements]
+    for (const g of contextGroups) combined.push({ node: g, icon: 'folder', kind: 'group' })
+    if (elSortBy === 'title') combined.sort((a, b) => (a.node.text || '').localeCompare(b.node.text || ''))
+    else if (elSortBy === 'updated') combined.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
+    else if (elSortBy === 'created') combined.sort((a, b) => (b.node.createdAt || '').localeCompare(a.node.createdAt || ''))
+    else combined.sort((a, b) => {
+      const oa = ctxOrderOf(a.node), ob = ctxOrderOf(b.node)
+      if (oa !== ob) return oa - ob
+      return (b.node.createdAt || '').localeCompare(a.node.createdAt || '')
+    })
+    return combined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elements, contextGroups, elSortBy, store.nodesVersion])
+
+  // Arrastrar para reordenar — nativo (sin librería nueva). Al soltar, renumera
+  // TODOS los visibles en el orden resultante y los persiste en `_ctxOrder`;
+  // fuerza el modo a "manual" para que se vea inmediatamente.
+  const [draggedId, setDraggedId] = useState<string | null>(null)
+  function reorderDrop(targetId: string) {
+    if (!draggedId || draggedId === targetId) { setDraggedId(null); return }
+    const ids = filteredElements.map(e => e.node.id)
+    const from = ids.indexOf(draggedId), to = ids.indexOf(targetId)
+    if (from === -1 || to === -1) { setDraggedId(null); return }
+    ids.splice(to, 0, ids.splice(from, 1)[0])
+    ids.forEach((id, i) => {
+      const n = store.getNode(id); if (!n) return
+      const e = parseExtraData(n.extraData)
+      if (e._ctxOrder === i) return
+      e._ctxOrder = i
+      store.updateNode(id, { extraData: JSON.stringify(e) })
+    })
+    setElSortBy('manual')
+    setDraggedId(null)
+  }
+
   // Filtro por tipo de la lista de Elementos — mismo estilo que la tab Elementos
   // (ElementsPanel): chips en una fila con subrayado activo, solo los tipos que
   // realmente aparecen en este contexto (con su recuento).
@@ -225,15 +282,23 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
     { key: 'cita',         label: t('elements.citas', 'Citas') },
     { key: 'agent',        label: t('elements.agents', 'Agentes') },
     { key: 'prompt',       label: t('elements.prompts', 'Prompts') },
+    { key: 'group',        label: t('elements.groups', 'Grupos') },
   ]
   const elCounts = useMemo(() => {
     const acc: Record<string, number> = {}
-    for (const el of elements) acc[el.kind] = (acc[el.kind] || 0) + 1
+    for (const el of elementsWithGroups) acc[el.kind] = (acc[el.kind] || 0) + 1
     return acc
-  }, [elements])
+  }, [elementsWithGroups])
   const elKindChips = ELKIND_ORDER.filter(k => elCounts[k.key] > 0)
   useEffect(() => { if (elFilter !== 'all' && !elCounts[elFilter]) setElFilter('all') }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
-  const filteredElements = elFilter === 'all' ? elements : elements.filter(e => e.kind === elFilter)
+  const filteredElements = elFilter === 'all' ? elementsWithGroups : elementsWithGroups.filter(e => e.kind === elFilter)
+  // Grupos desplegados (chevron) — qué grupos muestran sus miembros anidados debajo.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const toggleGroupExpanded = (id: string) => setExpandedGroups(prev => {
+    const next = new Set(prev)
+    next.has(id) ? next.delete(id) : next.add(id)
+    return next
+  })
 
   // Selección múltiple + «Crear grupo (N)» — mismo mecanismo que la tab global
   // Elementos (ElementsPanel.tsx), hook compartido (Alberto, 25 ago 2026: "lo de
@@ -341,21 +406,49 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
           <div className="v2-section-label" style={{ padding: '16px 0 6px' }}>
             <span>{t('v2.context.events', 'Eventos')}</span>
           </div>
-          <V2TaskList tasks={events} />
+          <V2TaskList tasks={events} hideCheckbox />
         </>
       )}
 
       {/* Elementos del contexto: documentos, archivos, audios, enlaces, AGENTES y
           CONVERSACIONES — todo junto, ordenado de más reciente a más antigua, cada
           uno con su icono. */}
-      {elements.length > 0 && (
+      {elementsWithGroups.length > 0 && (
         <>
           <div className="v2-section-label" style={{ padding: '16px 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span>{t('v2.context.elements', 'Elementos')} ({elements.length})</span>
+            <span>{t('v2.context.elements', 'Elementos')} ({elementsWithGroups.length})</span>
+            <div style={{ marginLeft: 'auto', position: 'relative' }}>
+              <button
+                title={t('elements.sortBy', 'Ordenar por')}
+                onClick={() => setElSortMenuOpen(v => !v)}
+                style={{ flexShrink: 0, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid var(--border,#e2e2e2)', background: elSortMenuOpen ? 'var(--bg-hover,#f4f4f5)' : 'var(--bg,#fff)', color: 'var(--text-secondary,#666)', cursor: 'pointer' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h10M3 12h6M3 18h3M17 4v16m0 0l4-4m-4 4l-4-4"/></svg>
+              </button>
+              {elSortMenuOpen && (
+                <>
+                  <div onClick={() => setElSortMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 1000 }} />
+                  <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 1001, minWidth: 170, background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 8, boxShadow: '0 6px 24px rgba(0,0,0,0.14)', padding: 4, fontSize: 13 }}>
+                    {([
+                      ['manual', t('elements.sortManual', 'Tu orden (arrastrar)')],
+                      ['title', t('elements.sortTitle', 'Título')],
+                      ['created', t('elements.sortCreated', 'Fecha de creación')],
+                      ['updated', t('elements.sortUpdated', 'Última modificación')],
+                    ] as const).map(([key, label]) => (
+                      <button key={key} onClick={() => { setElSortBy(key); setElSortMenuOpen(false) }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', padding: '6px 10px', borderRadius: 5, fontSize: 13, color: 'var(--text,#222)', fontFamily: 'inherit' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-hover,#f4f4f5)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                      >{elSortBy === key ? '✓ ' : ''}{label}</button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
             <button
               title={selectMode ? t('elements.exitSelect', 'Salir de selección') : t('elements.selectMultiple', 'Seleccionar varios')}
               onClick={toggleSelectMode}
-              style={{ marginLeft: 'auto', flexShrink: 0, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid var(--border,#e2e2e2)', background: selectMode ? 'var(--accent,#3E5C76)' : 'var(--bg,#fff)', color: selectMode ? '#fff' : 'var(--text-secondary,#666)', cursor: 'pointer' }}
+              style={{ flexShrink: 0, width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 6, border: '1px solid var(--border,#e2e2e2)', background: selectMode ? 'var(--accent,#3E5C76)' : 'var(--bg,#fff)', color: selectMode ? '#fff' : 'var(--text-secondary,#666)', cursor: 'pointer' }}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l2.5 2.5L16 9"/></svg>
             </button>
@@ -405,55 +498,65 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
               })}
             </div>
           )}
-          {filteredElements.map(({ node: n, icon }) => {
+          {filteredElements.map(({ node: n, icon, kind }) => {
             const agentData = isAgentNode(n) ? getAgentData(n.id) : null
             const isSelected = selected.has(n.id)
+            const isGroupRow = kind === 'group'
+            const isExpanded = isGroupRow && expandedGroups.has(n.id)
+            const members = isGroupRow ? groupMembers(n) : []
             return (
-              <div key={n.id} style={{ position: 'relative' }}>
-                <V2ElementRow
-                  node={n}
-                  icon={icon}
-                  onOpen={onOpenNode}
-                  hideContext
-                  extraMeta={agentData ? (agentData.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')) : fmtDate(n.createdAt, i18n.language)}
-                  group={groupByElementId.get(n.id)}
-                  onOpenGroup={onOpenNode}
-                />
-                {/* Overlay de selección — mismo patrón que ElementsPanel: intercepta el
-                    clic sin tocar V2ElementRow, el contenido de debajo sigue visible. */}
-                {selectMode && (
-                  <div
-                    onClick={() => toggleSelect(n.id)}
-                    style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center', paddingLeft: 6, cursor: 'pointer', background: isSelected ? 'rgba(62,92,118,0.10)' : 'transparent' }}
-                  >
-                    <input type="checkbox" checked={isSelected} readOnly style={{ pointerEvents: 'none', width: 15, height: 15 }} />
-                  </div>
-                )}
+              <div
+                key={n.id}
+                draggable={!selectMode}
+                onDragStart={e => { setDraggedId(n.id); e.dataTransfer.effectAllowed = 'move' }}
+                onDragOver={e => { if (draggedId) e.preventDefault() }}
+                onDrop={e => { e.preventDefault(); reorderDrop(n.id) }}
+                onDragEnd={() => setDraggedId(null)}
+                style={{ opacity: draggedId === n.id ? 0.4 : 1, cursor: selectMode ? undefined : 'grab' }}
+              >
+                <div style={{ position: 'relative' }}>
+                  <V2ElementRow
+                    node={n}
+                    icon={icon}
+                    onOpen={onOpenNode}
+                    hideContext
+                    extraMeta={isGroupRow
+                      ? t('group.memberCount', '{{count}} elemento(s)', { count: members.length })
+                      : agentData ? (agentData.enabled ? t('agents.enabled', 'Activo') : t('agents.disabled', 'Pausado')) : fmtDate(n.createdAt, i18n.language)}
+                    group={isGroupRow ? undefined : groupByElementId.get(n.id)}
+                    onOpenGroup={onOpenNode}
+                    expandable={isGroupRow && members.length > 0}
+                    expanded={isExpanded}
+                    onToggleExpand={() => toggleGroupExpanded(n.id)}
+                  />
+                  {/* Overlay de selección — mismo patrón que ElementsPanel: intercepta el
+                      clic sin tocar V2ElementRow, el contenido de debajo sigue visible. */}
+                  {selectMode && !isGroupRow && (
+                    <div
+                      onClick={() => toggleSelect(n.id)}
+                      style={{ position: 'absolute', inset: 0, zIndex: 5, display: 'flex', alignItems: 'center', paddingLeft: 6, cursor: 'pointer', background: isSelected ? 'rgba(62,92,118,0.10)' : 'transparent' }}
+                    >
+                      <input type="checkbox" checked={isSelected} readOnly style={{ pointerEvents: 'none', width: 15, height: 15 }} />
+                    </div>
+                  )}
+                </div>
+                {/* Miembros del grupo, anidados debajo cuando está desplegado (28 ago
+                    2026 — sustituye a la sección "Grupos" aparte, "así estará más
+                    ordenado"). Mismo V2ElementRow, indentado (`child`). */}
+                {isGroupRow && isExpanded && members.map(m => (
+                  <V2ElementRow
+                    key={m.id}
+                    node={m}
+                    icon={classifyElement(m)?.icon || 'document'}
+                    onOpen={onOpenNode}
+                    hideContext
+                    child
+                    extraMeta={fmtDate(m.createdAt, i18n.language)}
+                  />
+                ))}
               </div>
             )
           })}
-        </>
-      )}
-
-      {/* GRUPOS derivados: los que tienen al menos un elemento de este contexto
-          (ver `contextGroups` arriba) — no es la lista de grupos que "viven"
-          aquí (un grupo no tiene contexto propio), es dónde tiene sentido
-          encontrarlos mientras se trabaja en este contexto. */}
-      {contextGroups.length > 0 && (
-        <>
-          <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>
-            <span>{t('v2.context.groups', 'Grupos')} ({contextGroups.length})</span>
-          </div>
-          {contextGroups.map(g => (
-            <V2ElementRow
-              key={g.id}
-              node={g}
-              icon="folder"
-              onOpen={onOpenNode}
-              hideContext
-              extraMeta={t('group.memberCount', '{{count}} elemento(s)', { count: groupMemberIds(g).length })}
-            />
-          ))}
         </>
       )}
     </div>

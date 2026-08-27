@@ -18,7 +18,7 @@ export function comparePendingTasks(a: Node, b: Node): number {
   return (a.text || '').localeCompare(b.text || '')
 }
 
-export default function V2TaskList({ tasks }: { tasks: Node[] }) {
+export default function V2TaskList({ tasks, hideCheckbox }: { tasks: Node[]; hideCheckbox?: boolean }) {
   const { t } = useTranslation()
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
   const [showDone, setShowDone] = useState(false)
@@ -39,7 +39,7 @@ export default function V2TaskList({ tasks }: { tasks: Node[] }) {
     .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
 
   const row = (task: Node) => (
-    <TaskRow key={task.id} node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
+    <TaskRow key={task.id} node={task} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} hideCheckbox={hideCheckbox} />
   )
 
   return (

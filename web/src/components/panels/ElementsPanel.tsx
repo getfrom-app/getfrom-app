@@ -409,7 +409,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
         filtered.length === 0 ? (
           <div style={{ fontSize: 13, color: 'var(--text-tertiary,#999)', padding: '20px' }}>{t('elements.empty')}</div>
         ) : view === 'tabla' ? (
-          <TableView matchIds={filteredIds} sortBy={sortBy as TableSortBy} onSortChange={changeSort} />
+          <TableView matchIds={filteredIds} sortBy={sortBy as TableSortBy} onSortChange={changeSort} onOpen={open} />
         ) : view === 'kanban' ? (
           <KanbanView matchIds={filteredIds} />
         ) : (

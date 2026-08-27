@@ -90,9 +90,17 @@ interface Props {
   extra?: ReactNode
   /** Estilo del contenedor — lo usa Elementos (posicionamiento absoluto virtualizado). */
   style?: CSSProperties
+  /** Fuerza el punto de evento (sin checkbox) aunque el nodo tenga `status` —
+   *  para listas donde YA está claro que es un evento por estar en su propia
+   *  sección "Eventos" (V2ContextView), no hace falta repetirlo con un
+   *  checkbox que además no debería poder completarse desde ahí (28 ago
+   *  2026, Alberto: "un evento no tiene checkbox"). No cambia el criterio
+   *  general de arriba (tareas con hora SÍ llevan checkbox) — solo lo anula
+   *  cuando el propio caller ya sabe que está listando eventos. */
+  hideCheckbox?: boolean
 }
 
-export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, rowRef, extra, style }: Props) {
+export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, rowRef, extra, style, hideCheckbox }: Props) {
   const { t, i18n } = useTranslation()
   // El propio taskNode.ts lo deja dicho: "`status` dice que es una tarea;
   // `isEvent` dice que va al timeline del día y a Google Calendar. No son dos
@@ -115,14 +123,14 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
   return (
     <div
       ref={rowRef}
-      className={`dc-row ${isEvent && !hasStatus ? 'dc-row--event' : ''} ${done ? 'dc-row--done' : ''}`}
+      className={`dc-row ${isEvent && (!hasStatus || hideCheckbox) ? 'dc-row--event' : ''} ${done ? 'dc-row--done' : ''}`}
       data-node-id={node.id}
       style={style}
       onClick={() => openNodeDetail(node.id)}
       onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: node.id, x: e.clientX, y: e.clientY } })) }}
       {...dragProps}
     >
-      {!hasStatus ? (
+      {!hasStatus || hideCheckbox ? (
         // Indicador de evento en vez de checkbox — mismo hueco visual que
         // .dc-check (ver comentario de .dc-event-dot en styles/index.css), pero
         // sin acción de completar: un evento SIN status (crudo, nunca

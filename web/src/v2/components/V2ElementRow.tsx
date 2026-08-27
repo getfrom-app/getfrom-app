@@ -39,9 +39,16 @@ interface Props {
    *  de conversación abría el composer de chat). Si se omite, cae a `onOpen`
    *  — correcto para cualquier caller cuya fila nunca sea una conversación. */
   onOpenGroup?: (id: string) => void
+  /** Fila expandible con chevron (28 ago 2026 — grupos dentro del bloque
+   *  Elementos, en vez de su propia sección): pasa `expanded` + `onToggleExpand`
+   *  para que la fila muestre una flecha a la izquierda del icono. El caller
+   *  decide qué renderizar debajo cuando `expanded` es true. */
+  expandable?: boolean
+  expanded?: boolean
+  onToggleExpand?: () => void
 }
 
-export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext, onDetach, group, onOpenGroup }: Props) {
+export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hideContext, onDetach, group, onOpenGroup, expandable, expanded, onToggleExpand }: Props) {
   const { t, i18n } = useTranslation()
   const ctx = hideContext ? null : firstContextOf(node)
   // `displayTitle` quita el emoji decorativo escrito en el propio dato («✦ …»,
@@ -70,6 +77,16 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
         window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: node.id, x: e.clientX, y: e.clientY } }))
       }}
     >
+      {expandable && (
+        <button
+          className="v2-el-chevron"
+          title={expanded ? t('common.collapse', 'Contraer') : t('common.expand', 'Desplegar')}
+          onClick={e => { e.stopPropagation(); e.preventDefault(); onToggleExpand?.() }}
+          style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: 2, display: 'flex', alignItems: 'center', transform: expanded ? 'rotate(90deg)' : undefined, transition: 'transform .1s' }}
+        >
+          <Icon name="chevron-right" size={13} />
+        </button>
+      )}
       <span className="v2-el-icon"><Icon name={icon} size={16} /></span>
       <span className="v2-el-main">
         <span className="v2-el-title">{title}</span>

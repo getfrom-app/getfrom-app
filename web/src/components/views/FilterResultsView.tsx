@@ -65,7 +65,14 @@ export type TableSortBy = 'created' | 'updated' | 'title' | 'kind'
 // decide el caller, p.ej. ElementsPanel) y las cabeceras se vuelven clicables
 // para cambiarlo. Sin ellos (WFHomeView, uso legado), sigue ordenando sola
 // por creación descendente, igual que siempre.
-function TableView({ matchIds, sortBy, onSortChange }: { matchIds: Set<string>; sortBy?: TableSortBy; onSortChange?: (v: TableSortBy) => void }) {
+function TableView({ matchIds, sortBy, onSortChange, onOpen }: { matchIds: Set<string>; sortBy?: TableSortBy; onSortChange?: (v: TableSortBy) => void
+  /** Abre la fila — por defecto navega a `/node/:id` (react-router, uso legado
+   *  de WFHomeView). ElementsPanel pasa su propio `open()` (28 ago 2026): en
+   *  la app v2 los elementos se abren via `centerElementId`/`openNodeDetail`,
+   *  no por ruta — sin esto el clic no llevaba a ningún sitio ("los enlaces
+   *  no van", Alberto, visto en vivo). */
+  onOpen?: (id: string) => void
+}) {
   const s = useStore()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
@@ -105,11 +112,11 @@ function TableView({ matchIds, sortBy, onSortChange }: { matchIds: Set<string>; 
           {nodes.map(n => {
             const kind = kindOf(n)
             return (
-              <tr key={n.id} onClick={() => navigate(`/node/${n.id}`)}
+              <tr key={n.id} onClick={() => onOpen ? onOpen(n.id) : navigate(`/node/${n.id}`)}
                 onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
                 className="filter-table-row">
                 <td className="filter-table-text">{n.text || t('common.noTitle')}</td>
-                <td className="filter-table-kind"><Icon name={kind.icon} size={13} /> {kind.label}</td>
+                <td className="filter-table-kind"><span className="filter-table-kind-inner"><Icon name={kind.icon} size={13} /> {kind.label}</span></td>
                 <td className="filter-table-crumb" onClick={e => e.stopPropagation()}><RowContextChip node={n} /></td>
                 <td className="filter-table-date">{fmtDate(n.createdAt, i18n.language) || '—'}</td>
                 <td className="filter-table-date">{fmtDate(n.updatedAt, i18n.language) || '—'}</td>
