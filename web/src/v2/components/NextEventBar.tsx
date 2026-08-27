@@ -42,12 +42,15 @@ function fmtWhen(d: Date, now: Date, t: any): string {
 // Umbrales (27 ago 2026, Alberto): bajo 15 min → rojo; bajo 5 min → rojo
 // parpadeando; el resto del tiempo, negro normal (ver CSS de
 // `.v2-nextevent-text`/`.v2-statusbar--urgent`/`--blink`). Un elemento EN
-// CURSO (ya empezó, no ha terminado) cuenta como "rojo" — sigue siendo lo
-// más urgente que hay, pero ya no tiene sentido que parpadee.
-function urgency(item: UpcomingItem, now: Date): 'normal' | 'soon' | 'blink' {
+// CURSO (ya empezó, no ha terminado) vuelve a gris normal — ya no hay nada
+// que avisar, solo informar — y cambia el prefijo a "En curso:" en vez de
+// "Siguiente:" (Alberto, mismo día, segunda vuelta: "debe poner Siguiente
+// hasta la hora de inicio, luego En curso:... y cuando esté en curso debe
+// volver a color gris").
+function urgency(item: UpcomingItem, now: Date): 'normal' | 'soon' | 'blink' | 'ongoing' {
   const toStart = item.due.getTime() - now.getTime()
   const ongoing = now >= item.due && now < item.dueEnd
-  if (ongoing) return 'soon'
+  if (ongoing) return 'ongoing'
   if (toStart > 0 && toStart <= FIVE_MIN_MS) return 'blink'
   if (toStart > 0 && toStart <= FIFTEEN_MIN_MS) return 'soon'
   return 'normal'
@@ -146,7 +149,7 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
   const urgent = hasEvent && (state === 'soon' || state === 'blink')
 
   const label = hasEvent ? `${first!.text || t('common.noTitle', 'Sin título')} — ${fmtWhen(first!.due, now, t)}` : ''
-  const prefix = t('nextEvent.next', 'Siguiente:')
+  const prefix = state === 'ongoing' ? t('nextEvent.ongoing', 'En curso:') : t('nextEvent.next', 'Siguiente:')
 
   const backupText = lastBackup
     ? `${t('statusbar.backup', 'Backup')} ${formatBackupAge(lastBackup.createdAt)}`
