@@ -40,6 +40,8 @@ import { useUserStore } from '../../store/userStore'
 import { useToast } from '../Toast'
 import Icon from '../../v2/components/Icon'
 import { usePlannerHours } from '../../utils/plannerHours'
+import NewTaskModal from '../modals/NewTaskModal'
+import NewEventModal from '../modals/NewEventModal'
 
 // ── Geometría fija ────────────────────────────────────────────────────────
 // La franja del día YA NO es fija: se ajusta en Ajustes y se comparte con la
@@ -118,6 +120,13 @@ function hasTime(isoStr: string): boolean {
 /** ISO a medianoche local del día dado. */
 function toMidnight(day: Date): string {
   const d = new Date(day); d.setHours(0,0,0,0); return d.toISOString()
+}
+
+// YYYY-MM-DD en hora LOCAL (toMidnight().slice(0,10) da la fecha en UTC, que
+// se desplaza un día en husos horarios adelantados a UTC).
+function localDateStr(day: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`
 }
 
 // Nombres de día/mes según el idioma activo de la interfaz (antes fijos en español).
@@ -418,6 +427,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const [newAllDay, setNewAllDay]     = useState<{day:Date;text:string}|null>(null)
   const newAllDayRef                  = useRef<HTMLInputElement>(null)
   const [snapLine, setSnapLine]       = useState<{dayKey:string;top:number}|null>(null)
+  // Clic en el hueco vacío de una celda del mes → elegir tarea o evento
+  // (Alberto, 27 ago 2026: el número del día abre el día; el resto de la
+  // celda debe permitir crear directamente).
+  const [monthAddMenu, setMonthAddMenu] = useState<{day: Date; x: number; y: number} | null>(null)
+  const [monthNewTaskDay, setMonthNewTaskDay] = useState<Date | null>(null)
+  const [monthNewEventDay, setMonthNewEventDay] = useState<Date | null>(null)
 
   // ── GCal ──────────────────────────────────────────────────────────────────
   // Instantánea local, NO reactiva al store: borrar/mover una tarea enlazada a
@@ -1232,10 +1247,16 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
               <div key={date.toISOString()} className={`pp-month-cell ${isTod ? 'pp-month-cell--today' : ''}`}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleMonthDrop(e, date)}
-                onClick={() => { const dn = ensureDayPath(date); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: dn.id } })) }}
+                // Hueco en blanco de la celda (fuera del número y de los chips) → elegir
+                // tarea o evento para ese día. El número del día tiene su propio onClick
+                // para abrir el día (más abajo).
+                onClick={e => { if (e.target === e.currentTarget) setMonthAddMenu({ day: date, x: e.clientX, y: e.clientY }) }}
                 title={date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}>
-                <div className={`pp-month-daynum ${isTod ? 'pp-month-daynum--today' : ''}`}>{date.getDate()}</div>
-                <div className="pp-month-items">
+                <div className={`pp-month-daynum ${isTod ? 'pp-month-daynum--today' : ''}`}
+                  onClick={e => { e.stopPropagation(); const dn = ensureDayPath(date); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: dn.id } })) }}>
+                  {date.getDate()}
+                </div>
+                <div className="pp-month-items" onClick={e => { if (e.target === e.currentTarget) setMonthAddMenu({ day: date, x: e.clientX, y: e.clientY }) }}>
                   {items.map(it => (
                     <div key={it.id} className="pp-month-chip" style={{ borderLeft: `2px solid ${it.color}`, opacity: it.done ? 0.45 : 1, textDecoration: it.done ? 'line-through' : 'none' }}
                       onClick={e => {
@@ -1259,6 +1280,31 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             )
           })}
         </div>
+        {monthAddMenu && (
+          <>
+            <div style={{position:'fixed',inset:0,zIndex:998}} onClick={()=>setMonthAddMenu(null)} />
+            <div className="pp-ctx" style={{left:monthAddMenu.x,top:monthAddMenu.y}}>
+              <button onClick={()=>{ setMonthNewTaskDay(monthAddMenu.day); setMonthAddMenu(null) }}>
+                {t('modal.newTask')}
+              </button>
+              <button onClick={()=>{ setMonthNewEventDay(monthAddMenu.day); setMonthAddMenu(null) }}>
+                {t('modal.newEvent')}
+              </button>
+            </div>
+          </>
+        )}
+        {monthNewTaskDay && (
+          <NewTaskModal
+            defaultDateStr={localDateStr(monthNewTaskDay)}
+            onClose={() => setMonthNewTaskDay(null)}
+          />
+        )}
+        {monthNewEventDay && (
+          <NewEventModal
+            defaultDateStr={localDateStr(monthNewEventDay)}
+            onClose={() => setMonthNewEventDay(null)}
+          />
+        )}
       </div>
     )
   }

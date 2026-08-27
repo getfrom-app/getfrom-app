@@ -22,9 +22,12 @@ interface Props {
   // defecto. Ahora mismo se crean sin fecha") — el resto de sitios que abren
   // este modal (sidebar, menú por-contexto) siguen sin fecha por defecto.
   defaultDueToday?: boolean
+  // Fecha concreta YYYY-MM-DD a precargar (p.ej. clic en una celda del mes en
+  // el planificador). Tiene prioridad sobre `defaultDueToday`.
+  defaultDateStr?: string
 }
 
-export default function NewTaskModal({ onClose, parentId, defaultDueToday }: Props) {
+export default function NewTaskModal({ onClose, parentId, defaultDueToday, defaultDateStr }: Props) {
   const { t } = useTranslation()
   const [text, setText] = useState('')
   // Vacío por defecto: el input es datetime-local (fecha + hora), así que un
@@ -32,7 +35,7 @@ export default function NewTaskModal({ onClose, parentId, defaultDueToday }: Pro
   // vacío) pero SIGUE siendo un string truthy en el estado — al enviar sin tocar
   // el campo, `due ? ... : null` colaba igualmente y creaba la tarea con
   // due=hoy medianoche UTC (02:00 en Madrid en verano) en vez de sin fecha.
-  const [due, setDue] = useState(defaultDueToday ? todayMidnightLocal() : '')
+  const [due, setDue] = useState(defaultDateStr ? `${defaultDateStr}T00:00` : (defaultDueToday ? todayMidnightLocal() : ''))
   const [priority, setPriority] = useState<'high' | 'medium' | 'low' | ''>('')
   const inputRef = useRef<HTMLInputElement>(null)
   const { showToast } = useToast()

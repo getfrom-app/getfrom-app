@@ -302,15 +302,14 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     }
 
     // Fecha
-    if (textToAnalyze.length > 3) {
-      setDatePrediction(extractDateFromEnd(textToAnalyze))
-    } else {
-      setDatePrediction(null)
-    }
+    const dp = textToAnalyze.length > 3 ? extractDateFromEnd(textToAnalyze) : null
+    setDatePrediction(dp)
 
-    // Detección tarea por verbo
+    // Detección tarea: verbo de acción al inicio, O una fecha detectada — un
+    // texto con fecha ya es accionable aunque no empiece por verbo
+    // ("Seguimiento X el 7 de septiembre").
     const normed = normalizeNFD(textToAnalyze)
-    if (!ft && textToAnalyze.length > 4 && buildTaskVerbRegex().test(normed)) {
+    if (!ft && ((textToAnalyze.length > 4 && buildTaskVerbRegex().test(normed)) || dp !== null)) {
       setTaskPrediction(true)
     } else {
       setTaskPrediction(false)
@@ -511,7 +510,8 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     // Preservar el tipo ya detectado: asignar contexto NO degrada la tarea a nota.
     setForceType(lockedForceTypeRef.current)
     if (!lockedForceTypeRef.current) {
-      setTaskPrediction(newText.length > 4 && buildTaskVerbRegex().test(normalizeNFD(newText)))
+      const dp = newText.length > 3 ? extractDateFromEnd(newText) : null
+      setTaskPrediction((newText.length > 4 && buildTaskVerbRegex().test(normalizeNFD(newText))) || dp !== null)
     }
   }
 
@@ -548,9 +548,10 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     // tipo bloqueado y la detección de tarea: enlazar un contexto no degrada la tarea a nota.
     setForceType(lockedForceTypeRef.current)
     setCtxSuggestion(null)
-    setDatePrediction(newText.length > 3 ? extractDateFromEnd(newText) : null)
+    const dp = newText.length > 3 ? extractDateFromEnd(newText) : null
+    setDatePrediction(dp)
     if (!lockedForceTypeRef.current) {
-      setTaskPrediction(newText.length > 4 && buildTaskVerbRegex().test(normalizeNFD(newText)))
+      setTaskPrediction((newText.length > 4 && buildTaskVerbRegex().test(normalizeNFD(newText))) || dp !== null)
     }
   }
 
