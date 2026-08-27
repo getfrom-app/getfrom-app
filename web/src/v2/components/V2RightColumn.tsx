@@ -35,6 +35,7 @@ import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
+import ElementsFilters from './ElementsFilters'
 import DailyCockpit from '../../components/views/DailyCockpit'
 import V2ContextView from './V2ContextView'
 import V2Chat from './V2Chat'
@@ -177,12 +178,9 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
 
   const isRecordingActive = !!recorder && (recorder.recording || recorder.busy)
 
-  // Destino Elementos sin nada abierto: la columna se colapsa a 0 (V2App.tsx) — sin
-  // asa de resize propia, si no queda una tira arrastrable sobre una columna invisible.
-  const collapsed = mode === 'elementos' && !elementId
   return (
     <aside className="v2-col v2-right">
-      {!collapsed && <div className="v2-resize-handle" onPointerDown={startResize} title={t('v2.rightColumn.dragToWiden', 'Arrastra para ensanchar')} />}
+      <div className="v2-resize-handle" onPointerDown={startResize} title={t('v2.rightColumn.dragToWiden', 'Arrastra para ensanchar')} />
       {importDragOver && <div className="v2-import-banner"><Icon name="import" size={15} /> {t('v2.chat.importToFromly', 'Importar a Fromly')}</div>}
       {/* Destino Chat: SIN cabecera de tabs propia (27 ago 2026 — se retiró la
           tab «Historial»: navegar aquí ya arranca en vacío, ver `onSelectGeneral`
@@ -313,16 +311,18 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
         </div>
       )}
 
-      {/* Elementos: el buscador universal (filtros por tipo, virtualizado) vive AHORA en
-          el CENTRO — mucho más ancho para tabla/kanban/calendario (27 ago 2026, ver
-          V2App.tsx). Aquí, Tab 1, solo mientras hay algo abierto: deja seguir explorando
-          sin perder el elemento centrado (equivalente a "volver a la lista" sin cerrar
-          nada). Mientras NO hay nada abierto, esta tab ni se muestra (mismo criterio que
-          siempre: sin `elementId` no hay 2ª tab, y aquí tampoco tiene sentido una 1ª —
-          el centro ya ES el buscador). */}
-      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'elementos' && elementId && (
+      {/* Elementos: los RESULTADOS (virtualizados, tabla/lista) viven en el CENTRO —
+          mucho más ancho (27 ago 2026). El buscador+filtros+orden viven AQUÍ, en la
+          columna derecha (28 ago 2026, Alberto: "dijimos que harías la columna derecha
+          para filtros y buscador. hazlo") — ambos leen/escriben el mismo
+          `elementsBrowserStore`, así que filtrar aquí actualiza el centro al instante.
+          Mientras hay algo abierto, esta tab además enseña sus propios resultados
+          (ElementsPanel, compacto) para poder seguir explorando sin perder de vista
+          el elemento centrado. */}
+      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'elementos' && (
         <div className="v2-right-fill">
-          <ElementsPanel initialFilter={elementsFilter ?? undefined} />
+          <ElementsFilters />
+          {elementId && <ElementsPanel initialFilter={elementsFilter ?? undefined} />}
         </div>
       )}
 

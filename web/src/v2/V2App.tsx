@@ -1002,14 +1002,9 @@ export default function V2App() {
     if (files.length) onFilesDropped(files)
   }
 
-  // Elementos, mientras se explora (nada abierto en el centro): la columna derecha
-  // ya no pinta nada (el buscador vive en el centro, ver abajo) — colapsarla del
-  // todo, si no, el hueco de 440px+ que reservaba se queda en blanco y el centro NO
-  // gana el ancho que era todo el punto del cambio (27 ago 2026).
-  const rightCollapsed = rightMode === 'elementos' && !centerElementId
   return (
     <ToastProvider>
-    <div className="v2-root" style={{ ['--v2-right' as string]: rightCollapsed ? '0px' : `${rightWidth}px` }}
+    <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}
       onDragOver={onRootDragOver} onDragLeave={onRootDragLeave} onDrop={onRootDrop}>
       <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onOpenAttach={onOpenAttach} onRecordInCtx={onRecordInCtx} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={onOpenProfile} />
       {centerElementId ? (

@@ -9,7 +9,29 @@ import { store, useStore } from '../../store/nodeStore'
 import { firstContextOf } from '../../utils/cajones'
 import { fmtDate } from '../../utils/formatDate'
 import RowContextChip from '../panels/RowContextChip'
+import Icon, { type IconName } from '../../v2/components/Icon'
 import type { Node } from '../../types'
+
+// ── Tipo de elemento — versión ligera, solo para la columna TIPO de la tabla
+// (no la clasificación completa de ElementsPanel.classify, que decide qué
+// entra o no en Elementos; aquí basta con etiquetar lo que YA llegó). ──────
+function kindOf(n: Node): { label: string; icon: IconName } {
+  let e: Record<string, unknown> = {}
+  try { e = JSON.parse(n.extraData || '{}') } catch { /* vacío */ }
+  if (n.status != null) return { label: 'Tarea', icon: 'task' }
+  if (e._group === '1') return { label: 'Grupo', icon: 'folder' }
+  if (e._agentDef === '1') return { label: 'Agente', icon: 'agent' }
+  if (e._promptDef === '1') return { label: 'Prompt', icon: 'prompt' }
+  if (e._aiSession === '1') return { label: 'Conversación', icon: 'conversation' }
+  if (e._pdfSelection != null) return { label: 'Subrayado', icon: 'highlight' }
+  if (e._docSelection != null) return { label: 'Cita', icon: 'quote' }
+  if (e._v2canvas === '1') return { label: 'Lienzo', icon: 'canvas' }
+  const rt = (e._resourceType as string) || n.resourceType
+  if (rt === 'image' || e._imageUrl) return { label: 'Imagen', icon: 'image' }
+  if (rt === 'pdf') return { label: 'PDF', icon: 'pdf' }
+  if (n.isResource || e._resourceUrl || e._resource) return { label: 'Enlace', icon: 'link' }
+  return { label: 'Texto', icon: 'document' }
+}
 
 // ── Mismo SVG que NodeView ─────────────────────────────────────────────────
 const ICONS = {
@@ -34,50 +56,66 @@ function getDayDate(node: Node): string | null {
   return node.due ?? null
 }
 
+export type TableSortBy = 'created' | 'updated' | 'title' | 'kind'
+
 // ── Vista tabla ────────────────────────────────────────────────────────────
-function TableView({ matchIds }: { matchIds: Set<string> }) {
+// `sortBy`/`onSortChange` opcionales (28 ago 2026, Elementos: "permite hacer
+// clic en las cabeceras de las columnas para ordenar"): si se pasan, la tabla
+// NO reordena por su cuenta — respeta el orden que ya trae `matchIds` (lo
+// decide el caller, p.ej. ElementsPanel) y las cabeceras se vuelven clicables
+// para cambiarlo. Sin ellos (WFHomeView, uso legado), sigue ordenando sola
+// por creación descendente, igual que siempre.
+function TableView({ matchIds, sortBy, onSortChange }: { matchIds: Set<string>; sortBy?: TableSortBy; onSortChange?: (v: TableSortBy) => void }) {
   const s = useStore()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
-  const nodes = useMemo(() =>
-    Array.from(matchIds)
-      .map(id => s.getNode(id))
-      .filter((n): n is Node => !!n && !n.deletedAt)
-      // Creación más reciente primero, sin fecha al final — mismo criterio que la
-      // vista lista (Alberto, 15 jul: antes ordenaba por título, sin relación con
-      // "más nuevo a más antiguo").
-      .sort((a, b) => {
-        if (!a.createdAt && !b.createdAt) return 0
-        if (!a.createdAt) return 1
-        if (!b.createdAt) return -1
-        return b.createdAt.localeCompare(a.createdAt)
-      })
-  , [matchIds, s.nodes.size]) // eslint-disable-line react-hooks/exhaustive-deps
+  const nodes = useMemo(() => {
+    const list = Array.from(matchIds).map(id => s.getNode(id)).filter((n): n is Node => !!n && !n.deletedAt)
+    if (onSortChange) return list // orden ya decidido por el caller
+    return list.sort((a, b) => {
+      if (!a.createdAt && !b.createdAt) return 0
+      if (!a.createdAt) return 1
+      if (!b.createdAt) return -1
+      return b.createdAt.localeCompare(a.createdAt)
+    })
+  }, [matchIds, s.nodes.size, onSortChange]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const Th = ({ col, label }: { col: TableSortBy; label: string }) => (
+    <th
+      onClick={onSortChange ? () => onSortChange(col) : undefined}
+      style={onSortChange ? { cursor: 'pointer', userSelect: 'none' } : undefined}
+    >
+      {label}{onSortChange && sortBy === col && <span style={{ marginLeft: 3, opacity: 0.6 }}>▾</span>}
+    </th>
+  )
 
   return (
     <div className="filter-table-view">
       <table className="filter-table">
         <thead>
           <tr>
-            <th>{t('search.filterStatus')}</th>
-            <th>{t('panel.tasks')}</th>
+            <Th col="title" label={t('panel.tasks')} />
+            <Th col="kind" label={t('elements.type', 'Tipo')} />
             <th>{t('search.filterContext')}</th>
-            <th>{t('search.filterDate')}</th>
+            <Th col="created" label={t('search.filterDate')} />
+            <Th col="updated" label={t('v2.rightColumn.updated', 'Modificado')} />
           </tr>
         </thead>
         <tbody>
-          {nodes.map(n => (
-            <tr key={n.id} onClick={() => navigate(`/node/${n.id}`)}
-              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
-              className="filter-table-row">
-              <td className="filter-table-status">
-                <span className={`filter-status-dot ${n.status === 'done' ? 'done' : n.status === 'pending' ? 'pending' : ''}`} />
-              </td>
-              <td className="filter-table-text">{n.text || t('common.noTitle')}</td>
-              <td className="filter-table-crumb" onClick={e => e.stopPropagation()}><RowContextChip node={n} /></td>
-              <td className="filter-table-date">{fmtDate(n.due, i18n.language) || '—'}</td>
-            </tr>
-          ))}
+          {nodes.map(n => {
+            const kind = kindOf(n)
+            return (
+              <tr key={n.id} onClick={() => navigate(`/node/${n.id}`)}
+                onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
+                className="filter-table-row">
+                <td className="filter-table-text">{n.text || t('common.noTitle')}</td>
+                <td className="filter-table-kind"><Icon name={kind.icon} size={13} /> {kind.label}</td>
+                <td className="filter-table-crumb" onClick={e => e.stopPropagation()}><RowContextChip node={n} /></td>
+                <td className="filter-table-date">{fmtDate(n.createdAt, i18n.language) || '—'}</td>
+                <td className="filter-table-date">{fmtDate(n.updatedAt, i18n.language) || '—'}</td>
+              </tr>
+            )
+          })}
         </tbody>
       </table>
     </div>

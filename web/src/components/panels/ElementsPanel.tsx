@@ -25,11 +25,12 @@ import { createPromptUnder } from '../../utils/promptsHelper'
 import { useGroupSelection } from '../../hooks/useGroupSelection'
 import NewNamedItemModal from '../modals/NewNamedItemModal'
 import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../views/FilterResultsView'
-import type { FilterView } from '../views/FilterResultsView'
+import type { FilterView, TableSortBy } from '../views/FilterResultsView'
 import PizarraThumbnail from '../views/PizarraThumbnail'
 import Icon, { type IconName } from '../../v2/components/Icon'
 import GroupAddButton from '../../v2/components/GroupAddButton'
 import { displayTitle } from '../../utils/displayText'
+import { elementsBrowserStore, useElementsBrowserStore } from '../../store/elementsBrowserStore'
 
 // ⚠️ Ya NO existen los tipos 'event', 'context' ni 'memory' (Alberto, 5 ago 2026):
 //   · evento    → es una TAREA con día y hora, no un tipo aparte ("los eventos son
@@ -38,14 +39,17 @@ import { displayTitle } from '../../utils/displayText'
 //                 del contexto ya lista lo suyo. Aquí era un segundo camino redundante.
 //   · memoria   → memoria IA antigua, pieza interna de Fromly. Fuera de la vista.
 export type ElemKind = 'text' | 'canvas' | 'task' | 'link' | 'pdf' | 'image' | 'highlight' | 'agent' | 'conversation' | 'prompt' | 'cita' | 'group'
-type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
+export type TaskSub = 'all' | 'today' | 'open' | 'done' | 'future' | 'nodate'
 
-interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; due?: string | null; status?: string | null }
-type SortBy = 'updated' | 'created' | 'title'
+export interface ElemRow { id: string; kind: ElemKind; title: string; snippet: string; updatedAt: string; createdAt: string; due?: string | null; status?: string | null }
+type SortBy = 'updated' | 'created' | 'title' | 'kind'
 
 const ed = (n: Node): Record<string, unknown> => { try { return JSON.parse(n.extraData || '{}') } catch { return {} } }
 
-function classify(n: Node): ElemKind | null {
+// Exportada: ElementsFilters.tsx (columna derecha) necesita los mismos
+// recuentos por tipo que el centro, sin duplicar la regla de qué ES un
+// elemento — 28 ago 2026.
+export function classify(n: Node): ElemKind | null {
   if (n.deletedAt) return null
   const e = ed(n)
   if (e._absorbedBy != null) return null       // oculto dentro de un bloque → no es elemento suelto
@@ -117,7 +121,6 @@ const ROW_H = 46
 // declarar la altura real por fila o las filas de tarea se solapan/recortan.
 const TASK_ROW_H = 58
 const ELEMENTS_VIEW_KEY = 'from_v2_elements_view'
-const ELEMENTS_SORT_KEY = 'from_v2_elements_sort'
 
 interface Props {
   /** Filtro inicial (p.ej. al llegar desde «← Agentes»/«← Prompts» en el detalle). */
@@ -127,16 +130,22 @@ interface Props {
 export default function ElementsPanel({ initialFilter }: Props = {}) {
   const { t, i18n } = useTranslation()
   const s = useStore()
-  const [filter, setFilter] = useState<ElemKind | 'all' | 'favorite'>(initialFilter || 'all')
+  // Buscador/filtro/orden viven en un store COMPARTIDO (28 ago 2026): la
+  // columna derecha (ElementsFilters) los edita, el centro (aquí) solo los
+  // lee y pinta los resultados — mismo mando a distancia.
+  const browser = useElementsBrowserStore()
+  const { filter, taskSub, sortBy } = browser
+  const q = browser.q
   // Si llegamos aquí ya con el panel montado (p.ej. «← Agentes» tras «← Prompts»
   // sin pasar por otro modo), re-aplica el filtro pedido en vez de ignorarlo.
-  useEffect(() => { if (initialFilter) setFilter(initialFilter) }, [initialFilter])
-  const [taskSub, setTaskSub] = useState<TaskSub>('all')
-  const [q, setQ] = useState('')
+  useEffect(() => { if (initialFilter) elementsBrowserStore.setFilter(initialFilter) }, [initialFilter])
   const scrollRef = useRef<HTMLDivElement>(null)
-  // Vista: Tabla por defecto (27 ago 2026 — Alberto: "en elementos me gusta la
-  // vista de tabla por defecto, y la lista como secundaria"), Kanban/Calendario
-  // disponibles siempre, no solo filtrando Tareas.
+  // Vista: Tabla por defecto, Lista secundaria (27 ago 2026 — Alberto: "en
+  // elementos me gusta la vista de tabla por defecto, y la lista como
+  // secundaria"). Kanban/Calendario QUITADAS de aquí (28 ago 2026 — Alberto:
+  // "no quedan bien aquí"): agrupar por estado/fecha no encaja con una lista
+  // de tipos tan mixta (notas, PDFs, agentes...) — siguen existiendo tal
+  // cual en WFHomeView, que sí es solo texto/tareas.
   const [view, setView] = useState<FilterView>(
     () => (localStorage.getItem(ELEMENTS_VIEW_KEY) as FilterView) || 'tabla'
   )
@@ -144,13 +153,9 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     setView(v)
     localStorage.setItem(ELEMENTS_VIEW_KEY, v)
   }
-  const [sortBy, setSortBy] = useState<SortBy>(() => (localStorage.getItem(ELEMENTS_SORT_KEY) as SortBy) || 'created')
-  const [sortMenuOpen, setSortMenuOpen] = useState(false)
-  function changeSort(v: SortBy) {
-    setSortBy(v)
-    localStorage.setItem(ELEMENTS_SORT_KEY, v)
-    setSortMenuOpen(false)
-  }
+  // Si quedó una vista kanban/calendario guardada de antes de quitarlas, cae a Tabla.
+  useEffect(() => { if (view === 'kanban' || view === 'calendario') changeView('tabla') }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
+  const changeSort = (v: SortBy) => elementsBrowserStore.setSortBy(v)
 
   // TODOS los elementos del lienzo (globalmente) — el orden final lo decide `sortBy`.
   const rows = useMemo(() => {
@@ -196,6 +201,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     // (Alberto, 15 jul: "Locución CREO Laura Martínez..." salía primero sin ser
     // ni de lejos lo más nuevo).
     if (sortBy === 'title') sorted.sort((a, b) => a.title.localeCompare(b.title))
+    else if (sortBy === 'kind') sorted.sort((a, b) => a.kind.localeCompare(b.kind) || a.title.localeCompare(b.title))
     else if (sortBy === 'created') sorted.sort((a, b) => {
       if (!a.createdAt && !b.createdAt) return 0
       if (!a.createdAt) return 1
@@ -210,9 +216,6 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     })
     return sorted
   }, [byTypeAndSearch, sortBy])
-
-  const counts = useMemo(() => rows.reduce((acc, r) => { acc[r.kind] = (acc[r.kind] || 0) + 1; return acc }, {} as Record<ElemKind, number>), [rows])
-  const favCount = useMemo(() => { void s.nodesVersion; return rows.filter(r => store.getNode(r.id)?.isFavorite).length }, [rows, s.nodesVersion])
 
   const virtualizer = useVirtualizer({
     count: filtered.length,
@@ -230,31 +233,6 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
     const id = requestAnimationFrame(() => virtualizer.measure())
     return () => cancelAnimationFrame(id)
   }, [filtered.length]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const CHIPS: { key: ElemKind | 'all' | 'favorite'; label: string }[] = [
-    { key: 'all',      label: t('elements.all') },
-    { key: 'favorite', label: t('elements.favorites', 'Favoritos') },
-    { key: 'text',    label: t('elements.texts') },
-    { key: 'group',   label: t('elements.groups', 'Grupos') },
-    { key: 'canvas',  label: t('elements.canvases', 'Lienzos') },
-    { key: 'task',    label: t('elements.tasks') },
-    { key: 'link',    label: t('elements.links') },
-    { key: 'pdf',     label: t('elements.pdfs') },
-    { key: 'highlight', label: t('elements.highlights', 'Subrayados') },
-    { key: 'cita',    label: t('elements.citas', 'Citas') },
-    { key: 'image',   label: t('elements.images') },
-    { key: 'agent',   label: t('elements.agents', 'Agentes') },
-    { key: 'prompt',  label: t('elements.prompts', 'Prompts') },
-    { key: 'conversation', label: t('elements.conversations', 'Conversaciones') },
-  ]
-  const SUB_CHIPS: { key: TaskSub; label: string }[] = [
-    { key: 'all',    label: t('elements.subAll', 'Todas') },
-    { key: 'today',  label: t('elements.subToday', 'Hoy') },
-    { key: 'open',   label: t('elements.subOpen', 'Abiertas') },
-    { key: 'done',   label: t('elements.subDone', 'Cerradas') },
-    { key: 'future', label: t('elements.subFuture', 'Futuras') },
-    { key: 'nodate', label: t('elements.subNoDate', 'Sin fecha') },
-  ]
 
   function open(id: string) {
     openNodeDetail(id)
@@ -352,63 +330,21 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
       <div style={{ padding: '14px 14px 6px', flexShrink: 0 }}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10, position: 'relative' }}>
-          <input
-            value={q} onChange={e => setQ(e.target.value)}
-            placeholder={t('elements.searchShort', 'Buscar')}
-            style={{ flex: 1, minWidth: 0, boxSizing: 'border-box', padding: '8px 10px', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: 'var(--bg,#fff)', color: 'var(--text,#222)', fontSize: 13, outline: 'none' }}
-          />
-          <button
-            title={t('elements.sortBy', 'Ordenar por')}
-            onClick={() => setSortMenuOpen(v => !v)}
-            style={{ flexShrink: 0, width: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: sortMenuOpen ? 'var(--bg-hover,#f4f4f5)' : 'var(--bg,#fff)', color: 'var(--text-secondary,#666)', cursor: 'pointer' }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h10M3 12h6M3 18h3M17 4v16m0 0l4-4m-4 4l-4-4"/></svg>
-          </button>
+        {/* Buscador/filtro por tipo/orden viven ahora en la columna derecha
+            (ElementsFilters, 28 ago 2026) — aquí solo queda seleccionar-varios,
+            el atajo de crear agente/prompt (necesita `open()`, de aquí) y el
+            selector de vista. */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginBottom: 10 }}>
           <button
             title={selectMode ? t('elements.exitSelect', 'Salir de selección') : t('elements.selectMultiple', 'Seleccionar varios')}
             onClick={toggleSelectMode}
-            style={{ flexShrink: 0, width: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: selectMode ? 'var(--accent,#6c5ce7)' : 'var(--bg,#fff)', color: selectMode ? '#fff' : 'var(--text-secondary,#666)', cursor: 'pointer' }}
+            style={{ flexShrink: 0, width: 34, height: 34, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid var(--border,#e2e2e2)', background: selectMode ? 'var(--accent,#6c5ce7)' : 'var(--bg,#fff)', color: selectMode ? '#fff' : 'var(--text-secondary,#666)', cursor: 'pointer' }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l2.5 2.5L16 9"/></svg>
           </button>
-          {sortMenuOpen && (
-            <>
-              <div onClick={() => setSortMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 1000 }} />
-              <div style={{ position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 1001, minWidth: 180, background: 'var(--bg-elevated,#fff)', border: '1px solid var(--border,#e2e2e2)', borderRadius: 8, boxShadow: '0 6px 24px rgba(0,0,0,0.14)', padding: 4, fontSize: 13 }}>
-                <ElMenuItem label={(sortBy === 'updated' ? '✓ ' : '') + t('elements.sortUpdated', 'Última modificación')} onClick={() => changeSort('updated')} />
-                <ElMenuItem label={(sortBy === 'created' ? '✓ ' : '') + t('elements.sortCreated', 'Fecha de creación')} onClick={() => changeSort('created')} />
-                <ElMenuItem label={(sortBy === 'title' ? '✓ ' : '') + t('elements.sortTitle', 'Título')} onClick={() => changeSort('title')} />
-              </div>
-            </>
-          )}
-        </div>
-        {/* Filtro por tipo — en VARIAS LÍNEAS (`.el-filterbar` envuelve desde el 5 ago
-            2026), no en scroll horizontal: "que aparezcan en varias líneas para que se
-            vean todos de una pasada" (Alberto). Para que eso no se convierta en un muro
-            de 15 chips, los tipos SIN elementos no se pintan — salvo el activo (si no,
-            al quedarte sin resultados desaparecería el chip que acabas de pulsar) y
-            «Todos»/«Favoritos», que son la salida siempre disponible. */}
-        <div className="el-filterbar">
-          {CHIPS.map(c => {
-            const active = filter === c.key
-            const n = c.key === 'all' ? rows.length : c.key === 'favorite' ? favCount : (counts[c.key as ElemKind] || 0)
-            if (n === 0 && !active && c.key !== 'all' && c.key !== 'favorite') return null
-            return (
-              <button key={c.key} onClick={() => { setFilter(c.key); if (c.key !== 'task') setTaskSub('all') }}
-                style={{
-                  flex: '0 0 auto', border: 'none', background: 'transparent', cursor: 'pointer', padding: '3px 0',
-                  fontSize: 12.5, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
-                  color: active ? 'var(--accent,#6c5ce7)' : 'var(--text-tertiary,#999)',
-                  borderBottom: '2px solid ' + (active ? 'var(--accent,#6c5ce7)' : 'transparent'),
-                }}>
-                {c.label} <span style={{ opacity: 0.55, fontWeight: 400 }}>{n}</span>
-              </button>
-            )
-          })}
         </div>
         {(filter === 'agent' || filter === 'prompt') && (
-          <div style={{ marginTop: 6 }}>
+          <div style={{ marginBottom: 6 }}>
             <button
               onClick={() => setNewNamedModal(filter === 'agent' ? 'agent' : 'prompt')}
               style={{ display: 'flex', alignItems: 'center', gap: 5, border: '1px dashed var(--border,#e2e2e2)', background: 'transparent', borderRadius: 7, padding: '5px 10px', fontSize: 12.5, fontWeight: 500, color: 'var(--accent,#6c5ce7)', cursor: 'pointer', fontFamily: 'inherit' }}
@@ -418,36 +354,19 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
           </div>
         )}
         {filter === 'agent' && (
-          <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.4, color: 'var(--text-tertiary,#999)' }}>
+          <div style={{ marginBottom: 6, fontSize: 12, lineHeight: 1.4, color: 'var(--text-tertiary,#999)' }}>
             {t('elements.agentsDisabledHint', 'Los agentes predefinidos vienen desactivados. Ábrelos y activa el interruptor de Estado, o pulsa ▶ Ejecutar para probarlos primero.')}
           </div>
         )}
-        {showTaskSub && (
-          <div className="el-filterbar" style={{ marginTop: 4 }}>
-            {SUB_CHIPS.map(c => {
-              const active = taskSub === c.key
-              return (
-                <button key={c.key} onClick={() => setTaskSub(c.key)}
-                  style={{
-                    flex: '0 0 auto', border: 'none', background: 'transparent', cursor: 'pointer', padding: '2px 0',
-                    fontSize: 11.5, fontWeight: active ? 700 : 500, whiteSpace: 'nowrap', fontFamily: 'inherit',
-                    color: active ? 'var(--accent,#6c5ce7)' : 'var(--text-tertiary,#999)',
-                  }}>
-                  {c.label}
-                </button>
-              )
-            })}
-          </div>
-        )}
-        {/* Selector de vista — lista (por defecto) / tabla / kanban / calendario. Reutiliza
-            los componentes de la v1 (FilterResultsView) tal cual, sobre los ids ya filtrados.
-            «Limpiar» solo aparece si de verdad hay algo que limpiar (`filtersActive`). */}
+        {/* Selector de vista — Tabla / Lista únicamente (28 ago 2026: Kanban/Calendario
+            quitadas, "no quedan bien aquí"). Reutiliza FilterViewSwitcher tal cual, sobre
+            los ids ya filtrados. «Limpiar» solo aparece si hay algo que limpiar. */}
         <FilterViewSwitcher
           view={view}
           onChange={changeView}
           count={filtered.length}
-          onClear={() => { setQ(''); setFilter('all'); setTaskSub('all') }}
-          allowBoardViews
+          onClear={() => elementsBrowserStore.clear()}
+          allowBoardViews={false}
           canClear={filtersActive}
         />
         {/* Barra de acciones en bloque — visible solo en modo selección. */}
@@ -490,7 +409,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
         filtered.length === 0 ? (
           <div style={{ fontSize: 13, color: 'var(--text-tertiary,#999)', padding: '20px' }}>{t('elements.empty')}</div>
         ) : view === 'tabla' ? (
-          <TableView matchIds={filteredIds} />
+          <TableView matchIds={filteredIds} sortBy={sortBy as TableSortBy} onSortChange={changeSort} />
         ) : view === 'kanban' ? (
           <KanbanView matchIds={filteredIds} />
         ) : (
