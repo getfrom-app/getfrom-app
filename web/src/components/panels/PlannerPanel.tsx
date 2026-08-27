@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { ensureDayPath, diaryDayTitle } from '../../utils/agendaHelper'
-import { bumpReschedule, toggleTaskDone } from '../../utils/dailyCockpit'
+import { bumpReschedule, toggleTaskDone, detachFromRecurrence } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { gcalEventNodeId } from '../../utils/deterministicId'
 import { firstContextOf, contextColor } from '../../utils/cajones'
@@ -35,6 +35,7 @@ import { isTimeBlockNode } from '../../utils/taskNode'
 import { recurrenceFromString, nextRecurrence } from '../../utils/naturalDate'
 import { GCalEventEditor } from './DiaryRightPanel'
 import { TaskPropsPopover } from './DiaryPanelComponents'
+import RecurrenceScopeConfirm from './RecurrenceScopeConfirm'
 import { useUserStore } from '../../store/userStore'
 import { useToast } from '../Toast'
 import Icon from '../../v2/components/Icon'
@@ -399,6 +400,18 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   // página del evento, tarea o timeblock" — antes el bloque entero solo sabía
   // abrir la nota, sin atajo para tocar solo la fecha/repetición).
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
+  // «¿Solo esta instancia o todas las siguientes?» al arrastrar/redimensionar
+  // un bloque recurrente (27 ago 2026, Alberto: "cuando se... mueve... un
+  // evento recurrente o timeblock o tarea recurrente, debe preguntar igual
+  // que Apple Calendar"). `guardRecurrence` corta la operación si el nodo es
+  // recurrente y la retoma tras la respuesta; si no lo es, se ejecuta al
+  // instante como siempre.
+  const [pendingRecAction, setPendingRecAction] = useState<{ verb: string; run: (scope: 'this' | 'all') => void } | null>(null)
+  function guardRecurrence(nodeId: string, verb: string, run: (scope: 'this' | 'all') => void) {
+    const n = store.getNode(nodeId)
+    if (!n?.recurrence) { run('all'); return }
+    setPendingRecAction({ verb, run })
+  }
   const [ctxMenu, setCtxMenu]         = useState<{x:number;y:number;b:Block}|null>(null)
   const [newBlock, setNewBlock]       = useState<{day:Date;start:Date;top:number;text:string;isTimeBlock?: boolean}|null>(null)
   const newBlockRef                   = useRef<HTMLInputElement>(null)
@@ -690,18 +703,19 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       }
       const end = new Date(start.getTime() + 3600000)
 
-      // Nuevo modelo: solo actualizar due+dueEnd en el nodo original. Sin mover, sin duplicar.
-      store.updateNode(nodeId, {
-        due:    start.toISOString(),
-        dueEnd: end.toISOString(),
-        // Asegurar que tiene status para que aparezca como tarea
-        status: node.status ?? 'pending',
+      guardRecurrence(nodeId, t('planner.moveVerb', 'mover'), scope => {
+        if (scope === 'this') detachFromRecurrence(node)
+        // Nuevo modelo: solo actualizar due+dueEnd en el nodo original. Sin mover, sin duplicar.
+        store.updateNode(nodeId, {
+          due:    start.toISOString(),
+          dueEnd: end.toISOString(),
+          // Asegurar que tiene status para que aparezca como tarea
+          status: node.status ?? 'pending',
+        })
+        if (hadDate) bumpReschedule(nodeId)
+        // GCal sync
+        syncNodeToGcal(nodeId, start, end)
       })
-
-      if (hadDate) bumpReschedule(nodeId)
-
-      // GCal sync
-      syncNodeToGcal(nodeId, start, end)
 
     } else if (blockId) {
       // Mover bloque legacy (_timeBlock) o bloque nuevo
@@ -713,18 +727,21 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       const dur = n.dueEnd ? new Date(n.dueEnd).getTime() - new Date(n.due).getTime() : 3600000
       const end = new Date(start.getTime() + dur)
 
-      try {
-        const ed = JSON.parse(n.extraData || '{}')
-        if (ed._timeBlock === '1') {
-          // Legacy: mover el time block + mover el nodo vinculado al nuevo día diary
-          store.updateNode(blockId, { due: start.toISOString(), dueEnd: end.toISOString(), parentId: ensureDayPath(day).id })
-          return
-        }
-      } catch {}
+      guardRecurrence(blockId, t('planner.moveVerb', 'mover'), scope => {
+        if (scope === 'this') detachFromRecurrence(n)
+        try {
+          const ed = JSON.parse(n.extraData || '{}')
+          if (ed._timeBlock === '1') {
+            // Legacy: mover el time block + mover el nodo vinculado al nuevo día diary
+            store.updateNode(blockId, { due: start.toISOString(), dueEnd: end.toISOString(), parentId: ensureDayPath(day).id })
+            return
+          }
+        } catch {}
 
-      // Nuevo modelo: actualizar due en el nodo original
-      store.updateNode(blockId, { due: start.toISOString(), dueEnd: end.toISOString() })
-      syncNodeToGcal(blockId, start, end)
+        // Nuevo modelo: actualizar due en el nodo original
+        store.updateNode(blockId, { due: start.toISOString(), dueEnd: end.toISOString() })
+        syncNodeToGcal(blockId, start, end)
+      })
 
     } else {
       // GCal event arrastrado
@@ -888,9 +905,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           .then(updated => setGcalEvents(p => p.map(x => x.id === updated.id ? updated : x)))
           .catch(() => setGcalEvents(p => p.map(x => x.id === gcalEvent.id ? gcalEvent : x)))
       } else {
-        store.updateNode(id, { dueEnd: newEnd.toISOString() })
-        const n = store.getNode(id)
-        if (n?.due) syncNodeToGcal(id, new Date(n.due), newEnd)
+        guardRecurrence(id, t('planner.resizeVerb', 'cambiar la duración de'), scope => {
+          const n0 = store.getNode(id)
+          if (scope === 'this' && n0) detachFromRecurrence(n0)
+          store.updateNode(id, { dueEnd: newEnd.toISOString() })
+          const n = store.getNode(id)
+          if (n?.due) syncNodeToGcal(id, new Date(n.due), newEnd)
+        })
       }
       justResized.current = true; setTimeout(()=>{justResized.current=false}, 200)
     }
@@ -950,7 +971,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const widthPos = cols > 1 ? `calc(${slotW} - ${gap}px)` : undefined
     return (
       <div key={b.id} data-pp-block={b.id}
-        className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}${checkable ? ' pp-block--checkable' : ''}${b.virtual ? ' pp-block--virtual' : ''}`}
+        className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}${b.virtual ? ' pp-block--virtual' : ''}`}
         style={{ top: blockTop, height: blockH,
           background: bg, left: leftPos, ...(widthPos ? { width: widthPos } : { right: 2 }),
           ...(isGcal ? {} : { border: '1px solid var(--border)', borderLeft: `3px solid ${accentColor}` }) }}
@@ -985,15 +1006,20 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
         }}
         title={`${b.text}\n${fmtHH(b.start)} – ${fmtHH(b.end)}`}
       >
-        {checkable && (
-          <button className={`pp-block-check ${done ? 'pp-block-check--done' : ''}`}
-            onClick={e => { e.stopPropagation(); toggleTaskDone(blockNode!) }}
-            title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
-        )}
         {/* Bloques muy cortos (reuniones de 15-30min entre otras) no tienen alto para
             mostrar hora + título sin cortarse — se prioriza el título (Alberto, 21 jul). */}
         {blockH >= MIN_BLOCK_H_FOR_TIME && <div className="pp-block-time">{fmtHH(b.start)}</div>}
-        <div className="pp-block-text">{b.text || t('common.noTitle')}</div>
+        {/* Checkbox EN LÍNEA delante del título (27 ago 2026, Alberto: "delante del
+            texto de la tarea"), no flotando encima de la hora — de ahí que viva en
+            su propia fila, debajo de `.pp-block-time`. */}
+        <div className="pp-block-titlerow">
+          {checkable && (
+            <button className={`pp-block-check ${done ? 'pp-block-check--done' : ''}`}
+              onClick={e => { e.stopPropagation(); toggleTaskDone(blockNode!) }}
+              title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
+          )}
+          <div className="pp-block-text">{b.text || t('common.noTitle')}</div>
+        </div>
         {/* «+» — abre solo la ventana de fecha/recurrencia, sin navegar a la
             nota. Solo para bloques con nodo real (tarea/timeblock/evento ya
             materializado); un evento crudo de Google no tiene fecha propia
@@ -1563,6 +1589,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
         const pn = store.getNode(propsNodeId)
         return pn ? <TaskPropsPopover node={pn} allowRename allowDelete onClose={() => setPropsNodeId(null)} /> : null
       })()}
+      {pendingRecAction && (
+        <RecurrenceScopeConfirm
+          verb={pendingRecAction.verb}
+          onChoose={scope => { pendingRecAction.run(scope); setPendingRecAction(null) }}
+          onCancel={() => setPendingRecAction(null)}
+        />
+      )}
     </div>
   )
 }

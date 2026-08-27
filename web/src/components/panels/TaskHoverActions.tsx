@@ -20,12 +20,14 @@
 // ⚠️ Simplificado (24 ago 2026, misma tarde): el desplegable Mañana/+7d/Quitar
 // fecha se quita — Alberto: "es más simple" un botón directo "Mañana", igual
 // que el swipe de iOS (que ya era una única acción, sin menú).
+import { useState } from 'react'
 import type { Node } from '../../types'
 import { useTranslation } from 'react-i18next'
-import { scheduleTask, postponeTask } from '../../utils/dailyCockpit'
+import { scheduleTask, postponeTask, detachFromRecurrence } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
 import { isTaskOverdue } from './TaskRow'
 import Icon from '../../v2/components/Icon'
+import RecurrenceScopeConfirm from './RecurrenceScopeConfirm'
 
 export default function TaskHoverActions({ node, onOpenDate }: {
   node: Node
@@ -35,6 +37,16 @@ export default function TaskHoverActions({ node, onOpenDate }: {
   const { t } = useTranslation()
   const done = node.status === 'done'
   const overdue = isTaskOverdue(node)
+  // «¿Solo esta instancia o todas las siguientes?» (27 ago 2026, Alberto:
+  // "cuando se edita o mueve o borra un evento recurrente... debe preguntar
+  // igual que Apple Calendar"). Solo hace falta preguntar si la tarea ES
+  // recurrente — el resto de tareas siguen actuando al instante, como
+  // siempre. `pending` guarda qué acción ejecutar según la respuesta.
+  const [pending, setPending] = useState<{ verb: string; run: (scope: 'this' | 'all') => void } | null>(null)
+  function withScope(verb: string, run: (scope: 'this' | 'all') => void) {
+    if (!node.recurrence) { run('all'); return }
+    setPending({ verb, run })
+  }
 
   return (
     <span className="dc-actions">
@@ -46,7 +58,13 @@ export default function TaskHoverActions({ node, onOpenDate }: {
           mismo caso de fondo: no hay una fecha futura razonable ya puesta. */}
       {!done && (!node.due || overdue) && (
         <button className="dc-action dc-action--hoy" title={t('taskHover.scheduleToday')}
-          onClick={e => { e.stopPropagation(); scheduleTask(node, 0) }}>
+          onClick={e => {
+            e.stopPropagation()
+            withScope(t('taskHover.scheduleToday', 'mover a hoy'), scope => {
+              if (scope === 'this') detachFromRecurrence(node)
+              scheduleTask(node, 0)
+            })
+          }}>
           Hoy
         </button>
       )}
@@ -58,7 +76,13 @@ export default function TaskHoverActions({ node, onOpenDate }: {
           ciegas una hora/lugar concretos. */}
       {!done && node.due && !overdue && !node.isEvent && (
         <button className="dc-action" title={t('common.tomorrow')}
-          onClick={e => { e.stopPropagation(); postponeTask(node, 1) }}>
+          onClick={e => {
+            e.stopPropagation()
+            withScope(t('common.tomorrow', 'mañana'), scope => {
+              if (scope === 'this') detachFromRecurrence(node)
+              postponeTask(node, 1)
+            })
+          }}>
           {t('common.tomorrow')}
         </button>
       )}
@@ -72,9 +96,22 @@ export default function TaskHoverActions({ node, onOpenDate }: {
           badge siempre visible en TaskRow, junto al chip de fecha, igual que
           el de las tareas sin fecha (27 ago 2026, Alberto). */}
       <button className="dc-action dc-action--del" title={t('common.delete')}
-        onClick={e => { e.stopPropagation(); trashNode(node.id) }}>
+        onClick={e => {
+          e.stopPropagation()
+          withScope(t('common.delete', 'eliminar'), scope => {
+            if (scope === 'this') detachFromRecurrence(node)
+            trashNode(node.id)
+          })
+        }}>
         <Icon name="trash" size={13} />
       </button>
+      {pending && (
+        <RecurrenceScopeConfirm
+          verb={pending.verb}
+          onChoose={scope => { pending.run(scope); setPending(null) }}
+          onCancel={() => setPending(null)}
+        />
+      )}
     </span>
   )
 }

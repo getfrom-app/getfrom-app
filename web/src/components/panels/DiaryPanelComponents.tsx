@@ -12,6 +12,8 @@ import { useUserStore } from '../../store/userStore'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate } from '../../utils/dates'
 import { recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
 import { isInPapelera } from '../../utils/papeleraHelper'
+import { detachFromRecurrence } from '../../utils/dailyCockpit'
+import RecurrenceScopeConfirm from './RecurrenceScopeConfirm'
 import { pushEventToGcal } from '../../utils/gcalNodesSync'
 import ContextChip from './ContextChip'
 import ContextPicker from './ContextPicker'
@@ -84,6 +86,16 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
   const popNavigate = useNavigate()
   const { t } = useTranslation()
   const [movePickerOpen, setMovePickerOpen] = useState(false)
+  // «¿Solo esta instancia o todas las siguientes?» (27 ago 2026, Alberto: "cuando
+  // se edita... un evento recurrente... debe preguntar igual que Apple
+  // Calendar"). Se pregunta UNA vez al abrir este popover sobre una tarea
+  // recurrente, antes de dejar tocar nada — todo lo que se edite después (fecha,
+  // recurrencia, texto, prioridad…) usa el MISMO criterio elegido: "solo esta"
+  // desengancha la instancia de su serie (`detachFromRecurrence`, crea el
+  // sucesor y la deja suelta) antes de mostrar el formulario; "todas las
+  // siguientes" edita el nodo recurrente tal cual, como ya funcionaba.
+  const [scopeChoice, setScopeChoice] = useState<'this' | 'all' | null>(null)
+  const needsScopeChoice = !!node.recurrence && scopeChoice === null
 
   // Bucles no son agendables: si por error se intenta abrir un bucle, cerrar
   // inmediatamente y navegar a su nota (es un contenedor, no una tarea).
@@ -157,6 +169,19 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
   ]
 
   if (isBucle) return null
+
+  if (needsScopeChoice) {
+    return (
+      <RecurrenceScopeConfirm
+        verb={t('recurrence.scopeEditVerb', 'editar')}
+        onChoose={scope => {
+          if (scope === 'this') detachFromRecurrence(node)
+          setScopeChoice(scope)
+        }}
+        onCancel={onClose}
+      />
+    )
+  }
 
   return (
     <CenteredModal onClose={onClose} className="task-props-popup task-props-popup--modal">

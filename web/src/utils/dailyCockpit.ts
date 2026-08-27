@@ -115,6 +115,24 @@ export function toggleTaskDone(n: Node): void {
   }
 }
 
+/** Desengancha `n` de su serie recurrente antes de editarla/moverla/borrarla
+ *  SOLO A ELLA (27 ago 2026, Alberto: "debe preguntar igual que Apple
+ *  Calendar si quieres mover solo esta instancia o todas las demás"). Crea
+ *  primero el sucesor (mismo mecanismo que completar una tarea recurrente,
+ *  `spawnRecurrence`) para que la serie siga su curso, y solo DESPUÉS quita
+ *  `recurrence` de `n` — así queda como una instancia suelta, independiente,
+ *  libre de editar/mover/borrar sin afectar al resto de la serie. Elegir
+ *  "todas las siguientes" en su lugar no llama a esto: se edita `n`
+ *  directamente, tal y como ya funcionaba. */
+export function detachFromRecurrence(n: Node): void {
+  if (!n.recurrence) return
+  spawnRecurrence(n)
+  let extra: Record<string, unknown> = {}
+  try { extra = JSON.parse(n.extraData || '{}') } catch { /* corrupto */ }
+  delete extra._recurrence
+  store.updateNode(n.id, { recurrence: null, extraData: JSON.stringify(extra) })
+}
+
 /** Nº de veces que una tarea se ha reagendado (movido de fecha). */
 export function rescheduleCount(n: Node): number {
   try { const v = JSON.parse(n.extraData || '{}')._rescheduled; return typeof v === 'number' ? v : 0 } catch { return 0 }
