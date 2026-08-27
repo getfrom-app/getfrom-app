@@ -44,6 +44,16 @@ navegador si algún día quieres repasarlo.
 
 ## Novedades (agosto 2026)
 
+- **Elementos, rediseñado**: el buscador y la lista viven ahora en el espacio central, mucho más
+  ancho — con vista de **Tabla** por defecto (antes Lista) y **Kanban** siempre disponible, no solo
+  filtrando tareas. Clic derecho sobre cualquier fila (en cualquier vista) abre el menú con
+  renombrar, mover, añadir a grupo y eliminar. Un icono de **carpeta** en cada elemento (al pasar
+  el ratón, o en su propia ficha) lo añade a un grupo existente o crea uno nuevo al momento.
+- **Agentes con acceso a internet real y fiable**: cualquier agente puede buscar y leer la web por
+  su cuenta — ya no se queda atascado en el primer aviso de cookies o bloqueo que encuentra, lo
+  detecta y lo descarta, reintentando con otra vía antes de rendirse. Las cotizaciones de mercados
+  (acciones, índices, cripto, divisas) usan ahora una fuente de datos directa, mucho más fiable que
+  leer una web de noticias financieras.
 - **Notificaciones con la pestaña cerrada (web)**: activa el aviso desde el menú de tu nombre →
   «Avisarme aunque tenga la pestaña cerrada». Antes, si un agente terminaba con la web cerrada, no
   te enterabas hasta volver a abrirla.
