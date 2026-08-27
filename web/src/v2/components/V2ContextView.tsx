@@ -233,7 +233,12 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
   const [elSortBy, setElSortBy] = useState<'manual' | 'title' | 'created' | 'updated'>('manual')
   const [elSortMenuOpen, setElSortMenuOpen] = useState(false)
   const elementsWithGroups = useMemo(() => {
-    const combined: { node: Node; icon: IconName; kind: string }[] = [...elements]
+    // Un elemento que YA está dentro de uno de estos grupos no se lista suelto
+    // también arriba — solo se ve al desplegar su grupo (28 ago 2026, Alberto:
+    // "los elementos de dentro deben verse cuando se despliega el grupo, no
+    // fuera del mismo. ahora mismo se ven duplicados").
+    const inAnyGroup = new Set(contextGroups.flatMap(g => groupMemberIds(g)))
+    const combined: { node: Node; icon: IconName; kind: string }[] = elements.filter(el => !inAnyGroup.has(el.node.id))
     for (const g of contextGroups) combined.push({ node: g, icon: 'folder', kind: 'group' })
     if (elSortBy === 'title') combined.sort((a, b) => (a.node.text || '').localeCompare(b.node.text || ''))
     else if (elSortBy === 'updated') combined.sort((a, b) => (b.node.updatedAt || '').localeCompare(a.node.updatedAt || ''))
