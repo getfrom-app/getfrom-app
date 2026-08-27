@@ -13180,11 +13180,15 @@ textarea:focus-visible,
 .pp-block-text { font-size: 10px; font-weight: 600; color: var(--text-primary); overflow:hidden; display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; line-height:1.3; }
 .pp-block--gcal .pp-block-time { color: rgba(45,38,70,.62); }
 .pp-block--gcal .pp-block-text { color: rgba(45,38,70,.92); }
-/* Checkbox SOLO en tareas — nunca en eventos, para distinguirlos a golpe de
-   vista (Alberto, 22 jul). Flotante en la esquina para no robar alto a
-   bloques cortos (que ya van justos de espacio para hora+título). */
+/* Checkbox a la IZQUIERDA, centrado en vertical — mismo lado que las tareas
+   de todo el día (`.dc-check`), en vez de la esquina superior derecha (27 ago
+   2026, Alberto: "el checkbox lo puedes mover a la parte izquierda, igual
+   que las tareas de todo el día"). `.pp-block--checkable` reserva el hueco
+   en el propio bloque para que el texto no quede debajo. */
+.pp-block--checkable { padding-left: 16px; }
 .pp-block-check {
-  position: absolute; top: 2px; right: 2px; width: 11px; height: 11px; z-index: 2;
+  position: absolute; left: 3px; top: 50%; transform: translateY(-50%);
+  width: 11px; height: 11px; z-index: 2;
   border: 1.3px solid var(--text-tertiary); border-radius: 3px; background: var(--bg-primary);
   cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
   font-size: 8px; line-height: 1; color: #fff;
@@ -13193,12 +13197,15 @@ textarea:focus-visible,
 .pp-block-check--done { background: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
 .pp-block--done .pp-block-text { text-decoration: line-through; opacity: .55; }
 
-/* «+» — abre solo la ventana de fecha/recurrencia (27 ago 2026). Al hover del
-   bloque, igual que el resto de acciones de la fila (checkbox/resize) — no
-   compite en reposo con el título, que ya va apretado en bloques cortos.
-   Desplazado a la izquierda del checkbox cuando ambos coexisten. */
+/* «+» — abre solo la ventana de fecha/recurrencia (27 ago 2026). A la
+   DERECHA, centrado en vertical, dentro del propio bloque — antes compartía
+   la esquina superior derecha con el checkbox (que ahora vive a la
+   izquierda). Al hover del bloque, igual que el resto de acciones de la fila
+   (checkbox/resize) — no compite en reposo con el título, que ya va
+   apretado en bloques cortos. */
 .pp-block-props {
-  position: absolute; top: 2px; right: 2px; width: 13px; height: 13px; z-index: 2;
+  position: absolute; right: 3px; top: 50%; transform: translateY(-50%);
+  width: 13px; height: 13px; z-index: 2;
   border: none; border-radius: 3px; background: var(--bg-primary);
   color: var(--text-tertiary); cursor: pointer; padding: 0;
   display: flex; align-items: center; justify-content: center;
@@ -13206,7 +13213,6 @@ textarea:focus-visible,
 }
 .pp-block:hover .pp-block-props { opacity: .85; }
 .pp-block-props:hover { opacity: 1 !important; color: var(--accent); }
-.pp-block-check ~ .pp-block-props { right: 16px; }
 /* Resize handle más grande y visible — 10px en lugar de 5px */
 .pp-block-resize { position:absolute; bottom:0; left:0; right:0; height:10px; cursor:ns-resize; background:rgba(128,128,128,.08); border-radius:0 0 4px 4px; display:flex; align-items:center; justify-content:center; }
 .pp-block-resize::after { content:''; display:block; width:24px; height:2px; background:var(--text-tertiary); opacity:.5; border-radius:1px; }

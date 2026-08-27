@@ -68,18 +68,9 @@ export default function TaskHoverActions({ node, onOpenDate }: {
           {t('daily.postpone', 'Posponer')}
         </button>
       )}
-      {/* «+» — abre la ventana de fecha/repetición completa, igual que ya
-          hacía (siempre visible, no solo al hover) el badge de las tareas SIN
-          fecha (27 ago 2026, Alberto: "deberían mostrar el botón + en la
-          segunda fila... igual que las tareas sin fecha"). Para una tarea con
-          fecha el texto de la fecha YA abre lo mismo al clicarlo, pero no es
-          obvio que sea clicable — este «+» lo hace explícito también aquí. */}
-      {!done && node.due && (
-        <button className="dc-action dc-action--plus" title={t('dailyCockpit.editDateRecurrence')}
-          onClick={e => { e.stopPropagation(); onOpenDate(node) }}>
-          <Icon name="plus" size={13} />
-        </button>
-      )}
+      {/* El «+» de fecha/repetición ya no vive aquí (hover-only) — ahora es un
+          badge siempre visible en TaskRow, junto al chip de fecha, igual que
+          el de las tareas sin fecha (27 ago 2026, Alberto). */}
       <button className="dc-action dc-action--del" title={t('common.delete')}
         onClick={e => { e.stopPropagation(); trashNode(node.id) }}>
         <Icon name="trash" size={13} />

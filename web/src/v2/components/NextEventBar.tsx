@@ -83,6 +83,24 @@ function useLastBackup(): BackupSnapshot | null {
   return last
 }
 
+/** Conexión real a internet — el punto de la izquierda se leía como "algo va
+ *  mal" en ámbar aunque solo indicara la antigüedad del backup (27 ago 2026,
+ *  Alberto: "veo un punto amarillo, debería ser verde porque estoy conectado
+ *  a internet. el amarillo da la impresión de error"). Ahora el punto es
+ *  SOLO conectividad (verde=online, como cualquier app), y el backup se lee
+ *  aparte, en texto. */
+function useOnline(): boolean {
+  const [online, setOnline] = useState(navigator.onLine)
+  useEffect(() => {
+    const on = () => setOnline(true)
+    const off = () => setOnline(false)
+    window.addEventListener('online', on)
+    window.addEventListener('offline', off)
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off) }
+  }, [])
+  return online
+}
+
 interface Props {
   /** Abre Ajustes → Backups (V2App.setSettingsTab('backups')). */
   onOpenBackups?: () => void
@@ -99,6 +117,7 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
   const [blinkStopped, setBlinkStopped] = useState<Set<string>>(new Set())
   const activeAgents = useActiveAgentCount()
   const lastBackup = useLastBackup()
+  const online = useOnline()
 
   useEffect(() => {
     const onChange = () => setEnabled(isNextEventBarEnabled())
@@ -126,11 +145,8 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
     : ''
   const prefix = t('nextEvent.next', 'Siguiente:')
 
-  // Verde = reciente (<15min), ámbar = desfasado (<24h), rojo = obsoleto/nunca.
-  const backupAgeMin = lastBackup ? (Date.now() - new Date(lastBackup.createdAt).getTime()) / 60_000 : Infinity
-  const backupColor = backupAgeMin < 15 ? 'ok' : backupAgeMin < 24 * 60 ? 'stale' : 'old'
-  const backupTitle = lastBackup
-    ? `${t('statusbar.lastBackup', 'Último backup')}: ${formatBackupAge(lastBackup.createdAt)}`
+  const backupText = lastBackup
+    ? `${t('statusbar.backup', 'Backup')} ${formatBackupAge(lastBackup.createdAt)}`
     : t('statusbar.noBackup', 'Sin backups todavía')
 
   return (
@@ -143,8 +159,10 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
             <span>{activeAgents}</span>
           </button>
         )}
-        <button className="v2-statusbar-pill v2-statusbar-pill--dot" onClick={onOpenBackups} title={backupTitle}>
-          <span className={`v2-statusbar-dot v2-statusbar-dot--${backupColor}`} />
+        <span className={`v2-statusbar-dot v2-statusbar-dot--${online ? 'ok' : 'old'}`}
+          title={online ? t('statusbar.online', 'Conectado') : t('statusbar.offline', 'Sin conexión')} />
+        <button className="v2-statusbar-pill" onClick={onOpenBackups} title={backupText}>
+          <span>{backupText}</span>
         </button>
       </div>
       <div className="v2-statusbar-spacer" />

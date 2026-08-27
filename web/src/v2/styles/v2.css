@@ -161,7 +161,8 @@
   color: var(--text-tertiary); opacity: 0.6; display: flex; flex-shrink: 0;
 }
 .v2-nextevent-toggle:hover { opacity: 1; }
-.v2-statusbar--urgent { border-top-color: var(--danger, #e03131); }
+/* Solo el propio evento se destaca — el marco de la franja entera se probó y
+   no gustó (27 ago 2026, Alberto: "que solo se pinte el propio evento"). */
 .v2-statusbar--urgent .v2-nextevent-text,
 .v2-statusbar--urgent .v2-nextevent-prefix { color: var(--danger, #e03131); opacity: 0.95; font-weight: 600; }
 .v2-statusbar--blink .v2-nextevent-text { animation: v2-nextevent-blink 1s ease-in-out infinite; }
@@ -227,7 +228,15 @@
 /* ── Columnas ──────────────────────────────────────────────────────── */
 .v2-col {
   min-width: 0;
-  height: 100vh;
+  /* NO 100vh — .v2-root ya reserva 26px abajo para la barra de estado (`inset:
+     0 0 26px 0`), así que la altura real de la fila del grid es viewport-26px.
+     Con 100vh cada columna se salía 26px por debajo de esa fila (visible solo
+     en sidebar/derecha, que sí tienen contenido pegado al fondo) — el bloque
+     de usuario del sidebar quedaba compartiendo esa franja con la barra de
+     estado en vez de parar 26px antes como el resto (27 ago 2026, Alberto:
+     "el problema de la barra inferior no se ha corregido" — el primer intento
+     solo arregló el `left`, no esto). */
+  height: 100%;
   display: flex;
   flex-direction: column;
   overflow: hidden;

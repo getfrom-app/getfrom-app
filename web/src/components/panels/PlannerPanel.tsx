@@ -882,7 +882,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const widthPos = cols > 1 ? `calc(${slotW} - ${gap}px)` : undefined
     return (
       <div key={b.id} data-pp-block={b.id}
-        className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}`}
+        className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}${checkable ? ' pp-block--checkable' : ''}`}
         style={{ top: blockTop, height: blockH,
           background: bg, left: leftPos, ...(widthPos ? { width: widthPos } : { right: 2 }),
           ...(isGcal ? {} : { border: '1px solid var(--border)', borderLeft: `3px solid ${accentColor}` }) }}

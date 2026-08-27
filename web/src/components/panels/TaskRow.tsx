@@ -144,6 +144,15 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
               title={t('dailyCockpit.editDateRecurrence')}
               onClick={e => { e.stopPropagation(); onOpenDate(node) }}>{due}</span>
           )}
+          {/* Mismo badge «+» que las tareas sin fecha, ahora también con fecha —
+              antes vivía dentro de TaskHoverActions (solo visible al hover de
+              toda la fila): las atrasadas parecían no tener el mismo "+" que
+              las sin fecha (27 ago 2026, Alberto: "igualalo... en la segunda
+              fila, igual que las sin fecha"). */}
+          {due && !done && (
+            <span className="dc-due dc-due--empty" title={t('dailyCockpit.editDateRecurrence')}
+              onClick={e => { e.stopPropagation(); onOpenDate(node) }}>+</span>
+          )}
           {/* Hashtag junto a la fecha, sin píldora (24 ago 2026, paridad iOS:
               "quita los bordes... inclúyelos junto a la fecha"). Sigue siendo
               clicable para reasignar — a diferencia de iOS, la web no tiene
