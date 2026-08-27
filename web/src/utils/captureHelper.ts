@@ -79,7 +79,13 @@ export function createNodeFromText(rawTextInput: string, opts: CreateFromTextOpt
   const isTask = (
     effective === 'task' ||
     (effective !== 'note' && effective !== 'event' &&
-      ((opts.taskPredictionHint ?? false) || (dp !== null && buildTaskVerbRegex().test(normalizeNFD(effectiveText)))))
+      ((opts.taskPredictionHint ?? false) ||
+        (dp !== null && buildTaskVerbRegex().test(normalizeNFD(effectiveText))) ||
+        // Una RECURRENCIA («cada lunes», «cada 15 días»...) implica tarea, aunque el
+        // texto no empiece por un verbo reconocido — "seguimiento Alfredo cada lunes"
+        // es tan tarea como "llamar a Alfredo cada lunes" (Alberto, 27 ago 2026: "si
+        // pongo una recurrencia es una tarea, no una nota").
+        !!dp?.parsed.recurrence))
   )
   const isEvent = effective === 'event'
 

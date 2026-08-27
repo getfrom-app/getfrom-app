@@ -1483,10 +1483,20 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
     }
 
+    // ── Detección de fecha al final de cualquier nodo ──────────────────────
+    const dpLive = text.length > 3 ? extractDateFromEnd(text) : null
+    setDatePrediction(dpLive)
+
     // ── Detección de intención de tarea por verbo de acción ────────────────
-    // Usa el regex dinámico (built-in + palabras custom del usuario)
+    // Usa el regex dinámico (built-in + palabras custom del usuario). Una
+    // RECURRENCIA («cada lunes», «cada 15 días»...) también cuenta como
+    // intención de tarea, aunque el texto no empiece por un verbo reconocido
+    // — "seguimiento Alfredo cada lunes" es tan tarea como "llamar a Alfredo
+    // cada lunes" (Alberto, 27 ago 2026: "si pongo una recurrencia es una
+    // tarea, no una nota").
     const normedText = text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-    if (node.status === null && !node.isEvent && text.length > 5 && buildTaskVerbRegex().test(normedText)) {
+    if (node.status === null && !node.isEvent && text.length > 5 &&
+      (buildTaskVerbRegex().test(normedText) || !!dpLive?.parsed.recurrence)) {
       setTaskPrediction(true)
     } else {
       setTaskPrediction(false)
@@ -1495,13 +1505,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     // ── Detección "pizarra" → predicción de pizarra digital ─────────────────
     const normedForWb = text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
     setWhiteboardPrediction(/\bpizarra\b|\bwhiteboard\b/.test(normedForWb))
-
-    // ── Detección de fecha al final de cualquier nodo ──────────────────────
-    if (text.length > 3) {
-      setDatePrediction(extractDateFromEnd(text))
-    } else {
-      setDatePrediction(null)
-    }
 
     // ── Autocompletado de contextos (sin @) ─────────────────────────────────
     // Solo si no hay @ picker activo y el texto tiene >= 3 chars
