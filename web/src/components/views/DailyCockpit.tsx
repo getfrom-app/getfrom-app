@@ -169,6 +169,12 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
         // unificado «Todo el día» (Alberto, 22 jul: "agrupar ambas cosas... que
         // se llame Todo el día"). Aquí solo quedan las atrasadas, así que el
         // título cambia de "Tareas para hoy" a "Atrasadas" para que no mienta.
+        // Sin atrasadas → sin cabecera (27 ago 2026, Alberto: "cuando no hay
+        // tareas atrasadas se puede ocultar el heading") — a diferencia de
+        // «Tareas para hoy» (sigue SIEMPRE visible para poder crear la
+        // primera con el «+»), «Atrasadas» vacía no aporta nada que crear:
+        // una tarea nueva nace hoy o en el futuro, nunca ya atrasada.
+        if (hideToday && data.overdue.length === 0) return null
         return (
           <div className="dc-group">
             <div className="dc-group-headrow">
