@@ -605,6 +605,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                               className="el-row-del"
                               size={13}
                               stopPropagation
+                              popoverAlign="right"
                               style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: '4px 5px', borderRadius: 4, display: 'flex', alignItems: 'center' }}
                             />
                           )}

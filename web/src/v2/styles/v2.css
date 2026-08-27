@@ -1102,6 +1102,9 @@
   background: var(--v2-elevated); border: 1px solid var(--v2-line);
   border-radius: var(--v2-r-lg); box-shadow: var(--v2-shadow-lg); padding: 6px;
 }
+/* Cuelga hacia la izquierda desde el borde derecho del botón — para botones
+   pegados al borde derecho de una columna estrecha (ver GroupAddButton). */
+.v2-ctxpick-pop--right { left: auto; right: 0; }
 
 /* ── Vista de detalle (visor/editor en la columna derecha) ─────────── */
 .v2-detail-head {

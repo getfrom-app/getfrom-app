@@ -31,7 +31,7 @@ import V2RightColumn, { RightMode, type RightSubTab } from './components/V2Right
 import V2SettingsNav from './components/V2SettingsNav'
 import { SettingsPaneContent } from '../components/views/SettingsView'
 import type { Tab as SettingsTab } from '../components/views/settingsNav'
-import type { ElemKind } from '../components/panels/ElementsPanel'
+import ElementsPanel, { type ElemKind } from '../components/panels/ElementsPanel'
 import V2Onboarding from './components/V2Onboarding'
 import V2AttachModal from './components/V2AttachModal'
 import { maybeOfferProfileChat, openProfileChat } from './profileChat'
@@ -997,9 +997,14 @@ export default function V2App() {
     if (files.length) onFilesDropped(files)
   }
 
+  // Elementos, mientras se explora (nada abierto en el centro): la columna derecha
+  // ya no pinta nada (el buscador vive en el centro, ver abajo) — colapsarla del
+  // todo, si no, el hueco de 440px+ que reservaba se queda en blanco y el centro NO
+  // gana el ancho que era todo el punto del cambio (27 ago 2026).
+  const rightCollapsed = rightMode === 'elementos' && !centerElementId
   return (
     <ToastProvider>
-    <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}
+    <div className="v2-root" style={{ ['--v2-right' as string]: rightCollapsed ? '0px' : `${rightWidth}px` }}
       onDragOver={onRootDragOver} onDragLeave={onRootDragLeave} onDrop={onRootDrop}>
       <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onOpenAttach={onOpenAttach} onRecordInCtx={onRecordInCtx} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={onOpenProfile} />
       {centerElementId ? (
@@ -1029,21 +1034,16 @@ export default function V2App() {
           </div>
         </main>
       ) : rightMode === 'elementos' ? (
-        // Destino Elementos: la lista vive en la columna derecha y el centro es el
-        // elemento que abras de ella — hasta entonces, hueco propio con las 4 formas
-        // de crear algo nuevo (sin contexto, como el destino en sí). Antes caía en el
-        // fallback `V2Chat` y aparecía un chat que no pinta nada aquí.
-        <main className="v2-col v2-center">
-          <div className="v2-empty">
-            <h1>{t('v2.elementsCenterTitle', 'Elige un elemento de la lista')}</h1>
-            <p>{t('v2.elementsCenterHint', 'Lo que abras a la derecha se verá aquí. O empieza algo nuevo:')}</p>
-            <div className="v2-empty-actions">
-              <button onClick={() => onNewNoteInCtx(null)}><Icon name="note" size={14} /> {t('v2.chat.newNote', 'Nota')}</button>
-              <button onClick={() => onNewCanvasInCtx(null)}><Icon name="canvas" size={14} /> {t('v2.chat.newCanvasShort', 'Lienzo')}</button>
-              <button onClick={() => onOpenAttach(null)}><Icon name="attachment" size={14} /> {t('v2.attach.title', 'Adjuntar')}</button>
-              <button onClick={() => onRecordInCtx(null)}><Icon name="mic" size={14} /> {t('v2.chat.record', 'Grabar')}</button>
-            </div>
-          </div>
+        // Destino Elementos: el CENTRO es ahora el navegador real (buscador +
+        // filtros + lista/tabla/kanban/calendario) — antes vivía apretado en la
+        // columna derecha y el centro quedaba vacío hasta abrir algo (Alberto,
+        // 27 ago 2026: "el espacio central se puede aprovechar para distribuir
+        // los elementos"). Al abrir uno, este hueco lo sustituye el propio
+        // elemento (rama `centerElementId` de arriba) y la columna derecha pasa
+        // a las 2 tabs de siempre (Elementos para seguir explorando / Chat del
+        // elemento) — ver V2RightColumn.
+        <main className="v2-col v2-center v2-center--elements">
+          <ElementsPanel initialFilter={elementsFilter ?? undefined} />
         </main>
       ) : rightMode === 'agenda' ? (
         // Destino Agenda: calendario semana/mes/año navegable a pantalla

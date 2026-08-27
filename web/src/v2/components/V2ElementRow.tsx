@@ -91,7 +91,7 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
           <Icon name="folder" size={14} />
         </button>
       ) : (
-        <GroupAddButton nodeId={node.id} className="v2-el-del" stopPropagation />
+        <GroupAddButton nodeId={node.id} className="v2-el-del" stopPropagation popoverAlign="right" />
       )}
       {onDetach && (
         <button className="v2-el-del" title={t('v2.elementRow.detach', 'Quitar de esta conversación')} onClick={e => { e.stopPropagation(); e.preventDefault(); onDetach(node.id) }}>
