@@ -13181,6 +13181,21 @@ textarea:focus-visible,
 .pp-block-check:hover { border-color: var(--accent); }
 .pp-block-check--done { background: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
 .pp-block--done .pp-block-text { text-decoration: line-through; opacity: .55; }
+
+/* «+» — abre solo la ventana de fecha/recurrencia (27 ago 2026). Al hover del
+   bloque, igual que el resto de acciones de la fila (checkbox/resize) — no
+   compite en reposo con el título, que ya va apretado en bloques cortos.
+   Desplazado a la izquierda del checkbox cuando ambos coexisten. */
+.pp-block-props {
+  position: absolute; top: 2px; right: 2px; width: 13px; height: 13px; z-index: 2;
+  border: none; border-radius: 3px; background: var(--bg-primary);
+  color: var(--text-tertiary); cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .1s, color .1s;
+}
+.pp-block:hover .pp-block-props { opacity: .85; }
+.pp-block-props:hover { opacity: 1 !important; color: var(--accent); }
+.pp-block-check ~ .pp-block-props { right: 16px; }
 /* Resize handle más grande y visible — 10px en lugar de 5px */
 .pp-block-resize { position:absolute; bottom:0; left:0; right:0; height:10px; cursor:ns-resize; background:rgba(128,128,128,.08); border-radius:0 0 4px 4px; display:flex; align-items:center; justify-content:center; }
 .pp-block-resize::after { content:''; display:block; width:24px; height:2px; background:var(--text-tertiary); opacity:.5; border-radius:1px; }

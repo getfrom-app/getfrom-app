@@ -33,6 +33,7 @@ import {
 import { getGcalEventId, gcalIdCore, linkedGcalIdCores } from '../../utils/gcalNodesSync'
 import { isTimeBlockNode } from '../../utils/taskNode'
 import { GCalEventEditor } from './DiaryRightPanel'
+import { TaskPropsPopover } from './DiaryPanelComponents'
 import { useUserStore } from '../../store/userStore'
 import { useToast } from '../Toast'
 import Icon from '../../v2/components/Icon'
@@ -327,6 +328,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
 
   const [gcalEvents,  setGcalEvents]  = useState<CalendarEvent[]>([])
   const [editingGcal, setEditingGcal] = useState<CalendarEvent | null>(null)
+  // «+» por bloque → ventana de fecha/recurrencia SIN salir del planificador
+  // (27 ago 2026, Alberto: "un '+' en cada casilla... si le da al '+' se abre
+  // la ventana de edición, y si se le da a la ficha completa se abre la
+  // página del evento, tarea o timeblock" — antes el bloque entero solo sabía
+  // abrir la nota, sin atajo para tocar solo la fecha/repetición).
+  const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
   const [ctxMenu, setCtxMenu]         = useState<{x:number;y:number;b:Block}|null>(null)
   const [newBlock, setNewBlock]       = useState<{day:Date;start:Date;top:number;text:string;isTimeBlock?: boolean}|null>(null)
   const newBlockRef                   = useRef<HTMLInputElement>(null)
@@ -919,6 +926,16 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             mostrar hora + título sin cortarse — se prioriza el título (Alberto, 21 jul). */}
         {blockH >= MIN_BLOCK_H_FOR_TIME && <div className="pp-block-time">{fmtHH(b.start)}</div>}
         <div className="pp-block-text">{b.text || t('common.noTitle')}</div>
+        {/* «+» — abre solo la ventana de fecha/recurrencia, sin navegar a la
+            nota. Solo para bloques con nodo real (tarea/timeblock/evento ya
+            materializado); un evento crudo de Google no tiene fecha propia
+            que editar aquí, ya la abre el clic normal (`setEditingGcal`). */}
+        {b.nodeId && (
+          <button className="pp-block-props" title={t('dailyCockpit.editDateRecurrence')}
+            onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === b.nodeId ? null : b.nodeId!) }}>
+            <Icon name="plus" size={11} />
+          </button>
+        )}
         <div className="pp-block-resize" onMouseDown={e=>handleBlockResize(e,b)} />
       </div>
     )
@@ -1474,6 +1491,10 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           onUpdated={ev=>{setGcalEvents(p=>p.map(x=>x.id===ev.id?ev:x));setEditingGcal(null)}}
           onDeleted={id=>{setGcalEvents(p=>p.filter(x=>x.id!==id));setEditingGcal(null)}} />
       )}
+      {propsNodeId && (() => {
+        const pn = store.getNode(propsNodeId)
+        return pn ? <TaskPropsPopover node={pn} allowRename allowDelete onClose={() => setPropsNodeId(null)} /> : null
+      })()}
     </div>
   )
 }

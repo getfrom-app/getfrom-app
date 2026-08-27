@@ -720,6 +720,28 @@ export default function V2App() {
     setCenterElementId(id)
   }
 
+  // Si le CAMBIAN el contexto al elemento que ya está abierto, la izquierda y
+  // la derecha lo siguen (27 ago 2026, Alberto: "si creo un documento... se
+  // abre directamente y luego pongo contexto inversión, la columna derecha
+  // cambiará al contexto inversión"). `onOpenNode` ya hacía este mismo ajuste,
+  // pero solo AL ABRIR — un documento recién creado sin contexto (p. ej. desde
+  // el destino Chat general) se abre correctamente, pero asignarle un contexto
+  // DESPUÉS, con el documento ya en pantalla, no re-ejecuta esa lógica porque
+  // no vuelve a pasar por `onOpenNode`. Este efecto reacciona al mismo dato
+  // (`firstContextOf` del elemento centrado) cada vez que cambia, en vez de
+  // solo una vez al abrir.
+  useEffect(() => {
+    if (!centerElementId) return
+    const node = store.getNode(centerElementId)
+    if (!node) return
+    const ctx = firstContextOf(node)
+    if (!ctx || ctx.id === selectedCtxId) return
+    setSelectedCtxId(ctx.id)
+    setRightMode('contexto')
+    setRightSubTab('primary')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerElementId, store.nodesVersion])
+
   // Clic en una notificación de Web Push (sw.js): si la pestaña ya estaba
   // abierta, el service worker manda un postMessage; si la abrió de cero,
   // llega como ?openNode= en la URL. Los dos casos navegan igual que abrir
