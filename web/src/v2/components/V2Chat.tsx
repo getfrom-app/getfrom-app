@@ -15,6 +15,7 @@ import { useAssistantStore, assistantStore } from '../../store/assistantStore'
 import type { AssistantMsg } from '../../store/assistantStore'
 import type { AssistantListedTask, AssistantListedAgent } from '../../api/assistant'
 import { store, useStore } from '../../store/nodeStore'
+import { opsClient } from '../../store/opsClient'
 import { renderChatContent } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { aiLangBCP47 } from '../../utils/aiLang'
@@ -227,12 +228,19 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   }, [agentMenu])
 
   // "Abre mi nota de hoy" navega sola, sin esperar un clic en "Abrir" —
-  // paridad con AssistantChatView.swift (13 ago).
+  // paridad con AssistantChatView.swift (13 ago). Un nodo recién creado por
+  // el SERVIDOR (p.ej. un agente nuevo) no existe aún en el store local — el
+  // poll normal de ops tarda hasta 20s en traerlo (ver opsClient.ts), así
+  // que abrirlo al instante mostraba un espacio vacío/nada (Alberto, 27 ago
+  // 2026, segunda vez: "he creado un agente con el chat y no se ha abierto
+  // en el espacio principal... sigue sin abrirse"). Si el nodo aún no está
+  // localmente, se fuerza un pull inmediato antes de abrirlo.
   useEffect(() => {
     if (!chat.pendingAutoOpen) return
     const target = chat.pendingAutoOpen
     chat.pendingAutoOpen = null
-    openNode(target)
+    if (store.getNode(target)) { openNode(target); return }
+    opsClient.pullAndApply().finally(() => openNode(target))
   }, [chat.pendingAutoOpen])
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)

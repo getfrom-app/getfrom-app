@@ -21,6 +21,7 @@ import {
   assistantSetContext, assistantContexts, assistantRunAgent, assistantUpdateAgent,
   type AssistantListedTask, type AssistantListedAgent, type AssistantContext,
 } from '../api/assistant'
+import { opsClient } from './opsClient'
 
 export interface AssistantCreatedRef {
   id: string
@@ -165,6 +166,15 @@ class AssistantStore {
       })
       for (const t of reply.list ?? []) this.doneIds.delete(t.id)
       if (reply.autoOpen && reply.linkedNodeId) this.pendingAutoOpen = reply.linkedNodeId
+      // Lo que el propio TURNO acaba de crear en el servidor (agente, nota…)
+      // no existe todavía en el store local — el poll normal de ops tarda
+      // hasta 20s (opsClient.ts). Sin este pull inmediato, un agente recién
+      // creado no aparecía ni al abrirse solo (pendingAutoOpen) ni al mirar
+      // Elementos justo después — parecía "no se ha creado" cuando sí
+      // existía, solo que aún no había llegado (27 ago 2026, Alberto: "he
+      // creado un agente... no aparece como opción en el filtro... debería
+      // listarse el primero"). Fire-and-forget: no bloquea la respuesta visible.
+      if (reply.linkedNodeId || reply.created.length > 0) opsClient.pullAndApply().catch(() => {})
     } catch (e) {
       this.errorMessage = e instanceof Error ? e.message : String(e)
       this.appendVisible({
