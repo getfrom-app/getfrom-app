@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.8.0 · iOS v2.19 — 28 agosto 2026 · Buscar en todo, papelera en iPhone y compartir imágenes
+
+- **Buscar en todo, de verdad.** En la web, ⌘K ahora busca en todo tu Fromly — también DENTRO del texto de tus notas, con un fragmento del resultado. En el iPhone, nueva lupa en la barra superior con el buscador completo (texto, filtros y contextos).
+- **Papelera en el iPhone.** Restaura lo que borres desde Ajustes → Papelera — antes solo se podía recuperar desde la web.
+- **Comparte imágenes y archivos a Fromly** desde cualquier app del iPhone (antes solo enlaces y texto).
+- **El repaso del día ya no se pierde.** La conversación de "Repasa el día conmigo" se guarda completa como documento en tu nota diaria y aparece en todos tus dispositivos. La web además avisa con un banner mientras el repaso está activo.
+- **Interruptor nuevo**: las preguntas de Fromly por tareas estancadas se pueden apagar en Ajustes → Asistente.
+- **Pantalla de precios con salida** y consciente de tu cuenta; avisos de error visibles con botón Deshacer en el chat; "Publicar contexto…" en el menú del contexto; y decenas de correcciones de coherencia (elementos duplicados "Conversación", perfil de IA colándose en Elementos, textos y menús muertos).
+
+---
+
 ## Web v9.7.32 · iOS v2.18 — 27 agosto 2026 · Tipos de elemento personalizados
 
 - **Nuevo: tipos de elemento personalizados.** Crea tus propios tipos (Libro, Persona, Película, Receta…) desde Elementos → "Tipos" → "+", con icono y propiedades estilo Notion: texto, número, selección única o múltiple, fecha, casilla, enlace y el nuevo tipo **calificación** (estrellas de 1 a 5). Disponible en Mac, web y iPhone.
