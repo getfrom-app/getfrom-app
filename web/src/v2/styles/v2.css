@@ -115,7 +115,13 @@
    exige lectura activa. CENTRO = vacío a propósito. DERECHA = "Lo próximo",
    lo único con texto — es lo único que sí pide leerse. */
 .v2-statusbar {
-  position: fixed; left: var(--v2-sidebar, 0px); right: 0; bottom: 0; z-index: 6;
+  /* El fallback de `left` DEBE coincidir con el de la 1ª columna del grid en
+     .v2-root (260px) — con fallbacks distintos (0px aquí), sin `--v2-sidebar`
+     seteado (el caso normal: nada la fija salvo `.v2-sidebar-collapsed`), la
+     franja se extendía por DEBAJO de todo el sidebar y tapaba su bloque de
+     usuario (27 ago 2026, Alberto: "la barra inferior sigue superponiéndose
+     un poco al bloque de usuario de abajo a la izquierda"). */
+  position: fixed; left: var(--v2-sidebar, 260px); right: 0; bottom: 0; z-index: 6;
   display: flex; align-items: center; gap: 6px;
   height: 26px; padding: 0 10px 0 14px;
   background: var(--v2-surface-sunken);
@@ -594,6 +600,18 @@
 .v2-modal-title { font-size: 14px; font-weight: 700; color: var(--text-primary); flex: 1; }
 .v2-modal-close { background: none; border: none; font-size: 20px; line-height: 1; color: var(--text-tertiary); cursor: pointer; }
 .v2-modal-body { flex: 1; overflow-y: auto; padding: 8px 10px; }
+.v2-modal-search {
+  display: flex; align-items: center; gap: 8px; margin: 12px 14px 0;
+  padding: 8px 11px; border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r);
+  background: var(--v2-surface); color: var(--text-tertiary);
+  transition: border-color var(--v2-fast), box-shadow var(--v2-fast);
+}
+.v2-modal-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.v2-modal-search input {
+  flex: 1; min-width: 0; border: none; outline: none; background: transparent;
+  font: inherit; font-size: 13px; color: var(--text-primary);
+}
+.v2-modal-search input::placeholder { color: var(--text-tertiary); }
 .v2-modal-foot { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }
 .v2-trash-restore {
   margin-left: auto; flex: 0 0 auto; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 6px;

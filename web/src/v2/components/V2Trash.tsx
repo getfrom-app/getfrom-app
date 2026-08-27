@@ -13,14 +13,23 @@ export default function V2Trash({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   useStore()
   const [, force] = useState(0)
+  const [q, setQ] = useState('')
   // Los nodos en papelera llevan lápida (`deletedAt`): es lo que hace que el resto
   // de la app no los vea. Aquí se listan a propósito.
-  const items = trashItems()
+  const allItems = trashItems()
+  // Buscador — con miles de nodos borrados acumulados (27 ago 2026, Alberto,
+  // tras ver 1912 elementos de golpe) desplazarse a mano para encontrar uno
+  // concreto no es viable.
+  const needle = q.trim().toLowerCase()
+  const items = needle ? allItems.filter(n => (n.text || '').toLowerCase().includes(needle)) : allItems
 
   const restore = (id: string) => { restoreNode(id); force(x => x + 1) }
   const empty = () => {
-    if (!items.length) return
-    if (window.confirm(t('v2.trash.confirmEmpty', '¿Vaciar la papelera? Se eliminarán definitivamente {{count}} elemento(s). No se puede deshacer.', { count: items.length }))) {
+    if (!allItems.length) return
+    // Vacía SIEMPRE toda la papelera, no solo lo que el buscador esté
+    // filtrando en este momento — un buscador que solo borrara "lo visible"
+    // sería una trampa fácil de pisar sin querer.
+    if (window.confirm(t('v2.trash.confirmEmpty', '¿Vaciar la papelera? Se eliminarán definitivamente {{count}} elemento(s). No se puede deshacer.', { count: allItems.length }))) {
       emptyTrash(); force(x => x + 1)
     }
   }
@@ -34,9 +43,22 @@ export default function V2Trash({ onClose }: { onClose: () => void }) {
           <span className="v2-modal-title">{t('v2.trash.title', 'Papelera')}</span>
           <button className="v2-modal-close" onClick={onClose}>×</button>
         </div>
+        {allItems.length > 0 && (
+          <div className="v2-modal-search">
+            <Icon name="search" size={14} />
+            <input
+              autoFocus
+              value={q}
+              onChange={e => setQ(e.target.value)}
+              placeholder={t('v2.trash.searchPlaceholder', 'Buscar en la papelera')}
+            />
+          </div>
+        )}
         <div className="v2-modal-body">
-          {items.length === 0 ? (
+          {allItems.length === 0 ? (
             <div className="v2-right-empty" style={{ padding: '30px 12px' }}>{t('v2.trash.empty', 'La papelera está vacía.')}</div>
+          ) : items.length === 0 ? (
+            <div className="v2-right-empty" style={{ padding: '30px 12px' }}>{t('v2.trash.noSearchResults', 'Nada coincide con la búsqueda.')}</div>
           ) : (
             items.map(n => (
               <div className="v2-el-row" key={n.id} style={{ cursor: 'default' }}>
@@ -47,9 +69,9 @@ export default function V2Trash({ onClose }: { onClose: () => void }) {
             ))
           )}
         </div>
-        {items.length > 0 && (
+        {allItems.length > 0 && (
           <div className="v2-modal-foot">
-            <button className="v2-trash-empty" onClick={empty}>{t('v2.trash.emptyBtn', 'Vaciar papelera ({{count}})', { count: items.length })}</button>
+            <button className="v2-trash-empty" onClick={empty}>{t('v2.trash.emptyBtn', 'Vaciar papelera ({{count}})', { count: allItems.length })}</button>
           </div>
         )}
       </div>
