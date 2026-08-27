@@ -13,6 +13,7 @@ import { firstContextOf, setNodeContext, convertToTask, isContextNode } from '..
 import { isCitationNode, promoteCitationWithFeedback } from '../../utils/citations'
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from './ContextPicker'
+import GroupPicker from './GroupPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
 
 // Asignar contexto A MANO es una señal fuerte: guarda un EJEMPLO para que la
@@ -26,10 +27,12 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
   const { t } = useTranslation()
   const boxRef = useRef<HTMLDivElement>(null)
   const ctxBtnRef = useRef<HTMLButtonElement>(null)
+  const groupBtnRef = useRef<HTMLButtonElement>(null)
   const [pos, setPos] = useState({ top: y, left: x })
   const [renaming, setRenaming] = useState(false)
   // Flyout SEPARADO del selector de contexto (no inline, para no confundir).
   const [ctxFlyout, setCtxFlyout] = useState<{ top: number; left: number } | null>(null)
+  const [groupFlyout, setGroupFlyout] = useState<{ top: number; left: number } | null>(null)
   const [showMove, setShowMove] = useState(false)
   // Reposiciona el menú dentro del viewport.
   useLayoutEffect(() => {
@@ -53,6 +56,20 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
     let top = btn.top
     if (top + H > window.innerHeight - 8) top = Math.max(8, window.innerHeight - H - 8)
     setCtxFlyout({ top, left })
+  }
+
+  function toggleGroupFlyout() {
+    if (groupFlyout) { setGroupFlyout(null); return }
+    const box = boxRef.current?.getBoundingClientRect()
+    const btn = groupBtnRef.current?.getBoundingClientRect()
+    if (!box || !btn) return
+    const W = 244, H = 300
+    let left = box.left - W - 4
+    if (left < 8) left = box.right + 4
+    if (left + W > window.innerWidth - 8) left = Math.max(8, window.innerWidth - W - 8)
+    let top = btn.top
+    if (top + H > window.innerHeight - 8) top = Math.max(8, window.innerHeight - H - 8)
+    setGroupFlyout({ top, left })
   }
 
   const node = store.getNode(nodeId)
@@ -158,6 +175,9 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
             {t('rightColMenu.removeContext')}
           </button>
         )}
+        <button ref={groupBtnRef} className="node-ctx-item" onClick={toggleGroupFlyout}>
+          {t('tip.addToGroup', 'Añadir a grupo')} <span style={{ float: 'right', opacity: 0.6 }}>›</span>
+        </button>
         <div className="node-ctx-sep" />
         <button className="node-ctx-item" onClick={() => { duplicate() }}>{t('context.duplicate')}</button>
         <button className="node-ctx-item" onClick={() => setShowMove(true)}>{t('context.moveTo')}</button>
@@ -173,6 +193,12 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
         <div className="ctx-pick" style={{ position: 'fixed', top: ctxFlyout.top, left: ctxFlyout.left, zIndex: 3001 }}
           onClick={e => e.stopPropagation()}>
           <ContextPicker currentId={current?.id ?? null} onPick={id => { assignAndLearn(nodeId, id); onClose() }} />
+        </div>
+      )}
+      {groupFlyout && (
+        <div className="ctx-pick" style={{ position: 'fixed', top: groupFlyout.top, left: groupFlyout.left, zIndex: 3001 }}
+          onClick={e => e.stopPropagation()}>
+          <GroupPicker nodeId={nodeId} onDone={() => onClose()} />
         </div>
       )}
       {showMove && <MoveNodeModal node={node} onClose={() => { setShowMove(false); onClose() }} />}

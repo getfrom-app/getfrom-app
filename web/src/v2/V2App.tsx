@@ -34,7 +34,8 @@ import type { Tab as SettingsTab } from '../components/views/settingsNav'
 import ElementsPanel, { type ElemKind } from '../components/panels/ElementsPanel'
 import V2Onboarding from './components/V2Onboarding'
 import V2AttachModal from './components/V2AttachModal'
-import { maybeOfferProfileChat, openProfileChat } from './profileChat'
+import { maybeOfferProfileChat } from './profileChat'
+import { assistantStore } from '../store/assistantStore'
 import { useWebPush } from '../hooks/useWebPush'
 import RightColMenu from '../components/panels/RightColMenu'
 import TaskPropsModal from '../components/modals/TaskPropsModal'
@@ -186,7 +187,11 @@ export default function V2App() {
     setShowProfile(true)
     setRightMode('chat')
     setRightSubTab('primary')
-    openProfileChat()
+    // El destino Chat (Tab 1) SIEMPRE enseña el hilo GENERAL (currentNodeId=null,
+    // ver V2RightColumn) — así que la pregunta de perfil tiene que salir justo
+    // ahí, no en un hilo aparte que nadie mostraría.
+    assistantStore.setThread(null)
+    assistantStore.askProfileQuestion()
   }
   const [elementsFilter, setElementsFilter] = useState<ElemKind | 'all' | 'favorite' | null>(null) // filtro inicial pedido para la tab Elementos (p.ej. «← Agentes»)
   const [rightWidth, setRightWidth] = useState(() => {

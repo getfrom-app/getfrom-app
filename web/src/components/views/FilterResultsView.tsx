@@ -67,7 +67,9 @@ function TableView({ matchIds }: { matchIds: Set<string> }) {
         </thead>
         <tbody>
           {nodes.map(n => (
-            <tr key={n.id} onClick={() => navigate(`/node/${n.id}`)} className="filter-table-row">
+            <tr key={n.id} onClick={() => navigate(`/node/${n.id}`)}
+              onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
+              className="filter-table-row">
               <td className="filter-table-status">
                 <span className={`filter-status-dot ${n.status === 'done' ? 'done' : n.status === 'pending' ? 'pending' : ''}`} />
               </td>
@@ -118,7 +120,8 @@ function KanbanView({ matchIds }: { matchIds: Set<string> }) {
             </div>
             <div className="filter-kanban-cards">
               {colNodes.map(n => (
-                <div key={n.id} className="filter-kanban-card" onClick={() => navigate(`/node/${n.id}`)}>
+                <div key={n.id} className="filter-kanban-card" onClick={() => navigate(`/node/${n.id}`)}
+                  onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}>
                   <div className="filter-kanban-card-text">{n.text || t('common.noTitle')}</div>
                   {firstContextOf(n) && <div className="filter-kanban-card-crumb">{firstContextOf(n)!.text}</div>}
                 </div>
@@ -188,7 +191,9 @@ function CalendarView({ matchIds }: { matchIds: Set<string> }) {
               <div className="filter-cal-tasks">
                 {nodes.slice(0, 3).map(n => (
                   <div key={n.id} className={`filter-cal-task ${n.status === 'done' ? 'done' : ''}`}
-                    onClick={() => navigate(`/node/${n.id}`)} title={n.text || ''}>
+                    onClick={() => navigate(`/node/${n.id}`)}
+                    onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
+                    title={n.text || ''}>
                     {n.text?.slice(0, 22) || t('common.noTitle')}
                   </div>
                 ))}

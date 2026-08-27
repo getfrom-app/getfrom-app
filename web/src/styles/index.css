@@ -10916,22 +10916,24 @@ textarea:focus-visible,
 
 /* ── Vista tabla de filtro ───────────────────────────────────────── */
 .filter-table-view { overflow-x: auto; }
-.filter-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.filter-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
 .filter-table th {
-  text-align: left; padding: 6px 10px; font-size: 11px; font-weight: 600;
+  text-align: left; padding: 9px 12px; font-size: 11px; font-weight: 650;
   color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em;
   border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; background: var(--bg, #fff); z-index: 1;
 }
-.filter-table-row { cursor: pointer; transition: background 0.08s; }
+.filter-table-row { cursor: pointer; transition: background 0.1s; }
 .filter-table-row:hover { background: var(--bg-hover); }
-.filter-table-row td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.filter-table-row:hover .filter-table-text { color: var(--accent, #6c5ce7); }
+.filter-table-row td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .filter-table-status { width: 32px; }
 .filter-status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-tertiary); }
 .filter-status-dot.pending { background: #fbbf24; }
 .filter-status-dot.done { background: #22c55e; }
-.filter-table-text { font-weight: 500; color: var(--text-primary); }
+.filter-table-text { font-weight: 500; color: var(--text-primary); transition: color 0.1s; }
 .filter-table-crumb { font-size: 11px; color: var(--text-tertiary); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.filter-table-date { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+.filter-table-date { font-size: 11px; color: var(--text-secondary); white-space: nowrap; text-align: right; }
 
 /* ── Vista kanban de filtro ──────────────────────────────────────── */
 .filter-kanban-view { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px; min-height: 200px; }

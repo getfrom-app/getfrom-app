@@ -134,20 +134,16 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   const [taskSub, setTaskSub] = useState<TaskSub>('all')
   const [q, setQ] = useState('')
   const scrollRef = useRef<HTMLDivElement>(null)
-  // Vista: lista (por defecto, virtualizada) o tabla/kanban/calendario (reutilizadas de la v1).
+  // Vista: Tabla por defecto (27 ago 2026 — Alberto: "en elementos me gusta la
+  // vista de tabla por defecto, y la lista como secundaria"), Kanban/Calendario
+  // disponibles siempre, no solo filtrando Tareas.
   const [view, setView] = useState<FilterView>(
-    () => (localStorage.getItem(ELEMENTS_VIEW_KEY) as FilterView) || 'lista'
+    () => (localStorage.getItem(ELEMENTS_VIEW_KEY) as FilterView) || 'tabla'
   )
   function changeView(v: FilterView) {
     setView(v)
     localStorage.setItem(ELEMENTS_VIEW_KEY, v)
   }
-  // Kanban/Calendario solo tienen sentido filtrando Tareas — si el filtro cambia a
-  // cualquier otra cosa mientras esa vista está activa, vuelve a Lista (el interruptor
-  // ya no muestra esos botones, pero sin esto la vista se quedaría "atascada").
-  useEffect(() => {
-    if (filter !== 'task' && (view === 'kanban' || view === 'calendario')) changeView('lista')
-  }, [filter]) // eslint-disable-line react-hooks/exhaustive-deps
   const [sortBy, setSortBy] = useState<SortBy>(() => (localStorage.getItem(ELEMENTS_SORT_KEY) as SortBy) || 'created')
   const [sortMenuOpen, setSortMenuOpen] = useState(false)
   function changeSort(v: SortBy) {
@@ -451,7 +447,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
           onChange={changeView}
           count={filtered.length}
           onClear={() => { setQ(''); setFilter('all'); setTaskSub('all') }}
-          allowBoardViews={filter === 'task'}
+          allowBoardViews
           canClear={filtersActive}
         />
         {/* Barra de acciones en bloque — visible solo en modo selección. */}

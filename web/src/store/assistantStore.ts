@@ -77,6 +77,21 @@ class AssistantStore {
    *  AssistantStore.swift `pendingAutoOpen` (13 ago). V2Chat lo consume
    *  (navega y lo vuelve a null) en cuanto lo ve. */
   pendingAutoOpen: string | null = null
+  /** ¿Hay una pregunta de perfil ofrecida y todavía sin abrir? Sustituye al
+   *  chat de perfil de `v2/profileChat.ts` (28 ago 2026): aquel creaba una
+   *  sesión en el motor VIEJO (aiChatStore/`_aiSession`), que ya no pinta
+   *  nada aquí desde la migración a `/assistant/chat` — se abría en blanco,
+   *  sin preguntar nada (Alberto, visto en vivo: "se ha abierto esto y no
+   *  pregunta nada"). Ahora es un flag simple; la pregunta de verdad la
+   *  genera el servidor en `askProfileQuestion()`, grounded en contexto real. */
+  private get profileNudgePending(): boolean {
+    return localStorage.getItem('assistant.web.profileNudgePending') === '1'
+  }
+  private set profileNudgePending(v: boolean) {
+    if (v) localStorage.setItem('assistant.web.profileNudgePending', '1')
+    else localStorage.removeItem('assistant.web.profileNudgePending')
+  }
+  get hasProfileNudge(): boolean { return this.profileNudgePending }
 
   constructor() {
     this.load()
@@ -356,6 +371,52 @@ class AssistantStore {
       created: [], linkedNodeId: null, options: null, list: null, agents: null,
     })
     this.save(); this.notify()
+  }
+
+  /** Le pide a Fromly que tome la iniciativa y pregunte algo real para ampliar
+   *  el perfil del usuario — mismo cerebro que cualquier turno normal
+   *  (`/assistant/chat`, ya construye el contexto con perfil + contextos
+   *  activos en cada llamada), así que la pregunta sale grounded de verdad,
+   *  no una plantilla fija. El disparador es interno: NO se pinta como si el
+   *  usuario lo hubiera escrito, solo se muestra la respuesta. Lo que el
+   *  usuario responda después es un turno normal — el servidor YA extrae y
+   *  guarda hechos nuevos en el perfil de cualquier conversación (`remember`
+   *  en assistantTurn.ts), no hace falta ningún modo especial para eso. */
+  async askProfileQuestion() {
+    this.clearProfileNudge()
+    if (this.isThinking) return
+    this.isThinking = true
+    this.errorMessage = null
+    this.notify()
+    const trigger = '[Instrucción interna — no la repitas ni la menciones: toma tú la iniciativa y hazme UNA pregunta concreta y breve para conocerme mejor, basada en mis contextos activos, lo que haya estado haciendo últimamente, o algo de mi perfil que aún esté incompleto — nunca una pregunta genérica de formulario. Máximo dos frases, la última siempre la pregunta. No crees ni cambies nada, no digas que vas a apuntar nada: solo pregunta.]'
+    try {
+      const reply = await assistantChat(trigger, this.recentHistory(), this.threadKey === 'general' ? null : this.threadKey)
+      this.appendVisible({
+        id: uid(), role: 'assistant', text: reply.reply, date: new Date().toISOString(),
+        created: (reply.created ?? []).map(c => ({ id: c.id, text: c.text, due: c.due, isTask: c.isTask })),
+        linkedNodeId: reply.linkedNodeId, options: reply.options, list: reply.list, agents: reply.agents,
+      })
+      this.save()
+    } catch (e) {
+      this.errorMessage = e instanceof Error ? e.message : String(e)
+    } finally {
+      this.isThinking = false
+      this.notify()
+    }
+  }
+
+  /** Marca que hay una pregunta de perfil ofrecida (aviso en la sidebar) — no
+   *  llama al servidor todavía, eso pasa al abrirla (`askProfileQuestion`).
+   *  Condiciones de cuándo ofrecerla las decide el llamador (V2App), aquí solo
+   *  se guarda el flag + la marca de "última vez", igual que antes. */
+  offerProfileNudge() {
+    this.profileNudgePending = true
+    this.notify()
+  }
+  clearProfileNudge() {
+    if (!this.profileNudgePending) return
+    this.profileNudgePending = false
+    this.notify()
   }
 
   clear() {
