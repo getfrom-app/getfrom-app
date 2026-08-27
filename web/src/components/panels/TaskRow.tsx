@@ -48,6 +48,15 @@ export function dueColor(n: Node): string {
   if (dd === t0) return '#f59e0b'
   return '#3b82f6'
 }
+/** ¿Tiene fecha y es anterior a hoy? Mismo criterio de fecha (sin hora) que
+ *  `dueColor` — una sola fuente de verdad para "atrasada" en toda la web. */
+export function isTaskOverdue(n: Node): boolean {
+  if (!n.due) return false
+  const d = new Date(n.due); const now = new Date()
+  const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  return dd < t0
+}
 export function recLabel(n: Node, t: (k: string, opts?: Record<string, unknown>) => string): string | null {
   if (!n.recurrence) return null
   // Formato `unit` o `unit:N` (N = intervalo, ver recurrenceToString en naturalDate.ts).
