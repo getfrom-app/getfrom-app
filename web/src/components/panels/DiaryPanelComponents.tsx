@@ -10,6 +10,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate } from '../../utils/dates'
+import { recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { pushEventToGcal } from '../../utils/gcalNodesSync'
 import ContextChip from './ContextChip'
@@ -18,6 +19,9 @@ import { firstContextOf, setNodeContext } from '../../utils/cajones'
 import Icon from '../../v2/components/Icon'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
+
+/** 0=Dom … 6=Sáb — mismo índice que `RecurrenceConfig.days` (naturalDate.ts). */
+const DAY_LETTERS_ES = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
 /** True si algún ancestro del nodo es un "container vivo" (nota con tareas
  *  pendientes dentro). Se usa para evitar duplicar tareas en el panel —
@@ -112,6 +116,18 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
   }
 
   // Recurrencia helpers
+  // «Personalizado» (27 ago 2026, Alberto: "al darle a personalizar aparecen
+  // los días de la semana L M X J V S D y se puede hacer clic a los días que
+  // se quiera") vive en un formato DISTINTO del resto (`unit`/`unit:N`): un
+  // conjunto arbitrario de días no cabe en una sola fecha `due` como sí cabe
+  // un único día («cada viernes»). Se guarda como el `RecurrenceConfig`
+  // completo en JSON — `recurrenceToString`/`recurrenceFromString`
+  // (naturalDate.ts) ya saben leerlo y `nextRecurrence` ya sabe avanzarlo,
+  // solo hacía falta la UI para escribirlo a mano.
+  const isCustomRec = !!node.recurrence && node.recurrence.startsWith('{')
+  const customDays: number[] = isCustomRec
+    ? (recurrenceFromString(node.recurrence!)?.days ?? [])
+    : []
   function parseRec(r: string) {
     const [unit, nStr] = r.split(':')
     return { n: parseInt(nStr || '1') || 1, unit }
@@ -120,7 +136,16 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
     const safe = Math.max(1, n)
     store.updateNode(node.id, { recurrence: safe === 1 ? unit : `${unit}:${safe}` })
   }
+  function toggleCustomDay(day: number) {
+    const next = customDays.includes(day) ? customDays.filter(d => d !== day) : [...customDays, day].sort((a, b) => a - b)
+    if (next.length === 0) { store.updateNode(node.id, { recurrence: null }); return }
+    const display = next.map(d => DAY_LETTERS_ES[d]).join('')
+    store.updateNode(node.id, { recurrence: recurrenceToString({ type: 'custom', days: next, display }) })
+  }
   const recUnits: [string, string][] = [['daily', t('recUnit.days')], ['weekly', t('recUnit.weeks')], ['monthly', t('recUnit.months')], ['yearly', t('recUnit.years')]]
+  // L M X J V S D — empieza en lunes (día 1), domingo (0) al final, como
+  // cualquier calendario en español (Apple Calendar incluido).
+  const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0]
 
   const qNextMondayDays = (() => { const d = new Date().getDay(); return d === 1 ? 7 : (8 - d) % 7 || 7 })()
 
@@ -280,22 +305,39 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
         <button className={`nqp-chip${!node.recurrence ? ' active' : ''}`}
           onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
         <input type="number" className="nqp-rec-n" min={1} max={999}
-          value={node.recurrence ? parseRec(node.recurrence).n : 1}
-          disabled={!node.recurrence}
+          value={node.recurrence && !isCustomRec ? parseRec(node.recurrence).n : 1}
+          disabled={!node.recurrence || isCustomRec}
           onClick={e => e.stopPropagation()}
           onChange={e => {
             const n = Math.max(1, parseInt(e.target.value) || 1)
-            const unit = node.recurrence ? parseRec(node.recurrence).unit : 'daily'
+            const unit = node.recurrence && !isCustomRec ? parseRec(node.recurrence).unit : 'daily'
             applyRec(n, unit)
           }}
         />
         {recUnits.map(([unit, label]) => (
           <button key={unit}
-            className={`nqp-chip${!!node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
-            onClick={() => applyRec(node.recurrence ? parseRec(node.recurrence).n : 1, unit)}
+            className={`nqp-chip${!isCustomRec && !!node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
+            onClick={() => applyRec(node.recurrence && !isCustomRec ? parseRec(node.recurrence).n : 1, unit)}
           >{label}</button>
         ))}
+        {/* «Personalizado» (27 ago 2026) — al activarlo aparecen L M X J V S D
+            debajo; clicar un día lo añade/quita del conjunto. Sin días
+            marcados no hay recurrencia (mismo criterio que «–»). */}
+        <button className={`nqp-chip${isCustomRec ? ' active' : ''}`}
+          onClick={() => { if (!isCustomRec) toggleCustomDay(new Date().getDay()) }}
+        >{t('prop.recurrenceCustom', 'Personalizado')}</button>
       </div>
+      {isCustomRec && (
+        <div className="nqp-rec-days-row">
+          {WEEK_ORDER.map(day => (
+            <button key={day}
+              className={`nqp-rec-day${customDays.includes(day) ? ' active' : ''}`}
+              onClick={() => toggleCustomDay(day)}
+              title={t('prop.recurrenceCustom', 'Personalizado')}
+            >{DAY_LETTERS_ES[day]}</button>
+          ))}
+        </div>
+      )}
 
       {/* Estado */}
       <div className="tpp-section-label">{t('search.filterStatus')}</div>

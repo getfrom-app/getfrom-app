@@ -214,7 +214,19 @@ export function getOrCreateAgentInstructionDoc(agentId: string): Node {
     return store.getNode(candidateWithBody.id)!
   }
   // Agente v1: migra el texto plano existente (recursivo, mismo orden que readAgentNote).
-  const legacyText = readAgentNote(agentId)
+  // Agente creado desde el CHAT (`createAgentFromChat`, servidor): nace SIN
+  // ningún hijo — el servidor solo rellena `_agentSystemPrompt`/`_agentUserMessage`
+  // en el extraData, nunca un documento-instrucción — así que `readAgentNote`
+  // (que solo mira hijos) daba vacío la primera vez que se abría en la web.
+  // `syncAgentInstruction` (más abajo en el componente) entonces "sincronizaba"
+  // esa instrucción vacía DE VUELTA sobre `_agentSystemPrompt`, borrando en
+  // silencio lo que el servidor acababa de escribir — un agente recién creado
+  // por voz/chat quedaba sin ninguna instrucción, inservible (Alberto, 27 ago
+  // 2026, con captura: "el agente lo ha creado pero no tiene absolutamente
+  // ninguna instrucción"). Si no hay texto en los hijos, se cae al
+  // `_agentSystemPrompt` que ya hubiera en el extraData antes de dar por
+  // vacío.
+  const legacyText = readAgentNote(agentId) || getAgentData(agentId)?.systemPrompt || ''
   for (const k of kids) store.deleteNode(k.id)
   const doc = store.createNode({ text: '', parentId: agentId })
   store.updateNode(doc.id, { extraData: JSON.stringify({ _doc: '1' }), body: legacyText ? instructionToHtml(legacyText) : '<p></p>' })

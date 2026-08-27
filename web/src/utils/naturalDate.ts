@@ -513,18 +513,29 @@ export function getSuggestion(partial: string): string | null {
 // («cada N»). El DÍA de la semana / del mes lo aporta la fecha (due) de la tarea,
 // no se guarda en la cadena. Es el mismo formato que usan TODOS los editores de la
 // UI, los badges y la conversión a RRULE de Google Calendar (fromRecToRRule).
+//
+// EXCEPCIÓN — `custom` (27 ago 2026, editor "Personalizado" con días L-D
+// clicables, TaskPropsPopover): un conjunto arbitrario de días de la semana
+// («lunes y jueves») no cabe en una sola fecha `due` como sí cabe un único día
+// («cada viernes» = weekly + due en viernes). Para ese caso, y SOLO para ese
+// caso, se serializa el `RecurrenceConfig` completo como JSON — `nextRecurrence`
+// y `recurrenceFromString` ya sabían leer este formato desde antes (usado
+// puntualmente por `parseRecurrenceOnly`), solo faltaba que este lado de la
+// conversión dejara de perder los `days` al bajarlo a texto plano.
 export function recurrenceToString(rec: RecurrenceConfig): string {
   const n = rec.interval && rec.interval > 1 ? `:${rec.interval}` : ''
+  if (rec.type === 'custom' && rec.days && rec.days.length > 0) return JSON.stringify(rec)
   if (rec.type === 'daily') return `daily${n}`
   if (rec.type === 'monthly') return `monthly${n}`
-  // weekly / custom: «cada viernes» = weekly + due en viernes (el día lo da el due).
+  // weekly sin días concretos: «cada viernes» = weekly + due en viernes (el día lo da el due).
   return `weekly${n}`
 }
 
-/** Convierte string de node.recurrence (`unit` / `unit:N`, N = intervalo) a
- *  RecurrenceConfig. El día concreto lo aporta la fecha de la tarea, no la cadena.
- *  Tolera el formato viejo `:iN`. `yearly` se mapea a mensual×12 (el motor no tiene
- *  tipo anual). */
+/** Convierte string de node.recurrence (`unit` / `unit:N`, N = intervalo, o el
+ *  JSON de `custom` — ver `recurrenceToString`) a RecurrenceConfig. El día
+ *  concreto de un `weekly` simple lo aporta la fecha de la tarea, no la cadena.
+ *  Tolera el formato viejo `:iN`. `yearly` se mapea a mensual×12 (el motor no
+ *  tiene tipo anual). */
 export function recurrenceFromString(str: string): RecurrenceConfig | null {
   if (!str) return null
   if (str.startsWith('{')) {
