@@ -8,10 +8,10 @@
 // (utils/docTasks.ts) — las escritas con una casilla en el cuerpo y las creadas
 // desde aquí, incluidas las instancias que la recurrencia ya movió al día que
 // tocaba. Pulsarlas en el cockpit o en el planner abre este documento (V2App).
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { store, useStore } from '../../store/nodeStore'
-import { tasksOfDoc, createDocTask } from '../../utils/docTasks'
+import { useStore } from '../../store/nodeStore'
+import { tasksOfDoc } from '../../utils/docTasks'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { recurrenceFromString } from '../../utils/naturalDate'
 import { fmtDate } from '../../utils/formatDate'
@@ -40,11 +40,8 @@ function TaskRow({ task, flash }: { task: Node; flash: boolean }) {
 export default function V2DocTasks({ docId }: { docId: string }) {
   useStore()
   const { t } = useTranslation()
-  const [adding, setAdding] = useState(false)
-  const [draft, setDraft] = useState('')
   const [showDone, setShowDone] = useState(false)
   const [flashId, setFlashId] = useState<string | null>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
 
   // Abrir el documento desde una de sus tareas (cockpit, planner, buscador) resalta
   // la tarea concreta: sin eso, el salto deja al usuario en un documento largo sin
@@ -61,20 +58,19 @@ export default function V2DocTasks({ docId }: { docId: string }) {
     return () => window.removeEventListener('from:highlight-doc-task', h as EventListener)
   }, [docId])
 
-  useEffect(() => { if (adding) inputRef.current?.focus() }, [adding])
-
   const tasks = tasksOfDoc(docId)
   const pending = tasks.filter(n => n.status !== 'done')
   const done = tasks.filter(n => n.status === 'done')
 
-  // Enter encadena (crea y deja el campo listo para la siguiente); salir del campo cierra.
-  const submit = (value: string) => createDocTask(docId, value)
+  // Sin botón "+ Tarea": las tareas del documento se crean con el comando slash
+  // en el propio cuerpo (Alberto, 27 ago 2026: "ya no es necesario, se pueden
+  // crear con el comando slash, y ese bloque en la parte superior ensucia").
+  // El bloque solo se pinta si YA hay tareas — nada que mostrar, nada que limpiar.
+  if (pending.length === 0 && done.length === 0) return null
 
   return (
     <div className="v2-doctasks">
-      {(pending.length > 0 || done.length > 0) && (
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('docTasks.title', 'Tareas')}</div>
-      )}
+      <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('docTasks.title', 'Tareas')}</div>
       {pending.map(n => <TaskRow key={n.id} task={n} flash={flashId === n.id} />)}
       {done.length > 0 && (
         showDone
@@ -82,27 +78,6 @@ export default function V2DocTasks({ docId }: { docId: string }) {
           : <button className="v2-done-toggle" onClick={() => setShowDone(true)}>
               {t('v2.taskList.doneCount', 'Completadas ({{count}})', { count: done.length })}
             </button>
-      )}
-      {adding ? (
-        <input
-          ref={inputRef}
-          className="v2-doctask-input"
-          value={draft}
-          placeholder={t('docTasks.placeholder', 'seguimiento cada 15 días')}
-          onChange={e => setDraft(e.target.value)}
-          onKeyDown={e => {
-            if (e.key === 'Enter') { if (draft.trim()) { submit(draft); setDraft('') } else setAdding(false) }
-            if (e.key === 'Escape') { e.stopPropagation(); setDraft(''); setAdding(false) }
-          }}
-          // Campo CONTROLADO a propósito: con uno sin controlar, el Enter creaba la
-          // tarea pero el texto seguía en pantalla y al salir del campo el `onBlur`
-          // creaba una SEGUNDA tarea idéntica (visto en vivo).
-          onBlur={() => { if (draft.trim()) submit(draft); setDraft(''); setAdding(false) }}
-        />
-      ) : (
-        <button className="v2-doctask-add" onClick={() => setAdding(true)}>
-          <Icon name="plus" size={13} /> {t('docTasks.add', 'Tarea')}
-        </button>
       )}
     </div>
   )

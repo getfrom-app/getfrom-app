@@ -35,6 +35,7 @@ import { isAgentNode } from '../../utils/agentesHelper'
 import { isPromptNode } from '../../utils/promptsHelper'
 import { isGroupNode } from '../../utils/groups'
 import GroupView from '../../components/views/GroupView'
+import GroupAddButton from './GroupAddButton'
 import { useRef, useEffect } from 'react'
 import type { Node } from '../../types'
 import Icon from './Icon'
@@ -86,6 +87,12 @@ export function V2NoteContext({ node, onSelectCtx, inline }: { node: Node; onSel
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [open])
+  // Las «Notas» de un contexto (getOrCreateContainerNotes) SIEMPRE son las notas
+  // del contexto que está abierto — no tiene sentido ni tiene picker propio: se
+  // creaba confusión mostrando un selector en una nota cuyo contexto ya está fijo
+  // por definición (Alberto, 27 ago 2026: "no hace falta que tenga selector de
+  // contexto, de hecho es confuso").
+  if (parseExtraData(node.extraData)._containerNotes === '1') return null
   // Mismo criterio que el chip del Historial/columnas (RowContextChip): firstContextOf.
   const current = firstContextOf(node)
   // `inline`: vive DENTRO de la fila de acciones (v2-note-toolbar) — sin su propio
@@ -110,6 +117,10 @@ export function V2NoteContext({ node, onSelectCtx, inline }: { node: Node; onSel
           </div>
         )}
       </div>
+      {/* Aquí, no repetido en cada vista especializada (recurso/audio/tarea/agente…):
+          V2NoteContext ya se renderiza en TODAS ellas, así que un único punto cubre
+          "todos los elementos" del pedido (27 ago 2026). */}
+      <GroupAddButton nodeId={node.id} style={actBtn} />
     </div>
   )
 }

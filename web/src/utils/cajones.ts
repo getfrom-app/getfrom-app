@@ -327,7 +327,12 @@ export interface ContextTag {
 export function listContextTags(opts?: { includeClosed?: boolean }): ContextTag[] {
   const out: ContextTag[] = []
   for (const c of listContextsForParent()) {
-    if (!opts?.includeClosed && isContextClosed(c)) continue
+    // Los RAÍZ nunca están "cerrados" (contextState los trata siempre como
+    // 'open', ver comentario en esa función) — usar isContextClosed a pelo
+    // aquí escondía del picker contextos raíz con un `_closed` residual de
+    // antes de ser promovidos a raíz (visto en vivo: "Inversión"/"Recursos"
+    // aparecían en la barra lateral pero no en este selector, 27 ago 2026).
+    if (!opts?.includeClosed && !isRootContext(c.id) && isContextClosed(c)) continue
     const path = contextPath(c.id)
     if (!path) continue
     out.push({ node: c, path, label: contextPathLabel(c.id), depth: path.split('/').length })

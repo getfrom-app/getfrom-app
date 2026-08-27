@@ -8,6 +8,7 @@ import { firstContextOf, contextColor } from '../../utils/cajones'
 import { fmtDateFull } from '../../utils/formatDate'
 import Icon, { type IconName } from './Icon'
 import { displayTitle } from '../../utils/displayText'
+import GroupAddButton from './GroupAddButton'
 import type { Node } from '../../types'
 
 interface Props {
@@ -83,11 +84,14 @@ export default function V2ElementRow({ node, icon, onOpen, child, extraMeta, hid
           </span>
         )}
       </span>
-      {/* Editar grupo + quitar de la conversación (no borra, solo desengancha) + Eliminar — al hover. */}
-      {group && (
+      {/* Carpeta (editar grupo si ya está en uno, o añadir a uno si no) + quitar de
+          la conversación (no borra, solo desengancha) + Eliminar — al hover. */}
+      {group ? (
         <button className="v2-el-del" title={t('v2.elementRow.editGroup', 'Editar grupo "{{name}}"', { name: group.text || t('common.noTitle') })} onClick={e => { e.stopPropagation(); e.preventDefault(); (onOpenGroup || onOpen)(group.id) }}>
           <Icon name="folder" size={14} />
         </button>
+      ) : (
+        <GroupAddButton nodeId={node.id} className="v2-el-del" stopPropagation />
       )}
       {onDetach && (
         <button className="v2-el-del" title={t('v2.elementRow.detach', 'Quitar de esta conversación')} onClick={e => { e.stopPropagation(); e.preventDefault(); onDetach(node.id) }}>

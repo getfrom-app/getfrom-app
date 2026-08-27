@@ -28,6 +28,7 @@ import { FilterViewSwitcher, TableView, KanbanView, CalendarView } from '../view
 import type { FilterView } from '../views/FilterResultsView'
 import PizarraThumbnail from '../views/PizarraThumbnail'
 import Icon, { type IconName } from '../../v2/components/Icon'
+import GroupAddButton from '../../v2/components/GroupAddButton'
 import { displayTitle } from '../../utils/displayText'
 
 // ⚠️ Ya NO existen los tipos 'event', 'context' ni 'memory' (Alberto, 5 ago 2026):
@@ -596,6 +597,17 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
                             {fmtDate(sortBy === 'created' ? r.createdAt : r.updatedAt, i18n.language)}
                           </span>
                           <span style={{ flex: 1 }} />
+                          {/* Añadir a grupo — al hover, mismo patrón que Eliminar (27 ago 2026).
+                              Un grupo no se añade a sí mismo. */}
+                          {r.kind !== 'group' && (
+                            <GroupAddButton
+                              nodeId={r.id}
+                              className="el-row-del"
+                              size={13}
+                              stopPropagation
+                              style={{ flexShrink: 0, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: '4px 5px', borderRadius: 4, display: 'flex', alignItems: 'center' }}
+                            />
+                          )}
                           {/* Eliminar directo al hover — mismo patrón que el resto de listas de la app. */}
                           <button
                             className="el-row-del"
