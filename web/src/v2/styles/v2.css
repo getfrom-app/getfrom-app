@@ -115,23 +115,25 @@
    exige lectura activa. CENTRO = vacío a propósito. DERECHA = "Lo próximo",
    lo único con texto — es lo único que sí pide leerse. */
 .v2-statusbar {
-  /* El fallback de `left` DEBE coincidir con el de la 1ª columna del grid en
-     .v2-root (260px) — con fallbacks distintos (0px aquí), sin `--v2-sidebar`
-     seteado (el caso normal: nada la fija salvo `.v2-sidebar-collapsed`), la
-     franja se extendía por DEBAJO de todo el sidebar y tapaba su bloque de
-     usuario (27 ago 2026, Alberto: "la barra inferior sigue superponiéndose
-     un poco al bloque de usuario de abajo a la izquierda"). */
-  position: fixed; left: var(--v2-sidebar, 260px); right: 0; bottom: 0; z-index: 6;
+  /* Borde a borde de VERDAD (izquierda:0) — el bug real de la superposición
+     con el bloque de usuario del sidebar NO era este `left` (eso solo movía
+     el problema), era que `.v2-col` forzaba `height:100vh` e ignoraba los
+     26px que `.v2-root` reserva abajo (ver esa regla). Con eso ya arreglado,
+     la franja vuelve a ir de borde a borde como una barra de estado real
+     (27 ago 2026, Alberto: "sigue sin extenderse hasta el borde izquierdo"
+     — tras probar el `left` indentado un par de vueltas, confirma que
+     quería la franja completa, no solo desde donde acaba el sidebar). */
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 6;
   display: flex; align-items: center; gap: 6px;
   /* padding-left 15px — mismo margen que el avatar de usuario del sidebar
      justo encima (.v2-sidebar-foot 8px + .v2-userchip 7px), para que el
-     punto de conexión quede alineado con él en vez de un poco más adentro
-     (27 ago 2026, Alberto: "los elementos izquierdos deberían ir alineados
-     al borde izquierdo"). */
+     punto de conexión quede alineado con él (27 ago 2026, Alberto: "los
+     elementos izquierdos deberían ir alineados al borde izquierdo"). Sigue
+     aplicando ahora que la franja arranca en el mismo borde (0) que el
+     propio sidebar. */
   height: 26px; padding: 0 10px 0 15px;
   background: var(--v2-surface-sunken);
   border-top: 1px solid var(--border);
-  transition: left var(--v2-fast);
 }
 .v2-statusbar-left { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .v2-statusbar-spacer { flex: 1; min-width: 0; }
