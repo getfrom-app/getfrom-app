@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
+import { WEB_VERSION } from '../../components/layout/StatusBar'
 import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent, reparentContext, listContextsForParent, getOrCreateContextKnowledgeDoc } from '../../utils/cajones'
 import { listPendingAgentConversations, listUnseenAgentResults } from '../../store/aiChatStore'
 import { useTheme } from '../../hooks/useTheme'
@@ -304,7 +305,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
           «Día», que ya hace ese reset duro (`onSelectGeneral` en V2App). */}
       <div className="v2-sidebar-head">
         <button className="v2-brand" onClick={goHome} title={t('v2.goHome', 'Ir al día de hoy')}>
-          Fromly <span className="v2-brand-badge">2.0</span>
+          Fromly <span className="v2-brand-badge">{WEB_VERSION}</span>
         </button>
       </div>
 

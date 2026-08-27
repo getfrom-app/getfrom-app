@@ -41,7 +41,6 @@ import TaskPropsModal from '../components/modals/TaskPropsModal'
 import { docOfTask } from '../utils/docTasks'
 import UnifiedCapture from '../components/modals/UnifiedCapture'
 import { ToastProvider } from '../components/Toast'
-import { WEB_VERSION } from '../components/layout/StatusBar'
 import { runStartupMigrations } from '../utils/appInit'
 import PaywallModal from '../components/paywall/PaywallModal'
 import type { PaywallReason } from '../components/paywall/PaywallModal'
@@ -929,7 +928,6 @@ export default function V2App() {
           </div>
         </main>
         <aside className="v2-col v2-right" />
-        <span className="v2-version">{WEB_VERSION}</span>
         <NextEventBar />
       </div>
       </ToastProvider>
@@ -989,7 +987,7 @@ export default function V2App() {
         // duplicado compitiendo por la misma sesión global.
         <main className="v2-col v2-center">
           <div className="v2-empty">
-            <h1>{t('v2.generalChatCenterTitle', 'Lo que crees aquí aparece aquí')}</h1>
+            <h1>{t('v2.generalChatCenterTitle', 'Lo que crees se abre en este espacio')}</h1>
             <p>{t('v2.generalChatCenterHint', 'Escribe en el chat de la derecha — cualquier nota, tarea o documento que cree se abrirá en este espacio.')}</p>
           </div>
         </main>
@@ -1117,7 +1115,6 @@ export default function V2App() {
           <button className="v2-batchupload-dismiss" onClick={() => { setBatchUploadIds(null); setBatchPickerOpen(false) }} aria-label={t('common.close', 'Cerrar')}>✕</button>
         </div>
       )}
-      <span className="v2-version">{WEB_VERSION}</span>
       <NextEventBar />
     </div>
     </ToastProvider>

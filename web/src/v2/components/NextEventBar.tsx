@@ -70,6 +70,7 @@ export default function NextEventBar() {
   const label = expanded
     ? items.map(it => `${it.text || t('common.noTitle', 'Sin título')} — ${fmtWhen(it.due, now, t)}`).join('  ·  ')
     : `${first.text || t('common.noTitle', 'Sin título')} — ${fmtWhen(first.due, now, t)}`
+  const prefix = t('nextEvent.next', 'Siguiente:')
 
   return (
     <div className={`v2-nextevent${urgent ? ' v2-nextevent--urgent' : ''}${blinking ? ' v2-nextevent--blink' : ''}`}>
@@ -81,7 +82,7 @@ export default function NextEventBar() {
         }}
         title={blinking ? t('nextEvent.tapToStopBlink', 'Toca para dejar de parpadear') : label}
       >
-        {label}
+        <span className="v2-nextevent-prefix">{prefix}</span> {label}
       </button>
       {items.length > 1 && (
         <button
