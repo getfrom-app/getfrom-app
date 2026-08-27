@@ -13218,6 +13218,13 @@ textarea:focus-visible,
 .pp-block-resize::after { content:''; display:block; width:24px; height:2px; background:var(--text-tertiary); opacity:.5; border-radius:1px; }
 .pp-block-resize:hover { background:rgba(255,255,255,.25); }
 .pp-block-resize:hover::after { background:rgba(255,255,255,.8); }
+
+/* Proyección de recurrencia (27 ago 2026) — no es un nodo propio de ese día
+   todavía, solo la vista previa de dónde le toca; más tenue y sin cursor de
+   arrastre para no confundirse con un bloque real. */
+.pp-block--virtual { opacity: .55; cursor: pointer !important; }
+.pp-block--virtual:hover { opacity: .85; }
+.pp-block--virtual .pp-block-text { font-style: italic; }
 /* Feedback visual cuando se arrastra un nodo sobre una columna del planificador */
 .pp-col--drag-over { background: rgba(124,58,237,.06); outline: 2px dashed rgba(124,58,237,.25); outline-offset: -2px; }
 /* Línea de snap: muestra dónde va a caer el bloque durante el drag */

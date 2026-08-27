@@ -32,6 +32,7 @@ import {
 } from '../../api/googleCalendar'
 import { getGcalEventId, gcalIdCore, linkedGcalIdCores } from '../../utils/gcalNodesSync'
 import { isTimeBlockNode } from '../../utils/taskNode'
+import { recurrenceFromString, nextRecurrence } from '../../utils/naturalDate'
 import { GCalEventEditor } from './DiaryRightPanel'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import { useUserStore } from '../../store/userStore'
@@ -139,6 +140,43 @@ interface Block {
   color: string
   nodeId?: string     // id del nodo original (para task)
   gcalEvent?: CalendarEvent
+  /** Proyección visual de una recurrencia (Alberto, 27 ago 2026: "solo veo la
+   *  instancia de hoy, debería ver todas igual que en Apple Calendar o Google
+   *  Calendar") — NO es un nodo propio, es la instancia real (`nodeId`)
+   *  proyectada en un día futuro que le toca por su patrón. Al completarse
+   *  siempre se sigue creando un nodo nuevo (`spawnRecurrence`, sin cambios);
+   *  esto es solo la vista previa de "dónde tocará" antes de que exista. */
+  virtual?: boolean
+}
+
+/** Cuántos días por delante se proyectan las recurrencias en el timeline —
+ *  tope de seguridad para series raras (nunca hace falta ver más allá del
+ *  horizonte que el propio Planificador puede mostrar). */
+const MAX_RECURRENCE_LOOKAHEAD_DAYS = 120
+
+/** ¿El patrón de recurrencia de `origin` cae en `day`? Devuelve la fecha exacta
+ *  de esa ocurrencia (con hora heredada del nodo origen) o null si no aplica.
+ *  `nextRecurrence` avanza monótonamente desde `from`, así que basta con
+ *  recorrerlo hasta pasar `day` — sin necesidad de precalcular todo el rango. */
+function recurrenceOccursOn(origin: Node, day: Date): Date | null {
+  if (!origin.due || !origin.recurrence) return null
+  const rec = recurrenceFromString(origin.recurrence)
+  if (!rec) return null
+  const originDue = new Date(origin.due)
+  const dayStart = startOfDay(day)
+  if (dayStart.getTime() <= startOfDay(originDue).getTime()) return null // solo hacia el futuro — el propio origen ya es el bloque real de su día
+  const horizon = addDays(startOfDay(new Date()), MAX_RECURRENCE_LOOKAHEAD_DAYS)
+  if (dayStart.getTime() > horizon.getTime()) return null
+  let cursor = startOfDay(originDue)
+  for (let i = 0; i < MAX_RECURRENCE_LOOKAHEAD_DAYS; i++) {
+    cursor = nextRecurrence(cursor, rec)
+    if (cursor.getTime() > horizon.getTime()) return null
+    if (sameDay(cursor, day)) {
+      return new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate(), originDue.getHours(), originDue.getMinutes())
+    }
+    if (cursor.getTime() > dayStart.getTime()) return null // ya nos pasamos de `day` sin coincidir
+  }
+  return null
 }
 
 // ── Leer bloques con hora (timeline) ─────────────────────────────────────
@@ -179,6 +217,33 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
       start, end,
       color: n.color || 'var(--accent)',
       nodeId: n.id,
+    })
+  }
+
+  // Proyección de recurrencias hacia el futuro (27 ago 2026, ver comentario de
+  // `Block.virtual`). Solo desde instancias PENDIENTES: una vez completada,
+  // `spawnRecurrence` ya crea la instancia real siguiente con el mismo
+  // `recurrence` — proyectar TAMBIÉN desde instancias antiguas ya hechas
+  // duplicaría la proyección con la de esa instancia nueva. Se salta un día
+  // si ya hay un bloque real con el mismo texto (alguien la materializó a
+  // mano, p.ej. moviendo su fecha) para no pintarla dos veces.
+  const realTexts = new Set(blocks.map(b => b.text.trim().toLowerCase()))
+  for (const n of store.allActive()) {
+    if (!n.due || n.deletedAt || isInPapelera(n.id) || !n.recurrence || n.status === 'done') continue
+    if (sameDay(new Date(n.due), day)) continue // ya es el bloque real de su propio día
+    const occursAt = recurrenceOccursOn(n, day)
+    if (!occursAt) continue
+    if (realTexts.has(n.text.trim().toLowerCase())) continue
+    const durationMs = n.dueEnd ? (new Date(n.dueEnd).getTime() - new Date(n.due).getTime()) : 3600000
+    blocks.push({
+      kind: isTimeBlockNode(n) ? 'timeblock' : 'task',
+      id: `${n.id}::virtual::${occursAt.toISOString()}`,
+      text: n.text,
+      start: occursAt,
+      end: new Date(occursAt.getTime() + durationMs),
+      color: n.color || 'var(--accent)',
+      nodeId: n.id,
+      virtual: true,
     })
   }
 
@@ -870,7 +935,10 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     // un nodo: el evento crudo de Google (`isGcal`), que no se puede completar
     // en Fromly. Reutiliza toggleTaskDone (mismo que DayColumn) para no romper
     // el paso a «Atrasadas» al día siguiente.
-    const checkable = !isGcal && !!blockNode && blockNode.status != null && !blockNode.isEvent
+    // Una proyección virtual no es un nodo propio de ese día — no se puede
+    // completar ni arrastrar como si lo fuera (eso seguiría creando/tocando
+    // el nodo ORIGEN, con fecha distinta). El clic sigue abriendo el origen.
+    const checkable = !isGcal && !b.virtual && !!blockNode && blockNode.status != null && !blockNode.isEvent
     const done = checkable && blockNode!.status === 'done'
     // Solapes → columnas lado a lado (ver `layoutBlocks`). Sin solape, ocupa
     // el ancho completo de la columna como siempre.
@@ -882,12 +950,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const widthPos = cols > 1 ? `calc(${slotW} - ${gap}px)` : undefined
     return (
       <div key={b.id} data-pp-block={b.id}
-        className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}${checkable ? ' pp-block--checkable' : ''}`}
+        className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}${checkable ? ' pp-block--checkable' : ''}${b.virtual ? ' pp-block--virtual' : ''}`}
         style={{ top: blockTop, height: blockH,
           background: bg, left: leftPos, ...(widthPos ? { width: widthPos } : { right: 2 }),
           ...(isGcal ? {} : { border: '1px solid var(--border)', borderLeft: `3px solid ${accentColor}` }) }}
-        draggable
-        onDragStart={e => handleBlockDragStart(e, b)}
+        draggable={!b.virtual}
+        onDragStart={e => { if (!b.virtual) handleBlockDragStart(e, b) }}
         onClick={e => {
           e.stopPropagation()
           if (justResized.current || justDragged.current) return
@@ -936,7 +1004,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             <Icon name="plus" size={11} />
           </button>
         )}
-        <div className="pp-block-resize" onMouseDown={e=>handleBlockResize(e,b)} />
+        {!b.virtual && <div className="pp-block-resize" onMouseDown={e=>handleBlockResize(e,b)} />}
       </div>
     )
   }
