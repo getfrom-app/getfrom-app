@@ -23,8 +23,8 @@ import { apiRequest } from '../../api/client'
 import { listBackups, formatBackupAge, type BackupSnapshot } from '../../api/backups'
 import Icon from './Icon'
 
-const HOUR_MS = 3600_000
-const QUARTER_MS = 900_000
+const FIFTEEN_MIN_MS = 900_000
+const FIVE_MIN_MS = 300_000
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fmtWhen(d: Date, now: Date, t: any): string {
@@ -39,12 +39,17 @@ function fmtWhen(d: Date, now: Date, t: any): string {
   return `${dayLabel} ${t('nextEvent.at', 'a las')} ${time}`
 }
 
-function urgency(item: UpcomingItem, now: Date): 'normal' | 'soon' | 'blink' | 'ongoing' {
+// Umbrales (27 ago 2026, Alberto): bajo 15 min → rojo; bajo 5 min → rojo
+// parpadeando; el resto del tiempo, negro normal (ver CSS de
+// `.v2-nextevent-text`/`.v2-statusbar--urgent`/`--blink`). Un elemento EN
+// CURSO (ya empezó, no ha terminado) cuenta como "rojo" — sigue siendo lo
+// más urgente que hay, pero ya no tiene sentido que parpadee.
+function urgency(item: UpcomingItem, now: Date): 'normal' | 'soon' | 'blink' {
   const toStart = item.due.getTime() - now.getTime()
   const ongoing = now >= item.due && now < item.dueEnd
-  if (ongoing) return 'ongoing'
-  if (toStart > 0 && toStart <= QUARTER_MS) return 'blink'
-  if (toStart > 0 && toStart <= HOUR_MS) return 'soon'
+  if (ongoing) return 'soon'
+  if (toStart > 0 && toStart <= FIVE_MIN_MS) return 'blink'
+  if (toStart > 0 && toStart <= FIFTEEN_MIN_MS) return 'soon'
   return 'normal'
 }
 
@@ -113,7 +118,6 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
   const s = useStore()
   const [enabled, setEnabled] = useState(isNextEventBarEnabled())
   const [now, setNow] = useState(() => new Date())
-  const [expanded, setExpanded] = useState(false)
   const [blinkStopped, setBlinkStopped] = useState<Set<string>>(new Set())
   const activeAgents = useActiveAgentCount()
   const lastBackup = useLastBackup()
@@ -130,19 +134,18 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
     return () => clearInterval(id)
   }, [])
 
-  const items = useMemo(() => listUpcomingTimed(6, now), [now, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Un solo elemento, siempre — el botón de "ver más" desplegaba el resto en
+  // el mismo hueco estrecho y quedaba todo truncado, ilegible (27 ago 2026,
+  // Alberto: "no despliega bien... que solo salga lo próximo, una cosa").
+  const items = useMemo(() => listUpcomingTimed(1, now), [now, s.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
   const hasEvent = enabled && items.length > 0
 
   const first = items[0]
   const state = first ? urgency(first, now) : 'normal'
   const blinking = hasEvent && state === 'blink' && !blinkStopped.has(first!.id)
-  const urgent = hasEvent && (state === 'soon' || state === 'blink' || state === 'ongoing')
+  const urgent = hasEvent && (state === 'soon' || state === 'blink')
 
-  const label = hasEvent
-    ? (expanded
-        ? items.map(it => `${it.text || t('common.noTitle', 'Sin título')} — ${fmtWhen(it.due, now, t)}`).join('  ·  ')
-        : `${first!.text || t('common.noTitle', 'Sin título')} — ${fmtWhen(first!.due, now, t)}`)
-    : ''
+  const label = hasEvent ? `${first!.text || t('common.noTitle', 'Sin título')} — ${fmtWhen(first!.due, now, t)}` : ''
   const prefix = t('nextEvent.next', 'Siguiente:')
 
   const backupText = lastBackup
@@ -178,15 +181,6 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
           >
             <span className="v2-nextevent-prefix">{prefix}</span> {label}
           </button>
-          {items.length > 1 && (
-            <button
-              className="v2-nextevent-toggle"
-              onClick={() => setExpanded(e => !e)}
-              aria-label={expanded ? t('nextEvent.collapse', 'Mostrar menos') : t('nextEvent.expand', 'Ver más próximos')}
-            >
-              <Icon name={expanded ? 'chevron-right' : 'chevron-left'} size={12} />
-            </button>
-          )}
         </div>
       )}
     </div>
