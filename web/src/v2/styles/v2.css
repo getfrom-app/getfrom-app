@@ -88,7 +88,13 @@
 
 .v2-root {
   position: fixed;
-  inset: 0;
+  /* 26px reservados abajo para la franja "Lo próximo" (.v2-nextevent, fixed,
+     fuera del grid) — sin esto el propio grid ocupaba el 100% del viewport y
+     la franja quedaba ENCIMA de la última fila de contenido de las 3 columnas
+     en vez de debajo (27 ago 2026, Alberto: "hay que desplazar un poco arriba
+     el resto de la app porque se corta, se superpone la barra inferior"). Es
+     una barra de estado real: reserva su hueco siempre, como cualquier otra. */
+  inset: 0 0 26px 0;
   display: grid;
   grid-template-columns: var(--v2-sidebar, 260px) 1fr var(--v2-right, 440px);
   background: var(--bg-primary);
