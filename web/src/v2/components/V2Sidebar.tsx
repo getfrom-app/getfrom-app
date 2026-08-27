@@ -22,6 +22,7 @@ import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
 import NewContextModal from '../../components/modals/NewContextModal'
 import NewTaskModal from '../../components/modals/NewTaskModal'
+import ContextShareModal from '../../components/modals/ContextShareModal'
 import Icon from './Icon'
 import { displayTitle } from '../../utils/displayText'
 import type { Node } from '../../types'
@@ -108,6 +109,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   // existe — el sidebar de v2 necesita su propio botón para crear contextos, con
   // nombre + padre en un modal (Alberto, 21 jul).
   const [showNewContext, setShowNewContext] = useState(false)
+  const [shareCtxId, setShareCtxId] = useState<string | null>(null)
   const userWrap = useRef<HTMLDivElement>(null)
 
   // Menú «＋» por contexto: nota / tarea / evento / lienzo / conversación (antes
@@ -474,6 +476,9 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         </>
       )}
       {newTaskCtx && <NewTaskModal parentId={newTaskCtx.id} onClose={() => setNewTaskCtx(null)} />}
+      {shareCtxId && store.getNode(shareCtxId) && (
+        <ContextShareModal contextNode={store.getNode(shareCtxId)!} onClose={() => setShareCtxId(null)} />
+      )}
 
       {/* Menú de clic derecho de un contexto: renombrar / color / mover / eliminar. */}
       {ctxMenu && store.getNode(ctxMenu.id) && (
@@ -498,6 +503,13 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
                     documento que es. */}
                 <button className="v2-ctx-menu-item" onClick={() => { onOpenNode?.(getOrCreateContextKnowledgeDoc(ctxMenu.id).id); setCtxMenu(null) }}>
                   {t('v2.ctxMenu.memory', 'Lo que Fromly sabe')}
+                </button>
+                {/* Publicar el contexto entero (URL /c/…) — la feature existía
+                    (ContextShareModal, 🌐 en la nota del contexto) pero no era
+                    descubrible desde AQUÍ, el menú natural del contexto
+                    (auditoría 28 ago 2026). */}
+                <button className="v2-ctx-menu-item" onClick={() => { setShareCtxId(ctxMenu.id); setCtxMenu(null) }}>
+                  {t('v2.ctxMenu.publish', 'Publicar contexto…')}
                 </button>
                 <div className="v2-ctx-menu-sep" />
                 <button className="v2-ctx-menu-item v2-ctx-menu-item--danger" onClick={() => deleteContext(ctxMenu.id)}>{t('v2.ctxMenu.delete', 'Eliminar')}</button>

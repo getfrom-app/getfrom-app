@@ -91,8 +91,10 @@ function GoogleCallbackPage() {
     const redirectUri = window.location.origin + '/app/google-callback'
     connectGoogle(code, redirectUri)
       .then(() => {
-        // Hard reload para que DiaryRightPanel refetche con la nueva conexión Google
-        window.location.replace(window.location.origin + '/app/')
+        // Hard reload para que DiaryRightPanel refetche con la nueva conexión Google.
+        // BASE_URL, no '/app/' fijo: en Tauri la base es '/' y la ruta fija
+        // acababa en 404 tras autorizar (auditoría 28 ago 2026).
+        window.location.replace(window.location.origin + import.meta.env.BASE_URL)
       })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : 'Error al conectar con Google.')
@@ -105,7 +107,7 @@ function GoogleCallbackPage() {
         <h2 style={{ color: '#3E5C76' }}>Fromly</h2>
         <p style={{ color: '#e53e3e', margin: '16px 0' }}>{error}</p>
         <button
-          onClick={() => navigate('/app/', { replace: true })}
+          onClick={() => navigate('/', { replace: true })}
           style={{ padding: '8px 16px', background: '#3E5C76', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
         >
           {t('app.backToHome')}

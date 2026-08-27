@@ -382,6 +382,17 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
 
   const today = startOfDay(new Date())
   const [viewMode,      setViewMode]      = useState<ViewMode>(initialView ?? viewTabs[0] ?? 'day')
+
+  // Vista Mes: al abrirla, la fila de HOY a la vista — sin esto el mes abría
+  // anclado al día 1 y la semana actual (con sus tareas) quedaba bajo el fold,
+  // pareciendo "el mes está vacío" (auditoría 28 ago 2026, visto en vivo).
+  useEffect(() => {
+    if (viewMode !== 'month') return
+    const id = window.setTimeout(() => {
+      document.querySelector('.pp-month-daynum--today')?.scrollIntoView({ block: 'center' })
+    }, 30)
+    return () => window.clearTimeout(id)
+  }, [viewMode])
   const [centerDate,    setCenterDate]    = useState(today)
   const [slotH,         setSlotH]         = useState(DEFAULT_SLOT_H)
   const [visibleDayCnt, setVisibleDayCnt] = useState(initialDays ?? DEFAULT_DAY_CNT)
@@ -1600,9 +1611,17 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             )}
             {ctxMenu.b.kind === 'gcal' && (
               <button className="pp-ctx-danger" onClick={async ()=>{
-                try { await deleteCalendarEvent(ctxMenu.b.id) } catch {}
-                setGcalEvents(p => p.filter(x => x.id !== ctxMenu.b.id))
+                const evId = ctxMenu.b.id
                 setCtxMenu(null)
+                // Solo se quita de la UI si Google CONFIRMÓ el borrado — antes el
+                // error se tragaba y el evento desaparecía de Fromly pero seguía
+                // vivo en el calendario (auditoría 28 ago 2026).
+                try {
+                  await deleteCalendarEvent(evId)
+                  setGcalEvents(p => p.filter(x => x.id !== evId))
+                } catch {
+                  window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('gcal.deleteFailed', 'No se pudo borrar el evento en Google Calendar'), type: 'error' } }))
+                }
               }}>
                 {t('tip.deleteEvent')}
               </button>

@@ -225,7 +225,8 @@ export default function ElementsFilters() {
             return (
               <button key={td.id} onClick={() => elementsBrowserStore.setCustomType(active ? null : td.id)}
                 onDoubleClick={() => setTypeModal(td.id)}
-                title={t('types.doubleClickToEdit', 'Doble clic para editar')}
+                onContextMenu={e => { e.preventDefault(); setTypeModal(td.id) }}
+                title={t('types.doubleClickToEdit', 'Doble clic o clic derecho para editar')}
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6, border: '1px solid ' + (active ? 'var(--accent,#6c5ce7)' : 'var(--border,#e2e2e2)'),
                   background: active ? 'var(--accent-soft,rgba(108,92,231,.1))' : 'var(--bg,#fff)', borderRadius: 999, cursor: 'pointer', padding: '6px 11px 6px 9px',
@@ -262,6 +263,7 @@ export default function ElementsFilters() {
           onClose={() => setTypeModal(null)}
           editingId={typeModal === 'new' ? undefined : typeModal}
           onSaved={id => elementsBrowserStore.setCustomType(id)}
+          onDeleted={() => elementsBrowserStore.setCustomType(null)}
         />
       )}
     </div>

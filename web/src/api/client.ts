@@ -9,8 +9,11 @@ const BASE = import.meta.env.DEV
 // cuota de chat del plan gratis (FREE_CHAT_LIMIT conversaciones/mes) — ambos
 // casos abren el paywall pero con copy distinto (ver PaywallModal).
 export class TokensError extends Error {
-  reason: 'ai_limit' | 'free_chat_limit'
-  constructor(reason: 'ai_limit' | 'free_chat_limit' = 'ai_limit') {
+  /** Motivo del 402 tal y como lo nombra el servidor (`paywall`/`error`):
+   *  'ai_limit' | 'free_chat_limit' | 'trial_expired' | 'agent_limit' |
+   *  'file_limit' | 'node_limit' | 'publish_limit' | 'byok_paid_plan'… */
+  reason: string
+  constructor(reason: string = 'ai_limit') {
     super('INSUFFICIENT_TOKENS')
     this.name = 'TokensError'
     this.reason = reason
@@ -98,6 +101,10 @@ export async function apiRequest<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
+    // 402 = paywall, SIEMPRE tipado: antes /assistant/chat con la prueba
+    // caducada acababa como burbuja de error técnico en el hilo en vez de
+    // abrir el paywall (auditoría 28 ago 2026).
+    if (res.status === 402) throw new TokensError(body.paywall || body.error || 'ai_limit')
     throw new Error(body.error || `HTTP ${res.status}`)
   }
 

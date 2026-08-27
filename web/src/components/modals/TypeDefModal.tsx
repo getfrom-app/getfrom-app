@@ -32,9 +32,12 @@ interface Props {
   /** Presente = editar ese tipo existente; ausente = crear uno nuevo. */
   editingId?: string
   onSaved?: (typeId: string) => void
+  /** Se llama al eliminar el tipo — el llamador debe limpiar cualquier filtro
+   *  activo sobre él (antes la lista quedaba "vacía" en un filtro colgado). */
+  onDeleted?: (typeId: string) => void
 }
 
-export default function TypeDefModal({ onClose, editingId, onSaved }: Props) {
+export default function TypeDefModal({ onClose, editingId, onSaved, onDeleted }: Props) {
   const { t } = useTranslation()
   const inputRef = useRef<HTMLInputElement>(null)
   const editing = editingId ? store.getNode(editingId) : undefined
@@ -88,6 +91,7 @@ export default function TypeDefModal({ onClose, editingId, onSaved }: Props) {
   function handleDelete() {
     if (!editingId) return
     deleteTypeDef(editingId)
+    onDeleted?.(editingId)
     onClose()
   }
 

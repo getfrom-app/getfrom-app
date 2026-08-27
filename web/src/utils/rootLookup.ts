@@ -35,6 +35,23 @@ export function findContextRoot(): Node | undefined {
  * Se identifica por id determinista (robusto al reparent) + el flag de Perfil IA.
  * NO por texto: así los DUPLICADOS (id aleatorio) sí se pueden limpiar.
  */
+/**
+ * isInsidePerfilIA — true si el nodo ES el Perfil de IA o cuelga de él (hasta 6
+ * niveles). Los hijos del perfil ("Quién soy", "Cómo quiero que me responda"…)
+ * son infraestructura del asistente, NUNCA elementos del usuario — antes se
+ * colaban en Elementos como notas normales (auditoría 28 ago 2026).
+ */
+export function isInsidePerfilIA(node: Node): boolean {
+  const perfilId = structuralId('perfil')
+  let cur: Node | undefined | null = node
+  for (let i = 0; i < 6 && cur; i++) {
+    if (perfilId && cur.id === perfilId) return true
+    try { if (JSON.parse(cur.extraData || '{}')._perfilIA === '1') return true } catch { /* ignore */ }
+    cur = cur.parentId ? store.getNode(cur.parentId) : null
+  }
+  return false
+}
+
 export function isProtectedSystemRoot(nodeId: string): boolean {
   for (const key of ['home','agenda','contexto','prompts','agentes','plantillas','paneles','papelera','perfil']) {
     if (structuralId(key) === nodeId) return true

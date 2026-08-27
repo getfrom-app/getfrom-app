@@ -30,12 +30,22 @@ export interface AssistantCreatedItem {
   isTask: boolean
 }
 
+export interface AssistantListedContext { id: string; title: string }
+
 export interface AssistantChatReply {
   reply: string
   created: AssistantCreatedItem[]
   options: string[] | null
   list: AssistantListedTask[] | null
   agents: AssistantListedAgent[] | null
+  /** Contextos nombrados en la respuesta ("mis contextos") — el prompt obliga
+   *  a NO escribirlos en `reply`, así que sin pintarlos la respuesta quedaba
+   *  vacía ("Tienes 3 contextos:" y nada; auditoría 28 ago 2026). */
+  contexts?: AssistantListedContext[] | null
+  favorites?: AssistantListedContext[] | null
+  /** "Repasa el día conmigo": el turno fue atendido por el motor nocturno. */
+  eveningActive?: boolean
+  eveningConcluded?: boolean
   linkedNodeId: string | null
   /** true si el usuario pidió justo VER linkedNodeId — navegar sin esperar
    *  un clic en "Abrir" (13 ago, paridad con iOS). */
@@ -118,8 +128,11 @@ export interface AssistantPrefs {
   eveningHour: number
   remindersEnabled: boolean
   reminderLeadMin: number
+  checkinEnabled: boolean
   telegramLinked: boolean
   lastBriefOn: string | null
+  /** true mientras "Repasa el día conmigo" está activo en servidor. */
+  eveningSessionActive: boolean
   plan: { pro: boolean; trialDaysLeft: number; hasAccess: boolean }
 }
 
@@ -128,7 +141,7 @@ export async function assistantGetPrefs(): Promise<AssistantPrefs> {
 }
 
 export type AssistantPrefsPatch = Partial<Pick<AssistantPrefs,
-  'briefEnabled' | 'briefHour' | 'eveningEnabled' | 'eveningHour' | 'remindersEnabled' | 'reminderLeadMin'>>
+  'briefEnabled' | 'briefHour' | 'eveningEnabled' | 'eveningHour' | 'remindersEnabled' | 'reminderLeadMin' | 'checkinEnabled'>>
 
 export async function assistantUpdatePrefs(patch: AssistantPrefsPatch): Promise<AssistantPrefs> {
   return apiRequest<AssistantPrefs>('/assistant/prefs', { method: 'PUT', body: JSON.stringify(patch) })

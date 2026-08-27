@@ -5,6 +5,7 @@
 import { parseExtraData } from '../utils/papeleraHelper'
 import { isDocNode } from '../utils/docNode'
 import { isContextMemoryNode } from '../utils/knowledgeNodes'
+import { isInsidePerfilIA } from '../utils/rootLookup'
 import { isTaskNode, isTimeBlockNode } from '../utils/taskNode'
 import type { IconName } from './components/Icon'
 import type { Node } from '../types'
@@ -56,6 +57,8 @@ export function classifyElement(n: Node): { kind: ElKind; icon: IconName; label:
   // Memoria del contexto: por FLAG o por título (los contextos anteriores al flag no
   // lo tienen hasta que se abren una vez) — nunca es un elemento del usuario.
   if (isContextMemoryNode(n)) return null
+  // Perfil de IA y sus hijos: infraestructura del asistente, nunca un elemento.
+  if (isInsidePerfilIA(n)) return null
   if (e._group === '1') return { kind: 'group', icon: 'folder', label: 'Grupo' }
   if (e._pdfSelection != null) return { kind: 'highlight', icon: 'highlight', label: 'Subrayado' }
   // Cita de un párrafo de OTRA nota, asignada a este contexto (ver DocEditor.tsx,

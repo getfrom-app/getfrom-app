@@ -6,23 +6,18 @@
 // resuelve: la sesión que lo creó si nació de un chat, la que ya se enlazó la
 // última vez que se habló de él, o una nueva la primera vez — y la deja
 // cargada en `aiChatStore.sessionId`.
-import { useLayoutEffect } from 'react'
 import { store, useStore } from '../../store/nodeStore'
-import { aiChatStore } from '../../store/aiChatStore'
 import { elementDisplayTitle } from '../../utils/docNode'
 import V2Chat from './V2Chat'
 
 export default function V2ElementChat({ nodeId, onFilesDropped }: { nodeId: string; onFilesDropped: (files: File[]) => void }) {
   useStore()
-  // useLayoutEffect (no useEffect): resuelve/crea la sesión ANTES de pintar, para
-  // no enseñar un instante el composer/mensajes de la conversación anterior al
-  // cambiar de elemento (el padre ya monta esto con key={nodeId}, así que en cada
-  // nodo nuevo es un montaje limpio) — useAIChat() se suscribe en un useEffect
-  // normal (después del commit), pero React no pinta hasta que los layout
-  // effects y los re-renders síncronos que disparan terminan, así que el
-  // cambio de sesión de aquí nunca llega a verse en pantalla.
-  useLayoutEffect(() => { aiChatStore.getOrCreateElementSession(nodeId) }, [nodeId])
-
+  // El hilo del chat del elemento lo lleva ENTERO assistantStore (V2Chat con
+  // currentNodeId → threadKey por nodo). La llamada antigua a
+  // `aiChatStore.getOrCreateElementSession(nodeId)` era un resto del motor
+  // viejo: creaba un nodo "Conversación" (_aiSession) REAL en el árbol cada
+  // vez que se abría esta tab — los elementos fantasma duplicados que se veían
+  // en Elementos (auditoría 28 ago 2026). Eliminada.
   const node = store.getNode(nodeId)
   const title = elementDisplayTitle(node).replace(/^✦\s*/, '').trim()
 

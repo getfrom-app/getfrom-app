@@ -2597,7 +2597,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       }
     }
     store.updateNode(node.id, { deletedAt: now })
-    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `"${(node.text || 'Nodo').slice(0, 30)}" eliminado`, type: 'info' } }))
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `"${(node.text || 'Elemento').slice(0, 30)}" eliminado`, type: 'info' } }))
   }
 
   function acceptDatePrediction() {
@@ -3067,7 +3067,7 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       return
     } else if (action === 'count-children') {
       const count = store.children(node.id).filter(c => !c.deletedAt).length
-      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${count} nodo${count !== 1 ? 's' : ''} hijo${count !== 1 ? 's' : ''}` } }))
+      window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: `${count} elemento${count !== 1 ? 's' : ''} dentro` } }))
       return
     } else if (action === 'ai-summarize') {
       window.dispatchEvent(new CustomEvent('from:ai-inline', { detail: { nodeId: node.id, prompt: 'Resume el contenido de este nodo y sus hijos en un párrafo conciso.' } }))

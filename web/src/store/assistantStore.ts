@@ -20,8 +20,11 @@ import {
   assistantChat, assistantInbox, assistantComplete, assistantPostpone, assistantTrash,
   assistantSetContext, assistantContexts, assistantRunAgent, assistantUpdateAgent,
   type AssistantListedTask, type AssistantListedAgent, type AssistantContext,
+  type AssistantListedContext, assistantGetPrefs,
 } from '../api/assistant'
 import { opsClient } from './opsClient'
+import { TokensError } from '../api/client'
+import i18n from '../i18n/config'
 
 export interface AssistantCreatedRef {
   id: string
@@ -41,6 +44,9 @@ export interface AssistantMsg {
   options: string[] | null
   list: AssistantListedTask[] | null
   agents: AssistantListedAgent[] | null
+  /** Contextos/favoritos nombrados en la respuesta — listas tocables (paridad iOS). */
+  contexts?: AssistantListedContext[] | null
+  favorites?: AssistantListedContext[] | null
 }
 
 type Listener = () => void
@@ -66,6 +72,12 @@ class AssistantStore {
   private threadKey = 'general'
 
   isThinking = false
+  /** true mientras la sesión de "Repasa el día conmigo" está activa en el
+   *  servidor: los turnos se enrutan a ese motor y la UI debe decirlo (antes
+   *  el usuario pedía "crea una tarea" y recibía una pregunta existencial sin
+   *  ninguna señal — auditoría 28 ago 2026). Se hidrata de GET /assistant/prefs
+   *  y de la respuesta de cada turno. */
+  eveningActive = false
   /** Última acción deshacible — paridad iOS AssistantUndo (13 ago 2026). Solo
    *  completar/posponer (revierten con las mismas llamadas ya existentes);
    *  papelera no tiene "deshacer" todavía, no hay endpoint de restaurar. */
@@ -178,7 +190,11 @@ class AssistantStore {
         options: reply.options && reply.options.length > 0 ? reply.options : null,
         list: reply.list && reply.list.length > 0 ? reply.list : null,
         agents: reply.agents && reply.agents.length > 0 ? reply.agents : null,
+        contexts: reply.contexts && reply.contexts.length > 0 ? reply.contexts : null,
+        favorites: reply.favorites && reply.favorites.length > 0 ? reply.favorites : null,
       })
+      // Estado del "Repasa el día conmigo" — la UI pinta el banner con esto.
+      if (reply.eveningActive !== undefined) this.eveningActive = !!reply.eveningActive && !reply.eveningConcluded
       for (const t of reply.list ?? []) this.doneIds.delete(t.id)
       if (reply.autoOpen && reply.linkedNodeId) this.pendingAutoOpen = reply.linkedNodeId
       // Lo que el propio TURNO acaba de crear en el servidor (agente, nota…)
@@ -191,9 +207,18 @@ class AssistantStore {
       // listarse el primero"). Fire-and-forget: no bloquea la respuesta visible.
       if (reply.linkedNodeId || reply.created.length > 0) opsClient.pullAndApply().catch(() => {})
     } catch (e) {
+      // 402 (prueba terminada, sin tokens…) → paywall, no una burbuja de error
+      // técnico en el hilo (auditoría 28 ago 2026).
+      if (e instanceof TokensError) {
+        window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: e.reason } }))
+        this.isThinking = false
+        this.save(); this.notify()
+        return
+      }
       this.errorMessage = e instanceof Error ? e.message : String(e)
       this.appendVisible({
-        id: uid(), role: 'assistant', text: `No he podido contestar: ${this.errorMessage}`,
+        id: uid(), role: 'assistant',
+        text: i18n.t('v2.chat.errorReply', 'No he podido contestar ahora mismo. Vuelve a intentarlo en un momento.'),
         date: new Date().toISOString(), created: [], linkedNodeId: null, options: null, list: null, agents: null,
       })
     }
@@ -245,6 +270,14 @@ class AssistantStore {
   }
 
   async fetchInbox() {
+    // De paso, hidrata el estado del "Repasa el día conmigo" — el banner del
+    // chat depende de esto (auditoría 28 ago 2026). Fire-and-forget.
+    assistantGetPrefs().then(p => {
+      if (this.eveningActive !== !!p.eveningSessionActive) {
+        this.eveningActive = !!p.eveningSessionActive
+        this.notify()
+      }
+    }).catch(() => {})
     try {
       const msgs = await assistantInbox(this.lastInboxDate)
       const seen = this.seenInboxIds
@@ -281,6 +314,19 @@ class AssistantStore {
   isDone(id: string): boolean { return this.doneIds.has(id) }
   isTrashed(id: string): boolean { return this.trashedIds.has(id) }
 
+  /** Errores de ACCIONES (completar, posponer, papelera…): antes se escribían
+   *  en `errorMessage` y ningún componente lo leía — la casilla revertía sola
+   *  sin explicación (auditoría 28 ago 2026). Ahora: 402 → paywall; el resto →
+   *  toast visible. */
+  private reportActionError(e: unknown, fallback: string) {
+    if (e instanceof TokensError) {
+      window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: e.reason } }))
+      return
+    }
+    this.errorMessage = e instanceof Error ? e.message : String(e)
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: fallback, type: 'error' } }))
+  }
+
   async toggleDone(id: string, done: boolean, text?: string) {
     const was = this.doneIds.has(id)
     if (done) this.doneIds.add(id); else this.doneIds.delete(id)
@@ -299,7 +345,7 @@ class AssistantStore {
     }
     catch (e) {
       if (was) this.doneIds.add(id); else this.doneIds.delete(id)
-      this.errorMessage = e instanceof Error ? e.message : String(e)
+      this.reportActionError(e, i18n.t('v2.chat.errorComplete', 'No se pudo guardar el cambio de la tarea'))
       this.notify()
     }
   }
@@ -309,7 +355,7 @@ class AssistantStore {
     try { await assistantTrash(id) }
     catch (e) {
       this.trashedIds.delete(id)
-      this.errorMessage = e instanceof Error ? e.message : String(e)
+      this.reportActionError(e, i18n.t('v2.chat.errorTrash', 'No se pudo enviar a la papelera'))
       this.notify()
     }
   }
@@ -328,12 +374,12 @@ class AssistantStore {
         this.notify()
       }
     }
-    catch (e) { this.errorMessage = e instanceof Error ? e.message : String(e); this.notify() }
+    catch (e) { this.reportActionError(e, i18n.t('v2.chat.errorPostpone', 'No se pudo posponer la tarea')); this.notify() }
   }
 
   async setContext(id: string, contextId: string | null) {
     try { await assistantSetContext(id, contextId) }
-    catch (e) { this.errorMessage = e instanceof Error ? e.message : String(e); this.notify() }
+    catch (e) { this.reportActionError(e, i18n.t('v2.chat.errorContext', 'No se pudo cambiar el contexto')); this.notify() }
   }
 
   async loadContexts(): Promise<AssistantContext[]> {
@@ -359,7 +405,7 @@ class AssistantStore {
 
   async toggleAgentEnabled(id: string, enabled: boolean) {
     try { await assistantUpdateAgent(id, enabled) }
-    catch (e) { this.errorMessage = e instanceof Error ? e.message : String(e); this.notify() }
+    catch (e) { this.reportActionError(e, i18n.t('v2.chat.errorAgentToggle', 'No se pudo cambiar el agente')); this.notify() }
   }
 
   /** Mete un mensaje del asistente en el hilo SIN llamar al servidor — para

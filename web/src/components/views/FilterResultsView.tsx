@@ -18,6 +18,12 @@ import type { Node } from '../../types'
 function kindOf(n: Node): { label: string; icon: IconName } {
   let e: Record<string, unknown> = {}
   try { e = JSON.parse(n.extraData || '{}') } catch { /* vacío */ }
+  // Un elemento de TIPO PERSONALIZADO (Libro, Persona…) enseña el nombre de su
+  // tipo, no «Texto» — antes la columna Tipo lo desmentía (auditoría 28 ago 2026).
+  if (typeof e._typeId === 'string' && e._typeId) {
+    const typeNode = store.getNode(e._typeId)
+    if (typeNode && !typeNode.deletedAt) return { label: typeNode.text || 'Tipo', icon: 'document' }
+  }
   if (n.status != null) return { label: 'Tarea', icon: 'task' }
   if (e._group === '1') return { label: 'Grupo', icon: 'folder' }
   if (e._agentDef === '1') return { label: 'Agente', icon: 'agent' }
@@ -108,7 +114,8 @@ function TableView({ matchIds, sortBy, onSortChange, onOpen, selectMode, selecte
         <thead>
           <tr>
             {selectMode && <th className="filter-table-check" />}
-            <Th col="title" label={t('panel.tasks')} />
+            {/* «Título», no «Tareas»: la tabla lista elementos de cualquier tipo. */}
+            <Th col="title" label={t('elements.colTitle', 'Título')} />
             <Th col="kind" label={t('elements.type', 'Tipo')} />
             <th>{t('search.filterContext')}</th>
             <Th col="created" label={t('search.filterDate')} />

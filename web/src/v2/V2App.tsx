@@ -27,6 +27,7 @@ import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
 import V2ProfileView from './components/V2ProfileView'
 import V2ElementView from './components/V2ElementView'
+import V2ConversationView from './components/V2ConversationView'
 import V2RightColumn, { RightMode, type RightSubTab } from './components/V2RightColumn'
 import V2SettingsNav from './components/V2SettingsNav'
 import { SettingsPaneContent } from '../components/views/SettingsView'
@@ -75,6 +76,8 @@ export default function V2App() {
   const { t } = useTranslation()
   const chat = useAIChat()
   const [ready, setReady] = useState(store.isLoaded)
+  const [loadFailed, setLoadFailed] = useState(false)
+  const [loadRetry, setLoadRetry] = useState(0)
   const [selectedCtxId, setSelectedCtxId] = useState<string | null>(null)
   useWebPush()
 
@@ -302,8 +305,14 @@ export default function V2App() {
         try { store.startRemotePolling() } catch { /* ya activo */ }
         setReady(true)
       })
-      .catch(() => setReady(true)) // no bloquear el shell aunque falle la carga
-  }, [])
+      .catch(() => {
+        // La carga inicial falló: NUNCA pintar la app "vacía" como si el
+        // usuario no tuviera nada — para un segundo cerebro, "parece que he
+        // perdido todo" es el peor mensaje posible (auditoría 28 ago 2026).
+        setLoadFailed(true)
+        setReady(true)
+      })
+  }, [loadRetry])
 
   // Arranque en frío: Agenda es el destino por defecto (`rightMode` ya nace
   // así) — su centro es el planner, sin elemento que fijar (la nota diaria
@@ -472,7 +481,10 @@ export default function V2App() {
     const sessionCtx = sessionNode ? firstContextOf(sessionNode) : null
     setSelectedCtxId(sessionCtx?.id ?? null)
     setFocusNodeId(null)
-    setCenterElementId(null)
+    // La conversación se abre en el CENTRO con su vista propia
+    // (V2ConversationView) — antes se ponía a null y no se veía nada
+    // (auditoría 28 ago 2026).
+    setCenterElementId(id)
     // Excepción a "abrir un elemento nunca cambia la tab activa": si venimos del
     // tab «Historial» (destino Chat), la conversación que acabamos de abrir se
     // pinta justo en la tab que estamos dejando atrás — sin esto el Historial se
@@ -567,29 +579,18 @@ export default function V2App() {
       return
     }
 
-    if (aiChatStore.sessionId) {
-      // Hay conversación → adjuntar a ella. Si ya hay algo centrado, su Tab 2
-      // "Chat" enseña esta conversación; si no, es el destino Chat general.
-      const sid = aiChatStore.sessionId
-      if (centerElementId) setRightSubTab('chat'); else setRightMode('chat')
-      let ok = 0
-      for (const f of otherFiles) { if (await uploadResourceNode(f, sid)) { ok++; toast(t('v2.attachedToConversation', '{{name}} adjuntado a la conversación', { name: f.name })) } }
-      if (ok > 0) {
-        const label = ok === 1 ? `**${otherFiles[0].name}**` : t('v2.filesCount', '{{count}} archivos', { count: ok })
-        aiChatStore.addNotice(t('v2.filesIncorporatedNotice', 'He incorporado {{label}} a esta conversación. Ya puedes preguntarme sobre su contenido.', { label }))
-      }
-    } else {
-      // Sin conversación → importar a Fromly (RAG), sin iniciar chat.
-      const needsContext = !selectedCtxId
-      const ids = await importFilesToFromly(otherFiles, captureParentId())
-      if (ids.length) setCenterElementId(ids[ids.length - 1])
-      // Varios a la vez → ofrecer agruparlos con un contexto compartido en un
-      // solo gesto, en vez de abrir cada uno y asignárselo por separado
-      // (estilo brain: seleccionar varios → una acción de grupo). Solo hace
-      // falta el botón de asignar cuando fueron a General (`needsContext`);
-      // dentro de un contexto concreto ya nacen con él.
-      if (ids.length > 1) setBatchUploadIds({ ids, needsContext })
-    }
+    // Siempre al contexto/día activo. La rama anterior "si hay conversación
+    // del motor viejo, adjuntar a su nodo _aiSession" colgaba los archivos de
+    // una sesión fantasma que ninguna UI pinta (auditoría 28 ago 2026).
+    const needsContext = !selectedCtxId
+    const ids = await importFilesToFromly(otherFiles, captureParentId())
+    if (ids.length) setCenterElementId(ids[ids.length - 1])
+    // Varios a la vez → ofrecer agruparlos con un contexto compartido en un
+    // solo gesto, en vez de abrir cada uno y asignárselo por separado
+    // (estilo brain: seleccionar varios → una acción de grupo). Solo hace
+    // falta el botón de asignar cuando fueron a General (`needsContext`);
+    // dentro de un contexto concreto ya nacen con él.
+    if (ids.length > 1) setBatchUploadIds({ ids, needsContext })
   }
 
   // Toast unificado (mismo canal que el resto de la app).
@@ -618,17 +619,9 @@ export default function V2App() {
     }
     if (!result) return // cancelado en el Picker, o redirigido a conectar Drive
 
-    if (aiChatStore.sessionId) {
-      const sid = aiChatStore.sessionId
-      if (centerElementId) setRightSubTab('chat'); else setRightMode('chat')
-      createDriveResourceNode(result, sid)
-      toast(t('v2.attachedToConversation', '{{name}} adjuntado a la conversación', { name: result.name }))
-      aiChatStore.addNotice(t('v2.filesIncorporatedNotice', 'He incorporado {{label}} a esta conversación. Ya puedes preguntarme sobre su contenido.', { label: `**${result.name}**` }))
-    } else {
-      const id = createDriveResourceNode(result, captureParentId())
-      setCenterElementId(id)
-      toast(t('v2.importedToFromly', '{{name}} importado a Fromly', { name: result.name }))
-    }
+    const id = createDriveResourceNode(result, captureParentId())
+    setCenterElementId(id)
+    toast(t('v2.importedToFromly', '{{name}} importado a Fromly', { name: result.name }))
   }
 
   // Dónde nace el contenido creado desde el centro: el contexto activo o el diario de hoy.
@@ -682,6 +675,15 @@ export default function V2App() {
   }
 
   const onOpenNode = (id: string) => {
+    // Centinela del chat "abre mis elementos" (paridad iOS AssistantNavigator):
+    // no es un nodo — navega al destino Elementos. Antes se intentaba abrir un
+    // id inexistente y no pasaba nada (auditoría 28 ago 2026).
+    if (id === '__elements__') {
+      setShowProfile(false)
+      setCenterElementId(null)
+      setRightMode('elementos')
+      return
+    }
     // Registra de dónde se abre — solo en la transición "nada abierto" → "algo
     // abierto" (no al saltar de un elemento a otro ya centrado, para no pisar
     // el origen real con un destino intermedio).
@@ -988,7 +990,21 @@ export default function V2App() {
   const contextLabel = focusNode?.text || ctxNode?.text || t('v2.general', 'General')
 
   if (!ready) {
-    return <div className="v2-loading">{t('v2.loadingFromly', 'Cargando Fromly 2.0…')}</div>
+    return <div className="v2-loading">{t('v2.loadingFromly', 'Cargando Fromly…')}</div>
+  }
+
+  if (loadFailed && store.nodes.size === 0) {
+    return (
+      <div className="v2-loading" style={{ flexDirection: 'column', gap: 12 }}>
+        <div>{t('v2.loadFailed', 'No se han podido cargar tus datos')}</div>
+        <div style={{ fontSize: 13, color: 'var(--text-tertiary,#999)', maxWidth: 360, textAlign: 'center' }}>
+          {t('v2.loadFailedHint', 'Tus elementos están a salvo en el servidor — esto suele ser un problema de conexión.')}
+        </div>
+        <button className="v2-chip" onClick={() => { setLoadFailed(false); setReady(store.isLoaded); setLoadRetry(n => n + 1) }}>
+          {t('common.retry', 'Reintentar')}
+        </button>
+      </div>
+    )
   }
 
   if (settingsTab) {
@@ -1052,6 +1068,23 @@ export default function V2App() {
         // tab día... ese texto de esa tarea se ha copiado en la nota diaria").
         // Con `key={centerElementId}` React desmonta y monta desde cero, sin
         // ventana de solape posible.
+        (() => {
+          // Una CONVERSACIÓN guardada (_aiSession) no es una nota: se abre con
+          // su vista propia (tareas + elementos de la conversación). Antes caía
+          // en V2ElementView y se veía como una nota vacía, o directamente no
+          // se veía nada al clicarla en Elementos (auditoría 28 ago 2026).
+          const cn = store.getNode(centerElementId)
+          let isConv = false
+          try { isConv = !!cn && JSON.parse(cn.extraData || '{}')._aiSession === '1' } catch { /* ignore */ }
+          if (isConv) {
+            return (
+              <main className="v2-col v2-center">
+                <V2ConversationView sessionId={centerElementId} onOpenNode={onOpenNode} onSelectCtx={onSelectCtx} />
+              </main>
+            )
+          }
+          return null
+        })() ??
         <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => {
           setCenterElementId(null)
           const origin = openOriginRef.current

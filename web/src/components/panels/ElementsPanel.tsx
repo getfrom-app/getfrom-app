@@ -15,6 +15,7 @@ import { isDocNode, elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
 import { isMarkedContext, listMarkedContexts, contextColor, assignContext } from '../../utils/cajones'
 import { isContextMemoryNode } from '../../utils/knowledgeNodes'
+import { isInsidePerfilIA } from '../../utils/rootLookup'
 import { openNodeDetail } from '../../utils/canvasNav'
 import TaskRow from './TaskRow'
 import { TaskPropsPopover } from './DiaryPanelComponents'
@@ -77,6 +78,9 @@ export function classify(n: Node): ElemKind | null {
   if (e._aiSession === '1') return 'conversation'
   if (e._containerNotes === '1') return null   // espacio de notas libres (estructural, no un elemento)
   if (isContextMemoryNode(n)) return null      // Memoria del contexto — superficie interna, no un elemento suelto
+  // Perfil de IA ("Quién soy", "Cómo quiero que me responda"…): infraestructura
+  // del asistente, se edita desde Ajustes → IA, nunca es un elemento del usuario.
+  if (isInsidePerfilIA(n)) return null
   if (e._pdfSelection != null) return 'highlight'   // subrayado guardado de un PDF (cita)
   if (e._docSelection != null) return 'cita'        // párrafo de otra nota asignado a este contexto
   if (e._agentDef === '1') return 'agent'           // agente (v2: puede colgar de cualquier contexto)
@@ -132,9 +136,13 @@ const TASK_ROW_H = 58
 interface Props {
   /** Filtro inicial (p.ej. al llegar desde «← Agentes»/«← Prompts» en el detalle). */
   initialFilter?: ElemKind | 'all' | 'favorite'
+  /** Modo columna estrecha (columna derecha con un elemento abierto): fuerza la
+   *  vista Lista — la Tabla completa aplastada a ese ancho era ilegible (filas
+   *  a tres líneas, fechas truncadas; auditoría 28 ago 2026). */
+  compact?: boolean
 }
 
-export default function ElementsPanel({ initialFilter }: Props = {}) {
+export default function ElementsPanel({ initialFilter, compact }: Props = {}) {
   const { t, i18n } = useTranslation()
   const s = useStore()
   // Buscador/filtro/orden viven en un store COMPARTIDO (28 ago 2026): la
@@ -164,7 +172,7 @@ export default function ElementsPanel({ initialFilter }: Props = {}) {
   // el toggle y el selector Tabla/Lista se pintan en la columna derecha
   // (ElementsFilters), este componente solo lee `view` y publica su estado
   // de selección para que el botón de allí sepa qué mostrar.
-  const view = browser.view
+  const view = compact ? 'lista' : browser.view
   const changeView = (v: FilterView) => elementsBrowserStore.setView(v)
   // Si quedó una vista kanban/calendario guardada de antes de quitarlas, cae a Tabla.
   useEffect(() => { if (view === 'kanban' || view === 'calendario') changeView('tabla') }, [view]) // eslint-disable-line react-hooks/exhaustive-deps

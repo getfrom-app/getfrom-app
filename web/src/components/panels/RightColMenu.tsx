@@ -85,7 +85,9 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
       text: node!.text,
       parentId: node!.parentId,
       siblingOrder: node!.siblingOrder + 0.25,
-      isTask: node!.status !== null,
+      // `!= null` (no `!== null`): con `status === undefined` una NOTA normal
+      // duplicada nacía convertida en tarea (auditoría 28 ago 2026).
+      isTask: node!.status != null,
       types: node!.types,
     })
     store.updateNode(dup.id, { priority: node!.priority, status: node!.status })

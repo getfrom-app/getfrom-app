@@ -18,7 +18,8 @@ import { openNodeDetail } from '../../utils/canvasNav'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../Toast'
 import { normalizeText } from '../../utils/normalize'
-import { getTodayDiaryUnderAgenda, findAgendaRoot } from '../../utils/agendaHelper'
+import { getTodayDiaryUnderAgenda } from '../../utils/agendaHelper'
+import { isInsidePerfilIA } from '../../utils/rootLookup'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { recordingStore, useRecordingStore } from '../../store/recordingStore'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
@@ -674,7 +675,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           label: 'Contextos',
           sublabel: (() => {
             const c = listContextsForParent().length
-            return c > 0 ? `${c} contextos` : 'Sin contextos'
+            return c === 1 ? '1 contexto' : c > 0 ? `${c} contextos` : 'Sin contextos'
           })(),
           type: 'wf-action' as const,
           taskStatus: null,
@@ -768,33 +769,42 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       if (sc2 > 0) results.push({ id: `filtro-${f.id}`, label: f.text || t('common.noTitle'), sublabel: `◈ ${f.query}`, type: 'wf-action' as const, taskStatus: null, score: sc2 + 10, action: () => { window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: f.query } })); onClose() } })
     }
 
-    // Scope de búsqueda de nodos: SOLO dentro de 📅 Agenda (+ favoritos sueltos).
-    // Nunca dentro de contextos, papelera ni carpetas de sistema.
-    const agendaRoot = findAgendaRoot()
-    const agendaIds = new Set<string>()
-    if (agendaRoot) {
-      const queue = [agendaRoot.id]
-      while (queue.length) {
-        const pid = queue.shift()!
-        for (const c of store.children(pid).filter(c => !c.deletedAt)) {
-          agendaIds.add(c.id)
-          queue.push(c.id)
-        }
-      }
-    }
-
+    // Búsqueda GLOBAL: todo el árbol activo — antes solo Agenda + favoritos,
+    // así que nada de lo que vive en un contexto aparecía nunca; y solo por
+    // TÍTULO, así que una palabra dentro de una nota devolvía cero resultados
+    // (auditoría 28 ago 2026, verificado en vivo). Ahora: título (prioridad) y,
+    // si no coincide, el CUERPO, con un fragmento como subtítulo.
+    const qNormBody = normalizeText(searchTerm)
+    const scanBody = qNormBody.length >= 3
     for (const n of store.allActive()) {
       if (n.isDiaryEntry || n.deletedAt) continue
       if (atajosRoot && (n.id === atajosRoot.id || n.parentId === atajosRoot.id)) continue
-      // Fuera de Agenda solo se permiten favoritos
-      if (!agendaIds.has(n.id) && !n.isFavorite) continue
-      const sc = scoreMatch(n.text || '', searchTerm)
+      if (isInsidePerfilIA(n)) continue
+      // Piezas internas del chat/memoria: nunca son un resultado.
+      try {
+        const e = JSON.parse(n.extraData || '{}')
+        if (e._aiTranscript != null || e._aiMsgRole != null || e._containerNotes === '1') continue
+      } catch { /* extraData corrupto: se busca igual */ }
+
+      let sc = scoreMatch(n.text || '', searchTerm)
+      let snippet: string | undefined
+      if (sc === 0 && scanBody && n.body) {
+        // Texto plano del cuerpo (acotado: los documentos largos no deben
+        // encarecer cada pulsación).
+        const plain = n.body.slice(0, 8000).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ')
+        const idx = normalizeText(plain).indexOf(qNormBody)
+        if (idx >= 0) {
+          sc = 15 // por debajo de cualquier match de título
+          const from = Math.max(0, idx - 30)
+          snippet = (from > 0 ? '…' : '') + plain.slice(from, idx + qNormBody.length + 50).trim() + '…'
+        }
+      }
       if (sc === 0) continue
       const parentText = n.parentId ? store.getNode(n.parentId)?.text : undefined
       results.push({
         id: `note-${n.id}`,
         label: n.text || t('common.noTitle'),
-        sublabel: parentText,
+        sublabel: snippet ?? parentText,
         type: 'note' as const,
         taskStatus: (n.status as 'pending' | 'done' | null) ?? null,
         score: sc,
@@ -1060,7 +1070,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
             data-placeholder={
               view === 'filtros' ? 'Buscar filtro…'
               : view === 'contextos' ? 'Buscar contexto…'
-              : 'Escribe un nodo, tarea o idea...'
+              : 'Busca o escribe una tarea, nota o idea…'
             }
             style={{
               flex: 1,

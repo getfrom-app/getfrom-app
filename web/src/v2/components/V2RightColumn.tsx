@@ -322,7 +322,7 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
       {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'elementos' && (
         <div className="v2-right-fill">
           <ElementsFilters />
-          {elementId && <ElementsPanel initialFilter={elementsFilter ?? undefined} />}
+          {elementId && <ElementsPanel initialFilter={elementsFilter ?? undefined} compact />}
         </div>
       )}
 
@@ -341,7 +341,24 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
             <DailyCockpit bare disablePlanner hideToday hideFuture />
           </div>
           {dayNoteId && (
-            <div className="v2-agenda-daynote">
+            <div
+              className="v2-agenda-daynote"
+              // Clic en CUALQUIER hueco del panel → cursor al final del editor.
+              // Antes la única zona clicable era la línea de texto (26px
+              // invisibles); clicar el resto del panel no hacía nada y la nota
+              // parecía de solo lectura (auditoría 28 ago 2026, visto en vivo).
+              onClick={e => {
+                const target = e.target as HTMLElement
+                if (target.closest('.ProseMirror') || target.closest('button, input, a, [contenteditable]')) return
+                const ed = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('.ProseMirror')
+                if (!ed) return
+                ed.focus()
+                try {
+                  const sel = window.getSelection()
+                  if (sel) { const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); sel.removeAllRanges(); sel.addRange(r) }
+                } catch { /* foco sin mover cursor, suficiente */ }
+              }}
+            >
               <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
             </div>
           )}

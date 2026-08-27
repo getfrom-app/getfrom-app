@@ -164,6 +164,31 @@ function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boo
       {m.list && m.list.length > 0 && <AssistantTaskList items={m.list} />}
       {m.agents && m.agents.length > 0 && <AssistantAgentList items={m.agents} />}
 
+      {/* Contextos/favoritos nombrados: el prompt del servidor prohíbe
+          escribirlos en `reply` porque "la app los pinta como lista tocable" —
+          y la web no lo hacía: "Tienes 3 contextos:" y nada (auditoría 28 ago
+          2026). Paridad con iOS. */}
+      {m.contexts && m.contexts.length > 0 && (
+        <div className="v2-assistant-list" style={{ marginTop: 6 }}>
+          {m.contexts.map(cx => (
+            <button key={cx.id} className="v2-assistant-row" onClick={() => openNode(cx.id)}>
+              <Icon name="context" size={14} />
+              <span className="v2-assistant-row-text">{cx.title}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {m.favorites && m.favorites.length > 0 && (
+        <div className="v2-assistant-list" style={{ marginTop: 6 }}>
+          {m.favorites.map(f => (
+            <button key={f.id} className="v2-assistant-row" onClick={() => openNode(f.id)}>
+              <Icon name="star" size={14} />
+              <span className="v2-assistant-row-text">{f.title}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {m.linkedNodeId && (
         // "→", no "›" — el "›" ya lo usa el prefijo de los mensajes del
         // usuario (línea ~112) y se confundían al leer rápido (Alberto, 13
@@ -202,6 +227,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   const [dragOver, setDragOver] = useState(false)
   const [promptMenu, setPromptMenu] = useState(false)
   const [agentMenu, setAgentMenu] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   // Formulario de "Nuevo prompt" embebido en el propio desplegable — antes solo
   // mandaba un mensaje al chat pidiéndole a Fromly que lo redactara; ahora el
   // usuario puede crear su prompt (con carpeta) directamente aquí (13 ago 2026).
@@ -471,6 +497,26 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
         )}
       </div>
 
+      {/* Banner "Repasa el día conmigo" — mientras la sesión nocturna está
+          activa, TODO lo que se escriba va a ese motor (no crea tareas). Sin
+          esta señal el usuario pedía "crea una tarea" y recibía una pregunta
+          de reflexión sin explicación (auditoría 28 ago 2026). */}
+      {!currentNodeId && chat.eveningActive && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 14px 6px', padding: '7px 12px', borderRadius: 8, background: 'var(--accent-soft, rgba(108,92,231,.08))', color: 'var(--accent,#6c5ce7)', fontSize: 12.5 }}>
+          <Icon name="sparkle" size={13} />
+          {t('v2.chat.eveningActive', 'Repaso del día en curso — cuéntame qué tal; al terminar lo guardo en tu nota diaria.')}
+        </div>
+      )}
+      {/* Deshacer la última acción (completar/posponer) — paridad iOS. */}
+      {chat.lastUndo && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '0 14px 6px' }}>
+          <button className="v2-chip" onClick={async () => {
+            const u = chat.lastUndo
+            assistantStore.lastUndo = null
+            try { await u?.revert() } catch { /* el propio revert ya avisa */ }
+          }}>↩ {t('v2.chat.undo', 'Deshacer')} · {chat.lastUndo.label}</button>
+        </div>
+      )}
       <div className="v2-composer">
         <div className="v2-composer-inner">
           <div className="v2-composer-box" style={{ position: 'relative' }}>
@@ -481,19 +527,29 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                 ))}
               </div>
             )}
-            <button
-              className="v2-iconbtn"
-              title={t('v2.chat.newConversation', 'Nueva conversación')}
-              onClick={() => {
-                // El hilo se apilaba sin fin (avisos y turnos de semanas atrás
-                // seguían ahí) — un botón claro para vaciarlo, en vez de que
-                // solo exista un gesto oculto (Alberto, 24 ago 2026). Sin
-                // `window.confirm()` — el diálogo nativo del navegador desentona
-                // con el resto de la app (Alberto, 27 ago 2026: "sale el aviso
-                // de chrome feo... limpia el chat sin más").
-                assistantStore.clear()
-              }}
-            ><Icon name="trash" /></button>
+            {/* Vaciar el hilo en DOS toques (el segundo confirma): borrar es
+                irreversible (el hilo solo vive en este navegador) y un clic
+                accidental se llevaba semanas de conversación. Sin
+                `window.confirm()` — el diálogo nativo desentona (Alberto, 27
+                ago: "sale el aviso de chrome feo"); esta confirmación es de la
+                propia app (auditoría 28 ago 2026). */}
+            {confirmClear ? (
+              <button
+                className="v2-iconbtn"
+                style={{ color: '#dc2626', fontSize: 11.5, width: 'auto', padding: '0 8px', fontWeight: 600 }}
+                title={t('v2.chat.confirmClear', 'Confirmar: vaciar la conversación')}
+                onClick={() => { assistantStore.clear(); setConfirmClear(false) }}
+              >{t('v2.chat.confirmClearLabel', '¿Vaciar?')}</button>
+            ) : (
+              <button
+                className="v2-iconbtn"
+                title={t('v2.chat.newConversation', 'Nueva conversación')}
+                onClick={() => {
+                  setConfirmClear(true)
+                  setTimeout(() => setConfirmClear(false), 3500)
+                }}
+              ><Icon name="trash" /></button>
+            )}
             <div style={{ position: 'relative' }} ref={promptMenuRef}>
               <button className="v2-iconbtn" title={t('v2.chat.promptsTitle', 'Prompts')} onClick={() => { setPromptMenu(o => !o); setNewPromptOpen(false) }}><Icon name="prompt" /></button>
               {promptMenu && !newPromptOpen && (

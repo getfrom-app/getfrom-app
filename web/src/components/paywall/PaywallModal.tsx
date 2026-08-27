@@ -17,6 +17,11 @@ export type PaywallReason =
   | 'publish_limit'
   | 'agent_limit'
   | 'free_chat_limit'
+  // Prueba de 15 días terminada (402 del chat/asistente) — cae en el copy
+  // general de "tu prueba ha terminado" según el estado de la cuenta.
+  | 'trial_expired'
+  // BYOK/elegir modelo: exige plan de pago incluso durante la prueba.
+  | 'byok_paid_plan'
 
 interface Props {
   reason: PaywallReason

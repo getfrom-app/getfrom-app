@@ -44,6 +44,13 @@ export default function V2TaskList({ tasks, hideCheckbox }: { tasks: Node[]; hid
 
   return (
     <div>
+      {/* Empty state: antes la cabecera «Tareas» quedaba seguida de la nada
+          (auditoría 28 ago 2026). */}
+      {pending.length === 0 && done.length === 0 && (
+        <div style={{ fontSize: 12.5, color: 'var(--text-tertiary,#999)', padding: '2px 0 6px' }}>
+          {t('v2.taskList.empty', 'Sin tareas pendientes ✓')}
+        </div>
+      )}
       {pending.map(row)}
       {done.length > 0 && (
         <>

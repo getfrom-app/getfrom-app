@@ -46,7 +46,9 @@ export default function RowContextChip({ node, flat }: { node: Node; flat?: bool
         <ContextChip context={current} title={t('noteColumn.changeContext')} onClick={open} flat={flat}
           onRemove={() => setNodeContext(node.id, null)} />
       ) : (
-        <span className="dc-ctx-chip dc-ctx-chip--empty" title={t('rowContextChip.assign')} onClick={open}>?</span>
+        /* «＋» y no «?»: el interrogante parecía un dato roto en toda la columna
+           Contexto de Elementos (auditoría 28 ago 2026). */
+        <span className="dc-ctx-chip dc-ctx-chip--empty" title={t('rowContextChip.assign')} onClick={open}>＋</span>
       )}
       {menu && createPortal((
         <div ref={menuRef} className="ctx-pick" style={{ position: 'fixed', ...(menu.up ? { bottom: menu.y } : { top: menu.y }), left: menu.x, zIndex: 3000 }}

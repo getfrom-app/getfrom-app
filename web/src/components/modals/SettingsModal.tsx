@@ -700,7 +700,7 @@ export function IAPane() {
   return (
     <div className="st-pane">
       {/* API keys propias: cualquier plan de pago puede usar sus propias claves. */}
-      {hasPaidPlan && (
+      {hasPaidPlan ? (
         <>
           <SectionTitle>{t('ai.sectionApiKeys')}</SectionTitle>
           {PROVIDERS.map(p => (
@@ -708,6 +708,18 @@ export function IAPane() {
           ))}
           <Row label="" hint={t('ai.ownKeyBillingHint')} />
           <ModelSelector />
+        </>
+      ) : (
+        /* Sin plan de pago (prueba incluida): la sección se muestra BLOQUEADA
+           con explicación — antes se ocultaba entera y el resto del texto de la
+           página seguía diciendo "añade tu clave arriba", apuntando a la nada
+           (auditoría 28 ago 2026). */
+        <>
+          <SectionTitle>{t('ai.sectionApiKeys')}</SectionTitle>
+          <Row
+            label={t('ai.byokLockedLabel', '🔒 Claves de IA propias')}
+            hint={t('ai.byokLockedHint', 'Disponible con un plan de pago (no incluido en la prueba): añade tu clave de Claude, GPT o Gemini y elige modelo sin consumir tokens de Fromly.')}
+          />
         </>
       )}
 

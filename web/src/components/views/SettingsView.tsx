@@ -122,8 +122,15 @@ function AsistentePane() {
   const { t } = useTranslation()
   const [prefs, setPrefs] = useState<AssistantPrefs | null>(null)
   const [saving, setSaving] = useState(false)
+  const [loadError, setLoadError] = useState(false)
+  const [retry, setRetry] = useState(0)
 
-  useEffect(() => { assistantGetPrefs().then(setPrefs).catch(() => {}) }, [])
+  // Con reintento y estado de error visible — antes un fallo dejaba la
+  // pestaña EN BLANCO para siempre, sin explicación (auditoría 28 ago 2026).
+  useEffect(() => {
+    setLoadError(false)
+    assistantGetPrefs().then(setPrefs).catch(() => setLoadError(true))
+  }, [retry])
 
   async function patch(p: AssistantPrefsPatch) {
     if (!prefs) return
@@ -134,7 +141,25 @@ function AsistentePane() {
     finally { setSaving(false) }
   }
 
-  if (!prefs) return <div className="st-pane" />
+  if (!prefs) {
+    return (
+      <div className="st-pane">
+        {loadError ? (
+          <div className="st-row">
+            <div className="st-row-info">
+              <div className="st-row-label">{t('settingsView.assistantLoadError', 'No se pudieron cargar los ajustes del asistente')}</div>
+              <div className="st-row-hint">{t('settingsView.assistantLoadErrorHint', 'Comprueba tu conexión e inténtalo de nuevo.')}</div>
+            </div>
+            <div className="st-row-action">
+              <button className="btn-secondary btn-sm" onClick={() => setRetry(n => n + 1)}>{t('common.retry', 'Reintentar')}</button>
+            </div>
+          </div>
+        ) : (
+          <div className="st-row-hint">{t('common.loading', 'Cargando…')}</div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className="st-pane">
@@ -190,6 +215,17 @@ function AsistentePane() {
             </select>
           )}
           <input type="checkbox" checked={prefs.remindersEnabled} onChange={e => patch({ remindersEnabled: e.target.checked })}
+            style={{ width: 16, height: 16, cursor: 'pointer' }} />
+        </div>
+      </div>
+      <div className="st-section-title" style={{ marginTop: 24 }}>{t('settingsView.assistantCheckinTitle', 'Iniciativa de Fromly')}</div>
+      <div className="st-row">
+        <div className="st-row-info">
+          <div className="st-row-label">{t('settingsView.assistantCheckinLabel', 'Pregúntame por tareas estancadas')}</div>
+          <div className="st-row-hint">{t('settingsView.assistantCheckinHint', 'De vez en cuando, Fromly te pregunta por una tarea que lleva días parada.')}</div>
+        </div>
+        <div className="st-row-action" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <input type="checkbox" checked={prefs.checkinEnabled} onChange={e => patch({ checkinEnabled: e.target.checked })}
             style={{ width: 16, height: 16, cursor: 'pointer' }} />
         </div>
       </div>

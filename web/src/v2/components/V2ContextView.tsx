@@ -564,6 +564,19 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
           })}
         </>
       )}
+      {/* Empty state SIEMPRE visible: un contexto con elementos ocultos (o sin
+          ninguno) mostraba solo dos títulos y un input — parecía roto y no
+          decía cómo llenarlo (auditoría 28 ago 2026). */}
+      {elementsWithGroups.length === 0 && (
+        <>
+          <div className="v2-section-label" style={{ padding: '16px 0 4px' }}>
+            <span>{t('v2.context.elements', 'Elementos')}</span>
+          </div>
+          <div style={{ fontSize: 12.5, color: 'var(--text-tertiary,#999)', padding: '2px 0 8px' }}>
+            {t('v2.context.elementsEmpty', 'Aún no hay elementos aquí. Crea una nota con «+», arrastra archivos, o pídeselo al chat de este contexto.')}
+          </div>
+        </>
+      )}
     </div>
   )
 }

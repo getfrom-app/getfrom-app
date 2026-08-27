@@ -31,7 +31,10 @@ export const NAV: NavSection[] = [
     title: 'IA',
     items: [
       { id: 'ia', label: 'Inteligencia Artificial' },
-      { id: 'magic', label: 'Magic' },
+      // «Memoria», no «Magic»: la marca Magic se retiró del producto — solo
+      // sobrevivía aquí (auditoría 28 ago 2026). El id se conserva por las
+      // referencias internas.
+      { id: 'magic', label: 'Memoria' },
     ],
   },
   {

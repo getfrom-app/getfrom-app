@@ -65,8 +65,19 @@ export default function PricingView() {
     t('pricing.lifetimeNoSub', 'Pago único — sin suscripción'),
   ]
 
+  const isInTrial = !!us.isInTrial
+  const trialDaysLeft = us.trialDaysLeft ?? 0
+
   return (
-    <div className="pricing2">
+    <div className="pricing2" style={{ position: 'relative' }}>
+      {/* Salida SIEMPRE visible: esta pantalla no tenía ni X ni Volver — el
+          usuario quedaba atrapado salvo que usara el Atrás del navegador
+          (auditoría 28 ago 2026). */}
+      <button
+        onClick={() => navigate(isGuest ? '/login' : '/')}
+        title={t('common.close', 'Cerrar')}
+        style={{ position: 'absolute', top: 18, right: 22, width: 34, height: 34, borderRadius: 999, border: '1px solid var(--border,#e2e2e2)', background: 'var(--bg,#fff)', cursor: 'pointer', fontSize: 16, color: 'var(--text-secondary,#666)', zIndex: 5 }}
+      >✕</button>
       <div className="pricing2-head">
         <h1 className="pricing2-title">{t('pricing.titleTrial', 'Empieza con 15 días gratis')}</h1>
         <p className="pricing2-sub">{t('pricing.subtitleTrial', 'Todo Fromly, sin tarjeta. Pasa a Pro cuando quieras seguir')}</p>
@@ -104,12 +115,25 @@ export default function PricingView() {
           <div className="pcard-price-row">
             <span className="pcard-price">€0</span>
           </div>
-          <button
-            className="pcard-cta pcard-cta--solid"
-            onClick={isGuest ? () => navigate('/register') : () => navigate('/')}
-          >
-            {t('pricing.ctaStartFree2', 'Empezar gratis')}
-          </button>
+          {/* CTA consciente del estado de la cuenta: a quien YA está en la
+              prueba no se le ofrece "empezar gratis" (auditoría 28 ago 2026). */}
+          {isGuest ? (
+            <button className="pcard-cta pcard-cta--solid" onClick={() => navigate('/register')}>
+              {t('pricing.ctaStartFree2', 'Empezar la prueba')}
+            </button>
+          ) : isPaid ? (
+            <button className="pcard-cta" disabled style={{ opacity: 0.55, cursor: 'default' }}>
+              {t('pricing.trialNotApplicable', 'Ya tienes Pro')}
+            </button>
+          ) : isInTrial ? (
+            <button className="pcard-cta pcard-cta--solid" onClick={() => navigate('/')}>
+              {t('pricing.trialDaysLeftCta', 'Te quedan {{count}} días', { count: trialDaysLeft })}
+            </button>
+          ) : (
+            <button className="pcard-cta" disabled style={{ opacity: 0.55, cursor: 'default' }}>
+              {t('pricing.trialOver', 'Tu prueba ha terminado')}
+            </button>
+          )}
         </div>
 
         {/* ── Pro ── */}

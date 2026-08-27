@@ -509,21 +509,9 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
         </button>
         {/* Publicar / despublicar / copiar enlace público viven en el icono 🌐 de la
             cabecera (NodeView), no duplicados aquí. */}
-        <button className="context-menu-item" onClick={(e) => {
-          e.preventDefault(); e.stopPropagation()
-          const currentSlug = node.publicSlug || ''
-          const suggested = (node.text || '')
-            .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-            .replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').slice(0, 50)
-          // Disparar evento global para que el modal se renderice fuera del ciclo de vida del menú
-          window.dispatchEvent(new CustomEvent('from:open-slug-modal', {
-            detail: { nodeId: node.id, currentSlug: currentSlug || suggested }
-          }))
-          onClose()
-        }}>
-          <span className="context-menu-icon">✂️</span>
-          {node.publicSlug ? `URL: /node/${node.publicSlug}` : t('context.setShortUrl')}
-        </button>
+        {/* «URL corta» retirado: emitía `from:open-slug-modal`, cuyo único
+            listener vivía en MainLayout (v1, ya no montado) — la opción no
+            hacía nada (auditoría 28 ago 2026). */}
       </div>
 
       {/* Plantillas */}
@@ -688,15 +676,8 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
               <span className="context-menu-icon">✓</span> {t('teachMagic.correctInterpretation')}
             </button>
 
-            <div className="context-menu-separator" style={{ margin: '3px 8px' }} />
-
-            {/* Escribir o grabar corrección en lenguaje natural → abre modal */}
-            <button className="context-menu-item context-menu-item--sub"
-              onClick={run(() => {
-                window.dispatchEvent(new CustomEvent('from:teach-magic', { detail: { nodeId: node.id } }))
-              })}>
-              <span className="context-menu-icon">✎</span> {t('teachMagic.writeOrRecord')}
-            </button>
+            {/* «Escribir o grabar corrección» retirado: emitía `from:teach-magic`
+                sin ningún listener vivo (auditoría 28 ago 2026). */}
           </div>
         )}
       </div>

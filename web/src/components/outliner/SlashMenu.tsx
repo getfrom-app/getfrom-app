@@ -71,11 +71,10 @@ const OPTIONS: (SlashMenuOption & { action: SlashAction; group: string })[] = [
   { group: 'Árbol', label: 'Duplicar', icon: '⧉', prefix: '', description: 'Duplicar este nodo y sus hijos', action: 'duplicate' },
   { group: 'Árbol', label: 'Espejo',   icon: '⬡', prefix: '', description: 'Insertar un espejo de otra nota aquí', action: 'mirror' },
   // ── IA ────────────────────────────────────────────────────────────────────
-  { group: 'IA', label: 'Resumir', icon: 'sparkle', prefix: '', description: 'Resumir el contenido con IA', action: 'ai-summarize' },
-  { group: 'IA', label: 'Encontrar tareas', icon: '✓', prefix: '', description: 'Extraer tareas del contenido', action: 'ai-find-tasks' },
-  { group: 'IA', label: 'Crear esquema', icon: 'note', prefix: '', description: 'Generar un outline del contenido', action: 'ai-draft-outline' },
-  { group: 'IA', label: 'Corregir gramática', icon: 'pencil', prefix: '', description: 'Corregir errores gramaticales', action: 'ai-fix-grammar' },
-  { group: 'IA', label: 'Hacer más corto', icon: '↔', prefix: '', description: 'Resumir a versión más concisa', action: 'ai-make-shorter' },
+  // Retiradas las 5 acciones de IA inline (Resumir/Encontrar tareas/Esquema/
+  // Corregir/Acortar): emitían `from:ai-inline`, un evento que ya no escucha
+  // NADIE desde la retirada del motor viejo — 5 opciones de menú muertas
+  // (auditoría 28 ago 2026). El camino vivo para pedir esto es el chat.
   // ── Gestión ───────────────────────────────────────────────────────────────
   // Añadir a atajos eliminado — usar Favorito desde ··· más opciones
   { group: 'Gestión', label: 'Añadir fecha', icon: 'calendar', prefix: '', description: 'Asignar fecha de vencimiento', action: 'add-date' },

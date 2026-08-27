@@ -15,7 +15,7 @@ export default function V2SettingsNav({ activeTab, onSelect, onClose }: Props) {
   return (
     <aside className="v2-col v2-sidebar">
       <div className="v2-sidebar-head">
-        <span className="v2-brand">Fromly <span className="v2-brand-badge">2.0</span></span>
+        <span className="v2-brand">Fromly</span>
       </div>
       <button className="v2-newchat" onClick={onClose}>‹ {t('v2.back', 'Volver')}</button>
 

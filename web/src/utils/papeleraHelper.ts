@@ -69,7 +69,7 @@ export function trashNode(nodeId: string): void {
   // Las raíces de sistema (Agenda, Contexto, Prompts, Agentes, Plantillas, Papelera,
   // Perfil, 🏠 From) son estructura: no se pueden eliminar.
   if (isProtectedSystemRoot(nodeId)) {
-    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Este nodo del sistema no se puede eliminar', type: 'info' } }))
+    window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: 'Este elemento del sistema no se puede eliminar', type: 'info' } }))
     return
   }
 

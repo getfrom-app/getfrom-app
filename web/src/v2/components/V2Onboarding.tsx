@@ -23,9 +23,11 @@ export default function V2Onboarding() {
 
   useEffect(() => {
     const done = localStorage.getItem(STORAGE_KEY)
-    const params = new URLSearchParams(window.location.search)
-    const hasWelcome = params.get('welcome') === '1'
-    if (done && !hasWelcome) return
+    // OJO: `?welcome=1` es TAMBIÉN el parámetro de retorno del checkout de
+    // LemonSqueezy (App.tsx usePostCheckoutRefresh) — antes reabría el tutorial
+    // completo a quien acababa de PAGAR (auditoría 28 ago 2026). El tutorial
+    // solo se muestra si nunca se completó.
+    if (done) return
     const timer = setTimeout(() => {
       setVisible(true)
       requestAnimationFrame(() => requestAnimationFrame(() => setAnimIn(true)))
