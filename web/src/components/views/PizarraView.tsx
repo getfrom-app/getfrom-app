@@ -1185,6 +1185,9 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(n.extraData || '{}') } catch { /* corrupto */ }
     delete ed._gcalEventId; delete (ed as Record<string, unknown>).gcalEventId; delete ed._gcalSynced; delete ed._gcalColor
+    // El duplicado sale del grupo (paridad con trazos, que ya hacían `g: undefined`
+    // al duplicar — este nodo se quedaba pegado al grupo original por asimetría).
+    delete ed._groupId
     const pin = readPin(n)
     if (pin) { ed[PIN_X] = String(Math.round(pin.x + offset)); ed[PIN_Y] = String(Math.round(pin.y + offset)) }
     const dup = store.createNode({
