@@ -49,6 +49,7 @@ import PaywallModal from '../components/paywall/PaywallModal'
 import type { PaywallReason } from '../components/paywall/PaywallModal'
 import V2UpgradeBanner from './components/V2UpgradeBanner'
 import NextEventBar from './components/NextEventBar'
+import { parsePizarra } from '../components/views/PizarraView'
 import './styles/v2.css'
 
 export const V2_VERSION = 'v2.0.0-beta.1'
@@ -297,7 +298,13 @@ export default function V2App() {
   // esta versión no rastrea nada: por construcción, solo un documento nunca tocado tiene
   // título Y cuerpo vacíos a la vez (agentes/prompts/lienzos/"Lo que Fromly sabe" siempre
   // tienen texto), así que descartarlo al cerrar es seguro sin importar cuándo se creó.
-  // No toca lienzos (`_v2canvas`): su "vacío" es JSON de pizarra, no `<p></p>`.
+  // Los lienzos (`_v2canvas`) tienen su PROPIA rama: su "vacío" es JSON de
+  // pizarra (`WBData` en PizarraView.tsx), no `<p></p>` — un lienzo nunca
+  // tocado sí tiene texto/body vacíos como un documento normal, pero además
+  // hay que comprobar que no tenga trazos/textos/conectores propios en el
+  // JSON (E10 de la auditoría, 28 ago 2026: "un clic en Lienzo crea un
+  // elemento persistente sin nombre y sin deshacer" — verificado en vivo, el
+  // documento normal ya se limpiaba solo desde jul, el lienzo no).
   // Depende de `centerElementId` — único lugar donde se abre un elemento ahora.
   useEffect(() => {
     if (!centerElementId) return
@@ -306,9 +313,21 @@ export default function V2App() {
       const node = store.getNode(id)
       if (!node || node.deletedAt) return
       const ed = parseExtraData(node.extraData)
-      if (ed._doc !== '1' || ed._v2canvas === '1') return
-      const blank = !(node.text || '').trim() && (!node.body || node.body === '<p></p>' || !htmlToMarkdown(node.body).trim())
-      if (blank && store.children(id).every(c => c.deletedAt)) store.deleteNode(id)
+      if (ed._doc !== '1') return
+      const noTitle = !(node.text || '').trim()
+      const noChildren = store.children(id).every(c => c.deletedAt)
+      if (!noTitle || !noChildren) return
+      if (ed._v2canvas === '1') {
+        // El body de un lienzo no es JSON plano: va envuelto en una valla
+        // ```from-pizarra — `parsePizarra` (PizarraView.tsx) ya sabe
+        // desenvolverlo y da un WBData por defecto ante cualquier cosa rara.
+        const wb = parsePizarra(node.body)
+        const blank = !wb.strokes.length && !(wb.texts?.length) && !(wb.connectors?.length) && !(wb.tasks?.length)
+        if (blank) store.deleteNode(id)
+        return
+      }
+      const blank = !node.body || node.body === '<p></p>' || !htmlToMarkdown(node.body).trim()
+      if (blank) store.deleteNode(id)
     }
   }, [centerElementId])
 
