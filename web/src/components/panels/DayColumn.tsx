@@ -657,9 +657,17 @@ export default function DayColumn({
             <div className="node-ctx-sep" />
             <button className="node-ctx-item node-ctx-item--danger" onClick={async () => {
               const ev = gcalCtxMenu.ev
-              try { await deleteCalendarEvent(ev.id) } catch { /* noop */ }
-              setGcalEvents(p => p.filter(x => x.id !== ev.id))
               setGcalCtxMenu(null)
+              // A5 de la auditoría (28 ago 2026): antes borraba sin confirmar
+              // y quitaba de la UI aunque Google fallara (el catch se tragaba
+              // el error y el filter corría igual, fuera del try) — parecía
+              // borrado en Fromly mientras seguía vivo en el calendario real.
+              // Mismo confirm + mismo orden que GCalEventEditor.remove().
+              if (!window.confirm(t('gcal.deleteConfirm', { title: ev.title }))) return
+              try {
+                await deleteCalendarEvent(ev.id)
+                setGcalEvents(p => p.filter(x => x.id !== ev.id))
+              } catch { alert(t('gcal.deleteError')) }
             }}>{t('rightColMenu.delete')}</button>
           </div>
         </>

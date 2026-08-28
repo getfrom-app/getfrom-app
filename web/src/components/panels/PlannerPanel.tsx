@@ -1612,7 +1612,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             {ctxMenu.b.kind === 'gcal' && (
               <button className="pp-ctx-danger" onClick={async ()=>{
                 const evId = ctxMenu.b.id
+                const evTitle = ctxMenu.b.text
                 setCtxMenu(null)
+                // A5 de la auditoría: mismo confirm que GCalEventEditor.remove()
+                // — antes borraba sin preguntar mientras el editor sí lo hacía.
+                if (!window.confirm(t('gcal.deleteConfirm', { title: evTitle }))) return
                 // Solo se quita de la UI si Google CONFIRMÓ el borrado — antes el
                 // error se tragaba y el evento desaparecía de Fromly pero seguía
                 // vivo en el calendario (auditoría 28 ago 2026).
