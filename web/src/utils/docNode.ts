@@ -9,6 +9,7 @@
 
 import type { Node } from '../types'
 import { displayTitle } from './displayText'
+import { sanitizeHtml } from './sanitizeHtml'
 
 export const DOC = '_doc'
 export const CTEXT = '_ctext'
@@ -38,8 +39,12 @@ export function canvasViewKind(node: Node | null | undefined): CanvasViewKind | 
 // Título del documento = primer bloque/línea del HTML del body. Se refleja en
 // `node.text` para que el árbol, breadcrumb y listados muestren algo legible.
 export function firstLineTitle(html: string | null | undefined): string {
+  // El <div> nunca se inserta en el documento real, pero eso NO basta para que
+  // sea seguro: un <img onerror=…> dispara la carga del recurso (y el handler)
+  // igual al parsear el innerHTML, esté o no en el DOM visible (auditoría de
+  // seguridad, 28 ago 2026) — sanear antes de parsear.
   const d = document.createElement('div')
-  d.innerHTML = html || ''
+  d.innerHTML = sanitizeHtml(html || '')
   const txt = (d.textContent || '').replace(/ /g, ' ').trim()
   // Primer NODO hijo con texto, RECORRIENDO también los nodos de texto sueltos:
   // en un contentEditable la 1ª línea suele ir SIN envolver en <div>/<p>, así que

@@ -33,6 +33,7 @@ import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, buildClassifyContexts, CONFIDENCE_THRESHOLD, type ClassifyResult } from '../../api/autoClassify'
 import { saveUserKnowledgeToProfile } from '../../api/userKnowledge'
 import Icon from '../../v2/components/Icon'
+import { sanitizeHtml } from '../../utils/sanitizeHtml'
 
 // Deduplicación de extracción de conocimiento entre desmonte/remonte del componente.
 // Set a nivel de módulo: persiste mientras el JS bundle esté cargado (toda la sesión).
@@ -3821,8 +3822,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               // Patrón típico: https://url" target="_blank" rel="..." >texto
               if (clipText && /"\s+(target|rel|class|id|style)=/.test(clipText) && htmlClip) {
                 // Extraer URL limpia desde text/html
+                // El HTML pegado puede venir de un sitio malicioso (clipboard
+                // hijacking) — un <img onerror=…> dispara el handler al parsear,
+                // aunque tmp nunca se inserte en el documento (auditoría de
+                // seguridad, 28 ago 2026).
                 const tmp = document.createElement('div')
-                tmp.innerHTML = htmlClip
+                tmp.innerHTML = sanitizeHtml(htmlClip)
                 const anchor = tmp.querySelector('a')
                 if (anchor?.href && /^https?:\/\//.test(anchor.href)) {
                   clipText = anchor.href

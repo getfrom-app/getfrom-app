@@ -374,7 +374,12 @@ export default function InlineRenderer({ text, className }: Props) {
 // Evita poner React children dentro de contentEditable (bug removeChild)
 export function renderInlineToHtml(text: string, highlight?: string, forcedBlock?: 'bullet' | 'h1' | 'h2' | 'h3'): string {
   if (!text && !forcedBlock) return ''
+  // Escapa también comillas: más abajo el texto escapado se reinserta dentro de
+  // un atributo (data-ref-text="…" de los wiki-links) — sin esto, un título de
+  // nota con una comilla suelta rompía fuera del atributo (auditoría de
+  // seguridad, 28 ago 2026). Entidades en texto normal se muestran igual.
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;')
 
   // Detectar tipo de bloque (con override por forcedBlock vía extraData)
   const type = forcedBlock ?? detectBlockType(text)
