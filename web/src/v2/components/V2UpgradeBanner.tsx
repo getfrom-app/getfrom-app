@@ -44,12 +44,21 @@ export default function V2UpgradeBanner() {
     try { await openUpgradeCheckout('subscription') } finally { setLoading(false) }
   }
 
+  // "Tu prueba ha terminado" a secas dejaba que el usuario asumiera que solo
+  // se le limitaba algo vago — ni el mensaje ni el `title` decían que la
+  // cuenta pasa a SOLO LECTURA de verdad: nada nuevo, nada editable, solo
+  // consultar lo que ya hay (Alberto, 28 ago 2026, corrigiendo mi confusión
+  // anterior sobre un supuesto tope de 1.000 elementos que no existe).
   const message = expired
-    ? t('v2.upgradeBanner.expired', 'Tu prueba de 15 días ha terminado')
+    ? t('v2.upgradeBanner.expired', 'Tu prueba de 15 días ha terminado — modo solo lectura')
     : t('v2.upgradeBanner.endingSoon', 'Quedan {{count}} días de prueba', { count: u.trialDaysLeft })
+  const expiredTitle = t(
+    'v2.upgradeBanner.expiredHint',
+    'No puedes crear elementos nuevos ni modificar los que ya tienes — solo consultarlos. Pasa a Pro para seguir editando.',
+  )
 
   return (
-    <div className={`v2-upgrade-banner${expired ? ' v2-upgrade-banner-expired' : ''}`} role="status">
+    <div className={`v2-upgrade-banner${expired ? ' v2-upgrade-banner-expired' : ''}`} role="status" title={expired ? expiredTitle : undefined}>
       <span className="v2-upgrade-banner-text">
         <Icon name="sparkle" size={14} /> {message}
       </span>

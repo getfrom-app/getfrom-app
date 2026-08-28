@@ -5,9 +5,6 @@ import { opsClient, DATA_FIELDS } from './opsClient'
 import { structuralId, diaryId } from '../utils/deterministicId'
 import { userStore } from './userStore'
 
-/** Límite de nodos del plan gratuito. */
-export const FREE_NODE_LIMIT = 1000
-
 const GUEST_NODES_KEY = 'from_guest_nodes'
 
 // Plantilla que se pre-rellena al crear el perfil IA por primera vez.
@@ -332,22 +329,15 @@ export class NodeStore {
     return [...this.nodes.values()].filter(n => !n.deletedAt)
   }
 
-  /** True si el usuario gratis ya alcanzó el límite de nodos. Si es así, dispara
-   *  el paywall (banner de pasar a Pro). Los usuarios Pro/Lifetime nunca se bloquean.
-   *  "1 chat = 1 elemento" (29 jul 2026, mismo criterio que el servidor en
-   *  ops.ts): el wrapper de transcript y cada mensaje individual de una
-   *  conversación NO cuentan — si contaran aquí también, este check local
-   *  bloquearía/avisaría de forma prematura frente a lo que el servidor
-   *  realmente permite. */
+  /** ⚠️ CORREGIDO 28 ago 2026 (Alberto): no hay ni ha habido nunca un tope de
+   *  1.000 nodos como "plan gratis". Con la prueba de 15 días vencida y sin
+   *  suscripción la cuenta es de SOLO LECTURA — cero capacidad para crear
+   *  nada nuevo, siempre, no solo por encima de un umbral. Los usuarios en
+   *  prueba activa o de pago (`hasAccess`) nunca se bloquean. Dispara el
+   *  paywall (mismo evento que el rechazo server-side en opsClient.ts) para
+   *  que el aviso sea idéntico se detecte donde se detecte. */
   atFreeNodeLimit(): boolean {
     if (userStore.hasAccess) return false
-    const countable = this.allActive().filter(n => {
-      try {
-        const ed = JSON.parse(n.extraData || '{}')
-        return ed._aiTranscript !== '1' && ed._aiMsgRole === undefined
-      } catch { return true }
-    })
-    if (countable.length < FREE_NODE_LIMIT) return false
     window.dispatchEvent(new CustomEvent('from:paywall', { detail: { reason: 'node_limit' } }))
     return true
   }
