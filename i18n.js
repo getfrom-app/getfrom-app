@@ -31,7 +31,7 @@ const TRANSLATIONS = {
 
     /* ── index.html ── */
     "index.meta_title":   "Fromly — Tu segundo cerebro. Que te entiende. Web, Mac e iPhone",
-    "index.meta_desc":    "Fromly entiende lo que escribes: clasifica, fecha y recuerda por ti, sin menús. Chat-first, con outliner ultrarrápido de fondo, para Web, Mac e iPhone. Sync instantáneo y backup local cada 2h. Gratis para empezar.",
+    "index.meta_desc":    "Fromly entiende lo que escribes: clasifica, fecha y recuerda por ti, sin menús. Chat-first, con outliner ultrarrápido de fondo, para Web, Mac e iPhone. Sync instantáneo. Prueba 15 días completa, sin tarjeta.",
 
     "index.privacy_label":    "Privacidad",
     "index.privacy_title":    "Tu privacidad, por diseño",
@@ -94,8 +94,8 @@ const TRANSLATIONS = {
     "support.faq8_a":   "Anthropic (Claude Haiku), OpenAI (GPT) y Google (Gemini). Con la suscripción usas el modelo gestionado por Fromly. Con licencia perpetua eliges tú el proveedor y modelo.",
     "support.faq9_q":   "¿Cómo conecto Google Calendar?",
     "support.faq9_a":   "Desde Ajustes → Cuenta, en la sección Google Calendar, sigue las instrucciones para iniciar sesión con \"Continuar con Google\". Una vez conectado, tus eventos aparecen en el Planificador y puedes crear eventos directamente desde Fromly. Fromly no usa Apple Calendar ni EventKit.",
-    "support.faq10_q":  "¿Cómo sincronizo con Google Docs?",
-    "support.faq10_a":  "Desde la barra de acciones de cualquier nota, pulsa el botón de Google Docs. La primera vez te pedirá autorización de Google. Una vez conectado, el contenido de la nota se sincroniza con el documento automáticamente.",
+    "support.faq10_q":  "¿Cómo hablo con Fromly por Telegram?",
+    "support.faq10_a":  "Desde Ajustes → Asistente → Telegram, pulsa \"Vincular\" y sigue el enlace al bot. Te dará un código de un solo uso: mándaselo por Telegram y quedará conectado a tu cuenta.",
     "support.manual_card_title": "Manual de usuario",
     "support.manual_card_body":  "Guía completa de todas las funciones de Fromly: notas, tareas, IA, agentes y más.",
     "support.manual_card_btn":   "Ver manual",
@@ -134,12 +134,12 @@ const TRANSLATIONS = {
     "account.apikeys_note":  "Las API keys se almacenan cifradas y nunca se comparten con terceros.",
 
     "account.delete_title": "Eliminar cuenta",
-    "account.delete_body":  "Elimina tu cuenta y todos los datos asociados en nuestro servidor. Si usas la app de Mac, el backup local en tu equipo no se ve afectado.",
+    "account.delete_body":  "Elimina tu cuenta y todos los datos asociados en nuestro servidor. Si quieres conservar una copia, expórtala primero desde Ajustes → Exportar (JSON o Markdown).",
     "account.delete_btn":   "Solicitar eliminación",
 
     "account.info_title": "Información importante",
     "account.info1_q": "Tu cuenta y tus notas son cosas diferentes",
-    "account.info1_a": "Tu cuenta de Fromly gestiona la suscripción, tokens y acceso a la IA gestionada. Tus notas viven en el servidor de Fromly, sincronizadas en tiempo real entre Web, Mac e iPhone. En Mac además tienes un backup local en Markdown cada 2 horas. Eliminar tu cuenta <strong>no</strong> elimina ese backup local — esos archivos siguen siendo tuyos, en tu disco.",
+    "account.info1_a": "Tu cuenta de Fromly gestiona la suscripción, tokens y acceso a la IA gestionada. Tus notas viven en el servidor de Fromly, sincronizadas en tiempo real entre Web, Mac e iPhone, con un snapshot automático cada 2 horas restaurable desde Ajustes. Exporta a JSON o Markdown cuando quieras tener tu propia copia.",
     "account.info2_q": "Gestión desde la app",
     "account.info2_a": "La mayoría de opciones de cuenta están disponibles directamente en Fromly: Ajustes → Cuenta. Desde ahí puedes ver tu plan, balance de tokens, activar Lifetime y configurar API keys.",
     "account.info3_q": "Pagos procesados por LemonSqueezy",
@@ -187,7 +187,7 @@ const TRANSLATIONS = {
 
     /* ── index.html ── */
     "index.meta_title":   "Fromly — Your second brain. That understands you. Web, Mac and iPhone",
-    "index.meta_desc":    "Fromly understands what you write: it classifies, dates and remembers for you — no menus. Chat-first, with an ultra-fast outliner underneath, for Web, Mac and iPhone. Instant sync and local backup every 2h. Free to start.",
+    "index.meta_desc":    "Fromly understands what you write: it classifies, dates and remembers for you — no menus. Chat-first, with an ultra-fast outliner underneath, for Web, Mac and iPhone. Instant sync. Full 15-day trial, no card.",
 
     "index.privacy_label":    "Privacy",
     "index.privacy_title":    "Your privacy, by design",
@@ -253,8 +253,8 @@ const TRANSLATIONS = {
     "support.manual_card_body":  "Full guide to all Fromly features: notes, tasks, AI, agents and more.",
     "support.manual_card_btn":   "View guide",
     "support.faq9_a":  "From Settings → Account, in the Google Calendar section, follow the instructions to sign in with \"Continue with Google\". Once connected, your events appear in the Planner and you can create events directly from Fromly. Fromly doesn't use Apple Calendar or EventKit.",
-    "support.faq10_q": "How do I connect Google Drive?",
-    "support.faq10_a": "Go to Settings → Google. Click \"Connect account\" and follow Google's authorization flow. You can connect multiple accounts.",
+    "support.faq10_q": "How do I talk to Fromly on Telegram?",
+    "support.faq10_a": "Go to Settings → Assistant → Telegram, tap \"Link\" and follow the link to the bot. It will give you a one-time code — send it to the bot on Telegram and your account will be linked.",
     "support.faq11_q": "How do I cancel my subscription?",
     "support.faq11_a": "You can cancel at any time from <a href=\"account.html\">your account</a> or directly in the app at Settings → Account. Cancellation is immediate and no further charges are made.",
     "support.faq12_q": "How do I delete my account?",
@@ -290,12 +290,12 @@ const TRANSLATIONS = {
     "account.apikeys_note":  "API keys are stored encrypted and never shared with third parties.",
 
     "account.delete_title": "Delete account",
-    "account.delete_body":  "Delete your account and all associated data on our server. If you use the Mac app, your local backup on that machine is not affected.",
+    "account.delete_body":  "Delete your account and all associated data on our server. If you want to keep a copy, export it first from Settings → Export (JSON or Markdown).",
     "account.delete_btn":   "Request deletion",
 
     "account.info_title": "Important information",
     "account.info1_q": "Your account and your notes are different things",
-    "account.info1_a": "Your Fromly account manages your subscription, tokens, and access to managed AI. Your notes live on Fromly's server, synced in real time across Web, Mac, and iPhone. On Mac you also get a local Markdown backup every 2 hours. Deleting your account does <strong>not</strong> delete that local backup — those files remain yours, on your disk.",
+    "account.info1_a": "Your Fromly account manages your subscription, tokens, and access to managed AI. Your notes live on Fromly's server, synced in real time across Web, Mac, and iPhone, with an automatic snapshot every 2 hours restorable from Settings. Export to JSON or Markdown whenever you want your own copy.",
     "account.info2_q": "Manage from the app",
     "account.info2_a": "Most account options are available directly in Fromly: Settings → Account. From there you can view your plan, token balance, activate Lifetime, and configure API keys.",
     "account.info3_q": "Payments processed by LemonSqueezy",

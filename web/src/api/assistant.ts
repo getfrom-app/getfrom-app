@@ -67,6 +67,39 @@ export async function assistantChat(
   })
 }
 
+/** Payload de un turno guardado — mismo shape que el resto de la respuesta del
+ *  chat, para poder repintar la burbuja sin volver a preguntar (28 ago 2026). */
+export interface AssistantStoredPayload {
+  created?: AssistantCreatedItem[]
+  list?: AssistantListedTask[] | null
+  agents?: AssistantListedAgent[]
+  contexts?: AssistantListedContext[]
+  favorites?: AssistantListedContext[]
+  linkedNodeId?: string | null
+  autoOpen?: boolean
+  options?: string[] | null
+}
+
+export interface AssistantStoredTurn {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  createdAt: string
+  payload: AssistantStoredPayload | null
+}
+
+/** Hidrata/pagina el historial persistido de un hilo — 'general' o el id de un
+ *  elemento/contexto. `before`: pide la página anterior a esa fecha (scroll
+ *  hacia atrás). Ver server/src/services/assistantThreads.ts. */
+export async function assistantThreadTurns(threadKey: string, before?: string, limit?: number): Promise<AssistantStoredTurn[]> {
+  const q = new URLSearchParams()
+  if (before) q.set('before', before)
+  if (limit) q.set('limit', String(limit))
+  const qs = q.toString() ? `?${q.toString()}` : ''
+  const res = await apiRequest<{ turns: AssistantStoredTurn[] }>(`/assistant/threads/${encodeURIComponent(threadKey)}/turns${qs}`)
+  return res.turns
+}
+
 export interface AssistantInboxMessage {
   id: string
   title: string

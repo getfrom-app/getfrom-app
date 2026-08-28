@@ -21,6 +21,7 @@ import {
   assistantSetContext, assistantContexts, assistantRunAgent, assistantUpdateAgent,
   type AssistantListedTask, type AssistantListedAgent, type AssistantContext,
   type AssistantListedContext, assistantGetPrefs,
+  assistantThreadTurns, type AssistantStoredTurn,
 } from '../api/assistant'
 import { opsClient } from './opsClient'
 import { TokensError } from '../api/client'
@@ -60,6 +61,21 @@ function uid(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+/** Turno guardado en servidor → burbuja del hilo local (28 ago 2026). */
+function turnToAssistantMsg(t: AssistantStoredTurn): AssistantMsg {
+  const p = t.payload || {}
+  return {
+    id: t.id, role: t.role, text: t.content, date: t.createdAt,
+    created: p.created ?? [],
+    linkedNodeId: p.linkedNodeId ?? null,
+    options: p.options ?? null,
+    list: p.list ?? null,
+    agents: p.agents ?? null,
+    contexts: p.contexts ?? null,
+    favorites: p.favorites ?? null,
+  }
 }
 
 class AssistantStore {
@@ -136,17 +152,44 @@ class AssistantStore {
     if (key === this.threadKey) return
     this.save()
     this.threadKey = key
+    this.serverExhausted = false
     this.load()
     this.notify()
   }
 
+  /** true si sabemos con seguridad que ESTE hilo no tiene más historial en el
+   *  servidor — evita reintentar una llamada de red en cada "cargar más"
+   *  cuando ya se agotó. Se resetea al cambiar de hilo. */
+  private serverExhausted = false
+
   get hasMoreHistory(): boolean {
-    return this.visibleCount < this.allMessages.length
+    if (this.visibleCount < this.allMessages.length) return true
+    return !this.serverExhausted
   }
 
-  loadMoreHistory() {
-    this.visibleCount = Math.min(this.allMessages.length, this.visibleCount + PAGE_SIZE)
-    this.notify()
+  /** Revela más mensajes ya cargados en memoria; si no quedan, pide la
+   *  página más antigua al SERVIDOR (28 ago 2026 — antes "cargar más" solo
+   *  tiraba de lo que ya hubiera en localStorage, así que el historial de
+   *  otro dispositivo era invisible incluso scrolleando hacia atrás). */
+  async loadMoreHistory() {
+    if (this.visibleCount < this.allMessages.length) {
+      this.visibleCount = Math.min(this.allMessages.length, this.visibleCount + PAGE_SIZE)
+      this.notify()
+      return
+    }
+    if (this.serverExhausted) return
+    const threadAtCall = this.threadKey
+    const oldest = this.allMessages[0]
+    try {
+      const older = await assistantThreadTurns(threadAtCall, oldest?.date, PAGE_SIZE)
+      if (threadAtCall !== this.threadKey) return // el usuario cambió de hilo mientras llegaba
+      if (older.length === 0) { this.serverExhausted = true; return }
+      const olderMsgs = older.map(turnToAssistantMsg)
+      this.allMessages = [...olderMsgs, ...this.allMessages]
+      this.visibleCount += olderMsgs.length
+      this.save()
+      this.notify()
+    } catch { /* sin conexión — se reintenta la próxima vez que se pulse */ }
   }
 
   private appendVisible(m: AssistantMsg) {
@@ -489,6 +532,26 @@ class AssistantStore {
     // (Alberto, 13 ago, mismo criterio que iOS: "no es buena idea para
     // rendimiento" cargarlo todo de golpe).
     this.visibleCount = Math.min(this.allMessages.length, PAGE_SIZE)
+    // Localmente vacío = primera vez en ESTE dispositivo (nunca usado, datos
+    // borrados, o reinstalación) — hidrata desde el servidor si esa
+    // conversación existe en otro sitio (28 ago 2026, auditoría: "en el móvil
+    // tuve una conversación que en la web no encuentro"). Si local YA tiene
+    // algo, se confía en él tal cual — evita fusionar dos historiales con ids
+    // distintos para el mismo contenido.
+    if (this.allMessages.length === 0) this.hydrateFromServer(this.threadKey)
+  }
+
+  private async hydrateFromServer(threadKey: string) {
+    try {
+      const turns = await assistantThreadTurns(threadKey, undefined, PAGE_SIZE)
+      if (threadKey !== this.threadKey) return   // el usuario cambió de hilo mientras llegaba
+      if (this.allMessages.length > 0) return    // se escribió algo local mientras tanto
+      if (turns.length === 0) return
+      this.allMessages = turns.map(turnToAssistantMsg)
+      this.visibleCount = this.allMessages.length
+      this.save()
+      this.notify()
+    } catch { /* sin conexión — el hilo se queda vacío hasta el próximo load() */ }
   }
 
   private save() {
