@@ -329,60 +329,82 @@ export default function V2App() {
     }
   }, [centerElementId])
 
-  // ⚠️ URL real, segunda pieza del router (28 ago 2026, fase 2 — ver Ajustes
-  // más arriba para la primera). A propósito de alcance LIMITADO: solo
-  // `centerElementId` se refleja en la URL (`/element/:id`); `rightMode`/
-  // `selectedCtxId`/`rightSubTab` siguen sin URL propia (fase futura). Un
-  // enlace a un elemento abre exactamente ese elemento — el resto de la
-  // pantalla (qué contexto queda seleccionado a la izquierda, qué tab de la
-  // columna derecha) se deriva como siempre, dentro de `onOpenNode`.
+  // ⚠️ URL real, segunda y tercera pieza del router (28 ago 2026, fase 2 —
+  // ver Ajustes más arriba para la primera). A propósito de alcance
+  // LIMITADO: solo `centerElementId` y `selectedCtxId` se reflejan en la URL
+  // (`/element/:id` y `/context/:id`); `rightMode`/`rightSubTab` siguen sin
+  // URL propia (fase futura). Un enlace abre exactamente ese elemento o
+  // contexto — el resto de la pantalla se deriva como siempre, dentro de
+  // `onOpenNode`/`onSelectCtx`.
   //
-  // Solo ida (estado → URL): al abrir/cambiar/cerrar `centerElementId`,
-  // empuja o reemplaza la URL. PUSH solo en la transición null→algo (para
-  // que el botón atrás del navegador tenga un sitio simple al que volver);
-  // cualquier otro cambio (cambiar de elemento sin cerrar antes, o cerrar)
-  // usa REPLACE — sin esto, el redirect interno tarea→documento de
-  // `onOpenNode` (se llama a sí mismo) empujaría DOS entradas de historial
-  // por un solo clic del usuario.
-  const hadElementOpenRef = useRef(false)
+  // Precedencia elemento vs. contexto: `onSelectCtx(id)` fija AMBOS
+  // `selectedCtxId` Y `centerElementId` (a la nota-contenedor del propio
+  // contexto, `_containerNotes` — ver cajones.ts) — eso es "estás viendo
+  // este contexto", URL `/context/:id`. Pero `onOpenNode` también fija
+  // `selectedCtxId` como EFECTO SECUNDARIO al abrir una tarea/nota que
+  // pertenece a un contexto (sin tocarlo, la izquierda no reflejaría dónde
+  // vive) — eso sigue siendo "este elemento en concreto", URL
+  // `/element/:id`, más específica. La forma de distinguir los dos casos sin
+  // guardar un flag aparte: mirar si el nodo abierto en el centro ES la
+  // nota-contenedor de su contexto.
+  //
+  // Solo ida (estado → URL): PUSH solo en la transición nada-abierto→algo
+  // (para que el botón atrás del navegador tenga un sitio simple al que
+  // volver); cualquier otro cambio usa REPLACE — sin esto, el redirect
+  // interno tarea→documento de `onOpenNode` (se llama a sí mismo) empujaría
+  // dos entradas de historial por un solo clic del usuario.
+  const hadUrlDestRef = useRef(false)
   useEffect(() => {
-    const wasOpen = hadElementOpenRef.current
-    hadElementOpenRef.current = centerElementId !== null
-    if (centerElementId) {
-      const target = `${routeBase}/element/${centerElementId}`
+    const centerNode = centerElementId ? store.getNode(centerElementId) : null
+    const isContainerNotes = !!centerNode && parseExtraData(centerNode.extraData)._containerNotes === '1'
+    const target =
+      isContainerNotes && selectedCtxId ? `${routeBase}/context/${selectedCtxId}`
+      : centerElementId ? `${routeBase}/element/${centerElementId}`
+      : selectedCtxId ? `${routeBase}/context/${selectedCtxId}` // contexto sin nota-contenedor todavía creada
+      : null
+    const wasOpen = hadUrlDestRef.current
+    hadUrlDestRef.current = target !== null
+    if (target) {
       if (location.pathname !== target) navigate(target, { replace: wasOpen })
-    } else if (wasOpen && /\/element\//.test(location.pathname)) {
-      // Se acaba de cerrar (X, o `onSelectCtx`/`onOpenConversation` tomaron
-      // otro camino) — no dejar la URL apuntando a un elemento que ya no se ve.
+    } else if (wasOpen && (/\/element\//.test(location.pathname) || /\/context\//.test(location.pathname))) {
+      // Se acaba de cerrar todo (X, o `onSelectGeneral` tomó otro camino) —
+      // no dejar la URL apuntando a algo que ya no se ve.
       navigate(routeBase || '/', { replace: true })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [centerElementId])
+  }, [centerElementId, selectedCtxId])
 
   // Vuelta (URL → estado): cubre enlace directo, refresco de página, Y el
   // botón atrás/adelante del navegador. No hace ping-pong con el efecto de
-  // arriba porque compara contra `centerElementIdRef` (actualizada en cada
-  // render, sin esperar al siguiente efecto): cuando ESTE efecto abrió el
-  // elemento y el de arriba reacciona empujando la URL, para cuando ese
-  // cambio de URL vuelve a disparar este efecto el ref ya coincide y no hace
-  // nada — y viceversa cuando el de arriba cierra.
+  // arriba porque compara contra `centerElementIdRef`/`selectedCtxIdRef`
+  // (actualizadas en cada render, sin esperar al siguiente efecto): cuando
+  // ESTE efecto abre algo y el de arriba reacciona empujando la URL, para
+  // cuando ese cambio de URL vuelve a disparar este efecto los refs ya
+  // coinciden y no hace nada — y viceversa cuando el de arriba cierra.
   useEffect(() => {
     if (!ready) return
-    const m = location.pathname.match(/\/element\/([^/]+)$/)
-    const urlId = m ? m[1] : null
-    if (urlId) {
-      if (urlId !== centerElementIdRef.current) onOpenNode(urlId)
-    } else if (centerElementIdRef.current !== null) {
-      // La URL ya no apunta a un elemento (atrás/adelante del navegador) pero
-      // seguía abierto uno — cerrarlo para no dejar la pantalla desincronizada
-      // de la URL. Mismo camino que el botón ✕ de V2ElementView: restaura
-      // `rightMode`/`selectedCtxId` de antes de abrir.
-      setCenterElementId(null)
-      const origin = openOriginRef.current
-      if (origin) {
-        setRightMode(origin.rightMode)
-        setSelectedCtxId(origin.selectedCtxId)
-        openOriginRef.current = null
+    const em = location.pathname.match(/\/element\/([^/]+)$/)
+    const cm = location.pathname.match(/\/context\/([^/]+)$/)
+    if (em) {
+      if (em[1] !== centerElementIdRef.current) onOpenNode(em[1])
+    } else if (cm) {
+      if (cm[1] !== selectedCtxIdRef.current) onSelectCtx(cm[1])
+    } else if (centerElementIdRef.current !== null || selectedCtxIdRef.current !== null) {
+      // Ni elemento ni contexto en la URL (atrás/adelante del navegador) pero
+      // había algo abierto — cerrarlo para no dejar la pantalla
+      // desincronizada de la URL.
+      if (selectedCtxIdRef.current !== null) {
+        onSelectCtx(null)
+      } else {
+        // Mismo camino que el botón ✕ de V2ElementView: restaura
+        // `rightMode`/`selectedCtxId` de antes de abrir.
+        setCenterElementId(null)
+        const origin = openOriginRef.current
+        if (origin) {
+          setRightMode(origin.rightMode)
+          setSelectedCtxId(origin.selectedCtxId)
+          openOriginRef.current = null
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
