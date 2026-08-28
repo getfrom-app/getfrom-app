@@ -329,6 +329,65 @@ export default function V2App() {
     }
   }, [centerElementId])
 
+  // ⚠️ URL real, segunda pieza del router (28 ago 2026, fase 2 — ver Ajustes
+  // más arriba para la primera). A propósito de alcance LIMITADO: solo
+  // `centerElementId` se refleja en la URL (`/element/:id`); `rightMode`/
+  // `selectedCtxId`/`rightSubTab` siguen sin URL propia (fase futura). Un
+  // enlace a un elemento abre exactamente ese elemento — el resto de la
+  // pantalla (qué contexto queda seleccionado a la izquierda, qué tab de la
+  // columna derecha) se deriva como siempre, dentro de `onOpenNode`.
+  //
+  // Solo ida (estado → URL): al abrir/cambiar/cerrar `centerElementId`,
+  // empuja o reemplaza la URL. PUSH solo en la transición null→algo (para
+  // que el botón atrás del navegador tenga un sitio simple al que volver);
+  // cualquier otro cambio (cambiar de elemento sin cerrar antes, o cerrar)
+  // usa REPLACE — sin esto, el redirect interno tarea→documento de
+  // `onOpenNode` (se llama a sí mismo) empujaría DOS entradas de historial
+  // por un solo clic del usuario.
+  const hadElementOpenRef = useRef(false)
+  useEffect(() => {
+    const wasOpen = hadElementOpenRef.current
+    hadElementOpenRef.current = centerElementId !== null
+    if (centerElementId) {
+      const target = `${routeBase}/element/${centerElementId}`
+      if (location.pathname !== target) navigate(target, { replace: wasOpen })
+    } else if (wasOpen && /\/element\//.test(location.pathname)) {
+      // Se acaba de cerrar (X, o `onSelectCtx`/`onOpenConversation` tomaron
+      // otro camino) — no dejar la URL apuntando a un elemento que ya no se ve.
+      navigate(routeBase || '/', { replace: true })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [centerElementId])
+
+  // Vuelta (URL → estado): cubre enlace directo, refresco de página, Y el
+  // botón atrás/adelante del navegador. No hace ping-pong con el efecto de
+  // arriba porque compara contra `centerElementIdRef` (actualizada en cada
+  // render, sin esperar al siguiente efecto): cuando ESTE efecto abrió el
+  // elemento y el de arriba reacciona empujando la URL, para cuando ese
+  // cambio de URL vuelve a disparar este efecto el ref ya coincide y no hace
+  // nada — y viceversa cuando el de arriba cierra.
+  useEffect(() => {
+    if (!ready) return
+    const m = location.pathname.match(/\/element\/([^/]+)$/)
+    const urlId = m ? m[1] : null
+    if (urlId) {
+      if (urlId !== centerElementIdRef.current) onOpenNode(urlId)
+    } else if (centerElementIdRef.current !== null) {
+      // La URL ya no apunta a un elemento (atrás/adelante del navegador) pero
+      // seguía abierto uno — cerrarlo para no dejar la pantalla desincronizada
+      // de la URL. Mismo camino que el botón ✕ de V2ElementView: restaura
+      // `rightMode`/`selectedCtxId` de antes de abrir.
+      setCenterElementId(null)
+      const origin = openOriginRef.current
+      if (origin) {
+        setRightMode(origin.rightMode)
+        setSelectedCtxId(origin.selectedCtxId)
+        openOriginRef.current = null
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, location.pathname])
+
   // Arranque del motor SOLO si la v1 no lo cargó ya en esta sesión SPA.
   // NO re-ejecutamos las migraciones estructurales de v1 (algunas destructivas):
   // la v2 es cliente de lectura/chat sobre el mismo árbol.
