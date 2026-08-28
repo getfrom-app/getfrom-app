@@ -267,6 +267,8 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
           style={depth > 1 ? { paddingLeft: 26 + (depth - 1) * 16 } : undefined}
           onClick={() => enter(c)}
           onContextMenu={(e) => openCtxMenu(e, c.id)}
+          role="button" tabIndex={0}
+          onKeyDown={(e) => { if (renaming === c.id) return; if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enter(c) } }}
         >
           <span className="v2-ctx-dot" style={{ background: contextColor(c.id) }} />
           {renaming === c.id ? (
@@ -353,18 +355,18 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
           libre — con solo 3 filas cortas, eso dejaba un hueco en blanco enorme
           entre "Elementos" y "Contextos" (Alberto, 5 ago 2026). */}
       <div className="v2-ctx-list" style={{ marginBottom: 8, flex: 'none' }}>
-        <div className={`v2-ctx-row ${activeGeneralDest === 'agenda' ? 'active' : ''}`} onClick={() => onSelectGeneral('agenda')}>
+        <button type="button" className={`v2-ctx-row ${activeGeneralDest === 'agenda' ? 'active' : ''}`} onClick={() => onSelectGeneral('agenda')}>
           <Icon name="calendar" size={16} className="v2-ctx-glyph" />
           <span className="v2-el-title">{t('v2.rightColumn.tabAgenda', 'Agenda')}</span>
-        </div>
-        <div className={`v2-ctx-row ${activeGeneralDest === 'chat' ? 'active' : ''}`} onClick={() => onSelectGeneral('chat')}>
+        </button>
+        <button type="button" className={`v2-ctx-row ${activeGeneralDest === 'chat' ? 'active' : ''}`} onClick={() => onSelectGeneral('chat')}>
           <Icon name="chat" size={16} className="v2-ctx-glyph" />
           <span className="v2-el-title">{t('v2.rightColumn.tabChat', 'Chat')}</span>
-        </div>
-        <div className={`v2-ctx-row ${activeGeneralDest === 'elementos' ? 'active' : ''}`} onClick={() => onSelectGeneral('elementos')}>
+        </button>
+        <button type="button" className={`v2-ctx-row ${activeGeneralDest === 'elementos' ? 'active' : ''}`} onClick={() => onSelectGeneral('elementos')}>
           <Icon name="layers" size={16} className="v2-ctx-glyph" />
           <span className="v2-el-title">{t('v2.rightColumn.tabElements', 'Elementos')}</span>
-        </div>
+        </button>
       </div>
 
       {/* Avisos (conversación de agente pendiente / informe de agente nuevo) — texto
@@ -426,6 +428,8 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         <div
           className={`v2-ctx-row ${selectedCtxId === null ? 'active' : ''}`}
           onClick={() => onSelectCtx(null)}
+          role="button" tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectCtx(null) } }}
         >
           <span className="v2-ctx-dot" style={{ background: 'var(--text-tertiary)' }} />
           <span className="v2-el-title">{t('v2.general', 'General')}</span>
