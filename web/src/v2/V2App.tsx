@@ -329,50 +329,78 @@ export default function V2App() {
     }
   }, [centerElementId])
 
-  // ⚠️ URL real, segunda y tercera pieza del router (28 ago 2026, fase 2 —
-  // ver Ajustes más arriba para la primera). A propósito de alcance
-  // LIMITADO: solo `centerElementId` y `selectedCtxId` se reflejan en la URL
-  // (`/element/:id` y `/context/:id`); `rightMode`/`rightSubTab` siguen sin
-  // URL propia (fase futura). Un enlace abre exactamente ese elemento o
-  // contexto — el resto de la pantalla se deriva como siempre, dentro de
-  // `onOpenNode`/`onSelectCtx`.
+  // ⚠️ URL real, cuarta pieza del router (28 ago 2026 — Ajustes/elemento/
+  // contexto en fases anteriores). A propósito de alcance LIMITADO: de
+  // `rightMode` solo se sincronizan 'agenda' y 'elementos' (`/agenda`,
+  // `/elementos`) — 'chat' se deja FUERA a propósito: `onSelectGeneral`
+  // arranca SIEMPRE una sesión nueva al entrar en ese destino
+  // (`aiChatStore.startNewSession()`, decisión de Alberto del 27 ago), así
+  // que sincronizarlo con la URL haría que cada visita a un enlace/recarga
+  // de `/chat` empezara una conversación en blanco — sorprendente, no lo que
+  // alguien esperaría de "volver a donde estaba". La conversación en sí
+  // (`aiChatStore`, store aparte del router) queda para otra fase.
   //
-  // Precedencia elemento vs. contexto: `onSelectCtx(id)` fija AMBOS
-  // `selectedCtxId` Y `centerElementId` (a la nota-contenedor del propio
-  // contexto, `_containerNotes` — ver cajones.ts) — eso es "estás viendo
-  // este contexto", URL `/context/:id`. Pero `onOpenNode` también fija
+  // Precedencia elemento vs. contexto vs. destino general: `onSelectCtx(id)`
+  // fija AMBOS `selectedCtxId` Y `centerElementId` (a la nota-contenedor del
+  // propio contexto, `_containerNotes` — ver cajones.ts) — eso es "estás
+  // viendo este contexto", URL `/context/:id`. Pero `onOpenNode` también fija
   // `selectedCtxId` como EFECTO SECUNDARIO al abrir una tarea/nota que
   // pertenece a un contexto (sin tocarlo, la izquierda no reflejaría dónde
   // vive) — eso sigue siendo "este elemento en concreto", URL
   // `/element/:id`, más específica. La forma de distinguir los dos casos sin
   // guardar un flag aparte: mirar si el nodo abierto en el centro ES la
-  // nota-contenedor de su contexto.
+  // nota-contenedor de su contexto. Sin nada de eso, cae a `rightMode`.
   //
   // Solo ida (estado → URL): PUSH solo en la transición nada-abierto→algo
   // (para que el botón atrás del navegador tenga un sitio simple al que
   // volver); cualquier otro cambio usa REPLACE — sin esto, el redirect
   // interno tarea→documento de `onOpenNode` (se llama a sí mismo) empujaría
   // dos entradas de historial por un solo clic del usuario.
+  //
+  // `mountedRef`: en el primer render `rightMode` YA vale 'agenda' (su
+  // default, no una navegación real) — sin este guard, cargar la app en la
+  // raíz (`/app`) empujaría un redirect inmediato a `/app/agenda` antes de
+  // que el usuario hiciera nada, añadiendo una entrada de historial de la
+  // que "atrás" no tendría de dónde volver. Elemento/contexto SÍ deben
+  // sincronizar desde el primer render (un enlace directo debe abrir), así
+  // que el guard solo afecta a la rama `rightMode`.
+  //
+  // ⚠️ `ready` en la condición (no solo `mountedRef`) — bug real encontrado
+  // probando en vivo: `ready` tarda un tick en pasar a `true` (carga
+  // asíncrona del store). Sin el `&& ready`, este efecto podía disparar ANTES
+  // que el de más abajo (URL → estado) hubiera tenido ocasión de corregir
+  // `rightMode` a partir de una URL como `/elementos` — con `rightMode`
+  // todavía en su valor por defecto 'agenda', empujaba `/agenda` y PISABA el
+  // enlace directo antes de que se procesara. Cargar `/app/elementos` de
+  // cero acababa mostrando Agenda con la URL ya reescrita a `/agenda`, sin
+  // ningún error visible — el bug más difícil de detectar sin probar de
+  // verdad en el navegador.
   const hadUrlDestRef = useRef(false)
+  const mountedRef = useRef(false)
   useEffect(() => {
     const centerNode = centerElementId ? store.getNode(centerElementId) : null
     const isContainerNotes = !!centerNode && parseExtraData(centerNode.extraData)._containerNotes === '1'
+    const generalTarget = rightMode === 'agenda' ? `${routeBase}/agenda`
+      : rightMode === 'elementos' ? `${routeBase}/elementos`
+      : null // 'chat'/'contexto': sin URL propia aquí, ver comentario arriba
     const target =
       isContainerNotes && selectedCtxId ? `${routeBase}/context/${selectedCtxId}`
       : centerElementId ? `${routeBase}/element/${centerElementId}`
       : selectedCtxId ? `${routeBase}/context/${selectedCtxId}` // contexto sin nota-contenedor todavía creada
+      : (mountedRef.current && ready) ? generalTarget
       : null
+    if (ready) mountedRef.current = true
     const wasOpen = hadUrlDestRef.current
     hadUrlDestRef.current = target !== null
     if (target) {
       if (location.pathname !== target) navigate(target, { replace: wasOpen })
-    } else if (wasOpen && (/\/element\//.test(location.pathname) || /\/context\//.test(location.pathname))) {
+    } else if (wasOpen && (/\/element\//.test(location.pathname) || /\/context\//.test(location.pathname) || /\/agenda$/.test(location.pathname) || /\/elementos$/.test(location.pathname))) {
       // Se acaba de cerrar todo (X, o `onSelectGeneral` tomó otro camino) —
       // no dejar la URL apuntando a algo que ya no se ve.
       navigate(routeBase || '/', { replace: true })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [centerElementId, selectedCtxId])
+  }, [centerElementId, selectedCtxId, rightMode, ready])
 
   // Vuelta (URL → estado): cubre enlace directo, refresco de página, Y el
   // botón atrás/adelante del navegador. No hace ping-pong con el efecto de
@@ -385,10 +413,16 @@ export default function V2App() {
     if (!ready) return
     const em = location.pathname.match(/\/element\/([^/]+)$/)
     const cm = location.pathname.match(/\/context\/([^/]+)$/)
+    const gm = location.pathname.match(/\/(agenda|elementos)$/)
     if (em) {
       if (em[1] !== centerElementIdRef.current) onOpenNode(em[1])
     } else if (cm) {
       if (cm[1] !== selectedCtxIdRef.current) onSelectCtx(cm[1])
+    } else if (gm) {
+      // Mismo guard que element/context: solo actuar si de verdad hace falta
+      // — `onSelectGeneral` no es gratis (limpia filtros, arranca
+      // aiChatStore para 'chat', pero eso no llega aquí — ver arriba).
+      if (gm[1] !== rightModeRef.current) onSelectGeneral(gm[1] as 'agenda' | 'elementos')
     } else if (centerElementIdRef.current !== null || selectedCtxIdRef.current !== null) {
       // Ni elemento ni contexto en la URL (atrás/adelante del navegador) pero
       // había algo abierto — cerrarlo para no dejar la pantalla
@@ -406,6 +440,14 @@ export default function V2App() {
           openOriginRef.current = null
         }
       }
+    } else if (rightModeRef.current === 'elementos') {
+      // Ruta base (`/`) sin elemento/contexto/destino en la URL, pero
+      // `rightMode` se había quedado en 'elementos' (atrás del navegador
+      // desde /elementos) — 'agenda' es el default real de la ruta base, no
+      // 'elementos'; sin esto la pantalla se quedaba en Elementos con la URL
+      // ya en la raíz. 'chat'/'contexto' no entran aquí: no tienen URL
+      // propia en esta fase, así que no hay nada que "desincronizar".
+      onSelectGeneral('agenda')
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, location.pathname])
