@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { fetchFileContent, uploadFile } from '../../api/client'
 import { store, useStore } from '../../store/nodeStore'
 import { parseExtraData } from '../../utils/papeleraHelper'
+import DOMPurify from 'dompurify'
 import Icon from '../../v2/components/Icon'
 
 /** Rectángulo NORMALIZADO (0-1, relativo al ancho/alto de la página) — mismo
@@ -60,10 +61,15 @@ export default function PdfViewer({ url, nodeId, filename, resourceKey, annotati
     .filter(c => { if (c.deletedAt) return false; const ed = parseExtraData(c.extraData); return ed._pdfSelection === '1' })
     .map(c => {
       const ed = parseExtraData(c.extraData)
-      const d = document.createElement('div'); d.innerHTML = c.body || ''
+      // Texto plano del subrayado: NO usar un <div> + innerHTML "descartado" para
+      // esto — un body con <img onerror=...> dispara la carga del recurso (y el
+      // handler) aunque el nodo nunca se inserte en el documento real (auditoría
+      // de seguridad, 28 ago 2026). DOMPurify con ALLOWED_TAGS:[] quita todas las
+      // etiquetas de forma segura y devuelve solo el texto.
+      const text = DOMPurify.sanitize(c.body || '', { ALLOWED_TAGS: [] }).trim()
       let rects: NormRect[] = []
       try { rects = JSON.parse((ed._pdfHlRects as string) || '[]') } catch { /* ignore */ }
-      return { id: c.id, text: (d.textContent || '').trim(), page: ed._pdfPage ? Number(ed._pdfPage) : null, rects }
+      return { id: c.id, text, page: ed._pdfPage ? Number(ed._pdfPage) : null, rects }
     })
   // Modo «recorte de región» (Heptabase): arrastrar sobre la página captura esa
   // zona como imagen. Independiente de la selección de texto (se excluyen: al

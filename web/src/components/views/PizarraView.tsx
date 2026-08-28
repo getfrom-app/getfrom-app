@@ -29,6 +29,7 @@ import { firstContextOf, contextColor, isMarkedContext, reparentContext, clearCo
 import { findTagNodeBySlug } from '../../utils/tagsHelper'
 import { createMarkdownNode } from '../../utils/importMarkdown'
 import { computeNestedLayout, CONTENT_W, type NestedLayout } from '../../utils/nestedCanvasLayout'
+import { sanitizeHtml } from '../../utils/sanitizeHtml'
 import type { CanvasViewKind } from '../../utils/docNode'
 import { mergeNodesToBlock } from '../../utils/noteBlocks'
 import DocEditor from './DocEditor'
@@ -2875,7 +2876,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                 // Solo el cuerpo del documento renderizado. (El formato va en la barra
                 // flotante al seleccionar; se edita con doble clic / al seleccionarlo.)
                 <div className="pizarra-text" style={{ fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
-                  dangerouslySetInnerHTML={{ __html: node.body || `<span style="opacity:.4">${t('pizarra.textPlaceholder')}</span>` }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(node.body || `<span style="opacity:.4">${t('pizarra.textPlaceholder')}</span>`) }}
                 />
               ) : (
                 // Gutter [chevron][dot] + cuerpo, alineados con la 1ª línea — como el
@@ -2895,7 +2896,7 @@ export default function PizarraView({ parentId, flowUnpositioned, pdfBackground,
                     </div>
                   ) : (
                     <div className="pizarra-text" style={{ flex: 1, minWidth: 0, fontSize: 16, lineHeight: 1.6, color: 'var(--text,#222)', wordBreak: 'break-word', minHeight: 20, userSelect: 'none', WebkitUserSelect: 'none' }}
-                      dangerouslySetInnerHTML={{ __html: node.body || `<span style="opacity:.4">${t('pizarra.textPlaceholder')}</span>` }}
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(node.body || `<span style="opacity:.4">${t('pizarra.textPlaceholder')}</span>`) }}
                     />
                   )}
                 </div>
