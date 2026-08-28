@@ -795,9 +795,19 @@ export default function AccountView() {
           )}
 
           {user?.tokensBalance !== undefined && (
-            <div className="settings-row">
-              <div className="settings-row-label">{t('account.tokensBalance')}</div>
-              <div className="settings-row-value">{user.tokensBalance.toLocaleString()}</div>
+            <div className="settings-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
+              <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between' }}>
+                <div className="settings-row-label">{t('account.tokensBalance')}</div>
+                <div className="settings-row-value">{user.tokensBalance.toLocaleString()}</div>
+              </div>
+              {/* M8 de la auditoría (28 ago): un número crudo sin contexto.
+                  ⚠️ Este componente (AccountView.tsx) es MainLayout v1 —
+                  sin ruta desde v2, no lo ve ningún usuario real (ver R8).
+                  El arreglo de verdad vive en SettingsModal.tsx, la pantalla
+                  "Mi cuenta" que sí se usa — mismo `account.tokensBalanceHint`. */}
+              <div className="settings-row-hint" style={{ fontSize: 12, color: 'var(--text-tertiary,#999)' }}>
+                {t('account.tokensBalanceHint')}
+              </div>
             </div>
           )}
 

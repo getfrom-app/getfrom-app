@@ -274,7 +274,7 @@ export function CuentaPane() {
               </Row>
             )}
             {user?.tokensBalance !== undefined && (
-              <Row label={t('account.tokensBalance')}>
+              <Row label={t('account.tokensBalance')} hint={t('account.tokensBalanceHint')}>
                 <span className="st-value">{user.tokensBalance.toLocaleString()}</span>
               </Row>
             )}
