@@ -89,7 +89,7 @@ export default function ContextShareModal({ contextNode, onClose }: { contextNod
         <div className="modal-header">
           <span className="modal-icon"><Icon name="external" size={18} /></span>
           <h2>{t('context.shareTitle', 'Compartir contexto completo')}</h2>
-          <button className="modal-close-btn" onClick={onClose}>×</button>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}>×</button>
         </div>
 
         <div style={{ padding: '0 20px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>

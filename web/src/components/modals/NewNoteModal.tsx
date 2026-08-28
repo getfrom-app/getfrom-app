@@ -91,7 +91,7 @@ export default function NewNoteModal({ parentId, onClose }: Props) {
         <div className="modal-header">
           <span className="modal-icon">✎</span>
           <h2>{t('modal.newNote')}</h2>
-          <button className="modal-close-btn" onClick={onClose}>×</button>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}>×</button>
         </div>
 
         <div className="modal-field">

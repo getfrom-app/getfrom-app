@@ -134,7 +134,7 @@ export default function NewEventModal({ onClose, parentId, defaultDateStr, onCre
         <div className="modal-header">
           <span className="modal-icon"><Icon name="event" size={18} /></span>
           <h2>{t('modal.newEvent')}</h2>
-          <button className="modal-close-btn" onClick={onClose}>×</button>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}>×</button>
         </div>
         <form onSubmit={handleSubmit}>
 

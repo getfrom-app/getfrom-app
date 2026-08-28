@@ -169,7 +169,7 @@ export default function ResourcePanel({ node }: Props) {
                 if (e.key === 'Escape') { setAddingType(false); setNewTypeLabel('') }
               }}
             />
-            <button className="resource-type-add-confirm" onClick={addCustomType}><Icon name="check" size={13} strokeWidth={2.2} /></button>
+            <button className="resource-type-add-confirm" onClick={addCustomType} aria-label={t('common.confirm')}><Icon name="check" size={13} strokeWidth={2.2} /></button>
           </div>
         )}
       </div>

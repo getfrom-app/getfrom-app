@@ -164,7 +164,7 @@ export default function MoveNodeModal({ node, nodeIds, onClose }: Props) {
         <div className="modal-header">
           <span className="modal-icon">⇢</span>
           <h2>{t('modal.moveNote')}</h2>
-          <button className="modal-close-btn" onClick={onClose}>×</button>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}>×</button>
         </div>
         <div className="move-node-info">
           {nodeIds && nodeIds.length > 1

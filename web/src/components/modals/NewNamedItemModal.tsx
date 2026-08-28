@@ -45,7 +45,7 @@ export default function NewNamedItemModal({ onClose, onSubmit, title, icon, plac
         <div className="modal-header">
           <span className="modal-icon"><Icon name={icon} size={18} /></span>
           <h2>{title}</h2>
-          <button className="modal-close-btn" onClick={onClose}><Icon name="close" size={15} /></button>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}><Icon name="close" size={15} /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-field">

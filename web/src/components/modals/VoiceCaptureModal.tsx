@@ -44,7 +44,7 @@ export default function VoiceCaptureModal({ onClose }: Props) {
           <span className="modal-icon"><Icon name="mic" size={18} /></span>
           <h2>{t('voice.recordingTitle')}</h2>
           {/* Closing modal does NOT stop recording */}
-          <button className="modal-close-btn" onClick={onClose}>×</button>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}>×</button>
         </div>
 
         {!r.isSupported && (

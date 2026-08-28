@@ -101,7 +101,7 @@ export default function TypeDefModal({ onClose, editingId, onSaved, onDeleted }:
         <div className="modal-header">
           <span className="modal-icon"><Icon name={icon} size={18} /></span>
           <h2>{editingId ? t('types.editTitle', 'Editar tipo') : t('types.newTitle', 'Nuevo tipo')}</h2>
-          <button className="modal-close-btn" onClick={onClose}><Icon name="close" size={15} /></button>
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.close')}><Icon name="close" size={15} /></button>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="modal-field">
