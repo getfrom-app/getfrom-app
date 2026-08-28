@@ -1352,6 +1352,12 @@ export default function V2App() {
         <UnifiedCapture
           onClose={() => setShowCapture(false)}
           onSelectContext={id => { onSelectCtx(id); setShowCapture(false) }}
+          // N12 de la auditoría (28 ago 2026): filtros guardados y #tag desde
+          // ⌘K llamaban a `wf:set-filter`, un evento que solo escuchaba
+          // MainLayout v1 — sin efecto en v2. UnifiedCapture ya escribe en
+          // `elementsBrowserStore` directamente (arreglado en el propio
+          // componente); solo faltaba saber ir a Elementos.
+          onNavigate={path => { if (path === '/elementos') onSelectGeneral('elementos') }}
         />
       )}
       {attachCtx && (

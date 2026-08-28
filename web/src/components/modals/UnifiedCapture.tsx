@@ -15,6 +15,7 @@ import { findContextRoot } from '../../utils/rootLookup'
 import { listMarkedContexts, listContextsForParent, assignContext, createContext, contextColor } from '../../utils/cajones'
 import { useLocation } from 'react-router-dom'
 import { openNodeDetail } from '../../utils/canvasNav'
+import { elementsBrowserStore } from '../../store/elementsBrowserStore'
 import { useTranslation } from 'react-i18next'
 import { useToast } from '../Toast'
 import { normalizeText } from '../../utils/normalize'
@@ -604,7 +605,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
         taskStatus: null,
         score: q ? scoreMatch(f.text, q) : 100,
         action: () => {
-          window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: f.query } }))
+          elementsBrowserStore.setQ(f.query); onNavigate?.('/elementos')
           onClose()
         },
       }))
@@ -731,10 +732,10 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
       const tagQuery = q.slice(1).toLowerCase()
       const allTags = store.allUsedTags()
       if (!tagQuery) {
-        return allTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, type: 'tag' as const, taskStatus: null, score: 100, action: () => { const nodes = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)); if (nodes.length === 1) { openNodeDetail(nodes[0].id); onClose(); return }; window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: '#' + tag } })); onClose() } }))
+        return allTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, type: 'tag' as const, taskStatus: null, score: 100, action: () => { const nodes = store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)); if (nodes.length === 1) { openNodeDetail(nodes[0].id); onClose(); return }; elementsBrowserStore.setQ('#' + tag); onNavigate?.('/elementos'); onClose() } }))
       }
       const matchingTags = allTags.filter(tg => tg.toLowerCase().includes(tagQuery))
-      const tagItems: PaletteItem[] = matchingTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, sublabel: `${store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)).length} notas`, type: 'tag' as const, taskStatus: null, score: tag.toLowerCase().startsWith(tagQuery) ? 90 : 60, action: () => { window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: '#' + tag } })); onClose() } }))
+      const tagItems: PaletteItem[] = matchingTags.map(tag => ({ id: `tag-${tag}`, label: `#${tag}`, sublabel: `${store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(tag)).length} notas`, type: 'tag' as const, taskStatus: null, score: tag.toLowerCase().startsWith(tagQuery) ? 90 : 60, action: () => { elementsBrowserStore.setQ('#' + tag); onNavigate?.('/elementos'); onClose() } }))
       const exactTag = matchingTags.find(tg => tg.toLowerCase() === tagQuery)
       const noteItems: PaletteItem[] = exactTag ? store.allActive().filter(n => !n.deletedAt && (n.types || []).includes(exactTag)).map(n => ({ id: `tagged-${n.id}`, label: n.text || 'Sin título', sublabel: `#${exactTag}`, type: 'note' as const, taskStatus: (n.status as 'pending' | 'done' | null) ?? null, score: 50, action: () => { recordRecentNode(n.id); openNodeDetail(n.id); onClose() } })) : []
       return [...tagItems.sort((a, b) => b.score - a.score), ...noteItems]
@@ -766,7 +767,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     // Filtros guardados que coincidan
     for (const f of allFilterNodes()) {
       const sc2 = scoreMatch(f.text, searchTerm)
-      if (sc2 > 0) results.push({ id: `filtro-${f.id}`, label: f.text || t('common.noTitle'), sublabel: `◈ ${f.query}`, type: 'wf-action' as const, taskStatus: null, score: sc2 + 10, action: () => { window.dispatchEvent(new CustomEvent('wf:set-filter', { detail: { query: f.query } })); onClose() } })
+      if (sc2 > 0) results.push({ id: `filtro-${f.id}`, label: f.text || t('common.noTitle'), sublabel: `◈ ${f.query}`, type: 'wf-action' as const, taskStatus: null, score: sc2 + 10, action: () => { elementsBrowserStore.setQ(f.query); onNavigate?.('/elementos'); onClose() } })
     }
 
     // Búsqueda GLOBAL: todo el árbol activo — antes solo Agenda + favoritos,
