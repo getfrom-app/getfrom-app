@@ -4,6 +4,7 @@
 // El chat es el centro; la columna derecha reacciona; los contextos = proyectos.
 // ══════════════════════════════════════════════════════════════════════
 import { useEffect, useRef, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../store/nodeStore'
@@ -71,10 +72,25 @@ function resolveOwnAccentColor(nodeId: string | null): string | null {
   return null
 }
 
+/** Claves válidas de `Tab` (settingsNav.ts) — para validar el segmento de la
+ *  URL antes de aceptarlo como pestaña de Ajustes (una URL escrita a mano o
+ *  vieja no debe poder dejar `settingsTab` en un valor que rompa el nav). */
+const SETTINGS_TABS = new Set<SettingsTab>([
+  'cuenta', 'google', 'apariencia', 'ia', 'magic', 'asistente', 'atajos',
+  'exportar', 'importar', 'backups', 'captura',
+])
+
 export default function V2App() {
   useStore()
   const { t } = useTranslation()
   const chat = useAIChat()
+  const navigate = useNavigate()
+  const location = useLocation()
+  /** Prefijo de ruta actual — V2App se monta tanto en `/v2/*` (compatibilidad
+   *  de enlaces antiguos) como en `/*` (raíz, la app principal). Las rutas que
+   *  genera este componente deben respetar bajo cuál de los dos está montado,
+   *  o navegar añadiría/perdería el prefijo `/v2` en cada paso. */
+  const routeBase = location.pathname.startsWith('/v2') ? '/v2' : ''
   const [ready, setReady] = useState(store.isLoaded)
   const [loadFailed, setLoadFailed] = useState(false)
   const [loadRetry, setLoadRetry] = useState(0)
@@ -201,7 +217,33 @@ export default function V2App() {
   // Ajustes a pantalla completa: null = modo normal; si no, la pestaña activa.
   // Sustituye al modal — nav a la izquierda (donde van los contextos), contenido
   // al centro, columna derecha vacía.
+  //
+  // ⚠️ URL real (28 ago 2026, primera pieza del router — auditoría "no se
+  // puede compartir un enlace ni usar atrás/adelante dentro de la app"):
+  // `settingsTab` deja de ser la fuente de verdad y pasa a DERIVARSE de
+  // `location.pathname` vía el efecto de abajo — abrir/cerrar Ajustes ahora
+  // es simplemente navegar a `${routeBase}/settings/:tab` o volver atrás, y
+  // el efecto sincroniza el estado. Así el botón atrás del navegador cierra
+  // Ajustes, refrescar la página con `/settings/apariencia` en la URL abre
+  // esa pestaña directamente, y el enlace es compartible. Se eligió Ajustes
+  // como primera pieza por ser una vista de pantalla completa aislada (no
+  // interactúa con `centerElementId`/`rightMode`/`selectedCtxId`) — el resto
+  // de destinos (elemento, contexto, chat) quedan para tandas futuras.
   const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null)
+  useEffect(() => {
+    const m = location.pathname.match(/\/settings\/([a-z]+)$/)
+    const fromUrl = m && SETTINGS_TABS.has(m[1] as SettingsTab) ? (m[1] as SettingsTab) : null
+    setSettingsTab(fromUrl)
+  }, [location.pathname])
+  /** Abrir Ajustes = navegar. El efecto de arriba deriva `settingsTab` de la
+   *  URL resultante — no hace falta (ni conviene) llamar a setSettingsTab
+   *  aquí también, sería una segunda fuente de verdad compitiendo con la 1ª. */
+  const openSettings = (tab: SettingsTab) => navigate(`${routeBase}/settings/${tab}`)
+  /** Cerrar Ajustes = volver a la ruta base. No `navigate(-1)`: si se llegó
+   *  aquí por enlace directo o refresco (sin entrada previa en el historial
+   *  de ESTA sesión), ir "atrás" saldría de la app. La ruta base siempre
+   *  existe y es segura. */
+  const closeSettings = () => navigate(routeBase || '/')
   const [showProfile, setShowProfile] = useState(false)
 
   /** «Perfil»: la nota del perfil ocupa el centro y, a la derecha, Fromly abre una
@@ -1011,14 +1053,14 @@ export default function V2App() {
     return (
       <ToastProvider>
       <div className="v2-root" style={{ ['--v2-right' as string]: '0px' }}>
-        <V2SettingsNav activeTab={settingsTab} onSelect={setSettingsTab} onClose={() => setSettingsTab(null)} />
+        <V2SettingsNav activeTab={settingsTab} onSelect={openSettings} onClose={closeSettings} />
         <main className="v2-col v2-center" style={{ padding: 0 }}>
           <div className="settings-view-content" style={{ height: '100%' }}>
             <SettingsPaneContent activeTab={settingsTab} />
           </div>
         </main>
         <aside className="v2-col v2-right" />
-        <NextEventBar onOpenBackups={() => setSettingsTab('backups')} onOpenAgents={() => { setSettingsTab(null); onOpenElementsFiltered('agent') }} />
+        <NextEventBar onOpenBackups={() => openSettings('backups')} onOpenAgents={() => { closeSettings(); onOpenElementsFiltered('agent') }} />
       </div>
       </ToastProvider>
     )
@@ -1054,7 +1096,7 @@ export default function V2App() {
     <ToastProvider>
     <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}
       onDragOver={onRootDragOver} onDragLeave={onRootDragLeave} onDrop={onRootDrop}>
-      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onOpenAttach={onOpenAttach} onRecordInCtx={onRecordInCtx} onOpenSettings={() => setSettingsTab('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={onOpenProfile} />
+      <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onOpenAttach={onOpenAttach} onRecordInCtx={onRecordInCtx} onOpenSettings={() => openSettings('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={onOpenProfile} />
       {centerElementId ? (
         // ⚠️ `key` es OBLIGATORIO: sin él, al pasar de un elemento a otro (p.ej.
         // abrir una nota de Casa Alicante y luego la nota diaria de otro día
@@ -1225,7 +1267,7 @@ export default function V2App() {
           <button className="v2-batchupload-dismiss" onClick={() => { setBatchUploadIds(null); setBatchPickerOpen(false) }} aria-label={t('common.close', 'Cerrar')}>✕</button>
         </div>
       )}
-      <NextEventBar onOpenBackups={() => setSettingsTab('backups')} onOpenAgents={() => onOpenElementsFiltered('agent')} />
+      <NextEventBar onOpenBackups={() => openSettings('backups')} onOpenAgents={() => onOpenElementsFiltered('agent')} />
     </div>
     </ToastProvider>
   )
