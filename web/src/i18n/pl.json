@@ -2257,6 +2257,8 @@
   "v2.trash.title": "Kosz",
   "v2.trash.empty": "Kosz jest pusty.",
   "v2.trash.restore": "Przywróć",
+  "v2.trash.restoredToast": "\"{{name}}\" przywrócone",
+  "v2.trash.restoredOpen": "Otwórz →",
   "v2.trash.emptyBtn": "Opróżnij kosz ({{count}})",
   "docSlash.table": "Tabela",
   "docSlash.tableDesc": "Wbudowany widok tabeli z elementami podrzędnymi",

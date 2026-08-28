@@ -2257,6 +2257,8 @@
   "v2.trash.title": "Cestino",
   "v2.trash.empty": "Il cestino è vuoto.",
   "v2.trash.restore": "Ripristina",
+  "v2.trash.restoredToast": "\"{{name}}\" ripristinato",
+  "v2.trash.restoredOpen": "Apri →",
   "v2.trash.emptyBtn": "Svuota cestino ({{count}})",
   "docSlash.table": "Tabella",
   "docSlash.tableDesc": "Vista tabella inline con elementi figli",

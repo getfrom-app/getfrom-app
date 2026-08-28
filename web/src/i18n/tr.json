@@ -2257,6 +2257,8 @@
   "v2.trash.title": "Çöp",
   "v2.trash.empty": "Çöp kutusu boş.",
   "v2.trash.restore": "Geri yükle",
+  "v2.trash.restoredToast": "\"{{name}}\" geri yüklendi",
+  "v2.trash.restoredOpen": "Aç →",
   "v2.trash.emptyBtn": "Çöp kutusunu boşalt ({{count}})",
   "docSlash.table": "Tablo",
   "docSlash.tableDesc": "Alt öğeleriyle satır içi tablo görünümü",

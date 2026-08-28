@@ -2257,6 +2257,8 @@
   "v2.trash.title": "Κάδος",
   "v2.trash.empty": "Ο κάδος είναι άδειος.",
   "v2.trash.restore": "Επαναφορά",
+  "v2.trash.restoredToast": "Το \"{{name}}\" επαναφέρθηκε",
+  "v2.trash.restoredOpen": "Άνοιγμα →",
   "v2.trash.emptyBtn": "Άδειασμα κάδου ({{count}})",
   "docSlash.table": "Πίνακας",
   "docSlash.tableDesc": "Ενσωματωμένη προβολή πίνακα με θυγατρικά στοιχεία",

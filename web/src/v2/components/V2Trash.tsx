@@ -1,7 +1,7 @@
 // Papelera de Fromly 2.0 — lista los nodos eliminados (hijos del nodo 🗑 Papelera) y
 // permite RESTAURARLOS (vuelven a su sitio) o vaciar la papelera. Reutiliza los
 // helpers reales de v1 (papeleraHelper): borrado suave y reversible.
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '../../store/nodeStore'
@@ -9,11 +9,15 @@ import { trashItems, restoreNode, emptyTrash } from '../../utils/papeleraHelper'
 import Icon from './Icon'
 import { displayTitle } from '../../utils/displayText'
 
-export default function V2Trash({ onClose }: { onClose: () => void }) {
+export default function V2Trash({ onClose, onOpenNode }: { onClose: () => void; onOpenNode?: (id: string) => void }) {
   const { t } = useTranslation()
-  useStore()
+  const store = useStore()
   const [, force] = useState(0)
   const [q, setQ] = useState('')
+  // N8 de la auditoría (28 ago 2026): restaurar no decía a dónde había vuelto
+  // el elemento — con un padre distinto según cada caso (`restoreNode` cae al
+  // padre original, o a Agenda si ya no existe), "restaurado" a secas no basta.
+  const [justRestored, setJustRestored] = useState<{ nodeText: string; parentId: string } | null>(null)
   // Los nodos en papelera llevan lápida (`deletedAt`): es lo que hace que el resto
   // de la app no los vea. Aquí se listan a propósito.
   const allItems = trashItems()
@@ -23,7 +27,12 @@ export default function V2Trash({ onClose }: { onClose: () => void }) {
   const needle = q.trim().toLowerCase()
   const items = needle ? allItems.filter(n => (n.text || '').toLowerCase().includes(needle)) : allItems
 
-  const restore = (id: string) => { restoreNode(id); force(x => x + 1) }
+  const restore = (id: string) => {
+    const node = store.getNode(id)
+    const parentId = restoreNode(id)
+    force(x => x + 1)
+    if (parentId) setJustRestored({ nodeText: title(node?.text || ''), parentId })
+  }
   const empty = () => {
     if (!allItems.length) return
     // Vacía SIEMPRE toda la papelera, no solo lo que el buscador esté
@@ -35,6 +44,12 @@ export default function V2Trash({ onClose }: { onClose: () => void }) {
   }
 
   const title = (txt: string) => displayTitle(txt, t('v2.untitled', 'Sin título'))
+
+  useEffect(() => {
+    if (!justRestored) return
+    const timer = setTimeout(() => setJustRestored(null), 5000)
+    return () => clearTimeout(timer)
+  }, [justRestored])
 
   return createPortal((
     <div className="v2-modal-overlay" onMouseDown={onClose}>
@@ -69,6 +84,16 @@ export default function V2Trash({ onClose }: { onClose: () => void }) {
             ))
           )}
         </div>
+        {justRestored && (
+          <div className="v2-trash-toast">
+            <span>{t('v2.trash.restoredToast', '"{{name}}" restaurado', { name: justRestored.nodeText })}</span>
+            {onOpenNode && (
+              <button onClick={() => { onOpenNode(justRestored.parentId); onClose() }}>
+                {t('v2.trash.restoredOpen', 'Abrir →')}
+              </button>
+            )}
+          </div>
+        )}
         {allItems.length > 0 && (
           <div className="v2-modal-foot">
             <button className="v2-trash-empty" onClick={empty}>{t('v2.trash.emptyBtn', 'Vaciar papelera ({{count}})', { count: allItems.length })}</button>

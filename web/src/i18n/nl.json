@@ -2257,6 +2257,8 @@
   "v2.trash.title": "Prullenbak",
   "v2.trash.empty": "De prullenbak is leeg.",
   "v2.trash.restore": "Herstellen",
+  "v2.trash.restoredToast": "\"{{name}}\" hersteld",
+  "v2.trash.restoredOpen": "Openen →",
   "v2.trash.emptyBtn": "Prullenbak legen ({{count}})",
   "docSlash.table": "Tabel",
   "docSlash.tableDesc": "Inline tabelweergave met onderliggende items",

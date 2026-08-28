@@ -2538,6 +2538,8 @@
   "v2.trash.emptyBtn": "Empty trash ({{count}})",
   "v2.trash.noSearchResults": "Nothing matches your search.",
   "v2.trash.restore": "Restore",
+  "v2.trash.restoredToast": "\"{{name}}\" restored",
+  "v2.trash.restoredOpen": "Open →",
   "v2.trash.searchPlaceholder": "Search the trash",
   "v2.trash.title": "Trash",
   "v2.unseenAgentResultOne": "1 new agent report",

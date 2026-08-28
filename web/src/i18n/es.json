@@ -2543,6 +2543,8 @@
   "v2.trash.emptyBtn": "Vaciar papelera ({{count}})",
   "v2.trash.noSearchResults": "Nada coincide con la búsqueda.",
   "v2.trash.restore": "Restaurar",
+  "v2.trash.restoredToast": "\"{{name}}\" restaurado",
+  "v2.trash.restoredOpen": "Abrir →",
   "v2.trash.searchPlaceholder": "Buscar en la papelera",
   "v2.trash.title": "Papelera",
   "v2.unseenAgentResultOne": "1 informe de agente nuevo",

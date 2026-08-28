@@ -606,7 +606,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
           <Icon name="chevron-down" size={13} className="v2-userchip-caret" />
         </button>
       </div>
-      {showTrash && <V2Trash onClose={() => setShowTrash(false)} />}
+      {showTrash && <V2Trash onClose={() => setShowTrash(false)} onOpenNode={onOpenNode} />}
       {showNewContext && (
         <NewContextModal
           defaultParentId={null}

@@ -2257,6 +2257,8 @@
   "v2.trash.title": "Lixo",
   "v2.trash.empty": "O lixo está vazio.",
   "v2.trash.restore": "Restaurar",
+  "v2.trash.restoredToast": "\"{{name}}\" restaurado",
+  "v2.trash.restoredOpen": "Abrir →",
   "v2.trash.emptyBtn": "Esvaziar lixo ({{count}})",
   "docSlash.table": "Tabela",
   "docSlash.tableDesc": "Vista de tabela inline com filhos",

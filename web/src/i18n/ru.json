@@ -2257,6 +2257,8 @@
   "v2.trash.title": "Корзина",
   "v2.trash.empty": "Корзина пуста.",
   "v2.trash.restore": "Восстановить",
+  "v2.trash.restoredToast": "«{{name}}» восстановлено",
+  "v2.trash.restoredOpen": "Открыть →",
   "v2.trash.emptyBtn": "Очистить корзину ({{count}})",
   "docSlash.table": "Таблица",
   "docSlash.tableDesc": "Встроенное табличное представление с дочерними элементами",

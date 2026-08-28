@@ -2257,6 +2257,8 @@
   "v2.trash.title": "Corbeille",
   "v2.trash.empty": "La corbeille est vide.",
   "v2.trash.restore": "Restaurer",
+  "v2.trash.restoredToast": "« {{name}} » restauré",
+  "v2.trash.restoredOpen": "Ouvrir →",
   "v2.trash.emptyBtn": "Vider la corbeille ({{count}})",
   "docSlash.table": "Tableau",
   "docSlash.tableDesc": "Vue tableau intégrée avec éléments enfants",

@@ -2257,6 +2257,8 @@
   "v2.trash.title": "Papperskorg",
   "v2.trash.empty": "Papperskorgen är tom.",
   "v2.trash.restore": "Återställ",
+  "v2.trash.restoredToast": "\"{{name}}\" återställdes",
+  "v2.trash.restoredOpen": "Öppna →",
   "v2.trash.emptyBtn": "Töm papperskorgen ({{count}})",
   "docSlash.table": "Tabell",
   "docSlash.tableDesc": "Infogad tabellvy med underelement",
