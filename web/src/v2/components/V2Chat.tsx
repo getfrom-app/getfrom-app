@@ -29,7 +29,8 @@ import Icon from './Icon'
 
 interface Props {
   currentNodeId: string | null
-  contextLabel: string
+  /** null = sin contexto/elemento enfocado (chat general) — ver V2App.tsx. */
+  contextLabel: string | null
   onFilesDropped: (files: File[]) => void
   embedded?: boolean
   elementScoped?: boolean
@@ -434,7 +435,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   }
 
   const isEmpty = messages.length === 0
-  const hasCtx = !!contextLabel && contextLabel !== 'General'
+  const hasCtx = !!contextLabel
 
   const Wrapper = embedded ? 'div' : 'main'
   return (
@@ -632,7 +633,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               ref={taRef}
               value={input}
               rows={1}
-              placeholder={isRecording ? t('v2.chat.voiceRecording', 'Escuchando…') : `${t('v2.chat.composerPlaceholder', 'Escribe a Fromly')}${contextLabel && contextLabel !== 'General' ? ` · ${contextLabel}` : ''}…`}
+              placeholder={isRecording ? t('v2.chat.voiceRecording', 'Escuchando…') : `${t('v2.chat.composerPlaceholder', 'Escribe a Fromly')}${contextLabel ? ` · ${contextLabel}` : ''}…`}
               onChange={onInputChange}
               onKeyDown={onKeyDown}
               onBlur={() => setTimeout(() => setMentionQuery(null), 150)}

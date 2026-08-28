@@ -1171,7 +1171,13 @@ export default function V2App() {
   const currentNodeId = focusNodeId || selectedCtxId
   const focusNode = focusNodeId ? store.getNode(focusNodeId) : null
   const ctxNode = selectedCtxId ? store.getNode(selectedCtxId) : null
-  const contextLabel = focusNode?.text || ctxNode?.text || t('v2.general', 'General')
+  // T7 de la auditoría (28 ago 2026): antes caía a `t('v2.general')` como
+  // valor por defecto, y V2Chat comparaba ese texto YA TRADUCIDO contra el
+  // literal español 'General' para decidir si mostrar el sufijo de contexto
+  // — roto en cualquier idioma donde "General" se traduce (alemán "Allgemein",
+  // francés "Général"...). Ahora `null` es la señal de "sin contexto", sin
+  // depender de qué texto tenga esa traducción.
+  const contextLabel = focusNode?.text || ctxNode?.text || null
 
   if (!ready) {
     return <div className="v2-loading">{t('v2.loadingFromly', 'Cargando Fromly…')}</div>
