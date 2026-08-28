@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.8.1 — 28 agosto 2026 · Tu conversación te sigue entre dispositivos
+
+- **El chat ya no se queda en un solo dispositivo.** Empieza una conversación en el iPhone, ábrela en la web (o al revés) y sigue ahí — el historial se guarda en tu cuenta, no solo en el aparato donde escribiste.
+- Páginas de precios y ayuda más precisas sobre qué hace Fromly hoy.
+
+---
+
 ## Web v9.8.0 · iOS v2.19 — 28 agosto 2026 · Buscar en todo, papelera en iPhone y compartir imágenes
 
 - **Buscar en todo, de verdad.** En la web, ⌘K ahora busca en todo tu Fromly — también DENTRO del texto de tus notas, con un fragmento del resultado. En el iPhone, nueva lupa en la barra superior con el buscador completo (texto, filtros y contextos).
