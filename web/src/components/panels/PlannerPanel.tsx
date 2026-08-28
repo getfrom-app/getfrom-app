@@ -381,7 +381,22 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const { showToast } = useToast()
 
   const today = startOfDay(new Date())
-  const [viewMode,      setViewMode]      = useState<ViewMode>(initialView ?? viewTabs[0] ?? 'day')
+  // A7 de la auditoría (28 ago 2026): la vista elegida (Semana/Mes/Año) se
+  // perdía en cuanto el componente se remontaba (abrir y cerrar un elemento,
+  // navegar y volver a Agenda...) — siempre caía a `initialView` ('week' en
+  // la única llamada real, V2App.tsx). Persistida en localStorage, validada
+  // contra `viewTabs` (esta instancia concreta puede no admitir 'day').
+  const [viewMode,      setViewMode]      = useState<ViewMode>(() => {
+    try {
+      const saved = localStorage.getItem('from_agenda_view_mode') as ViewMode | null
+      if (saved && viewTabs.includes(saved)) return saved
+    } catch { /* localStorage no disponible */ }
+    return initialView ?? viewTabs[0] ?? 'day'
+  })
+
+  useEffect(() => {
+    try { localStorage.setItem('from_agenda_view_mode', viewMode) } catch { /* localStorage no disponible */ }
+  }, [viewMode])
 
   // Vista Mes: al abrirla, la fila de HOY a la vista — sin esto el mes abría
   // anclado al día 1 y la semana actual (con sus tareas) quedaba bajo el fold,
