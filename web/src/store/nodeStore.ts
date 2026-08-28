@@ -1078,7 +1078,10 @@ export class NodeStore {
     isDiaryEntry?: boolean
     diaryDate?: string | null
     types?: string[]
-    extraData?: Record<string, string>
+    // `unknown`, no `string`: varios campos reales (`_audios`, `_props`...) son
+    // objetos/arrays — igual que `updateNode`, solo se JSON.stringify una vez
+    // más abajo, nunca se valida el tipo de cada valor en tiempo de ejecución.
+    extraData?: Record<string, unknown>
     isAtomic?: boolean
     isResource?: boolean
     /** ID determinista para nodos únicos (raíces, Perfil, diario…). Si el nodo

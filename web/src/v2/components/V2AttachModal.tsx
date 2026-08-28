@@ -57,8 +57,9 @@ export default function V2AttachModal({ onClose, onFiles, onOpenDrive, parentId,
     const withProto = /^https?:\/\//i.test(clean) ? clean : `https://${clean}`
     let host = withProto
     try { host = new URL(withProto).hostname.replace(/^www\./, '') } catch { /* URL rara: se queda el texto */ }
-    const node = store.createNode({ text: host, parentId })
-    store.updateNode(node.id, { isResource: true, extraData: JSON.stringify({ _resourceUrl: withProto }) })
+    // R7 de la auditoría: create-luego-update, un fallo entre las dos
+    // escrituras dejaba una nota de texto normal en vez de un recurso-URL.
+    const node = store.createNode({ text: host, parentId, isResource: true, extraData: { _resourceUrl: withProto } })
     onOpenNode(node.id)
     onClose()
     unfurlUrl(withProto)

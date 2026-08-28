@@ -785,8 +785,14 @@ export default function V2App() {
   // la hizo el servidor en /google/drive/import) — mismo `extraData` que
   // `uploadResourceNode`, sin repetir la subida.
   const createDriveResourceNode = (result: DriveImportResult, parentId: string | null): string => {
-    const node = store.createNode({ text: result.name.replace(/\.[^.]+$/, ''), parentId })
-    store.updateNode(node.id, { isResource: true, extraData: JSON.stringify({ _resourceUrl: result.publicUrl, _resourceKey: result.key, _resourceType: result.resourceType }) })
+    // R7 de la auditoría (28 ago 2026): create-luego-update — un fallo justo
+    // entre las dos escrituras dejaba un nodo de texto normal, sin marcar
+    // como recurso. `createNode` ya acepta `isResource`/`extraData` en el
+    // mismo alta.
+    const node = store.createNode({
+      text: result.name.replace(/\.[^.]+$/, ''), parentId, isResource: true,
+      extraData: { _resourceUrl: result.publicUrl, _resourceKey: result.key, _resourceType: result.resourceType },
+    })
     return node.id
   }
 
@@ -819,9 +825,11 @@ export default function V2App() {
     const parentId = captureParentId()
     if (!parentId || !r.audioKey) return
     const title = (r.transcript || '').trim().slice(0, 60) || t('v2.voiceNote', 'Nota de voz')
-    const n = store.createNode({ text: title, parentId })
-    store.updateNode(n.id, {
-      extraData: JSON.stringify({ _audios: [{ audioKey: r.audioKey, durationSec: r.durationSec, transcript: r.transcript }] }),
+    // R7 de la auditoría: create-luego-update, un fallo entre las dos
+    // escrituras dejaba una nota de voz sin audio enganchado.
+    const n = store.createNode({
+      text: title, parentId,
+      extraData: { _audios: [{ audioKey: r.audioKey, durationSec: r.durationSec, transcript: r.transcript }] },
     })
     setCenterElementId(n.id)
   }
