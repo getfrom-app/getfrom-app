@@ -29,6 +29,7 @@ import DocContextMention from './DocContextMention'
 import { extractDateFromEnd, recurrenceToString } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { uploadFile } from '../../api/client'
+import { saveNodeBodyVersion } from '../../api/nodeHistory'
 import { setDocEditor, notifyDocEditor } from '../../utils/docEditorStore'
 import TaskItemChip from './TaskItemChip'
 import { MagicTaskGhost } from './MagicTaskGhost'
@@ -100,6 +101,13 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // disparar, así que no sirve por sí solo para saber si hay cambios sin guardar.
   const pendingSaveRef = useRef(false)
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
+  // Historial con undo (P2 de la Parte II, 29 ago 2026): el último body que se
+  // GUARDÓ de verdad (no leído de `node.body`, que puede quedar obsoleto en el
+  // cierre de `onUpdate` — el editor persiste entre renders, `node` no).
+  // Throttle de 5 min: un checkpoint cada rato de edición activa, no una
+  // versión por cada autosave de 500ms (llenaría el tope de 50 en minutos).
+  const lastSavedBodyRef = useRef(node.body || '')
+  const lastVersionSavedAtRef = useRef(0)
   const [showColors, setShowColors] = useState(false)
   // Fechas pendientes de aplicar a la próxima tarea creada por el magic (clave = texto limpio
   // en minúsculas). El ghost quita la fecha del título al aceptar; aquí la recuperamos cuando
@@ -840,7 +848,19 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       const html = editor.getHTML()
       saveTimer.current = window.setTimeout(() => {
         autoMagicTasks() // Magic: párrafos-tarea (fuera del cursor) → casilla
-        store.updateNode(node.id, bodySave(editor.getHTML()))
+        const newBody = editor.getHTML()
+        const prevBody = lastSavedBodyRef.current
+        const now = Date.now()
+        // `<p></p>` (párrafo vacío por defecto de Tiptap) es una cadena NO
+        // vacía — `.trim()` a secas lo dejaba pasar como si tuviera contenido
+        // real, guardando versiones "(vacío)" sin utilidad para deshacer nada.
+        const prevHasContent = prevBody.replace(/<[^>]+>/g, '').trim().length > 0
+        if (prevHasContent && prevBody !== newBody && now - lastVersionSavedAtRef.current > 5 * 60 * 1000) {
+          lastVersionSavedAtRef.current = now
+          saveNodeBodyVersion(node.id, prevBody).catch(() => { /* red de seguridad best-effort — nunca bloquea el guardado real */ })
+        }
+        lastSavedBodyRef.current = newBody
+        store.updateNode(node.id, bodySave(newBody))
         syncTasksToNodes()
         syncCitationDescendants()
         pendingSaveRef.current = false
@@ -948,6 +968,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     if (pendingSaveRef.current) return
     if (editor.getHTML() === (node.body || '')) return
     editor.commands.setContent(node.body || '', false)
+    lastSavedBodyRef.current = node.body || ''
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, node.body])
 

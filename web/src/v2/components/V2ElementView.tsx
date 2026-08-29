@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
 import PublishButton from '../../components/PublishButton'
+import NodeHistoryModal from './NodeHistoryModal'
 import V2DetailView from './V2DetailView'
 import { elementDisplayTitle } from '../../utils/docNode'
 import { fmtDate, fmtDateFull } from '../../utils/formatDate'
@@ -64,6 +65,7 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
 }) {
   useStore()
   const { t, i18n } = useTranslation()
+  const [showHistory, setShowHistory] = useState(false)
   const node = store.getNode(nodeId)
   // Recursos (PDF/imagen/audio/enlace/podcast…) llevan publicar+eliminar AQUÍ, en la
   // cabecera, junto al título — antes cada visor de recurso repetía el título en su
@@ -124,6 +126,24 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
           </button>
           <EditableTitle nodeId={nodeId} />
+          {/* Historial con undo (P2 de la Parte II, 29 ago 2026) — visible en
+              cualquier nota con cuerpo, no solo recursos. `DocEditor.tsx`
+              guarda un checkpoint cada ~5 min de edición activa; aquí se ve
+              la lista y se puede volver a una versión anterior. Oculto para
+              tareas: su `body` no es lo que se ve como "NOTAS" (esa es una
+              nota hija con `_containerNotes`, ver `nodeActions.ts`) —
+              enseñar aquí un historial de un campo invisible confundiría más
+              de lo que ayuda. */}
+          {node && node.status === null && (
+            <button
+              title={t('v2.history.title', 'Historial de esta nota')}
+              onClick={() => setShowHistory(true)}
+              className="v2-iconbtn"
+              style={{ flexShrink: 0 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 7v5l3 3"/></svg>
+            </button>
+          )}
           {/* El globo «Hablar de esto» se QUITÓ del todo (Alberto, 5 ago 2026:
               "hay que quitar el globo de texto pequeño de la cabecera de la nota,
               que era un botón que iba al chat pero que ya no es necesario") — la
@@ -156,6 +176,7 @@ export default function V2ElementView({ nodeId, onClose, onSelectCtx, onOpenElem
       </div>
       )}
       <div className="v2-detail-body" onMouseDown={focusDocEnd}><V2DetailView nodeId={nodeId} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} hideContext={isCtxMemory} hideToolbar={compact} /></div>
+      {showHistory && node && <NodeHistoryModal nodeId={node.id} onClose={() => setShowHistory(false)} />}
     </div>
   )
 }
