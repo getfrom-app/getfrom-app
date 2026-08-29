@@ -239,9 +239,9 @@ function AppInner() {
         </PrivateRoute>
       } />
       {/* v1 (clásica) retirada de la web (15 jul 2026, Alberto: "quita la v1 de web, ya no
-          debe ser accesible") — el componente MainLayout.tsx y sus paneles quedan como
-          código muerto, sin ruta que los monte. No borrados de golpe por si algo interno
-          seguía importándolos; limpiar en una pasada aparte si se confirma que nada los usa. */}
+          debe ser accesible"). MainLayout.tsx y los 30 archivos que solo él usaba (paneles,
+          vistas, WFTopBar, CommandPalette...) se borraron el 29 ago 2026 (R8 de la auditoría)
+          tras confirmar con `tsc -b` limpio que ningún archivo vivo los importaba. */}
       {/* Por defecto: Fromly 2.0. Toda la app requiere cuenta. */}
       <Route path="/*" element={
         <PrivateRoute>
