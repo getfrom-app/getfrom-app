@@ -372,6 +372,25 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         </button>
       </div>
 
+      {/* Favoritos anclados arriba del sidebar (P4 · Ordenar de la auditoría, 28 ago
+          2026: "existen como estrella y como filtro, pero no viven en ningún sitio").
+          Antes solo eran un chip dentro de Elementos — sin superficie fija, marcar
+          algo de favorito no cambiaba nada visible en el día a día. */}
+      {(() => {
+        const favorites = store.allActive().filter(n => n.isFavorite).sort(byName)
+        if (favorites.length === 0) return null
+        return (
+          <div className="v2-ctx-list" style={{ marginBottom: 8, flex: 'none' }}>
+            {favorites.map(n => (
+              <button key={n.id} type="button" className="v2-ctx-row" onClick={() => onOpenNode?.(n.id)}>
+                <Icon name="star" size={16} className="v2-ctx-glyph" />
+                <span className="v2-el-title">{n.text || t('common.noTitle', 'Sin título')}</span>
+              </button>
+            ))}
+          </div>
+        )
+      })()}
+
       {/* Avisos (conversación de agente pendiente / informe de agente nuevo) — texto
           destacado, NO un botón como "Nueva conversación" (Alberto, 5 ago 2026: "en
           lugar de como botones, ponlos como de texto... pero destacado que se vea
