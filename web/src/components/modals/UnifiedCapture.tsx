@@ -683,6 +683,24 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
           score: 170,
           action: () => { setView('contextos'); setActiveIdx(0) },
         },
+        // Recientes (P1 "Encontrar" de la Parte II de la auditoría, 29 ago
+        // 2026: `getRecentNodes`/`recordRecentNode` ya existían, pero solo se
+        // usaban al ABRIR un nodo — nunca se leían para poblar esta vista
+        // vacía, así que el historial que se guardaba no se veía en ningún
+        // sitio). Score justo debajo de los 4 accesos fijos.
+        ...getRecentNodes()
+          .map(id => store.getNode(id))
+          .filter((n): n is NonNullable<typeof n> => !!n && !n.deletedAt)
+          .slice(0, 6)
+          .map((n, i) => ({
+            id: `recent-${n.id}`,
+            label: n.text || 'Sin título',
+            sublabel: 'Reciente',
+            type: 'note' as const,
+            taskStatus: (n.status as 'pending' | 'done' | null) ?? null,
+            score: 160 - i,
+            action: () => { recordRecentNode(n.id); openNodeDetail(n.id); onClose() },
+          })),
       ]
     }
 

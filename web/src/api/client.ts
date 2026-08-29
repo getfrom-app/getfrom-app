@@ -329,12 +329,6 @@ export async function exportNodes(format: 'json' | 'markdown' = 'json'): Promise
   return format === 'markdown' ? res.text() : res.json()
 }
 
-// ── Search (server-side) ──────────────────────────────────────────────────
-
-export async function searchNodes(q: string, limit = 20): Promise<{ nodes: unknown[] }> {
-  return apiRequest(`/search/nodes?q=${encodeURIComponent(q)}&limit=${limit}`)
-}
-
 // RAG: contenido relacionado por SIGNIFICADO (modo push). Devuelve ids de nodos
 // del vault semánticamente cercanos al texto. Best-effort: [] si falla.
 export async function ragRelated(query: string, excludeIds: string[] = [], k = 6): Promise<{ nodeId: string; score: number }[]> {
