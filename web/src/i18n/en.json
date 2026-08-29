@@ -2502,6 +2502,7 @@
   "v2.profile.hint": "Write here whatever you want Fromly to know about you: your goals, your situation, how you work, how you like to be talked to… It’s taken into account in all your conversations and agents, so you don’t need to repeat it every time.",
   "v2.profile.title": "Profile",
   "v2.profileChatPending": "Fromly wants to know more about you",
+  "v2.mobileMenu": "Menu",
   "v2.related": "Related",
   "v2.removeFromThisConversation": "Remove from this conversation",
   "v2.review.aiSuggests": "AI suggests: {{name}}",

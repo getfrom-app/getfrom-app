@@ -2189,6 +2189,7 @@
   "v2.detachedFromConversation": "Αφαιρέθηκε από τη συνομιλία (παραμένει στο Fromly)",
   "v2.conversation": "Συνομιλία",
   "v2.addToContextEllipsis": "Προσθήκη στο πλαίσιο…",
+  "v2.mobileMenu": "Μενού",
   "v2.related": "Σχετικά",
   "v2.tasks": "Εργασίες",
   "v2.elementsCount": "Στοιχεία ({{count}})",

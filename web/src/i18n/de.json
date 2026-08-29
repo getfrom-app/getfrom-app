@@ -2189,6 +2189,7 @@
   "v2.detachedFromConversation": "Aus der Unterhaltung entfernt (bleibt in Fromly)",
   "v2.conversation": "Unterhaltung",
   "v2.addToContextEllipsis": "Zu Kontext hinzufügen…",
+  "v2.mobileMenu": "Menü",
   "v2.related": "Verwandt",
   "v2.tasks": "Aufgaben",
   "v2.elementsCount": "Elemente ({{count}})",

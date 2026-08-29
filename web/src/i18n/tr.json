@@ -2189,6 +2189,7 @@
   "v2.detachedFromConversation": "Konuşmadan kaldırıldı (Fromly'de kalmaya devam ediyor)",
   "v2.conversation": "Konuşma",
   "v2.addToContextEllipsis": "Bağlama ekle…",
+  "v2.mobileMenu": "Menü",
   "v2.related": "İlgili",
   "v2.tasks": "Görevler",
   "v2.elementsCount": "Öğeler ({{count}})",

@@ -280,6 +280,13 @@ export default function V2App() {
   const [agendaCenterDate, setAgendaCenterDate] = useState(() => new Date())
   useEffect(() => { localStorage.setItem('v2_right_w', String(rightWidth)) }, [rightWidth])
 
+  // Web móvil de una columna (P4 · Ordenar de la auditoría, 28 ago 2026): en
+  // ≤900px el sidebar se oculta por CSS (ver v2.css) sin ningún sustituto —
+  // sin esto no hay forma de llegar a Chat/Elementos/Contextos/Bandeja desde
+  // Agenda en un teléfono. El cajón se cierra solo al navegar a cualquier sitio.
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  useEffect(() => { setMobileNavOpen(false) }, [rightMode, selectedCtxId, centerElementId])
+
   // Auto-actualizar «Lo que Fromly sabe» del contexto al GUARDAR un elemento (nota/
   // tarea/documento): se dispara al SALIR del detalle (cerrar o abrir otro), no en
   // cada tecla — compara el snapshot de apertura vs. el de cierre y solo llama a la
@@ -1246,8 +1253,12 @@ export default function V2App() {
 
   return (
     <ToastProvider>
-    <div className="v2-root" style={{ ['--v2-right' as string]: `${rightWidth}px` }}
+    <div className={`v2-root${mobileNavOpen ? ' v2-mobile-nav-open' : ''}`} style={{ ['--v2-right' as string]: `${rightWidth}px` }}
       onDragOver={onRootDragOver} onDragLeave={onRootDragLeave} onDrop={onRootDrop}>
+      <button type="button" className="v2-mobile-menu-btn" onClick={() => setMobileNavOpen(true)} title={t('v2.mobileMenu', 'Menú')}>
+        <Icon name="menu" size={18} />
+      </button>
+      {mobileNavOpen && <button type="button" className="v2-mobile-nav-backdrop" aria-label={t('common.close', 'Cerrar')} onClick={() => setMobileNavOpen(false)} />}
       <V2Sidebar selectedCtxId={selectedCtxId} onSelectCtx={onSelectCtx} onSelectGeneral={onSelectGeneral} activeGeneralDest={selectedCtxId ? null : (rightMode === 'contexto' ? null : rightMode)} onNewChatInCtx={onNewChatInCtx} onNewNoteInCtx={onNewNoteInCtx} onNewCanvasInCtx={onNewCanvasInCtx} onOpenAttach={onOpenAttach} onRecordInCtx={onRecordInCtx} onOpenSettings={() => openSettings('cuenta')} onOpenConversation={onOpenConversation} onOpenNode={onOpenNode} onOpenProfile={onOpenProfile} />
       {centerElementId ? (
         // ⚠️ `key` es OBLIGATORIO: sin él, al pasar de un elemento a otro (p.ej.

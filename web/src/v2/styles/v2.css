@@ -1405,6 +1405,34 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 @media (max-width: 900px) {
   .v2-root { grid-template-columns: 1fr; }
   .v2-sidebar, .v2-right { display: none; }
+
+  /* Botón de menú — única forma de llegar a Chat/Elementos/Contextos/Bandeja/
+     Favoritos/Ajustes en móvil sin la barra lateral (P4 · Ordenar de la
+     auditoría, 28 ago 2026: "web móvil de una columna... es la única historia
+     Android posible hoy" — hasta ahora, sin esto, no había NINGUNA forma de
+     salir de Agenda en una pantalla de 375px, ni web ni PWA instalada). Fijo,
+     por ENCIMA del contenido central en vez de dentro de su flujo — el centro
+     (Agenda/Chat/Elementos) no reserva hueco propio para él. */
+  .v2-mobile-menu-btn {
+    position: fixed; top: 10px; left: 10px; z-index: 30;
+    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+    background: var(--v2-elevated); border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r);
+    box-shadow: var(--v2-shadow-sm); color: var(--text-primary);
+  }
+
+  /* Abierto: el sidebar entero (destinos + favoritos + avisos + contextos +
+     cuenta) se convierte en un cajón a pantalla completa con un margen a la
+     derecha para ver que sigue habiendo algo detrás — mismo componente que en
+     desktop, cero lógica duplicada. Se cierra solo al navegar (V2App.tsx,
+     useEffect sobre rightMode/selectedCtxId/centerElementId) o tocando el
+     fondo. */
+  .v2-root.v2-mobile-nav-open .v2-sidebar {
+    display: flex; position: fixed; inset: 0 15vw 26px 0; z-index: 50;
+    box-shadow: var(--v2-shadow-lg);
+  }
+  .v2-mobile-nav-backdrop {
+    position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,0.35); border: none; padding: 0;
+  }
 }
 
 /* ── Tareas DE UN DOCUMENTO (V2DocTasks) ─────────────────────────────────────

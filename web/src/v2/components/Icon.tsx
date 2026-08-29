@@ -26,7 +26,7 @@ export type IconName =
   // Acciones
   | 'plus' | 'close' | 'check' | 'pencil' | 'send' | 'mic' | 'mic-off' | 'stop'
   | 'sparkle' | 'star' | 'clock' | 'repeat' | 'arrow-right' | 'arrow-up'
-  | 'chevron-right' | 'chevron-left' | 'chevron-down' | 'more' | 'download'
+  | 'chevron-right' | 'chevron-left' | 'chevron-down' | 'more' | 'menu' | 'download'
   | 'import' | 'archive' | 'eye' | 'copy' | 'external' | 'lock' | 'pin'
   // Tema
   | 'sun' | 'moon' | 'auto'
@@ -99,6 +99,7 @@ const PATHS: Record<IconName, JSX.Element> = {
   'chevron-left': <path d="M15 5 8 12l7 7" />,
   'chevron-down': <path d="m5 9 7 7 7-7" />,
   more: <><circle cx="5.5" cy="12" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="18.5" cy="12" r="1.4" /></>,
+  menu: <path d="M4 6.5h16M4 12h16M4 17.5h16" />,
   download: <><path d="M12 3.5v12m-4.5-4.5L12 15.5l4.5-4.5" /><path d="M4.5 18.5v.5a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-.5" /></>,
   import: <><path d="M4 14.5V18a2.5 2.5 0 0 0 2.5 2.5h11A2.5 2.5 0 0 0 20 18v-3.5" /><path d="M12 3.5v11m-4.5-4.5L12 14.5l4.5-4.5" /></>,
   archive: <><rect x="3" y="4" width="18" height="4.5" rx="1.5" /><path d="M5 8.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5M10 12.5h4" /></>,

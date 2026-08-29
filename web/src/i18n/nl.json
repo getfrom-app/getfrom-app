@@ -2189,6 +2189,7 @@
   "v2.detachedFromConversation": "Verwijderd uit het gesprek (blijft in Fromly)",
   "v2.conversation": "Gesprek",
   "v2.addToContextEllipsis": "Toevoegen aan context…",
+  "v2.mobileMenu": "Menu",
   "v2.related": "Gerelateerd",
   "v2.tasks": "Taken",
   "v2.elementsCount": "Elementen ({{count}})",

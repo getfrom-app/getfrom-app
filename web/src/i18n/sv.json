@@ -2189,6 +2189,7 @@
   "v2.detachedFromConversation": "Borttagen från konversationen (finns kvar i Fromly)",
   "v2.conversation": "Konversation",
   "v2.addToContextEllipsis": "Lägg till i kontext…",
+  "v2.mobileMenu": "Meny",
   "v2.related": "Relaterat",
   "v2.tasks": "Uppgifter",
   "v2.elementsCount": "Element ({{count}})",
