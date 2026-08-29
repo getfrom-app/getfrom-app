@@ -182,3 +182,33 @@ export type AssistantPrefsPatch = Partial<Pick<AssistantPrefs,
 export async function assistantUpdatePrefs(patch: AssistantPrefsPatch): Promise<AssistantPrefs> {
   return apiRequest<AssistantPrefs>('/assistant/prefs', { method: 'PUT', body: JSON.stringify(patch) })
 }
+
+export interface AssistantTelegramLink {
+  code: string
+  expiresInMinutes: number
+  url: string
+}
+
+/** Vincular Telegram (P4 de la auditoría, 29 ago 2026 — ya existía en iOS, no
+ *  en web). Mismo endpoint que usa iOS: un código de 1 uso que caduca. */
+export async function assistantTelegramLink(): Promise<AssistantTelegramLink> {
+  return apiRequest<AssistantTelegramLink>('/assistant/telegram/link', { method: 'POST' })
+}
+
+export async function assistantTelegramUnlink(): Promise<void> {
+  await apiRequest('/assistant/telegram/unlink', { method: 'POST' })
+}
+
+export interface AssistantBrief {
+  title: string
+  body: string
+  count: number
+}
+
+/** El informe del día — mismo texto compuesto que ya llega a iOS/Telegram por
+ *  push, y al chat vía `/assistant/inbox`. P4 de la auditoría (29 ago 2026):
+ *  la web no tenía tarjeta propia, solo lo veía enterrado en el scroll del
+ *  chat general si abrías esa pestaña. */
+export async function assistantGetBrief(): Promise<AssistantBrief> {
+  return apiRequest<AssistantBrief>('/assistant/brief')
+}

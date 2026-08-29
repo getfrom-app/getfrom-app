@@ -938,6 +938,12 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
    columna) — aquí hace falta que SÍ ceda sitio al cockpit. */
 .v2-agenda-cockpit-strip { flex: 0 1 auto; max-height: 240px; overflow-y: auto; padding: 14px 20px 6px; border-bottom: 1px solid var(--v2-line); }
 .v2-center--agenda .pp-root { flex: 1 1 auto; height: auto; min-height: 0; }
+
+/* Tarjeta del informe del día (P4, 29 ago 2026) — arriba del todo, fuera del
+   scroll acotado del cockpit: es lo primero que se lee al abrir Agenda. */
+.v2-brief-card { flex: 0 0 auto; padding: 16px 20px 0; }
+.v2-brief-title { font-size: 15px; font-weight: 650; color: var(--text-primary); margin-bottom: 4px; }
+.v2-brief-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; }
 /* Nota diaria embebida (sin cabecera — `V2ElementView compact`): fondo
    sutilmente distinto para separarla visualmente del cockpit de arriba, y más
    aire alrededor del área de escritura (Alberto: "hazlo bonito, buen UI").

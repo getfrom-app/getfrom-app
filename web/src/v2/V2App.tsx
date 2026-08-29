@@ -24,6 +24,7 @@ import type { DriveImportResult } from '../api/googleDrive'
 import { useV2Recorder } from './useV2Recorder'
 import PlannerPanel from '../components/panels/PlannerPanel'
 import DailyCockpit from '../components/views/DailyCockpit'
+import V2BriefCard from './components/V2BriefCard'
 import Icon from './components/Icon'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
@@ -1335,6 +1336,7 @@ export default function V2App() {
         // con la nota diaria; la derecha ahora es SOLO la nota, a panel
         // completo (ver V2RightColumn).
         <main className="v2-col v2-center v2-center--agenda">
+          <V2BriefCard />
           <div className="v2-agenda-cockpit-strip">
             <DailyCockpit bare disablePlanner hideToday hideFuture />
           </div>

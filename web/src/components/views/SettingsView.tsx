@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { assistantGetPrefs, assistantUpdatePrefs, type AssistantPrefs, type AssistantPrefsPatch } from '../../api/assistant'
+import { assistantGetPrefs, assistantUpdatePrefs, assistantTelegramLink, assistantTelegramUnlink, type AssistantPrefs, type AssistantPrefsPatch, type AssistantTelegramLink } from '../../api/assistant'
 import {
   CuentaPane,
   AparienciaPane,
@@ -124,6 +124,10 @@ function AsistentePane() {
   const [saving, setSaving] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const [retry, setRetry] = useState(0)
+  // P4 de la auditoría (29 ago 2026): Telegram ya existía en iOS
+  // (IOSSettingsView.swift) — mismo flujo aquí, mismos endpoints de servidor.
+  const [telegramLink, setTelegramLink] = useState<AssistantTelegramLink | null>(null)
+  const [telegramBusy, setTelegramBusy] = useState(false)
 
   // Con reintento y estado de error visible — antes un fallo dejaba la
   // pestaña EN BLANCO para siempre, sin explicación (auditoría 28 ago 2026).
@@ -275,6 +279,43 @@ function AsistentePane() {
             style={{ width: 16, height: 16, cursor: 'pointer' }} />
         </div>
       </div>
+
+      <div className="st-section-title" style={{ marginTop: 24 }}>{t('settingsView.telegramTitle', 'Telegram')}</div>
+      <div className="st-row">
+        <div className="st-row-info">
+          <div className="st-row-label">{t('settingsView.telegramLabel', 'Habla con Fromly desde Telegram')}</div>
+          <div className="st-row-hint">
+            {prefs.telegramLinked
+              ? t('settingsView.telegramLinkedHint', 'Conectado — el mismo cerebro, sin abrir la app.')
+              : telegramLink
+                ? t('settingsView.telegramCodeHint', 'Ábrelo en Telegram y pulsa enviar. Caduca en {{min}} min.', { min: telegramLink.expiresInMinutes })
+                : t('settingsView.telegramUnlinkedHint', 'Recibe el informe del día y escribe tareas sin salir de Telegram.')}
+          </div>
+        </div>
+        <div className="st-row-action" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {prefs.telegramLinked ? (
+            <button className="btn-secondary btn-sm" disabled={telegramBusy} onClick={async () => {
+              setTelegramBusy(true)
+              try { await assistantTelegramUnlink(); setPrefs(await assistantGetPrefs()) }
+              finally { setTelegramBusy(false) }
+            }}>{t('settingsView.telegramDisconnect', 'Desconectar')}</button>
+          ) : telegramLink ? (
+            <>
+              <code style={{ fontSize: 15, fontWeight: 700 }}>{telegramLink.code}</code>
+              <a className="btn-secondary btn-sm" href={telegramLink.url} target="_blank" rel="noreferrer">
+                {t('settingsView.telegramOpen', 'Abrir Telegram')}
+              </a>
+            </>
+          ) : (
+            <button className="btn-secondary btn-sm" disabled={telegramBusy} onClick={async () => {
+              setTelegramBusy(true)
+              try { setTelegramLink(await assistantTelegramLink()) }
+              finally { setTelegramBusy(false) }
+            }}>{t('settingsView.telegramConnect', 'Conectar Telegram')}</button>
+          )}
+        </div>
+      </div>
+
       {saving && <div className="st-row-hint">{t('settingsView.saving', 'Guardando…')}</div>}
     </div>
   )
