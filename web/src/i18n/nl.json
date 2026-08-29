@@ -2382,5 +2382,11 @@
   "account.mcpAutoText": "Fromly geeft Claude zijn instructies bij het verbinden: het slaat op de achtergrond op en vat het aan het eind in één regel samen. Als je ooit het oude blok hebt geplakt in",
   "account.mcpAutoLegacyPath": "Claude → Instellingen → Profiel → Aangepaste instructies",
   "account.mcpAutoLegacyAfter": ", verwijder het: het verdubbelt het gedrag en laat Claude meteen over Fromly beginnen.",
-  "v2.rightColumn.tabDetails": "Details"
+  "v2.rightColumn.tabDetails": "Details",
+  "settingsView.timezoneTitle": "Tijdzone",
+  "settingsView.timezoneLabel": "Tijdzone",
+  "settingsView.timezoneAutoHint": "Gebruikt die van je apparaat — verandert automatisch als je Fromly ergens anders opent.",
+  "settingsView.timezoneManualHint": "Handmatig ingesteld — verandert niet, ook niet als je Fromly vanuit een andere zone opent.",
+  "settingsView.timezoneFix": "Deze vastzetten",
+  "settingsView.timezoneUseDevice": "Die van het apparaat gebruiken"
 }

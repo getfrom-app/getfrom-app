@@ -155,6 +155,9 @@ export async function assistantUpdateAgent(nodeId: string, enabled: boolean): Pr
 
 export interface AssistantPrefs {
   timezone: string
+  /** P5 de la auditoría: true = auto-detectado al arrancar cualquier cliente;
+   *  false = el usuario lo fijó a mano en Ajustes, no se pisa solo. */
+  timezoneAuto: boolean
   briefEnabled: boolean
   briefHour: number
   eveningEnabled: boolean
@@ -174,7 +177,7 @@ export async function assistantGetPrefs(): Promise<AssistantPrefs> {
 }
 
 export type AssistantPrefsPatch = Partial<Pick<AssistantPrefs,
-  'briefEnabled' | 'briefHour' | 'eveningEnabled' | 'eveningHour' | 'remindersEnabled' | 'reminderLeadMin' | 'checkinEnabled'>>
+  'timezone' | 'timezoneAuto' | 'briefEnabled' | 'briefHour' | 'eveningEnabled' | 'eveningHour' | 'remindersEnabled' | 'reminderLeadMin' | 'checkinEnabled'>>
 
 export async function assistantUpdatePrefs(patch: AssistantPrefsPatch): Promise<AssistantPrefs> {
   return apiRequest<AssistantPrefs>('/assistant/prefs', { method: 'PUT', body: JSON.stringify(patch) })

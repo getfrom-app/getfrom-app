@@ -2382,5 +2382,11 @@
   "account.mcpAutoText": "Fromly передаёт Claude свои инструкции при подключении: сохраняет в фоне и подводит итог одной строкой в конце. Если вы когда-то вставили старый блок в",
   "account.mcpAutoLegacyPath": "Claude → Настройки → Профиль → Пользовательские инструкции",
   "account.mcpAutoLegacyAfter": ", удалите его: он дублирует поведение и заставляет Claude заговорить о Fromly с самого начала.",
-  "v2.rightColumn.tabDetails": "Подробности"
+  "v2.rightColumn.tabDetails": "Подробности",
+  "settingsView.timezoneTitle": "Часовой пояс",
+  "settingsView.timezoneLabel": "Часовой пояс",
+  "settingsView.timezoneAutoHint": "Используется часовой пояс устройства — меняется сам при открытии Fromly в другом месте.",
+  "settingsView.timezoneManualHint": "Задан вручную — не меняется, даже если вы откроете Fromly из другого часового пояса.",
+  "settingsView.timezoneFix": "Зафиксировать",
+  "settingsView.timezoneUseDevice": "Использовать часовой пояс устройства"
 }

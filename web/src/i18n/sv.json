@@ -2382,5 +2382,11 @@
   "account.mcpAutoText": "Fromly ger Claude sina instruktioner vid anslutning: det sparar i bakgrunden och sammanfattar det på en rad i slutet. Om du en gång klistrade in det gamla blocket i",
   "account.mcpAutoLegacyPath": "Claude → Inställningar → Profil → Anpassade instruktioner",
   "account.mcpAutoLegacyAfter": ", ta bort det: det dubblerar beteendet och får Claude att ta upp Fromly direkt från början.",
-  "v2.rightColumn.tabDetails": "Detaljer"
+  "v2.rightColumn.tabDetails": "Detaljer",
+  "settingsView.timezoneTitle": "Tidszon",
+  "settingsView.timezoneLabel": "Tidszon",
+  "settingsView.timezoneAutoHint": "Använder enhetens — ändras automatiskt när du öppnar Fromly någon annanstans.",
+  "settingsView.timezoneManualHint": "Inställd manuellt — ändras inte även om du öppnar Fromly från en annan zon.",
+  "settingsView.timezoneFix": "Lås denna",
+  "settingsView.timezoneUseDevice": "Använd enhetens"
 }

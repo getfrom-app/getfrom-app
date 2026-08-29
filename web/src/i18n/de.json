@@ -2382,5 +2382,11 @@
   "account.mcpAutoText": "Fromly übergibt Claude seine Anweisungen beim Verbinden: Es speichert im Hintergrund und fasst es am Ende in einer Zeile zusammen. Falls du den alten Block einmal eingefügt hast in",
   "account.mcpAutoLegacyPath": "Claude → Einstellungen → Profil → Benutzerdefinierte Anweisungen",
   "account.mcpAutoLegacyAfter": ", lösche ihn: Er verdoppelt das Verhalten und lässt Claude gleich zu Beginn über Fromly reden.",
-  "v2.rightColumn.tabDetails": "Details"
+  "v2.rightColumn.tabDetails": "Details",
+  "settingsView.timezoneTitle": "Zeitzone",
+  "settingsView.timezoneLabel": "Zeitzone",
+  "settingsView.timezoneAutoHint": "Verwendet die deines Geräts — ändert sich automatisch, wenn du Fromly woanders öffnest.",
+  "settingsView.timezoneManualHint": "Manuell festgelegt — ändert sich nicht, auch wenn du Fromly aus einer anderen Zeitzone öffnest.",
+  "settingsView.timezoneFix": "Diese fixieren",
+  "settingsView.timezoneUseDevice": "Die des Geräts verwenden"
 }

@@ -2382,5 +2382,11 @@
   "account.mcpAutoText": "Fromly przekazuje Claude swoje instrukcje przy połączeniu: zapisuje w tle i podsumowuje to jedną linijką na końcu. Jeśli kiedyś wkleiłeś stary blok w",
   "account.mcpAutoLegacyPath": "Claude → Ustawienia → Profil → Instrukcje niestandardowe",
   "account.mcpAutoLegacyAfter": ", usuń go: dubluje zachowanie i sprawia, że Claude zaczyna od mówienia o Fromly.",
-  "v2.rightColumn.tabDetails": "Szczegóły"
+  "v2.rightColumn.tabDetails": "Szczegóły",
+  "settingsView.timezoneTitle": "Strefa czasowa",
+  "settingsView.timezoneLabel": "Strefa czasowa",
+  "settingsView.timezoneAutoHint": "Używa strefy z Twojego urządzenia — zmienia się sama, gdy otworzysz Fromly gdzie indziej.",
+  "settingsView.timezoneManualHint": "Ustawione ręcznie — nie zmienia się, nawet jeśli otworzysz Fromly z innej strefy.",
+  "settingsView.timezoneFix": "Ustal tę",
+  "settingsView.timezoneUseDevice": "Użyj strefy urządzenia"
 }

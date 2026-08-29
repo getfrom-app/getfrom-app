@@ -2382,5 +2382,11 @@
   "account.mcpAutoText": "Το Fromly δίνει στον Claude τις οδηγίες του κατά τη σύνδεση: αποθηκεύει στο παρασκήνιο και το συνοψίζει σε μία γραμμή στο τέλος. Αν κάποτε επικολλήσατε το παλιό μπλοκ στο",
   "account.mcpAutoLegacyPath": "Claude → Ρυθμίσεις → Προφίλ → Προσαρμοσμένες οδηγίες",
   "account.mcpAutoLegacyAfter": ", διαγράψτε το: διπλασιάζει τη συμπεριφορά και κάνει τον Claude να μιλά για το Fromly από την αρχή.",
-  "v2.rightColumn.tabDetails": "Λεπτομέρειες"
+  "v2.rightColumn.tabDetails": "Λεπτομέρειες",
+  "settingsView.timezoneTitle": "Ζώνη ώρας",
+  "settingsView.timezoneLabel": "Ζώνη ώρας",
+  "settingsView.timezoneAutoHint": "Χρησιμοποιεί αυτή της συσκευής σου — αλλάζει μόνη της όταν ανοίγεις το Fromly αλλού.",
+  "settingsView.timezoneManualHint": "Ορίστηκε χειροκίνητα — δεν αλλάζει ακόμη κι αν ανοίξεις το Fromly από άλλη ζώνη.",
+  "settingsView.timezoneFix": "Καθήλωση αυτής",
+  "settingsView.timezoneUseDevice": "Χρήση αυτής της συσκευής"
 }

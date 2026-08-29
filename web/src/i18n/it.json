@@ -2382,5 +2382,11 @@
   "account.mcpAutoText": "Fromly consegna a Claude le sue istruzioni al momento della connessione: salva in background e lo riassume in una riga alla fine. Se in passato hai incollato il vecchio blocco in",
   "account.mcpAutoLegacyPath": "Claude → Impostazioni → Profilo → Istruzioni personalizzate",
   "account.mcpAutoLegacyAfter": ", eliminalo: duplica il comportamento e fa parlare Claude di Fromly fin dall'inizio.",
-  "v2.rightColumn.tabDetails": "Dettagli"
+  "v2.rightColumn.tabDetails": "Dettagli",
+  "settingsView.timezoneTitle": "Fuso orario",
+  "settingsView.timezoneLabel": "Fuso orario",
+  "settingsView.timezoneAutoHint": "Usa quello del dispositivo — cambia da solo se apri Fromly altrove.",
+  "settingsView.timezoneManualHint": "Impostato manualmente — non cambia anche se apri Fromly da un altro fuso.",
+  "settingsView.timezoneFix": "Fissa questo",
+  "settingsView.timezoneUseDevice": "Usa quello del dispositivo"
 }

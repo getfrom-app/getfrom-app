@@ -161,9 +161,55 @@ function AsistentePane() {
     )
   }
 
+  // P5 de la auditoría (28-29 ago 2026): "gana el último dispositivo que
+  // abriste" — iOS pisaba el huso en silencio al arrancar. Aquí se puede fijar
+  // uno a mano ("timezoneAuto: false", nunca se pisa solo) o volver a
+  // "usar la del dispositivo" (timezoneAuto: true).
+  const deviceTz = (() => {
+    try { return Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return null }
+  })()
+  const tzOptions = (() => {
+    try {
+      // @ts-expect-error -- supportedValuesOf es reciente, puede faltar en el lib.d.ts del build
+      return (Intl.supportedValuesOf?.('timeZone') as string[] | undefined) ?? []
+    } catch { return [] }
+  })()
+
   return (
     <div className="st-pane">
-      <div className="st-section-title">{t('settingsView.assistantMorningTitle', 'Cada mañana')}</div>
+      <div className="st-section-title">{t('settingsView.timezoneTitle', 'Zona horaria')}</div>
+      <div className="st-row">
+        <div className="st-row-info">
+          <div className="st-row-label">{t('settingsView.timezoneLabel', 'Huso horario')}</div>
+          <div className="st-row-hint">
+            {prefs.timezoneAuto
+              ? t('settingsView.timezoneAutoHint', 'Usando la del dispositivo — cambia sola al abrir Fromly en otro sitio.')
+              : t('settingsView.timezoneManualHint', 'Fijado a mano — no cambia aunque abras Fromly desde otro huso.')}
+          </div>
+        </div>
+        <div className="st-row-action" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {!prefs.timezoneAuto && (
+            <select value={prefs.timezone} onChange={e => patch({ timezone: e.target.value, timezoneAuto: false })}
+              style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-secondary)', maxWidth: 220 }}>
+              {(tzOptions.includes(prefs.timezone) ? tzOptions : [prefs.timezone, ...tzOptions]).map(tz => (
+                <option key={tz} value={tz}>{tz}</option>
+              ))}
+            </select>
+          )}
+          {prefs.timezoneAuto ? (
+            <button className="btn-secondary btn-sm" disabled={!deviceTz}
+              onClick={() => deviceTz && patch({ timezone: deviceTz, timezoneAuto: false })}>
+              {t('settingsView.timezoneFix', 'Fijar esta')}
+            </button>
+          ) : (
+            <button className="btn-secondary btn-sm" onClick={() => patch({ timezoneAuto: true })}>
+              {t('settingsView.timezoneUseDevice', 'Usar la del dispositivo')}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="st-section-title" style={{ marginTop: 24 }}>{t('settingsView.assistantMorningTitle', 'Cada mañana')}</div>
       <div className="st-row">
         <div className="st-row-info">
           <div className="st-row-label">{t('settingsView.assistantBriefLabel', 'Escríbeme al empezar el día')}</div>

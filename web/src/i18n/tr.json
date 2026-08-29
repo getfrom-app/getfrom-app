@@ -2382,5 +2382,11 @@
   "account.mcpAutoText": "Fromly bağlanırken talimatlarını Claude'a veriyor: arka planda kaydediyor ve sonunda tek satırda özetliyor. Eskiden eski bloğu şuraya yapıştırdıysanız:",
   "account.mcpAutoLegacyPath": "Claude → Ayarlar → Profil → Özel talimatlar",
   "account.mcpAutoLegacyAfter": ", silin: davranışı ikiye katlıyor ve Claude'un daha en başta Fromly'den söz etmesine yol açıyor.",
-  "v2.rightColumn.tabDetails": "Ayrıntılar"
+  "v2.rightColumn.tabDetails": "Ayrıntılar",
+  "settingsView.timezoneTitle": "Saat dilimi",
+  "settingsView.timezoneLabel": "Saat dilimi",
+  "settingsView.timezoneAutoHint": "Cihazınınki kullanılıyor — Fromly'yi başka bir yerden açtığında kendiliğinden değişir.",
+  "settingsView.timezoneManualHint": "Elle ayarlandı — Fromly'yi başka bir dilimden açsan bile değişmez.",
+  "settingsView.timezoneFix": "Bunu sabitle",
+  "settingsView.timezoneUseDevice": "Cihazınkini kullan"
 }

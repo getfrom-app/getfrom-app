@@ -2382,5 +2382,11 @@
   "account.mcpAutoText": "Fromly transmet ses instructions à Claude à la connexion : il enregistre en arrière-plan et le résume en une ligne à la fin. Si vous aviez collé l'ancien bloc dans",
   "account.mcpAutoLegacyPath": "Claude → Réglages → Profil → Instructions personnalisées",
   "account.mcpAutoLegacyAfter": ", supprimez-le : il duplique le comportement et fait parler Claude de Fromly dès le début.",
-  "v2.rightColumn.tabDetails": "Détails"
+  "v2.rightColumn.tabDetails": "Détails",
+  "settingsView.timezoneTitle": "Fuseau horaire",
+  "settingsView.timezoneLabel": "Fuseau horaire",
+  "settingsView.timezoneAutoHint": "Utilise celui de votre appareil — change automatiquement si vous ouvrez Fromly ailleurs.",
+  "settingsView.timezoneManualHint": "Défini manuellement — ne change pas même si vous ouvrez Fromly depuis un autre fuseau.",
+  "settingsView.timezoneFix": "Fixer celui-ci",
+  "settingsView.timezoneUseDevice": "Utiliser celui de l'appareil"
 }
