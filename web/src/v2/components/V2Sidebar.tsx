@@ -20,6 +20,8 @@ import { useTheme } from '../../hooks/useTheme'
 import { useWebPush } from '../../hooks/useWebPush'
 import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
+import V2ReviewInbox from './V2ReviewInbox'
+import { getUnclassifiedIds } from '../../utils/unclassified'
 import NewContextModal from '../../components/modals/NewContextModal'
 import NewTaskModal from '../../components/modals/NewTaskModal'
 import ContextShareModal from '../../components/modals/ContextShareModal'
@@ -105,6 +107,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [userMenu, setUserMenu] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
+  const [showReviewInbox, setShowReviewInbox] = useState(false)
   // La v1 (donde antes había que crear contextos para que "aparecieran aquí") ya no
   // existe — el sidebar de v2 necesita su propio botón para crear contextos, con
   // nombre + padre en un modal (Alberto, 21 jul).
@@ -399,6 +402,19 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         )
       })()}
 
+      {/* Bandeja de revisión (P4 · Ordenar) — todo lo capturado sin contexto o
+          clasificado por la IA con baja confianza, visible con contador en vez
+          de perderse en un "General" ambiguo (auditoría 28 ago 2026). */}
+      {(() => {
+        const count = getUnclassifiedIds().size
+        if (count === 0) return null
+        return (
+          <button className="v2-sidebar-notice" onClick={() => setShowReviewInbox(true)}>
+            <Icon name="sparkle" size={14} /> {t('v2.review.count', '{{count}} por revisar', { count })}
+          </button>
+        )
+      })()}
+
       {(() => {
         const unseen = listUnseenAgentResults()
         if (unseen.length === 0 || !onOpenNode) return null
@@ -607,6 +623,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         </button>
       </div>
       {showTrash && <V2Trash onClose={() => setShowTrash(false)} onOpenNode={onOpenNode} />}
+      {showReviewInbox && <V2ReviewInbox onClose={() => setShowReviewInbox(false)} onOpenNode={id => onOpenNode?.(id)} />}
       {showNewContext && (
         <NewContextModal
           defaultParentId={null}

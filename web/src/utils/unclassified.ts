@@ -1,19 +1,28 @@
 /**
- * unclassified — fuente única de verdad para "Sin clasificar".
+ * unclassified — fuente única de verdad para la Bandeja de revisión (P4 ·
+ * Ordenar de la auditoría "Fromly a fondo": "todo lo capturado sin contexto,
+ * o clasificado por la IA con baja confianza, cae en una bandeja visible").
  *
- * Regla (acordada): un nodo está "sin clasificar" SOLO si:
+ * Regla (acordada): un nodo está "por revisar" SOLO si:
  *   · está dentro de 📅 Agenda (no en Contexto, Prompts, Agentes, Atajos, Plantillas, Papelera)
  *   · no es estructura temporal (año/mes/semana) ni entrada de diario
  *   · es contenido real (tarea o contenedor con hijos) con texto ≥ 4
- *   · NO tiene contexto de ningún tipo: ni manual (types/@/_contextManuallySet)
- *     ni asignado por la IA (_autoContextId). Si muestra un chip de contexto,
- *     no es "sin clasificar".
+ *   · NO tiene contexto REALMENTE aplicado: ni manual (types/@/_contextManuallySet/
+ *     _ctxRefs) ni por IA con confianza suficiente (_autoContextId +
+ *     _autoContextConfidence >= CONFIDENCE_THRESHOLD).
  *
- * Usado por UnclassifiedList (la lista) y ContextListPanel (el contador) para
- * que siempre coincidan.
+ * `_autoContextId` con confianza POR DEBAJO del umbral es justo el caso que la
+ * auditoría pedía dejar de tirar en silencio (OutlinerNode.tsx lo guarda pero
+ * nunca llama a `assignContext`): antes `hasAnyContext` lo trataba igual que un
+ * contexto real por el mero hecho de existir el campo, así que el nodo
+ * desaparecía de "sin clasificar" sin tener contexto de verdad en ningún sitio.
+ * `getSuggestedContext` expone esa sugerencia descartada para la bandeja.
  */
 import { store } from '../store/nodeStore'
 import { findAgendaRoot } from './agendaHelper'
+import { nodeCtxRefs } from './cajones'
+import { CONFIDENCE_THRESHOLD } from '../api/autoClassify'
+import type { Node } from '../types'
 
 /** Tags de sistema — no cuentan como contexto de usuario. */
 const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
@@ -35,18 +44,33 @@ export function getAgendaDescendantIds(): Set<string> {
   return ids
 }
 
-/** ¿Tiene el nodo algún contexto asignado (manual o por IA)? */
-function hasAnyContext(node: { types?: string[] | null; text?: string | null; extraData?: string | null }): boolean {
+/** ¿Tiene el nodo un contexto REALMENTE aplicado (manual, _ctxRefs, o IA con confianza suficiente)? */
+function hasAnyContext(node: Node): boolean {
   const userTypes = (node.types || []).filter(t => !BUILTIN_TAGS.has(t))
   if (userTypes.length > 0) return true
   if (/@\w/.test(node.text || '')) return true
+  if (nodeCtxRefs(node).length > 0) return true
   try {
     const ed = JSON.parse(node.extraData || '{}')
     if (ed._contextManuallySet === '1') return true
-    if (typeof ed._autoContextId === 'string' && ed._autoContextId) return true
+    if (typeof ed._autoContextId === 'string' && ed._autoContextId
+      && typeof ed._autoContextConfidence === 'number' && ed._autoContextConfidence >= CONFIDENCE_THRESHOLD) return true
     if (ed.temporalType) return true   // estructura temporal — no es contenido
   } catch { /* ignore */ }
   return false
+}
+
+/** Sugerencia de la IA descartada por baja confianza (guardada pero no aplicada) — la
+ *  bandeja la muestra para confirmar en un tap en vez de partir de cero. */
+export function getSuggestedContext(node: { extraData?: string | null }): { contextId: string; confidence: number } | null {
+  try {
+    const ed = JSON.parse(node.extraData || '{}')
+    if (typeof ed._autoContextId === 'string' && ed._autoContextId
+      && typeof ed._autoContextConfidence === 'number' && ed._autoContextConfidence < CONFIDENCE_THRESHOLD) {
+      return { contextId: ed._autoContextId, confidence: ed._autoContextConfidence }
+    }
+  } catch { /* ignore */ }
+  return null
 }
 
 /** Conjunto de IDs sin clasificar (dentro de Agenda). */

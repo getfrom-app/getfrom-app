@@ -327,6 +327,26 @@
 }
 .v2-sidebar-notice:hover { background: var(--accent-soft); }
 
+/* Bandeja de revisión (P4 · Ordenar) — mismo modal que "Gestionar plantillas",
+   solo un poco más ancho para dejar sitio a la sugerencia de la IA. */
+.v2-review-modal { width: 480px; }
+.v2-review-list { gap: 0; }
+.v2-review-item {
+  display: flex; flex-direction: column; align-items: stretch; gap: 4px;
+  padding: 8px 4px; border-bottom: 1px solid var(--border);
+}
+.v2-review-item:last-child { border-bottom: none; }
+.v2-review-item-text { padding: 4px 8px; white-space: normal; text-align: left; line-height: 1.4; }
+.v2-review-suggestion { display: flex; align-items: center; gap: 8px; padding: 0 8px; flex-wrap: wrap; }
+.v2-review-suggestion-label {
+  display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-tertiary);
+}
+.v2-review-confirm {
+  background: var(--accent-soft); border: none; border-radius: 6px; padding: 4px 10px;
+  font-size: 12px; font-weight: 600; color: var(--text-accent); cursor: pointer; font-family: inherit;
+}
+.v2-review-confirm:hover { background: var(--accent); color: #fff; }
+
 .v2-section-label {
   padding: 8px 16px 5px; font-size: 10.5px; font-weight: 650; text-transform: uppercase;
   letter-spacing: 0.075em; color: var(--text-tertiary);
