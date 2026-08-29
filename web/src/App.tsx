@@ -207,6 +207,16 @@ function useTauriSyncListener() {
       listen('from:sync', () => {
         store.sync().catch(() => {})
         userStore.fetchMe().catch(() => {})
+        // Backup a iCloud Drive (P2 de la Parte II, 29 ago 2026 — "honestidad
+        // comercial": el ajuste de Ajustes → Accesorios existía, el comando
+        // Rust existía, pero nada llamaba a `maybeICloudBackup()` nunca —
+        // activar el toggle no hacía absolutamente nada. Este evento ya
+        // dispara cada 15s + al recuperar el foco de la ventana; la propia
+        // función se auto-limita a como mucho una vez cada 2h, así que
+        // engancharla aquí no añade ningún timer nuevo.
+        import('./utils/icloudBackup').then(({ maybeICloudBackup }) => {
+          void maybeICloudBackup()
+        }).catch(() => {})
       }).then((fn) => { unlisten = fn })
     }).catch(() => {})
     return () => { unlisten?.() }

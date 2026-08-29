@@ -1982,15 +1982,28 @@ Esta sección describe el estado completo de la aplicación Fromly tal como est�
   - Suscripción €7/mes: sync + 2M tokens IA/mes (Anthropic/Gemini gestionados).
   - Licencia perpetua €149: sync + IA con 3M tokens de IA incluidos (o API key propia del usuario).
 - **LemonSqueezy** para pagos. Variants: suscripción (`1553200`), licencia (`1553210`), topup 5M tokens (`1553900`).
-**Backups unificados Mac+web (servidor):**
+**Backups unificados Mac+web+iOS (servidor):**
 - Tabla `node_snapshots(id, user_id, created_at, node_count, source, payload)` en PostgreSQL.
 - `payload` es un JSON con todos los nodos del usuario al momento del snapshot.
-- Retención: últimos 12 snapshots por usuario (DELETE NOT IN top-12 por created_at).
+- Retención: últimos **50** snapshots por usuario (`MAX_SNAPSHOTS_PER_USER`, `server/src/routes/backups.ts`) —
+  corregido el 29 ago 2026: esta sección decía 12, desactualizado (auditoría de producto lo detectó
+  comprobando en vivo).
 - Cron interno en `server/src/index.ts`: setInterval 30min que crea snapshot por cada usuario activo si último >1h55min **y** hubo cambios en `sync_nodes.server_updated_at` desde el último snapshot. `source="auto"`.
 - Endpoints `/backups` (Hono): `GET /` (lista), `POST /` (crear con source web/mac/manual), `GET /:id` (payload), `POST /:id/restore` (con snapshot pre-restore automático), `DELETE /:id`.
 - Restore es transaccional: borra `sync_nodes` del usuario y reinserta los del snapshot por lotes de 500.
-- Mac (`NodeBackupService`) y web comparten exactamente la misma lista vía API. Mac dispara snapshot cada 2h cuando está abierta, vía `triggerCloudSnapshot(source: "mac")`. Web: botón en Ajustes → Datos → Backups.
+- Mac (Tauri) y web comparten exactamente la misma lista vía API — botón en Ajustes → Datos → Backups
+  en ambos. **`NodeBackupService`/`triggerCloudSnapshot(source: "mac")` no existen** (no había ningún
+  target Swift nativo que los implementara desde que se eliminó el 28 ago 2026, ver "target Mac Swift
+  nativo" más abajo) — corregido el 29 ago 2026, esta sección describía un mecanismo que nunca llegó
+  a estar cableado.
 - Mac ya **no** guarda backups locales en disco — el sistema legacy (`~/Documents/From Backup/`, Markdown + SQLite) se eliminó en build 53 para evitar dos fuentes de verdad.
+- **Backup adicional a iCloud Drive (Mac, `landing/web/src/utils/icloudBackup.ts` +
+  `from-mac/src-tauri/src/lib.rs`)**: export JSON completo a
+  `~/Library/Mobile Documents/com~apple~CloudDocs/From Backups/`, activado por defecto, throttle de
+  2h, conserva los últimos 30 archivos. Ajustable en Ajustes → Accesorios. Corregido el 29 ago 2026:
+  el comando Rust y el ajuste llevaban meses listos, pero nada llamaba nunca a `maybeICloudBackup()`
+  — el toggle no hacía nada. Enganchado al mismo evento `from:sync` que ya dispara cada 15s + al
+  recuperar el foco de la ventana (la propia función se auto-limita a una vez cada 2h).
 
 ---
 
