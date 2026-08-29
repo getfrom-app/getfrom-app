@@ -23,6 +23,7 @@ import { pickAndImportDriveFile } from '../utils/googleDrivePicker'
 import type { DriveImportResult } from '../api/googleDrive'
 import { useV2Recorder } from './useV2Recorder'
 import PlannerPanel from '../components/panels/PlannerPanel'
+import DailyCockpit from '../components/views/DailyCockpit'
 import Icon from './components/Icon'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
@@ -669,12 +670,6 @@ export default function V2App() {
     // (V2ConversationView) — antes se ponía a null y no se veía nada
     // (auditoría 28 ago 2026).
     setCenterElementId(id)
-    // Excepción a "abrir un elemento nunca cambia la tab activa": si venimos del
-    // tab «Historial» (destino Chat), la conversación que acabamos de abrir se
-    // pinta justo en la tab que estamos dejando atrás — sin esto el Historial se
-    // queda en pantalla y la conversación no se ve en ningún sitio. Solo afecta
-    // a ese sub-tab; el resto de la navegación se mantiene intacta.
-    setRightSubTab(prev => (prev === 'historial' ? 'primary' : prev))
   }
 
   // «← Agentes»/«← Prompts» desde el detalle: cierra el detalle y abre la tab
@@ -1295,15 +1290,19 @@ export default function V2App() {
       ) : showProfile ? (
         <V2ProfileView onClose={() => setShowProfile(false)} />
       ) : rightMode === 'chat' ? (
-        // Destino Chat general: el composer vive SOLO en la columna derecha (Tab
-        // 1, ver V2RightColumn) — este hueco neutro evita un segundo composer
-        // duplicado compitiendo por la misma sesión global.
-        <main className="v2-col v2-center">
-          <div className="v2-empty">
-            <h1>{t('v2.generalChatCenterTitle', 'Lo que crees se abre en este espacio')}</h1>
-            <p>{t('v2.generalChatCenterHint', 'Escribe en el chat de la derecha — cualquier nota, tarea o documento que cree se abrirá en este espacio.')}</p>
-          </div>
-        </main>
+        // Destino Chat general: el chat ES el centro — antes este hueco era un
+        // lema vacío y el composer vivía apretado en la columna derecha (C14 de
+        // la auditoría, 29 ago 2026: "el chat es la tesis... el centro
+        // desperdiciado en un lema"). La columna derecha pasa a enseñar el
+        // historial de conversaciones por contexto (ver V2RightColumn).
+        <V2Chat
+          currentNodeId={null}
+          contextLabel={null}
+          onFilesDropped={onFilesDropped}
+          onOpenConversation={onOpenConversation}
+          onNewChatInCtx={onNewChatInCtx}
+          onSelectCtx={onSelectCtx}
+        />
       ) : rightMode === 'elementos' ? (
         // Destino Elementos: el CENTRO es ahora el navegador real (buscador +
         // filtros + lista/tabla/kanban/calendario) — antes vivía apretado en la
@@ -1329,7 +1328,16 @@ export default function V2App() {
         // con hora. Esto ya ES el timeline de un día (con margen), así que el
         // destino «Día» aparte (rejilla horaria de una sola columna) se retiró
         // por duplicado — ver el comentario de `centerElementId` más arriba.
-        <main className="v2-col v2-center">
+        //
+        // A3 de la auditoría (29 ago 2026): el cockpit (atrasadas/sin fecha)
+        // sube aquí, arriba de la rejilla — antes vivía apretado en la mitad
+        // superior de la columna derecha (440px) compartiendo sitio a medias
+        // con la nota diaria; la derecha ahora es SOLO la nota, a panel
+        // completo (ver V2RightColumn).
+        <main className="v2-col v2-center v2-center--agenda">
+          <div className="v2-agenda-cockpit-strip">
+            <DailyCockpit bare disablePlanner hideToday hideFuture />
+          </div>
           <PlannerPanel initialView="week" initialDays={3} viewTabs={['week', 'month', 'year']} onClose={() => {}} centerToday onCenterDateChange={setAgendaCenterDate} />
         </main>
       ) : (

@@ -923,27 +923,21 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 
 .v2-right-empty { color: var(--text-tertiary); font-size: 12.5px; text-align: center; padding: 30px 12px; line-height: 1.6; }
 
-/* Destino Agenda (24 ago 2026): atrasadas/sin fecha/futuro arriba (scroll propio,
-   nunca ocupa más de la mitad) + nota diaria de hoy al pie (fusión de la tab
-   «Día» retirada) — dos bloques con scroll independiente dentro de la misma
-   columna derecha, separados por un borde fino. */
-/* Agenda: cockpit (atrasadas/futuro) arriba + nota diaria abajo, mitad y mitad
-   fijas (24 ago 2026, Alberto: "la nota diaria... ahora ocupa más espacio...
-   debe estar en la mitad inferior... no más") — antes el cockpit se llevaba
-   solo su alto natural (`flex: 0 1 auto`) y la nota se comía TODO el resto
-   (`flex: 1`), así que con un cockpit corto (pocas tareas) la nota dominaba
-   visualmente la columna. `flex-basis: 50%` en los dos + `flex-grow/shrink: 1`
-   reparte el espacio en dos mitades iguales pase lo que pase con el contenido;
-   cada mitad scrollea la suya si no le cabe (`overflow-y: auto`).
-   `min-height: 0` en el contenedor es lo que permite que ambos flex children
-   respeten ese 50% en vez de desbordar (si no, un hijo con contenido alto
-   ignora `flex-basis` y empuja al otro). */
+/* Destino Agenda — A3 de la auditoría (29 ago 2026: "nota del día como panel
+   completo a la derecha... que la rejilla respire"). Antes el cockpit
+   (atrasadas/sin fecha) y la nota diaria se repartían la columna derecha a
+   medias fijas (`flex-basis: 50%` cada uno, 24 ago 2026) — el cockpit subió
+   al centro, junto a la rejilla (V2App.tsx), y la nota se quedó SOLA aquí, a
+   panel completo. */
 .v2-agenda-col { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.v2-agenda-cockpit-scroll { flex: 1 1 50%; min-height: 0; overflow-y: auto; padding: 0 16px; }
-.v2-agenda-daynote {
-  flex: 1 1 50%; min-height: 0; display: flex; flex-direction: column; overflow-y: auto;
-  border-top: 1px solid var(--border);
-}
+.v2-agenda-daynote--full { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; }
+
+/* Cockpit en el centro, arriba de la rejilla — alto acotado con scroll propio
+   (nunca empuja al planner fuera de vista) + separador fino. `.pp-root` trae
+   `height: 100%; flex-shrink: 0` (pensado para ser el único hijo de la
+   columna) — aquí hace falta que SÍ ceda sitio al cockpit. */
+.v2-agenda-cockpit-strip { flex: 0 1 auto; max-height: 240px; overflow-y: auto; padding: 14px 20px 6px; border-bottom: 1px solid var(--v2-line); }
+.v2-center--agenda .pp-root { flex: 1 1 auto; height: auto; min-height: 0; }
 /* Nota diaria embebida (sin cabecera — `V2ElementView compact`): fondo
    sutilmente distinto para separarla visualmente del cockpit de arriba, y más
    aire alrededor del área de escritura (Alberto: "hazlo bonito, buen UI").

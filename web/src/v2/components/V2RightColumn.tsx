@@ -7,8 +7,11 @@
 // algo abierto en el centro).
 //
 // Tab 1 (SIEMPRE, `effectiveSubTab==='primary'`): el contenido del destino activo —
-//   Contexto → Ficha (V2ContextView) · Chat (destino general) → composer de V2Chat
-//   embebido · Elementos → su vista de siempre, sin cambios.
+//   Contexto → Ficha (V2ContextView) · Chat (destino general) → historial de
+//   conversaciones por contexto, incondicional (C14, 29 ago 2026 — el composer
+//   se mudó al centro, ver V2App.tsx) · Elementos → su vista de siempre, sin
+//   cambios · Agenda → nota diaria a panel completo (A3, 29 ago 2026 — el
+//   cockpit subió al centro, junto a la rejilla).
 // Tab 2 "Chat" (SOLO si `elementId`, `effectiveSubTab==='chat'`): el chat del
 //   elemento abierto en el centro — SIEMPRE la misma conversación (V2ElementChat →
 //   aiChatStore.getOrCreateElementSession), nunca un «artifact» aparte. Aparece
@@ -25,10 +28,12 @@
 // un día ya vive en el CENTRO de Agenda (PlannerPanel semana, ahora 3 columnas
 // con la elegida siempre en el centro — V2App.tsx), así que un destino «Día»
 // aparte con su propia rejilla horaria de una sola columna era la MISMA vista
-// duplicada. La nota diaria (antes el centro exclusivo de «Día») pasa a vivir
-// al pie de esta misma columna derecha, debajo de DailyCockpit:
-//   · `mode='agenda'` → Tab 1 = atrasadas/sin fecha/futuro + nota diaria (al
-//     pie) · centro = planner.
+// duplicada. La nota diaria (antes el centro exclusivo de «Día») pasó a vivir
+// al pie de esta columna derecha, debajo de DailyCockpit — y desde A3 (29 ago
+// 2026) el cockpit subió al centro (junto a la rejilla, ver V2App.tsx) y la
+// nota se quedó sola aquí, a panel completo:
+//   · `mode='agenda'` → Tab 1 = nota diaria, panel completo · centro =
+//     cockpit (atrasadas/sin fecha) + planner.
 // La nota diaria nunca tiene Tab 2 "Chat" (`centerIsDiary`, ver V2ElementView.tsx)
 // — aquí no aplica porque no vive en `elementId`/centro, sino embebida abajo.
 import { useEffect } from 'react'
@@ -36,7 +41,6 @@ import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
 import ElementsFilters from './ElementsFilters'
-import DailyCockpit from '../../components/views/DailyCockpit'
 import V2ContextView from './V2ContextView'
 import V2Chat from './V2Chat'
 import V2ElementChat from './V2ElementChat'
@@ -51,13 +55,13 @@ import { displayTitle } from '../../utils/displayText'
 export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda'
 
 /** Sub-tab activa de la columna derecha.
- *  · `primary`   — el contenido del destino activo (Tab 1).
- *  · `chat`      — la conversación del elemento abierto en el centro (Tab 2).
- *  · `historial` — SOLO en el destino Chat: contextos + últimas conversaciones,
- *    el patrón «historial» de cualquier IA (Alberto, 5 ago 2026: "la vista de
- *    chat tiene que tener además el historial con los últimos chats... una tab
- *    sería la de chat y otra la de historial"). */
-export type RightSubTab = 'primary' | 'chat' | 'historial'
+ *  · `primary` — el contenido del destino activo (Tab 1).
+ *  · `chat`    — la conversación del elemento abierto en el centro (Tab 2).
+ *  (Hubo una tercera, `historial`, para una tab de la columna derecha del
+ *  destino Chat — desapareció con la cabecera de tabs de ese destino el 27
+ *  ago 2026 y quedó inalcanzable; el destino Chat enseña su historial de
+ *  forma incondicional desde C14, 29 ago 2026, sin necesitar sub-tab.) */
+export type RightSubTab = 'primary' | 'chat'
 
 interface Props {
   /** Destino activo (elegido en la sidebar) — decide el contenido de la Tab 1. */
@@ -114,11 +118,8 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
   //    el destino Contexto, donde la Tab 2 "Chat" es el HISTORIAL de
   //    conversaciones del contexto (26 ago 2026, ver más abajo) — ahí sigue
   //    teniendo contenido aunque no haya ningún elemento abierto en el centro.
-  //  · 'historial' fuera del destino Chat → esa tab ni siquiera existe ahí.
   const effectiveSubTab: RightSubTab =
-    rightSubTab === 'chat' ? ((elementId || mode === 'contexto') ? 'chat' : 'primary')
-    : rightSubTab === 'historial' ? (mode === 'chat' ? 'historial' : 'primary')
-    : 'primary'
+    rightSubTab === 'chat' ? ((elementId || mode === 'contexto') ? 'chat' : 'primary') : 'primary'
 
   // La nota diaria no tiene chat propio (ver V2ElementView.tsx) — si es lo que hay
   // centrado, el 3er tab "Chat" de Agenda no debe aparecer aunque `elementId`
@@ -279,28 +280,12 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
         />
       )}
 
-      {/* Tab 1 — destino «Chat» general: el composer completo, embebido en la
-          derecha (Alberto, 5 ago 2026: "debe haber algún chat en algún lugar
-          fuera de contextos... que se abra en columna derecha"). Se mantiene
-          SIEMPRE visible en este destino, abra lo que abra el centro — ya no
-          exige `!elementId` (27 ago 2026, ver comentario de la Tab 2 arriba). */}
-      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'chat' && (
-        <V2Chat
-          embedded
-          elementScoped={false}
-          currentNodeId={null}
-          contextLabel={t('v2.general', 'General')}
-          onFilesDropped={onFilesDropped}
-          onOpenConversation={onOpenConversation}
-          onNewChatInCtx={onNewChatInCtx}
-          onSelectCtx={onSelectCtx}
-        />
-      )}
-
-      {/* Destino Chat · tab «Historial»: contextos (tarjeta → sus conversaciones)
-          + las últimas conversaciones de todos ellos. Mismo componente que las
-          tarjetas del estado vacío del chat, en su variante de lista. */}
-      {!isRecordingActive && effectiveSubTab === 'historial' && mode === 'chat' && (
+      {/* Destino Chat general: el composer se mudó al CENTRO (C14 de la
+          auditoría, 29 ago 2026 — ver V2App.tsx). Esta columna ya no tiene Tab
+          1 "primary" propia aquí: lo único que enseña es el historial de
+          conversaciones por contexto, siempre visible, sin tabs (por eso
+          arriba, línea ~190, `mode === 'chat'` sigue sin cabecera de tabs). */}
+      {!isRecordingActive && mode === 'chat' && (
         <div className="v2-right-body">
           <V2ContextBrowser
             variant="list"
@@ -337,12 +322,9 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
           desmontar al cambiar de día no hay ventana de solape entre notas. */}
       {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (
         <div className="v2-right-fill v2-agenda-col">
-          <div className="v2-agenda-cockpit-scroll">
-            <DailyCockpit bare disablePlanner hideToday hideFuture />
-          </div>
           {dayNoteId && (
             <div
-              className="v2-agenda-daynote"
+              className="v2-agenda-daynote--full"
               // Clic en CUALQUIER hueco del panel → cursor al final del editor.
               // Antes la única zona clicable era la línea de texto (26px
               // invisibles); clicar el resto del panel no hacía nada y la nota
