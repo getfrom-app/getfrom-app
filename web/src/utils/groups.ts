@@ -1,14 +1,23 @@
 /**
- * Grupos — agrupar VARIOS elementos existentes (notas, imágenes, PDFs, mezcla)
- * bajo un nodo nuevo con su propio enlace público. Extensión de "publicar UNA
- * nota" (PublishButton.tsx / node.publicSlug) a "publicar VARIOS elementos".
+ * Grupos — redefinidos en la auditoría "Fromly a fondo" (P4 · Ordenar, 28 ago
+ * 2026 → aclarado por Alberto el 29 ago): un grupo NO es un subcontexto (no
+ * vive en el árbol de contextos, no tiene chat/tareas propias) y tampoco es
+ * "solo para compartir" (eso es una capacidad, no su definición). Un grupo es
+ * una CURACIÓN de varios elementos que ya viven dentro de un contexto — p.ej.
+ * 5 fotos concretas de #marketing, agrupadas para tratarlas como una unidad
+ * (una publicación) sin mezclarlas con el resto de lo que hay en ese
+ * contexto. Compartir por enlace público es lo que se hace CON esa curación,
+ * como hoy, no la razón de que exista.
  *
  * Modelo (coherente con `_ctxRefs` de los contextos, ver utils/cajones.ts):
  * un GRUPO es un nodo normal marcado `extraData._group='1'` cuyos miembros son
  * ids referenciados en `extraData._groupRefs` (array de node ids) — el grupo
  * apunta A sus miembros (al revés que `_ctxRefs`, donde el miembro apunta a su
  * contexto; aquí tiene más sentido que el propietario de la relación sea el
- * grupo, ya que un grupo se borra/publica como unidad).
+ * grupo, ya que un grupo se borra/publica como unidad). Sin contexto propio:
+ * cuelga a nivel raíz (`parentId=null`, ver `createGroup`) y el contexto que
+ * muestra la UI (V2ContextView.tsx `contextGroups`) se DERIVA mirando el
+ * contexto de sus miembros — nunca se guarda en el grupo.
  *
  * El enlace público reutiliza el MISMO campo `publicSlug` del nodo que ya usan
  * las notas individuales (ver nodeExport.publishNodePublicly), pero contra un
