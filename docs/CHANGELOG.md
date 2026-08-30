@@ -4,6 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.15 — 30 agosto 2026 · Ajustes de la Agenda viva + una tarea pegada en dos notas ya no "salta" de documento
+
+- **Arreglado**: si copiabas un checklist de una nota a otra (p. ej. de la nota libre de un contexto a la nota de un evento concreto), las casillas pegadas competían por la MISMA tarea real — cada vez que abrías uno u otro documento, la tarea "saltaba" a abrirse en el otro. Ahora cada documento se queda con su propia tarea independiente, como si nunca se hubieran compartido.
+- **Agenda**: la nota del día vuelve a estar siempre visible arriba de la columna derecha (sin botón que la despliegue) y el chat ya no repite la etiqueta "Chat" ni el aviso de "Enter para enviar…" — más sitio para escribir.
+
+---
+
 ## Web v9.10.14 — 30 agosto 2026 · Agenda como asistente vivo + historial de chats real
 
 - **Agenda tiene un asistente de verdad en la columna derecha.** Ya no es un párrafo que se calcula una vez al abrir: es el chat real (el mismo motor que iOS y Telegram) — puedes preguntarle, pedirle que cree tareas, anotar. Además va avisando solo a lo largo del día: cuando completas una tarea, cuando un evento está a punto de empezar.

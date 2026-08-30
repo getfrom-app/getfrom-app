@@ -36,7 +36,7 @@
 //     cockpit (atrasadas/sin fecha) + planner.
 // La nota diaria nunca tiene Tab 2 "Chat" (`centerIsDiary`, ver V2ElementView.tsx)
 // — aquí no aplica porque no vive en `elementId`/centro, sino embebida abajo.
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
@@ -184,25 +184,6 @@ function V2AgendaElementSide({ nodeId, onSelectCtx, onOpenNode }: { nodeId: stri
 export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, chatThreadId, onOpenChatThread, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped, agendaDayNoteDate }: Props) {
   useStore()
   const { t } = useTranslation()
-
-  // Nota del día del destino Agenda: botón + panel plegable (30 ago 2026,
-  // Alberto: "una pestaña o botón... que al pulsarlo revele la nota... no
-  // ocupa espacio permanente" — antes la nota vivía SIEMPRE a panel completo
-  // aquí abajo, empujando el chat fuera). Cierra sola al pulsar fuera —
-  // mismo gesto que cualquier popover de la app.
-  const [agendaNoteOpen, setAgendaNoteOpen] = useState(false)
-  const agendaNoteRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!agendaNoteOpen) return
-    const onDoc = (e: MouseEvent) => {
-      if (agendaNoteRef.current && !agendaNoteRef.current.contains(e.target as Node)) setAgendaNoteOpen(false)
-    }
-    document.addEventListener('mousedown', onDoc)
-    return () => document.removeEventListener('mousedown', onDoc)
-  }, [agendaNoteOpen])
-  // Cambiar de día en el planner con la nota abierta dejaría viendo la nota
-  // de OTRO día sin que el usuario lo pidiera — se cierra sola.
-  useEffect(() => { setAgendaNoteOpen(false) }, [agendaDayNoteDate])
 
   // Defensivo (ver comentario del prop `rightSubTab` en la interfaz): si
   // `centerElementId` volvió a null desde CUALQUIER sitio sin que ese sitio se
@@ -422,26 +403,14 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
       )}
       {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (!elementId || centerIsDiary) && (
         <div className="v2-right-fill v2-agenda-col">
-          {/* Cabecera corta: acceso a la nota del día — botón, no un panel
-              fijo (30 ago 2026, ver `agendaNoteOpen` arriba). */}
-          <div className="v2-agenda-notebar">
-            <button
-              type="button"
-              className={`v2-agenda-notebtn ${agendaNoteOpen ? 'active' : ''}`}
-              onClick={() => setAgendaNoteOpen(o => !o)}
-            >
-              <Icon name="note" size={14} />
-              {t('v2.agenda.dayNote', 'Nota del día')}
-            </button>
-          </div>
-
+          {/* Nota del día — siempre abierta arriba, panel fijo (30 ago 2026,
+              Alberto: revertido desde el botón plegable de la misma tarde —
+              "ponla arriba siempre abierta... quita el botón de nota del
+              día"). Altura propia + scroll interno, no se lleva todo el
+              alto de la columna. */}
           {dayNoteId && (
-            <div className={`v2-agenda-note-collapse ${agendaNoteOpen ? 'open' : ''}`} ref={agendaNoteRef}>
-              <div className="v2-agenda-note-collapse-inner">
-                <div className="v2-agenda-note-panel">
-                  <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => setAgendaNoteOpen(false)} onSelectCtx={onSelectCtx} compact />
-                </div>
-              </div>
+            <div className="v2-agenda-note-panel">
+              <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
             </div>
           )}
 

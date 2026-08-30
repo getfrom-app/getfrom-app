@@ -948,48 +948,17 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 .v2-right-empty { color: var(--text-tertiary); font-size: 12.5px; text-align: center; padding: 30px 12px; line-height: 1.6; }
 
 /* Destino Agenda (rediseño 30 ago 2026, Alberto: "que sea un asistente real...
-   columna derecha... formato chat" — antes la nota diaria vivía SIEMPRE a
-   panel completo aquí abajo, sin sitio para nada más; ver `V2AgendaAssistant`
-   y el botón "Nota del día" más abajo). Orden: botón de nota → panel plegable
-   de la nota (cerrado por defecto) → cockpit fijo (atrasadas/sin fecha) →
-   chat, que se lleva el espacio que sobra. */
+   columna derecha... formato chat"). Orden: nota del día (siempre abierta,
+   arriba) → cockpit fijo (atrasadas/sin fecha) → chat, que se lleva el
+   espacio que sobra. Hubo una vuelta intermedia el mismo día con un botón
+   que la plegaba/desplegaba con animación — revertida horas después, mismo
+   Alberto: "ponla arriba siempre abierta... quita el botón de nota del
+   día", prefiere tenerla siempre a la vista antes que un clic de más. */
 .v2-agenda-col { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-
-/* Botón "Nota del día" — mismo lenguaje visual que un chip de filtro (borde
-   fino, sin relleno en reposo) que se rellena de acento al activarse, igual
-   que cualquier toggle de la app. */
-.v2-agenda-notebar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 12px 16px 0; }
-.v2-agenda-notebtn {
-  display: flex; align-items: center; gap: 6px;
-  background: transparent; border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r-sm);
-  padding: 6px 11px; font: inherit; font-size: 12.5px; font-weight: 550; color: var(--text-secondary);
-  cursor: pointer; transition: background var(--v2-fast), color var(--v2-fast), border-color var(--v2-fast);
-}
-.v2-agenda-notebtn:hover { background: var(--v2-hover); color: var(--text-primary); }
-.v2-agenda-notebtn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-/* Panel plegable — técnica `grid-template-rows: 0fr → 1fr` (anima a la altura
-   NATURAL del contenido sin conocerla de antemano, a diferencia de animar
-   `max-height` a un valor fijo demasiado alto o demasiado corto). El
-   contenido real (`.v2-agenda-note-panel`) lleva su propio `max-height` +
-   scroll — eso acota también la altura "natural" que ve el grid, así una
-   nota larga no empuja el resto de la columna sin límite. Fade con un
-   pequeño retraso a la apertura para que el texto no aparezca de golpe
-   mientras el panel todavía se está desplegando. */
-.v2-agenda-note-collapse {
-  flex: 0 0 auto; display: grid; grid-template-rows: 0fr;
-  transition: grid-template-rows 240ms var(--v2-ease);
-}
-.v2-agenda-note-collapse.open { grid-template-rows: 1fr; }
-.v2-agenda-note-collapse-inner { overflow: hidden; min-height: 0; }
 .v2-agenda-note-panel {
-  max-height: 340px; overflow-y: auto; margin: 10px 16px 0;
-  border: 1px solid var(--v2-line); border-radius: var(--v2-r-lg); background: var(--v2-surface);
-  box-shadow: var(--v2-shadow);
-  opacity: 0; transform: translateY(-4px);
-  transition: opacity 160ms var(--v2-ease), transform 200ms var(--v2-ease);
+  flex: 0 0 auto; max-height: 210px; overflow-y: auto;
+  padding: 14px 20px 10px; border-bottom: 1px solid var(--v2-line);
 }
-.v2-agenda-note-collapse.open .v2-agenda-note-panel { opacity: 1; transform: translateY(0); transition-delay: 90ms; }
 
 /* Cockpit — alto acotado con scroll propio (nunca empuja el chat fuera de
    vista) + separador fino. */

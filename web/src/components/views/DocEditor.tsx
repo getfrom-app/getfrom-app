@@ -688,7 +688,25 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         // un `dataNodeId` ya usado por OTRA casilla en este mismo recorrido): se trata
         // como si no tuviera id, así crea su propio Node en vez de seguir compartiendo
         // fecha/estado con la casilla original.
-        const id = rawId && !seen.has(rawId) ? rawId : null
+        //
+        // ⚠️ MISMO bug, pero entre dos DOCUMENTOS distintos (30 ago 2026, Alberto,
+        // con capturas reales: pegó un checklist de la nota libre de un contexto
+        // dentro de la nota de un evento — "Reunión con Iñigo" — y desde entonces
+        // clicar esas tareas desde Agenda abría la nota del contexto, no la del
+        // evento, donde el usuario las reconoce de verdad). El portapapeles del
+        // navegador conserva `data-node-id` al pegar HTML entre dos instancias del
+        // editor, así que el mismo id termina viviendo en los DOS documentos. Si el
+        // candidato ya tiene un `_taskOf` EXPLÍCITO apuntando a otro documento vivo
+        // que no es este, no es la misma tarea "movida" — es una copia pegada: se
+        // trata como sin id también, para que cree su propio Node en vez de robarle
+        // la tarea al documento original cada vez que se abre uno u otro (antes,
+        // `_taskOf` "saltaba" de documento en documento según cuál se abriera
+        // último — ver el comentario de la reasignación "legado" más abajo).
+        const candidate = rawId ? store.getNode(rawId) : null
+        const candidateOwnerId = candidate ? (parseExtraData(candidate.extraData)[TASK_OF] as string | undefined) : undefined
+        const candidateOwner = candidateOwnerId ? store.getNode(candidateOwnerId) : null
+        const isCrossDocCollision = !!candidateOwner && !candidateOwner.deletedAt && candidateOwnerId !== node.id
+        const id = rawId && !seen.has(rawId) && !isCrossDocCollision ? rawId : null
         const existing = id ? store.getNode(id) : null
         if (existing && !existing.deletedAt) {
           // RECURRENCIA: al completar, `spawnRecurrence` no recicla el nodo — crea la

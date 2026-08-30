@@ -123,7 +123,7 @@ export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: 
 
   return (
     <div className="v2-agenda-assistant">
-      <V2Chat embedded currentNodeId={AGENDA_THREAD_KEY} contextLabel={null} onFilesDropped={onFilesDropped} />
+      <V2Chat embedded hideHeader currentNodeId={AGENDA_THREAD_KEY} contextLabel={null} onFilesDropped={onFilesDropped} />
     </div>
   )
 }

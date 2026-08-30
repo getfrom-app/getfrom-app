@@ -34,6 +34,13 @@ interface Props {
   onFilesDropped: (files: File[]) => void
   embedded?: boolean
   elementScoped?: boolean
+  /** Oculta la cabecera "Chat" (30 ago 2026, Alberto, sobre V2AgendaAssistant:
+   *  "no me gusta que ponga 'Chat', yo lo quitaría. Simplemente con la
+   *  separación que hay ya vale" — la sección de Atrasadas justo encima ya
+   *  separa visualmente el chat del resto, la etiqueta sobraba). Solo lo pasa
+   *  ese call site; el resto (V2ElementChat, el chat de un contexto) sigue
+   *  enseñando su cabecera de siempre. */
+  hideHeader?: boolean
 }
 
 function openNode(id: string) {
@@ -207,7 +214,7 @@ function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boo
   )
 }
 
-export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, embedded, elementScoped }: Props) {
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, embedded, elementScoped, hideHeader }: Props) {
   const { t } = useTranslation()
   const scoped = elementScoped ?? embedded
   const chat = useAssistantStore()
@@ -443,13 +450,15 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
       onDrop={onDrop}
       style={{ position: 'relative' }}
     >
-      <div className="v2-center-head">
-        <span className="v2-center-title">
-          {scoped
-            ? <><Icon name="chat" size={15} className="v2-title-icon" />{t('v2.rightColumn.tabChat', 'Chat')}</>
-            : <>{hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}{t('v2.chat.title', 'Fromly')}</>}
-        </span>
-      </div>
+      {!hideHeader && (
+        <div className="v2-center-head">
+          <span className="v2-center-title">
+            {scoped
+              ? <><Icon name="chat" size={15} className="v2-title-icon" />{t('v2.rightColumn.tabChat', 'Chat')}</>
+              : <>{hasCtx && <span className="v2-center-ctx">{contextLabel} › </span>}{t('v2.chat.title', 'Fromly')}</>}
+          </span>
+        </div>
+      )}
 
       <div className="v2-chat-scroll" ref={scrollRef}>
         {isEmpty ? (
@@ -653,9 +662,16 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
             ><Icon name="pencil" size={15} /></button>
             <button className="v2-send" disabled={!input.trim() || thinking} onClick={() => doSend(input)} title={t('v2.chat.send', 'Enviar')}><Icon name="arrow-up" size={16} strokeWidth={2} /></button>
           </div>
-          <div className="v2-composer-hint">
-            {thinking ? t('v2.chat.thinking', 'Fromly está pensando…') : t('v2.chat.composerHint', 'Enter para enviar · Shift+Enter salto de línea · arrastra archivos aquí')}
-          </div>
+          {/* Oculta en la variante compacta (Agenda, 30 ago 2026, Alberto:
+              "quita lo de 'Enter para enviar'... para bajar un poco más la
+              caja de texto y aprovechar mejor el espacio") — el aviso "Fromly
+              está pensando…" no se pierde, ya vive también dentro del hilo
+              (`.v2-creating`, más arriba) mientras `thinking` es true. */}
+          {!hideHeader && (
+            <div className="v2-composer-hint">
+              {thinking ? t('v2.chat.thinking', 'Fromly está pensando…') : t('v2.chat.composerHint', 'Enter para enviar · Shift+Enter salto de línea · arrastra archivos aquí')}
+            </div>
+          )}
         </div>
       </div>
 
