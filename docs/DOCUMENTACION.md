@@ -1,7 +1,93 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-27 (Web v9.7.32, iOS build 161)
+> Última actualización: 2026-08-30 (Web v9.10.13, iOS build 180)
+
+---
+
+## Sesión 2026-08-30 (sesión 11) — 13 bugs reportados en vivo por Alberto, cola completa
+
+Web **v9.10.13**. iOS **build 180** (Xcode Cloud, sin enviar a revisión — pendiente de decisión).
+Servidor: `assistantTurn.ts` (`buildSystemPrompt`). Detalle completo en
+`logs/2026-08-30-sesion11-cola-13-bugs.md`.
+
+Alberto fue reportando bugs uno tras otro mientras se auditaba el resto de la app; se resolvieron
+en cola, probando cada uno antes de pasar al siguiente.
+
+- **Contextos raíz con `_closed` residual no se podían asignar** ("Inversión" aparecía en el picker
+  pero el chip nunca se pintaba tras elegirlo): `isContextClosed()` (`utils/cajones.ts`) ahora
+  siempre devuelve `false` para un contexto raíz, en vez de depender de que cada caller (había
+  varios) recordara la excepción por separado.
+- **Mención `#contexto` en el editor de documentos se borraba del texto** tras Enter (aunque la cita
+  del párrafo sí se creaba): `DocContextMention.tsx` ahora inserta el texto `#nombre` como enlace
+  interno visible con clase propia `.doc-ctx-mention` (color de acento, algo más pequeño — estilo
+  Tana), en vez de `deleteRange`.
+- **Captura rápida no detectaba evento+hora sin palabra de fecha explícita** ("Reunión con X a las
+  11:30" sin "hoy"/"mañana"): `extractDateFromEnd()` (`utils/naturalDate.ts`) ahora asume HOY como
+  fallback cuando hay hora pero ningún día reconocible en el texto. De paso, `captureHelper.ts`
+  ahora también marca `isTask` para un evento detectado automáticamente (antes solo el shortcut
+  `-e` lo hacía) — invariante "todo evento nace también con status" (ver más abajo, 5 ago 2026).
+- **Duplicado de evento local + evento crudo de Google Calendar en la vista Mes del planner**:
+  `monthDayItems()` (`PlannerPanel.tsx`) no aplicaba el dedup por `gcalIdCore()`/
+  `linkedGcalIdCores()` que sí usan `getTimedBlocks`/`getAllDayTasks` del mismo archivo — único
+  punto que se había quedado sin el patrón.
+- **Fechas de tareas acopladas en documentos con varios checkboxes** (cambiar la fecha de una
+  cambiaba todas; solo una aparecía en las listas generales): el atributo `dataNodeId` de
+  `TaskItemLinked` (`DocEditor.tsx`) no tenía `keepOnSplit: false` — TipTap clonaba el id al partir
+  una casilla con Enter, así que dos checkboxes visuales acababan apuntando al mismo Node real.
+  Añadida también una red de seguridad en `syncTasksToNodes` que detecta `dataNodeId` duplicado
+  dentro del mismo recorrido y crea un Node propio para el duplicado (cubre documentos ya afectados).
+- **Botón "Hoy" del planner no recentraba** si ya estabas en el día de hoy pero habías desplazado el
+  scroll horizontal a mano: el efecto de reset de scroll estaba atado solo a
+  `centerDate.toDateString()`, que no cambia si ya era hoy. Añadido `recenterTick`, un contador que
+  se incrementa en cada clic del botón y fuerza el reset del scroll independientemente de si la
+  fecha cambió.
+- **Columna derecha no acompañaba el evento/tarea/timeblock abierto desde el planner** (destino
+  Agenda): seguía enseñando brief+cockpit+nota diaria de un día cualquiera. Nuevo
+  `V2AgendaElementSide` (`V2RightColumn.tsx`) — fecha/hora/recurrencia/prioridad vía `TaskPropsBody`
+  (ya existente, reutilizado sin cambios), contexto+grupo vía `V2NoteContext` (exportado, ya
+  existía), enlaces internos/externos de sus Notas (nuevo, extrae `<a href>` del body de la nota-hija
+  `_containerNotes`), y elementos relacionados vía `V2Backlinks` (recién exportado desde
+  `V2DetailView.tsx`, antes privado).
+- **Brief+cockpit vuelven a la columna derecha, planner limpio**: A3 de la auditoría (29 ago) los
+  había subido arriba del planner central. Revertido a petición de Alberto en vivo — el planner
+  (centro) solo muestra el calendario; `V2BriefCard`+`DailyCockpit` (atrasadas/sin fecha) se mueven
+  al pie de `V2RightColumn`, encima de la nota diaria — mismo sitio para el que ya existía CSS sin
+  usar (`.v2-agenda-cockpit-strip`, `.v2-brief-card`).
+- **Barra "Lo próximo" ("Después: …") se cortaba sin indicador** contra el borde de la ventana:
+  `.v2-nextevent-after` no tenía `min-width:0`/`overflow:hidden`/`text-overflow:ellipsis` — añadidos,
+  mismo tratamiento que `.v2-nextevent-text`.
+- **El asistente confundía el día de la semana al resolver "el martes"/"el lunes que viene"**: el
+  prompt (`buildSystemPrompt`, `assistantTurn.ts`) ya inyectaba HOY con su día correcto, pero dejaba
+  la aritmética de "próximo martes desde hoy" al LLM — fuente clásica de errores. Ahora se calcula en
+  TypeScript una tabla determinista (próximo de cada día de la semana) y se inyecta ya resuelta, con
+  instrucción explícita de copiarla en vez de recalcularla.
+- **iOS — scroll horizontal por días en el planificador semanal**: un `DragGesture(minimumDistance:
+  0)` en `WeekDayColumn` (añadido 26 ago para long-press→crear TimeBlock) bloqueaba el pan del
+  `ScrollView(.horizontal)` ancestro en cuanto el dedo tocaba la rejilla de horas. Sustituido por
+  `HourGridLocation`, un `UILongPressGestureRecognizer` real vía `UIGestureRecognizerRepresentable`
+  — mismo patrón que `RowPanGesture` (ver invariante del 25 ago más abajo).
+- **iOS — swipe "Hoy" en una tarea del chat también la abría**: `RowPanGesture`
+  (`AssistantSwipeRow.swift`) reconocía el toque simultáneamente con el `Button` del botón de swipe
+  revelado, y el guard `offset != 0` de `onTap` dejaba de proteger nada porque el `Button` ya había
+  puesto `offset = 0` antes. Ahora `RowPanGesture` recibe `isOpen` y su delegate implementa
+  `gestureRecognizer(_:shouldReceive:)` para rechazar el toque entero mientras la fila está abierta.
+- **iOS — "atrás" desde una tarea abierta volvía a una conversación anterior**:
+  `AssistantChatView.currentChatNodeId` seguía actualizando `store.currentThreadKey` en iPhone
+  aunque el comentario del código asumiera que ahí "casi siempre vale nil" — el `fullScreenCover` no
+  desmonta la vista de abajo, así que el `navigator` compartido sí lo cambiaba de verdad. Ahora es
+  `nil` explícito en iPhone (`isPad`, ya existía) — el mecanismo solo tiene efecto real en iPad.
+- **Fix urgente de producción, no relacionado con la cola**: un botón de menú móvil (feature del 29
+  ago) se renderizaba siempre en el DOM como primer hijo de `.v2-root` (grid de 3 columnas) pero solo
+  tenía estilo dentro de `@media (max-width:900px)` — en escritorio se colaba como ítem de grid sin
+  columna asignada y desplazaba sidebar/centro/derecha una posición cada uno. `display:none` base
+  añadido.
+- **Changelog de la web desincronizado de Telegram desde el 13 ago**: `changelog.html` se editaba a
+  mano por separado de `docs/CHANGELOG.md`, y se dejó de hacer mientras Telegram (`post-changelog.sh`)
+  seguía enlazando ahí en cada aviso. Nuevo `scripts/gen_changelog_html.py` regenera TODO el contenido
+  entre marcadores `<!-- CHANGELOG:START/END -->` desde el `.md` (163 versiones históricas, incluidas
+  16 antiguas en formato párrafo sin viñetas); `post-changelog.sh` lo llama automáticamente tras cada
+  publicación — el HTML ya no puede desincronizarse en silencio.
 
 ---
 

@@ -376,13 +376,15 @@ ves en el centro y en la columna derecha.
 ### Agenda — el Planificador completo, con tu día abajo
 
 Es el destino por defecto al abrir Fromly. El centro muestra el Planificador (semana de 3 columnas
-con el día elegido siempre en el centro, mes o año — navegable, ver sección 7); la columna derecha
-muestra lo que ese calendario no cubre (tareas atrasadas y tareas sin fecha) y, debajo, la nota del
-día de hoy embebida con scroll propio. Ya no existe un destino "Día" aparte — el timeline horario de
-un día concreto se ve directamente en el Planificador del centro, no duplicado en otro sitio.
+con el día elegido siempre en el centro, mes o año — navegable, ver sección 7), sin nada más encima
+— limpio. Mientras no tengas nada abierto, la columna derecha muestra el informe del día (resumen de
+Fromly), lo que el calendario no cubre (tareas atrasadas y tareas sin fecha, para poder arrastrarlas
+al Planificador) y, debajo, la nota del día elegido embebida con scroll propio.
 
-Abrir una tarea la centra y le da su propia pestaña **Chat** (ver más abajo); si esa tarea pertenece
-a un contexto, además queda seleccionado a la izquierda y su Ficha pasa a la columna derecha. La nota
+Abrir una tarea, evento o timeblock desde el Planificador la centra y **la columna derecha pasa a
+acompañarla**: fecha/hora/recurrencia/prioridad editables, su contexto y grupo, los enlaces que
+tenga en sus Notas, y qué otros elementos la mencionan — además de su propia pestaña **Chat** (ver
+más abajo). Si esa tarea pertenece a un contexto, además queda seleccionado a la izquierda. La nota
 del día en sí no tiene chat propio.
 
 ### Chat — empezar una conversación sin contexto

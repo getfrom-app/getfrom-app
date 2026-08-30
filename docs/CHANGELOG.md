@@ -4,6 +4,21 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.13 · iOS build 180 — 30 agosto 2026 · 13 correcciones reportadas en vivo
+
+- **Arreglo urgente**: el layout de la web se rompía por completo en escritorio (un botón de menú móvil se colaba en el grid de 3 columnas) — corregido en minutos tras el aviso.
+- **Contextos**: "Inversión" y otros contextos raíz con estado residual ahora se pueden asignar sin problema a agentes y elementos.
+- **Menciones `#`** en el editor de documentos ya no desaparecen del texto — quedan visibles con estilo propio (como en Tana).
+- **Captura rápida** detecta mejor los eventos: "Reunión con X a las 11:30" ya reconoce hora y tipo evento aunque no digas "hoy" o "mañana".
+- **Planificador**: sin duplicados de eventos de Google Calendar en la vista Mes; el botón "Hoy" recentra el día aunque hayas movido el scroll a mano; abrir una tarea o evento desde el planner ahora muestra su fecha/hora/recurrencia/contexto en la columna derecha, en vez de contenido de otro día.
+- **Documentos con varias tareas**: cada checkbox guarda su propia fecha — antes, en algunos casos, cambiar la fecha de una afectaba a las demás del mismo documento.
+- **Barra de estado**: el texto de "Lo próximo" ya no se corta a media palabra.
+- **El asistente calcula el día de la semana correctamente** al resolver "el martes", "el lunes que viene", etc.
+- **iOS**: scroll horizontal por días en el planificador semanal; el swipe "Hoy" en una tarea del chat ya no la abre a la vez; volver atrás desde una tarea ya no te deja en una conversación antigua.
+- Changelog de la web (esta página) vuelve a estar al día — se regenera automáticamente en cada aviso de Telegram, no depende de una edición manual aparte.
+
+---
+
 ## Web v9.8.1 — 28 agosto 2026 · Tu conversación te sigue entre dispositivos
 
 - **El chat ya no se queda en un solo dispositivo.** Empieza una conversación en el iPhone, ábrela en la web (o al revés) y sigue ahí — el historial se guarda en tu cuenta, no solo en el aparato donde escribiste.
