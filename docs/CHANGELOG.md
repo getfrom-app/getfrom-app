@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## iOS build 181 — 30 agosto 2026 · Scroll del Planificador y falso error en el chat
+## iOS v2.19.181 — 30 agosto 2026 · Scroll del Planificador y falso error en el chat
 
 - **Arreglado**: en la vista Semana del Planificador, el scroll horizontal entre días podía quedarse
   bloqueado según por dónde empezaras a arrastrar. En la vista Día, el scroll vertical por las horas
