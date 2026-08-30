@@ -145,6 +145,35 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   const [renameVal, setRenameVal] = useState('')
   const renameRef = useRef<HTMLInputElement>(null)
 
+  // Menú de clic derecho de un favorito: renombrar / quitar de favoritos /
+  // eliminar (30 ago 2026, Alberto: "en el sidebar, boton derecho a los
+  // favoritos para eliminar renombrar o quitar de favoritos" — antes la fila
+  // no tenía `onContextMenu`, así que no había forma de hacer ninguna de las
+  // 3 sin abrir el elemento entero). Reutiliza `renaming`/`renameVal` (ya
+  // genéricos, operan sobre cualquier nodeId) — solo hace falta el estado del
+  // propio menú, igual que `ctxMenu` de arriba pero para nodos cualquiera.
+  const [favMenu, setFavMenu] = useState<{ id: string; x: number; y: number } | null>(null)
+  const openFavMenu = (e: React.MouseEvent, id: string) => {
+    e.preventDefault(); e.stopPropagation()
+    setFavMenu({ id, x: e.clientX, y: e.clientY })
+  }
+  const unfavorite = (id: string) => {
+    store.updateNode(id, { isFavorite: false })
+    setFavMenu(null)
+  }
+  const deleteFavorite = (id: string) => {
+    const deletedIds = store.deleteNode(id)
+    setFavMenu(null)
+    if (deletedIds.length === 0) return
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: {
+        message: t('context.toastMovedToTrash', 'Movido a la papelera'),
+        type: 'success',
+        action: { label: t('tip.undo', 'Deshacer'), onClick: () => store.restoreDeleted(deletedIds) },
+      },
+    }))
+  }
+
   const openCtxMenu = (e: React.MouseEvent, id: string) => {
     e.preventDefault(); e.stopPropagation()
     setMoveSubmenu(false)
@@ -155,6 +184,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
     setRenameVal(n?.text || '')
     setRenaming(id)
     setCtxMenu(null)
+    setFavMenu(null)
     setTimeout(() => { renameRef.current?.focus(); renameRef.current?.select() }, 20)
   }
   const commitRename = () => {
@@ -382,10 +412,25 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         return (
           <div className="v2-ctx-list" style={{ marginBottom: 8, flex: 'none' }}>
             {favorites.map(n => (
-              <button key={n.id} type="button" className="v2-ctx-row" onClick={() => onOpenNode?.(n.id)}>
-                <Icon name="star" size={16} className="v2-ctx-glyph" />
-                <span className="v2-el-title">{n.text || t('common.noTitle', 'Sin título')}</span>
-              </button>
+              renaming === n.id ? (
+                <div key={n.id} className="v2-ctx-row">
+                  <Icon name="star" size={16} className="v2-ctx-glyph" />
+                  <input
+                    ref={renameRef}
+                    className="v2-ctx-rename-input"
+                    value={renameVal}
+                    onChange={(e) => setRenameVal(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                    onBlur={commitRename}
+                    onKeyDown={(e) => { if (e.key === 'Enter') commitRename(); else if (e.key === 'Escape') { setRenaming(null); setRenameVal('') } }}
+                  />
+                </div>
+              ) : (
+                <button key={n.id} type="button" className="v2-ctx-row" onClick={() => onOpenNode?.(n.id)} onContextMenu={(e) => openFavMenu(e, n.id)}>
+                  <Icon name="star" size={16} className="v2-ctx-glyph" />
+                  <span className="v2-el-title">{n.text || t('common.noTitle', 'Sin título')}</span>
+                </button>
+              )
             ))}
           </div>
         )
@@ -566,6 +611,20 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
                 ))}
               </>
             )}
+          </div>
+        </>
+      )}
+
+      {/* Menú de clic derecho de un favorito: renombrar / quitar de favoritos /
+          eliminar. */}
+      {favMenu && store.getNode(favMenu.id) && (
+        <>
+          <div onPointerDown={() => setFavMenu(null)} onContextMenu={(e) => { e.preventDefault(); setFavMenu(null) }} style={{ position: 'fixed', inset: 0, zIndex: 1999 }} />
+          <div className="v2-ctx-menu" style={{ position: 'fixed', top: favMenu.y, left: favMenu.x, zIndex: 2000 }}>
+            <button className="v2-ctx-menu-item" onClick={() => startRename(favMenu.id)}>{t('v2.ctxMenu.rename', 'Renombrar')}</button>
+            <button className="v2-ctx-menu-item" onClick={() => unfavorite(favMenu.id)}>{t('v2.favMenu.unfavorite', 'Quitar de favoritos')}</button>
+            <div className="v2-ctx-menu-sep" />
+            <button className="v2-ctx-menu-item v2-ctx-menu-item--danger" onClick={() => deleteFavorite(favMenu.id)}>{t('v2.ctxMenu.delete', 'Eliminar')}</button>
           </div>
         </>
       )}

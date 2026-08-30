@@ -670,7 +670,16 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       try { const r = JSON.parse(store.getNode(node.id)?.extraData || '{}')._ctxRefs; if (Array.isArray(r)) parentRefs = r } catch { /* ignore */ }
       ed.state.doc.descendants((item, pos) => {
         if (item.type.name !== 'taskItem') return true
-        const text = item.textContent.trim()
+        // ⚠️ SOLO el primer párrafo (el título de la casilla) — `TaskItemLinked`
+        // vive con `nested: true` (content spec `paragraph block*`), así que
+        // `item.textContent` se traga TODO lo que cuelgue debajo: un párrafo
+        // explicativo indentado (sin su propia casilla) o sub-tareas anidadas,
+        // sin ningún separador entre bloques (30 ago 2026, Alberto, con
+        // captura real: una tarea con nota debajo aparecía en Agenda como
+        // "TítuloExplicación" pegados sin espacio — el nodo de la tarea se
+        // guardaba con ese texto entero). El primer hijo de un taskItem es
+        // SIEMPRE su párrafo de título (lo exige el content spec).
+        const text = (item.firstChild?.textContent ?? item.textContent).trim()
         if (!text) return true // casilla vacía: aún no es tarea (evita nodos «Sin título»)
         const status = item.attrs.checked ? 'done' : 'pending'
         const rawId = item.attrs.dataNodeId as string | null

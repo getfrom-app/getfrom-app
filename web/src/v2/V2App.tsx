@@ -14,6 +14,7 @@ import { isDocNode } from '../utils/docNode'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { getTodayDiaryUnderAgenda } from '../utils/agendaHelper'
 import { isMarkedContext, isRootContext, firstContextOf, maybeUpdateContextKnowledge, contextParent, getOrCreateContainerNotes, assignContext } from '../utils/cajones'
+import { displayTitle } from '../utils/displayText'
 import ContextPicker from '../components/panels/ContextPicker'
 import { darkenHex, lightenHex, hexToRgba } from '../utils/color'
 import { htmlToMarkdown } from '../utils/htmlMarkdown'
@@ -126,6 +127,14 @@ export default function V2App() {
   }, [ownAccent])
   const [focusNodeId, setFocusNodeId] = useState<string | null>(null) // conversación centrada en un nodo concreto
   const [rightMode, setRightMode] = useState<RightMode>('agenda')
+  // Hilo abierto en el CENTRO del destino Chat (30 ago 2026) — `null` = hilo
+  // GENERAL, o el id de un contexto/elemento cuyo hilo se abrió desde el
+  // historial de la derecha (`V2ThreadHistory`). Separado de `selectedCtxId`
+  // a propósito: abrir el hilo de un contexto desde el historial NO debe
+  // saltar a la ficha de ese contexto (eso ya lo hace la sidebar) — solo
+  // enseña SU conversación aquí, en el destino Chat, con su historial
+  // siempre visible en la columna derecha.
+  const [chatThreadId, setChatThreadId] = useState<string | null>(null)
   const [importDragOver, setImportDragOver] = useState(false) // arrastrando un archivo sobre la columna de contextos
   // «Adjuntar» (V2AttachModal): archivo / enlace / Drive en un único sitio. Guarda
   // el contexto desde el que se abrió — lo que se adjunte nace ahí.
@@ -572,18 +581,18 @@ export default function V2App() {
       // de la columna derecha (V2RightColumn.tsx), no en el centro.
       setCenterElementId(null)
     } else if (dest === 'chat') {
-      // YA NO retoma la conversación general que hubiera (27 ago 2026, Alberto:
-      // "en el caso de web creo que es mejor que sean chats individuales y que
-      // haya un histórico de chats igual que en los chats de los contextos" —
-      // a diferencia de un contexto, que sí retoma SU documento/hilo propio, el
-      // destino Chat general no tiene "un" hilo: cada conversación es su propio
-      // nodo (`_aiSession`) desde siempre, lo único que cambiaba era que aquí
-      // se re-abría la última sin preguntar. Con la sesión vacía, `V2Chat`
-      // enseña su propio estado vacío (contextos + "General" con historial y
-      // "Nueva conversación", el mismo componente que ya usan los contextos) en
-      // vez de continuar el hilo de la última vez.
+      // ⚠️ 30 ago 2026 — el histórico de "cada conversación es su propio nodo
+      // `_aiSession`" (comentario original de esta rama, 27 ago 2026) resultó
+      // ser el motor VIEJO, desconectado del chat real desde la migración a
+      // `assistantStore` (FROM.md, "assistantStore es el ÚNICO motor de chat
+      // real; aiChatStore quedó a medias") — abrir una de esas conversaciones
+      // no enseñaba mensajes de verdad (nunca los tuvo) y, peor, dejaba
+      // "chats" vacíos sin forma de limpiarlos. Ahora el destino Chat vuelve
+      // al hilo GENERAL (`chatThreadId=null`) — el mismo patrón que ya usa
+      // cualquier contexto (retomar SU hilo, no "vaciarlo") — y el historial
+      // de la derecha lista los hilos reales (`V2ThreadHistory`), no nodos.
       setCenterElementId(null)
-      aiChatStore.startNewSession()
+      setChatThreadId(null)
     } else if (dest === 'elementos') {
       // Un clic normal en la fila Elementos siempre debe abrir «Todos» — sin esto,
       // `elementsFilter` se quedaba pegado al último filtro pedido por «← Agentes»/
@@ -1288,30 +1297,46 @@ export default function V2App() {
           }
           return null
         })() ??
-        <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => {
-          setCenterElementId(null)
-          const origin = openOriginRef.current
-          if (origin) {
-            setRightMode(origin.rightMode)
-            setSelectedCtxId(origin.selectedCtxId)
-            openOriginRef.current = null
-          }
-        }} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
+        // ⚠️ `main.v2-col`: sin esta clase el hijo del grid pierde `min-width:0`
+        // (regla de `.v2-col`, styles/v2.css) — cualquier contenido sin punto de
+        // corte dentro de la nota (una tarea larga, un enlace, una tabla) empuja
+        // la pista `1fr` del centro más allá del ancho disponible, y como
+        // `.v2-root` tiene `overflow:hidden`, el resultado es la columna derecha
+        // "desaparecida" (empujada fuera del viewport y recortada) y el centro
+        // cortado a mitad de línea (30 ago 2026, Alberto: "se ha eliminado la
+        // columna derecha y el centro no tiene fin, se sale por el lado
+        // derecho" — al abrir una nota con contenido largo, p.ej. la nota de un
+        // contexto). `V2ElementView` en sí no lleva esta clase porque el otro
+        // call site (uso `compact`, embebido en la columna derecha) ya hereda
+        // `min-width:0` de su `aside.v2-col.v2-right` ancestro.
+        <main className="v2-col v2-center">
+          <V2ElementView key={centerElementId} nodeId={centerElementId} onClose={() => {
+            setCenterElementId(null)
+            const origin = openOriginRef.current
+            if (origin) {
+              setRightMode(origin.rightMode)
+              setSelectedCtxId(origin.selectedCtxId)
+              openOriginRef.current = null
+            }
+          }} onSelectCtx={onSelectCtx} onOpenElementsFiltered={onOpenElementsFiltered} />
+        </main>
       ) : showProfile ? (
         <V2ProfileView onClose={() => setShowProfile(false)} />
       ) : rightMode === 'chat' ? (
         // Destino Chat general: el chat ES el centro — antes este hueco era un
         // lema vacío y el composer vivía apretado en la columna derecha (C14 de
         // la auditoría, 29 ago 2026: "el chat es la tesis... el centro
-        // desperdiciado en un lema"). La columna derecha pasa a enseñar el
-        // historial de conversaciones por contexto (ver V2RightColumn).
+        // desperdiciado en un lema"). La columna derecha enseña el historial
+        // REAL de hilos (V2ThreadHistory, 30 ago 2026) — `chatThreadId`
+        // decide CUÁL de ellos se ve aquí (null = general), con `key` para
+        // que cambiar de hilo desmonte/monte limpio (mismo motivo que
+        // `centerElementId` más abajo: sin él, dos hilos podrían solaparse
+        // durante la ventana de un render).
         <V2Chat
-          currentNodeId={null}
-          contextLabel={null}
+          key={chatThreadId ?? 'general'}
+          currentNodeId={chatThreadId}
+          contextLabel={chatThreadId ? displayTitle(store.getNode(chatThreadId)?.text || '') : null}
           onFilesDropped={onFilesDropped}
-          onOpenConversation={onOpenConversation}
-          onNewChatInCtx={onNewChatInCtx}
-          onSelectCtx={onSelectCtx}
         />
       ) : rightMode === 'elementos' ? (
         // Destino Elementos: el CENTRO es ahora el navegador real (buscador +
@@ -1354,9 +1379,6 @@ export default function V2App() {
           currentNodeId={currentNodeId}
           contextLabel={contextLabel}
           onFilesDropped={onFilesDropped}
-          onOpenConversation={onOpenConversation}
-          onNewChatInCtx={onNewChatInCtx}
-          onSelectCtx={onSelectCtx}
         />
       )}
       <V2RightColumn
@@ -1368,8 +1390,8 @@ export default function V2App() {
         onResize={setRightWidth}
         rightSubTab={rightSubTab}
         onSubTabChange={setRightSubTab}
-        onNewChatInCtx={onNewChatInCtx}
-        onOpenConversation={onOpenConversation}
+        chatThreadId={chatThreadId}
+        onOpenChatThread={setChatThreadId}
         importDragOver={importDragOver}
         elementsFilter={elementsFilter}
         onOpenElementsFiltered={onOpenElementsFiltered}

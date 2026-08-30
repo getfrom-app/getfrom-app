@@ -100,6 +100,23 @@ export async function assistantThreadTurns(threadKey: string, before?: string, l
   return res.turns
 }
 
+export interface AssistantThreadSummary {
+  /** 'general' o el id de un elemento/contexto — mismo `threadKey` de siempre. */
+  threadKey: string
+  updatedAt: string
+  /** Primera línea del último mensaje del hilo (de cualquier rol). */
+  preview: string
+}
+
+/** Un hilo por contexto/elemento con algún mensaje, más recientes primero —
+ *  el historial real de la columna derecha del destino Chat (30 ago 2026).
+ *  Sustituye a la lista de conversaciones sueltas `_aiSession` (motor viejo,
+ *  ver FROM.md "assistantStore es el ÚNICO motor de chat real"). */
+export async function assistantListThreads(): Promise<AssistantThreadSummary[]> {
+  const res = await apiRequest<{ threads: AssistantThreadSummary[] }>('/assistant/threads')
+  return res.threads
+}
+
 export interface AssistantInboxMessage {
   id: string
   title: string
@@ -199,10 +216,31 @@ export async function assistantTelegramUnlink(): Promise<void> {
   await apiRequest('/assistant/telegram/unlink', { method: 'POST' })
 }
 
+export interface AssistantBriefTask {
+  id: string
+  text: string
+  due: string
+  timed: boolean
+}
+
 export interface AssistantBrief {
   title: string
   body: string
   count: number
+  /** Frase de entrada corta ("Hoy tienes 2 cosas:" / "Te quedan 2 cosas:") —
+   *  la app la pinta como párrafo propio en vez de todo `body` seguido (30
+   *  ago 2026, Alberto: "hazlo en varios párrafos si es necesario" — un
+   *  párrafo largo con saludo+resumen+atención todo junto era ilegible en
+   *  cuanto había más de una cosa que contar). */
+  lead: string
+  /** "Mientras dormías, X trabajó por su cuenta." — null si no hubo agentes
+   *  nocturnos o no es por la mañana. */
+  overnight: string | null
+  /** Lectura corta de qué merece atención hoy (IA), separada del resto. */
+  attention: string | null
+  overdue: AssistantBriefTask[]
+  today: AssistantBriefTask[]
+  seguimiento: AssistantBriefTask[]
 }
 
 /** El informe del día — mismo texto compuesto que ya llega a iOS/Telegram por

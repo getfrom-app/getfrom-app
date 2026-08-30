@@ -947,27 +947,76 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 
 .v2-right-empty { color: var(--text-tertiary); font-size: 12.5px; text-align: center; padding: 30px 12px; line-height: 1.6; }
 
-/* Destino Agenda — A3 de la auditoría (29 ago 2026: "nota del día como panel
-   completo a la derecha... que la rejilla respire"). Antes el cockpit
-   (atrasadas/sin fecha) y la nota diaria se repartían la columna derecha a
-   medias fijas (`flex-basis: 50%` cada uno, 24 ago 2026) — el cockpit subió
-   al centro, junto a la rejilla (V2App.tsx), y la nota se quedó SOLA aquí, a
-   panel completo. */
+/* Destino Agenda (rediseño 30 ago 2026, Alberto: "que sea un asistente real...
+   columna derecha... formato chat" — antes la nota diaria vivía SIEMPRE a
+   panel completo aquí abajo, sin sitio para nada más; ver `V2AgendaAssistant`
+   y el botón "Nota del día" más abajo). Orden: botón de nota → panel plegable
+   de la nota (cerrado por defecto) → cockpit fijo (atrasadas/sin fecha) →
+   chat, que se lleva el espacio que sobra. */
 .v2-agenda-col { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.v2-agenda-daynote--full { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow-y: auto; }
 
-/* Cockpit en el centro, arriba de la rejilla — alto acotado con scroll propio
-   (nunca empuja al planner fuera de vista) + separador fino. `.pp-root` trae
-   `height: 100%; flex-shrink: 0` (pensado para ser el único hijo de la
-   columna) — aquí hace falta que SÍ ceda sitio al cockpit. */
+/* Botón "Nota del día" — mismo lenguaje visual que un chip de filtro (borde
+   fino, sin relleno en reposo) que se rellena de acento al activarse, igual
+   que cualquier toggle de la app. */
+.v2-agenda-notebar { flex: 0 0 auto; display: flex; justify-content: flex-end; padding: 12px 16px 0; }
+.v2-agenda-notebtn {
+  display: flex; align-items: center; gap: 6px;
+  background: transparent; border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r-sm);
+  padding: 6px 11px; font: inherit; font-size: 12.5px; font-weight: 550; color: var(--text-secondary);
+  cursor: pointer; transition: background var(--v2-fast), color var(--v2-fast), border-color var(--v2-fast);
+}
+.v2-agenda-notebtn:hover { background: var(--v2-hover); color: var(--text-primary); }
+.v2-agenda-notebtn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Panel plegable — técnica `grid-template-rows: 0fr → 1fr` (anima a la altura
+   NATURAL del contenido sin conocerla de antemano, a diferencia de animar
+   `max-height` a un valor fijo demasiado alto o demasiado corto). El
+   contenido real (`.v2-agenda-note-panel`) lleva su propio `max-height` +
+   scroll — eso acota también la altura "natural" que ve el grid, así una
+   nota larga no empuja el resto de la columna sin límite. Fade con un
+   pequeño retraso a la apertura para que el texto no aparezca de golpe
+   mientras el panel todavía se está desplegando. */
+.v2-agenda-note-collapse {
+  flex: 0 0 auto; display: grid; grid-template-rows: 0fr;
+  transition: grid-template-rows 240ms var(--v2-ease);
+}
+.v2-agenda-note-collapse.open { grid-template-rows: 1fr; }
+.v2-agenda-note-collapse-inner { overflow: hidden; min-height: 0; }
+.v2-agenda-note-panel {
+  max-height: 340px; overflow-y: auto; margin: 10px 16px 0;
+  border: 1px solid var(--v2-line); border-radius: var(--v2-r-lg); background: var(--v2-surface);
+  box-shadow: var(--v2-shadow);
+  opacity: 0; transform: translateY(-4px);
+  transition: opacity 160ms var(--v2-ease), transform 200ms var(--v2-ease);
+}
+.v2-agenda-note-collapse.open .v2-agenda-note-panel { opacity: 1; transform: translateY(0); transition-delay: 90ms; }
+
+/* Cockpit — alto acotado con scroll propio (nunca empuja el chat fuera de
+   vista) + separador fino. */
 .v2-agenda-cockpit-strip { flex: 0 1 auto; max-height: 240px; overflow-y: auto; padding: 14px 20px 6px; border-bottom: 1px solid var(--v2-line); }
 .v2-center--agenda .pp-root { flex: 1 1 auto; height: auto; min-height: 0; }
+
+/* El chat de Agenda se lleva el resto del alto disponible. */
+.v2-agenda-assistant { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 
 /* Tarjeta del informe del día (P4, 29 ago 2026) — arriba del todo, fuera del
    scroll acotado del cockpit: es lo primero que se lee al abrir Agenda. */
 .v2-brief-card { flex: 0 0 auto; padding: 16px 20px 0; }
-.v2-brief-title { font-size: 15px; font-weight: 650; color: var(--text-primary); margin-bottom: 4px; }
-.v2-brief-body { font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; }
+.v2-brief-title { font-size: 15px; font-weight: 650; color: var(--text-primary); margin-bottom: 6px; }
+/* Varios párrafos cortos en vez de una frase larga corrida (30 ago 2026) —
+   saludo/resumen, "mientras dormías" y "atención hoy" son ideas distintas,
+   cada una con su propio bloque de lectura. */
+.v2-brief-p { font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; margin: 0 0 8px; }
+.v2-brief-p:last-child { margin-bottom: 0; }
+.v2-brief-reports { display: block; margin-top: 4px; }
+.v2-brief-report-link {
+  display: inline-flex; align-items: center; gap: 4px; margin: 2px 6px 0 0;
+  background: var(--v2-hover); border: 1px solid var(--v2-line); border-radius: 999px;
+  padding: 3px 10px; font-size: 12px; color: var(--text-primary); cursor: pointer;
+}
+.v2-brief-report-link:hover { border-color: var(--accent); color: var(--accent); }
+.v2-brief-attention { color: var(--text-primary); }
+.v2-brief-attention-label { font-weight: 600; }
 /* Nota diaria embebida (sin cabecera — `V2ElementView compact`): fondo
    sutilmente distinto para separarla visualmente del cockpit de arriba, y más
    aire alrededor del área de escritura (Alberto: "hazlo bonito, buen UI").
@@ -1247,6 +1296,10 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
   cursor: pointer; transition: background var(--v2-fast);
 }
 .v2-hist-row:hover { background: var(--v2-hover); }
+/* Hilo abierto ahora mismo en el centro (V2ThreadHistory) — mismo lenguaje que
+   la fila activa de la sidebar (fondo sutil + acento a la izquierda). */
+.v2-hist-row.active { background: var(--v2-active); }
+.v2-hist-row.active .v2-hist-row-title { font-weight: 600; }
 .v2-hist-row-icon { color: var(--text-tertiary); margin-top: 1px; }
 .v2-hist-row-main { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 3px; }
 .v2-hist-row-title {
@@ -1305,38 +1358,6 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
   transition: background var(--v2-fast), color var(--v2-fast), border-color var(--v2-fast);
 }
 .v2-hist-newchat:hover { background: var(--v2-hover); color: var(--text-primary); border-color: var(--v2-line-strong); }
-
-/* ── Tarjetas de contexto (estado vacío del chat) ─────────────────────── */
-/* auto-fill + minmax: la MISMA rejilla sirve para el centro ancho (3-4 columnas)
-   y para el chat embebido en la columna derecha (1-2). Sin media queries. */
-.v2-ctxcards {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 10px;
-}
-.v2-ctxcard {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 7px;
-  padding: 14px 15px 13px; min-height: 96px;
-  border: 1px solid var(--v2-line); border-radius: var(--v2-r-lg);
-  background: var(--v2-surface); color: var(--text-primary);
-  font: inherit; text-align: left; cursor: pointer;
-  box-shadow: var(--v2-shadow-sm);
-  transition: border-color var(--v2-fast), box-shadow var(--v2-fast), transform var(--v2-fast);
-}
-.v2-ctxcard:hover {
-  border-color: var(--v2-line-strong);
-  box-shadow: var(--v2-shadow);
-  transform: translateY(-1px);
-}
-.v2-ctxcard:active { transform: translateY(0); box-shadow: var(--v2-shadow-sm); }
-.v2-ctxcard-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
-.v2-ctxcard-name {
-  font-size: 13.5px; font-weight: 600; line-height: 1.35; letter-spacing: -0.008em;
-  /* 2 líneas máximo: los nombres de contexto largos («Servicios para Radios»)
-     tienen que leerse enteros, pero sin descuadrar la altura de la rejilla. */
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-}
-.v2-ctxcard-meta { margin-top: auto; font-size: 11px; color: var(--text-tertiary); }
-.v2-ctxcard--general { background: transparent; box-shadow: none; border-style: dashed; }
-.v2-ctxcard--general:hover { background: var(--v2-hover); box-shadow: none; }
 
 /* ── Barra de creación (sidebar) ───────────────────────────────────────────
    Sustituye a los botones «Nueva conversación» / «Nuevo elemento»: una sola fila
@@ -1488,3 +1509,57 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
   background: var(--v2-surface); color: var(--text-primary); outline: none;
 }
 .v2-doctask-input:focus { border-color: var(--accent); }
+
+/* ── Enlace / recurso genérico (ResourcePanel.tsx) — rediseño 30 ago 2026 ──
+   Antes: selector de "Tipo" (chips diminutos, duplicaba `elementKind.ts` sin
+   ningún efecto real — eliminado, ver comentario en el propio componente) +
+   campo URL siempre fijo arriba + tarjeta de vista previa pequeña al final,
+   con tokens genéricos `--bg-*`/`--border` de la v1. Ahora la tarjeta de
+   vista previa es lo primero que se ve — más grande, clicable entera (abre
+   el enlace), con jerarquía real entre título/dominio/descripción — y la URL
+   se colapsa en un botón "Cambiar enlace" una vez hay una tarjeta que enseñar. */
+.v2-resource-panel { padding: 16px 20px; display: flex; flex-direction: column; gap: 10px; }
+.v2-resource-card {
+  display: flex; flex-direction: column; text-decoration: none; color: inherit;
+  border: 1px solid var(--v2-line); border-radius: var(--v2-r-lg, 13px);
+  background: var(--v2-surface); overflow: hidden; position: relative;
+  transition: border-color var(--v2-fast), box-shadow var(--v2-fast);
+}
+.v2-resource-card:hover { border-color: var(--v2-line-strong); box-shadow: 0 1px 6px rgba(0,0,0,0.05); }
+.v2-resource-thumb { width: 100%; height: 200px; object-fit: cover; display: block; background: var(--v2-surface-sunken); }
+.v2-resource-thumb--wide { height: 240px; }
+.v2-resource-card-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.v2-resource-title { font-size: 15px; font-weight: 600; color: var(--text-primary); line-height: 1.35; }
+.v2-resource-sub { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-tertiary); }
+.v2-resource-favicon { width: 6px; height: 6px; border-radius: 50%; background: var(--v2-line-strong); flex: 0 0 auto; }
+.v2-resource-desc { font-size: 12.5px; color: var(--text-secondary); line-height: 1.5; margin-top: 2px; }
+.v2-resource-open {
+  position: absolute; top: 12px; right: 12px; width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center; border-radius: 50%;
+  background: var(--v2-surface); color: var(--text-secondary); font-size: 13px;
+  border: 1px solid var(--v2-line); opacity: 0; transition: opacity var(--v2-fast);
+}
+.v2-resource-card:hover .v2-resource-open { opacity: 1; }
+.v2-resource-card--bare .v2-resource-open { position: static; opacity: 1; margin-left: auto; }
+.v2-resource-card--bare { flex-direction: row; align-items: center; padding-right: 14px; }
+.v2-resource-card--loading { pointer-events: none; }
+.v2-resource-skel-thumb { width: 100%; height: 200px; background: var(--v2-surface-sunken); animation: v2-resource-pulse 1.3s ease-in-out infinite; }
+.v2-resource-skel-line { height: 11px; border-radius: 4px; background: var(--v2-surface-sunken); margin: 3px 0; animation: v2-resource-pulse 1.3s ease-in-out infinite; }
+@keyframes v2-resource-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+.v2-resource-edit-url {
+  align-self: flex-start; background: none; border: none; cursor: pointer;
+  font-size: 12.5px; color: var(--text-tertiary); padding: 2px 0;
+}
+.v2-resource-edit-url:hover { color: var(--accent); }
+.v2-resource-url-row { display: flex; gap: 8px; }
+.v2-resource-url-input {
+  flex: 1; padding: 8px 12px; font-size: 13px; border-radius: var(--v2-r-sm, 8px);
+  border: 1px solid var(--v2-line-strong); background: var(--v2-surface); color: var(--text-primary); outline: none;
+}
+.v2-resource-url-input:focus { border-color: var(--accent); }
+.v2-resource-url-go {
+  padding: 8px 14px; background: var(--accent); color: white; border: none;
+  border-radius: var(--v2-r-sm, 8px); cursor: pointer; font-size: 13px; font-weight: 500;
+  white-space: nowrap;
+}
+.v2-resource-url-go:disabled { opacity: 0.5; cursor: not-allowed; }

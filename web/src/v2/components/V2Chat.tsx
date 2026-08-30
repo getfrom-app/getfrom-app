@@ -34,9 +34,6 @@ interface Props {
   onFilesDropped: (files: File[]) => void
   embedded?: boolean
   elementScoped?: boolean
-  onOpenConversation?: (id: string) => void
-  onNewChatInCtx?: (id: string | null) => void
-  onSelectCtx?: (id: string) => void
 }
 
 function openNode(id: string) {
@@ -210,7 +207,7 @@ function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boo
   )
 }
 
-export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, embedded, elementScoped, onOpenConversation, onNewChatInCtx, onSelectCtx }: Props) {
+export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, embedded, elementScoped }: Props) {
   const { t } = useTranslation()
   const scoped = elementScoped ?? embedded
   const chat = useAssistantStore()

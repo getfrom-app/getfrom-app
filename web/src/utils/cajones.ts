@@ -173,6 +173,29 @@ export function listContextsForParent(): Node[] {
   return out
 }
 
+/** Este contexto + TODOS sus subcontextos, recursivo (26 ago 2026 — movido
+ *  aquí desde `v2/conversations.ts`, borrado el 30 ago 2026 junto al resto
+ *  del historial de conversaciones sueltas `_aiSession`; esta función es de
+ *  propósito general y la sigue usando `utils/contextElements.ts`). Barrido
+ *  por capas sobre `listContextsForParent()` en vez de recorrer children()
+ *  directamente: un contexto puede colgar de otro por `_ctxRefs`/estructura
+ *  variada, y `contextParent` ya sabe resolver eso de forma consistente con
+ *  el resto de la app (mismo criterio que el picker de contexto padre). */
+export function contextAndDescendantIds(contextId: string): string[] {
+  const all = listContextsForParent()
+  const out = new Set<string>([contextId])
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const c of all) {
+      if (out.has(c.id)) continue
+      const p = contextParent(c.id)
+      if (p && out.has(p.id)) { out.add(c.id); changed = true }
+    }
+  }
+  return [...out]
+}
+
 /** Crea un contexto (marcado `_ctx='1'`) bajo el padre dado (o la raíz). */
 export function createContext(name: string, parentContextId?: string | null): Node {
   const root = findContextRoot()

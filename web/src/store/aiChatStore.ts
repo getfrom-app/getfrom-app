@@ -102,6 +102,38 @@ export function listPendingAgentConversations(): Node[] {
   return store.allActive().filter(n => ed(n)._pendingReply === '1' && !isInPapelera(n.id))
 }
 
+/** ¿Es esta sesión `_aiSession` una cáscara vacía — sin mensajes reales, sin
+ *  audio, sin nada creado dentro? Mismo criterio que `discardEmptyVoiceSession`
+ *  (arriba de `AIChatStore`), pero sin depender de `this.messages` (esa
+ *  versión solo sirve para la sesión activa en memoria) — aquí se comprueba
+ *  cualquier nodo desde sus hijos reales, para poder barrer TODAS las
+ *  sesiones vacías, no solo la que se acaba de abandonar. */
+function isEmptyAiSession(n: Node): boolean {
+  if (n.isDiaryEntry) return false
+  const e = ed(n)
+  if (Array.isArray(e._audios) && e._audios.length > 0) return false
+  const children = store.children(n.id)
+  const transcript = children.find(c => ed(c)._aiTranscript === '1')
+  const realChildren = children.filter(c => c.id !== transcript?.id)
+  if (realChildren.length > 0) return false
+  if (!transcript) return true
+  return !store.children(transcript.id).some(m => !m.deletedAt && ed(m)._aiMsgRole)
+}
+
+/** Barre y borra (a la papelera, con undo) las sesiones `_aiSession` vacías —
+ *  el "chat antiguo" del destino Chat general dejaba cáscaras sin mensajes al
+ *  crear una sesión (`startNewSession`) que nunca llegaba a recibir el primer
+ *  turno de verdad (30 ago 2026, Alberto: "cualquier chat creado que esté
+ *  vacío elimínalo... había algún bug antiguo por el que se creaban chats
+ *  vacíos"). Se llama una vez por arranque desde `runStartupMigrations` —
+ *  idempotente por diseño: una sesión ya borrada no vuelve a aparecer en
+ *  `store.allActive()`. Devuelve cuántas borró (solo para logging). */
+export function cleanupEmptyAiSessions(): number {
+  const empties = store.allActive().filter(n => ed(n)._aiSession === '1' && isEmptyAiSession(n))
+  for (const n of empties) store.deleteNode(n.id)
+  return empties.length
+}
+
 /** Quita el aviso "N conversaciones esperando" de la sidebar para una sesión
  *  concreta — se llama al ABRIR la conversación (V2App.onOpenConversation), no
  *  solo al responder. Antes SOLO se limpiaba en send() al enviar el primer

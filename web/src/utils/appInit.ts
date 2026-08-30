@@ -24,6 +24,7 @@ import { relocateRootDiariesToAgenda, cleanupYearMonthContexts, migrateDiaryEntr
 import { revertContextReferenceOnce } from './migrateContextReference'
 import { migrateEventsToTasks } from './migrateEventsToTasks'
 import { ensureTiposNode } from './typeDefsHelper'
+import { cleanupEmptyAiSessions } from '../store/aiChatStore'
 
 let _ranInThisSession = false
 
@@ -70,6 +71,13 @@ export async function runStartupMigrations(): Promise<void> {
     const ev = migrateEventsToTasks()
     if (ev > 0) console.info(`[from] eventos convertidos en tarea: ${ev}`)
   } catch (e) { console.warn('[from] migración eventos→tareas falló:', e) }
+  // Historial del destino Chat: motor viejo `_aiSession` desconectado del chat
+  // real desde la migración a `assistantStore` (FROM.md, 27-28 ago 2026) —
+  // dejaba cáscaras vacías por un bug de `startNewSession` (30 ago 2026).
+  try {
+    const emptied = cleanupEmptyAiSessions()
+    if (emptied > 0) console.info(`[from] sesiones de chat vacías eliminadas: ${emptied}`)
+  } catch (e) { console.warn('[from] limpieza de sesiones vacías falló:', e) }
   // Persistir ya: si el usuario recarga antes del debounce, los nodos de sistema
   // recién creados no deben recrearse en cada recarga.
   await store.sync(true)

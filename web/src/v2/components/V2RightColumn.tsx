@@ -36,7 +36,7 @@
 //     cockpit (atrasadas/sin fecha) + planner.
 // La nota diaria nunca tiene Tab 2 "Chat" (`centerIsDiary`, ver V2ElementView.tsx)
 // — aquí no aplica porque no vive en `elementId`/centro, sino embebida abajo.
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
@@ -45,14 +45,14 @@ import V2ContextView from './V2ContextView'
 import V2Chat from './V2Chat'
 import V2ElementChat from './V2ElementChat'
 import V2ElementView from './V2ElementView'
-import V2ContextBrowser from './V2ContextBrowser'
+import V2ThreadHistory from './V2ThreadHistory'
 import Icon from './Icon'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { containerNotesNode } from '../../utils/cajones'
 import { markAgentResultSeen } from '../../store/aiChatStore'
 import { displayTitle } from '../../utils/displayText'
 import DailyCockpit from '../../components/views/DailyCockpit'
-import V2BriefCard from './V2BriefCard'
+import V2AgendaAssistant from './V2AgendaAssistant'
 import { TaskPropsBody } from '../../components/modals/TaskPropsModal'
 import { V2NoteContext, V2Backlinks } from './V2DetailView'
 import { elementDisplayTitle } from '../../utils/docNode'
@@ -85,9 +85,11 @@ interface Props {
    *  limpia `centerElementId`). */
   rightSubTab: RightSubTab
   onSubTabChange: (t: RightSubTab) => void
-  onOpenConversation: (id: string) => void
-  /** Empezar una conversación nueva dentro de un contexto, desde el Historial. */
-  onNewChatInCtx: (id: string | null) => void
+  /** Hilo abierto en el centro del destino Chat (`V2App.chatThreadId`) — para
+   *  resaltar su fila en `V2ThreadHistory`. `null` = general. */
+  chatThreadId: string | null
+  /** Abre ESE hilo en el centro del destino Chat, desde el historial. */
+  onOpenChatThread: (threadKey: string | null) => void
   /** Filtro inicial pedido para la tab Elementos (p.ej. «← Agentes» → 'agent'). */
   elementsFilter?: ElemKind | 'all' | 'favorite' | null
   /** Cierra el detalle y abre la tab Elementos filtrada por ese tipo. */
@@ -179,9 +181,28 @@ function V2AgendaElementSide({ nodeId, onSelectCtx, onOpenNode }: { nodeId: stri
   )
 }
 
-export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, onOpenConversation, onNewChatInCtx, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped, agendaDayNoteDate }: Props) {
+export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, chatThreadId, onOpenChatThread, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped, agendaDayNoteDate }: Props) {
   useStore()
   const { t } = useTranslation()
+
+  // Nota del día del destino Agenda: botón + panel plegable (30 ago 2026,
+  // Alberto: "una pestaña o botón... que al pulsarlo revele la nota... no
+  // ocupa espacio permanente" — antes la nota vivía SIEMPRE a panel completo
+  // aquí abajo, empujando el chat fuera). Cierra sola al pulsar fuera —
+  // mismo gesto que cualquier popover de la app.
+  const [agendaNoteOpen, setAgendaNoteOpen] = useState(false)
+  const agendaNoteRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!agendaNoteOpen) return
+    const onDoc = (e: MouseEvent) => {
+      if (agendaNoteRef.current && !agendaNoteRef.current.contains(e.target as Node)) setAgendaNoteOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [agendaNoteOpen])
+  // Cambiar de día en el planner con la nota abierta dejaría viendo la nota
+  // de OTRO día sin que el usuario lo pidiera — se cierra sola.
+  useEffect(() => { setAgendaNoteOpen(false) }, [agendaDayNoteDate])
 
   // Defensivo (ver comentario del prop `rightSubTab` en la interfaz): si
   // `centerElementId` volvió a null desde CUALQUIER sitio sin que ese sitio se
@@ -355,17 +376,14 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
 
       {/* Destino Chat general: el composer se mudó al CENTRO (C14 de la
           auditoría, 29 ago 2026 — ver V2App.tsx). Esta columna ya no tiene Tab
-          1 "primary" propia aquí: lo único que enseña es el historial de
-          conversaciones por contexto, siempre visible, sin tabs (por eso
-          arriba, línea ~190, `mode === 'chat'` sigue sin cabecera de tabs). */}
+          1 "primary" propia aquí: lo único que enseña es el historial REAL de
+          hilos (30 ago 2026 — antes `V2ContextBrowser`, conversaciones sueltas
+          `_aiSession` desconectadas del chat de verdad, ver V2ThreadHistory.tsx),
+          siempre visible, sin tabs (por eso arriba, línea ~190, `mode === 'chat'`
+          sigue sin cabecera de tabs). */}
       {!isRecordingActive && mode === 'chat' && (
         <div className="v2-right-body">
-          <V2ContextBrowser
-            variant="list"
-            onOpenConversation={onOpenConversation}
-            onNewChatInCtx={onNewChatInCtx}
-            onSelectCtx={onSelectCtx}
-          />
+          <V2ThreadHistory activeThreadKey={chatThreadId} onOpenThread={onOpenChatThread} />
         </div>
       )}
 
@@ -404,32 +422,35 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
       )}
       {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (!elementId || centerIsDiary) && (
         <div className="v2-right-fill v2-agenda-col">
-          <V2BriefCard />
+          {/* Cabecera corta: acceso a la nota del día — botón, no un panel
+              fijo (30 ago 2026, ver `agendaNoteOpen` arriba). */}
+          <div className="v2-agenda-notebar">
+            <button
+              type="button"
+              className={`v2-agenda-notebtn ${agendaNoteOpen ? 'active' : ''}`}
+              onClick={() => setAgendaNoteOpen(o => !o)}
+            >
+              <Icon name="note" size={14} />
+              {t('v2.agenda.dayNote', 'Nota del día')}
+            </button>
+          </div>
+
+          {dayNoteId && (
+            <div className={`v2-agenda-note-collapse ${agendaNoteOpen ? 'open' : ''}`} ref={agendaNoteRef}>
+              <div className="v2-agenda-note-collapse-inner">
+                <div className="v2-agenda-note-panel">
+                  <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => setAgendaNoteOpen(false)} onSelectCtx={onSelectCtx} compact />
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="v2-agenda-cockpit-strip">
             <DailyCockpit bare disablePlanner hideToday hideFuture />
           </div>
-          {dayNoteId && (
-            <div
-              className="v2-agenda-daynote--full"
-              // Clic en CUALQUIER hueco del panel → cursor al final del editor.
-              // Antes la única zona clicable era la línea de texto (26px
-              // invisibles); clicar el resto del panel no hacía nada y la nota
-              // parecía de solo lectura (auditoría 28 ago 2026, visto en vivo).
-              onClick={e => {
-                const target = e.target as HTMLElement
-                if (target.closest('.ProseMirror') || target.closest('button, input, a, [contenteditable]')) return
-                const ed = (e.currentTarget as HTMLElement).querySelector<HTMLElement>('.ProseMirror')
-                if (!ed) return
-                ed.focus()
-                try {
-                  const sel = window.getSelection()
-                  if (sel) { const r = document.createRange(); r.selectNodeContents(ed); r.collapse(false); sel.removeAllRanges(); sel.addRange(r) }
-                } catch { /* foco sin mover cursor, suficiente */ }
-              }}
-            >
-              <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
-            </div>
-          )}
+
+          {/* El chat real de Agenda — sustituye al brief estático (V2AgendaAssistant.tsx). */}
+          <V2AgendaAssistant onFilesDropped={onFilesDropped} />
         </div>
       )}
 

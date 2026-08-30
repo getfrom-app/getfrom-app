@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.14 — 30 agosto 2026 · Agenda como asistente vivo + historial de chats real
+
+- **Agenda tiene un asistente de verdad en la columna derecha.** Ya no es un párrafo que se calcula una vez al abrir: es el chat real (el mismo motor que iOS y Telegram) — puedes preguntarle, pedirle que cree tareas, anotar. Además va avisando solo a lo largo del día: cuando completas una tarea, cuando un evento está a punto de empezar.
+- **Nota del día** ahora es un botón que despliega la nota con una animación suave, en vez de ocupar siempre media columna.
+- **Historial de chats real.** El destino Chat de la barra lateral ahora lista tus conversaciones de verdad (una por contexto, con vista previa y fecha), y limpia solas las sesiones vacías que dejaba un bug antiguo.
+- **Página de enlace** rediseñada — vista previa más grande y clara, quitado el selector de "Tipo" que ya no hacía nada (duplicaba la clasificación de Elementos).
+- **Favoritos**: botón derecho para renombrar, quitar de favoritos o eliminar, directamente desde la barra lateral.
+- El saludo del día ya no cuenta un evento de hoy que ya pasó como "pendiente".
+- Corregido: abrir una nota con contenido largo podía hacer desaparecer la columna derecha.
+- **Servidor**: arreglada una carrera al crear la nota diaria que a veces tumbaba el chat con un error 502.
+
+---
+
 ## Web v9.10.13 · iOS build 180 — 30 agosto 2026 · 13 correcciones reportadas en vivo
 
 - **Arreglo urgente**: el layout de la web se rompía por completo en escritorio (un botón de menú móvil se colaba en el grid de 3 columnas) — corregido en minutos tras el aviso.

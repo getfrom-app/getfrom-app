@@ -9484,21 +9484,12 @@ textarea:focus-visible,
    ════════════════════════════════════════════════════════════════════════════ */
 
 /* ── ResourcePanel (panel derecho) ─────────────────────────────────────────── */
-.resource-panel { padding: 0 0 12px; }
-.resource-panel-section { padding: 10px 14px 6px; border-bottom: 1px solid var(--border); }
-.resource-panel-section:last-child { border-bottom: none; }
-.resource-panel-label { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 7px; }
-.resource-panel-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; }
-.resource-type-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-.resource-type-chip { font-size: 11px; padding: 3px 8px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.1s; }
-.resource-type-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
-.resource-type-chip--add { background: var(--bg-hover); color: var(--accent); font-weight: 700; padding: 3px 10px; }
-.resource-type-chip--add:hover { background: var(--accent-soft); }
-.resource-type-add-row { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
-.resource-type-icon-input { width: 36px; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-tertiary); text-align: center; font-size: 14px; }
-.resource-type-label-input { flex: 1; padding: 4px 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-tertiary); font-size: 12px; outline: none; }
-.resource-type-label-input:focus { border-color: var(--border-focus); }
-.resource-type-add-confirm { padding: 4px 10px; border-radius: 6px; border: none; background: var(--accent); color: white; cursor: pointer; font-weight: 600; }
+/* ⚠️ El bloque "Tipo" (chips built-in + custom) y su tarjeta de vista previa
+   vieja se eliminaron el 30 ago 2026 junto con `ResourcePanel.tsx` — rediseño
+   completo con clases `.v2-resource-*` (v2/styles/v2.css, tokens `--v2-*`,
+   consistente con el resto de la app rediseñada). `resource-summary-*` y
+   `resource-status-chips`/`resource-tasks-*` de abajo son de otra pieza
+   (resumen IA / tareas del recurso) y no se tocan. */
 .resource-summary-btn { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-hover); color: var(--text-primary); cursor: pointer; font-size: 12px; transition: background 0.1s; }
 .resource-summary-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .resource-summary-status { font-size: 12px; color: var(--accent); padding: 6px 0; display: flex; align-items: center; gap: 6px; }
@@ -9509,19 +9500,6 @@ textarea:focus-visible,
 .resource-summary-open:hover { background: var(--accent); color: white; }
 .resource-summary-expand { padding: 6px 10px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; font-size: 12px; }
 .resource-summary-expand:hover { background: var(--bg-hover); border-color: var(--accent); color: var(--accent); }
-.resource-url-row { display: flex; gap: 6px; }
-.resource-url-input { flex: 1; padding: 5px 8px; font-size: 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-primary); color: var(--text-primary); outline: none; }
-.resource-url-input:focus { border-color: var(--border-focus); }
-.resource-url-fetch-btn { padding: 5px 10px; background: var(--accent); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; }
-.resource-url-fetch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.resource-meta-card { margin: 8px 0 4px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--bg-secondary); }
-.resource-meta-thumb { width: 100%; height: 120px; object-fit: cover; display: block; }
-.resource-meta-thumb--youtube { height: 140px; }
-.resource-meta-info { padding: 8px 10px; }
-.resource-meta-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; line-height: 1.3; }
-.resource-meta-sub { font-size: 11px; color: var(--text-tertiary); margin-bottom: 3px; }
-.resource-meta-desc { font-size: 11px; color: var(--text-secondary); margin-bottom: 5px; line-height: 1.4; }
-.resource-meta-link { font-size: 11px; color: var(--accent); text-decoration: none; }
 .resource-status-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .resource-status-chip { font-size: 11px; padding: 3px 9px; border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer; transition: all 0.1s; }
 .resource-tasks-section { }

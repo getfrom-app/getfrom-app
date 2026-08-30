@@ -3,39 +3,19 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { unfurlUrl, type UnfurlMeta } from '../../api/unfurl'
-import Icon from '../../v2/components/Icon'
 
-export type ResourceType = string  // ahora libre — usuario puede definir nuevos
-// `icon` sigue en el tipo por COMPATIBILIDAD: los tipos personalizados que el
-// usuario ya creó viven en localStorage con su emoji. Ya no se pinta ni se pide
-// al crear uno nuevo (rediseño 5 ago 2026: Fromly no muestra emojis) — los tipos
-// se distinguen por su etiqueta, que es lo que de verdad se lee.
-export type ResourceTypeDef = { key: string; icon?: string; label: string }
-
-// Tipos built-in (no se pueden borrar)
-const BUILTIN_TYPES: ResourceTypeDef[] = [
-  { key: 'url',      label: 'Enlace' },
-  { key: 'youtube',  label: 'Vídeo' },
-  { key: 'book',     label: 'Libro' },
-  { key: 'podcast',  label: 'Podcast' },
-  { key: 'document', label: 'Documento' },
-]
-
-const CUSTOM_TYPES_KEY = 'from_custom_resource_types'
-
-function loadCustomTypes(): ResourceTypeDef[] {
-  try {
-    const raw = localStorage.getItem(CUSTOM_TYPES_KEY)
-    if (!raw) return []
-    const arr = JSON.parse(raw)
-    if (!Array.isArray(arr)) return []
-    return arr.filter(t => t && typeof t.key === 'string' && typeof t.label === 'string')
-  } catch { return [] }
-}
-function saveCustomTypes(types: ResourceTypeDef[]) {
-  localStorage.setItem(CUSTOM_TYPES_KEY, JSON.stringify(types))
-  window.dispatchEvent(new Event('from-resource-types-updated'))
-}
+// ⚠️ Hasta el 30 ago 2026 esta ficha tenía su PROPIO selector de "Tipo"
+// (Enlace/Vídeo/Libro/Podcast/Documento + tipos custom en localStorage,
+// `_resourceType`) — anterior a `v2/elementKind.ts`, la clasificación real
+// que usa Elementos hoy (documento/nota/pdf/imagen/enlace/audio…). Los dos
+// sistemas no eran el mismo: elegir aquí "Vídeo" o "Libro" no cambiaba nada
+// en Elementos (ahí siempre era "Enlace"), así que el chip solo confundía
+// sin tener ningún efecto real. Eliminado (Alberto, 30 ago 2026: "queda un
+// bloque de tipo que creo que es algo de antiguo... hay que quitar esto, ya
+// no aplica") — de paso, rediseño visual completo de la ficha (tokens `--v2-*`
+// en vez de los genéricos `--bg-*`/`--border` de la v1, tarjeta de vista
+// previa más grande y con jerarquía real en vez de chips diminutos).
+type ResourceType = string
 
 function getResourceData(node: Node) {
   try {
@@ -62,20 +42,12 @@ interface Props { node: Node }
 
 export default function ResourcePanel({ node }: Props) {
   const { t } = useTranslation()
-  const { type, url, meta } = getResourceData(node)
+  const { url, meta } = getResourceData(node)
   const [urlInput, setUrlInput] = useState(url)
+  const [editingUrl, setEditingUrl] = useState(!url)
   const [loadingMeta, setLoadingMeta] = useState(false)
-  const [customTypes, setCustomTypes] = useState<ResourceTypeDef[]>(() => loadCustomTypes())
-  const [addingType, setAddingType] = useState(false)
-  const [newTypeLabel, setNewTypeLabel] = useState('')
 
-  useEffect(() => {
-    function refresh() { setCustomTypes(loadCustomTypes()) }
-    window.addEventListener('from-resource-types-updated', refresh)
-    return () => window.removeEventListener('from-resource-types-updated', refresh)
-  }, [])
-
-  const allTypes = [...BUILTIN_TYPES, ...customTypes]
+  useEffect(() => { setUrlInput(url) }, [url])
 
   // Auto-fetch meta si hay URL pero no hay meta
   useEffect(() => {
@@ -91,136 +63,91 @@ export default function ResourcePanel({ node }: Props) {
   function handleFetchMeta() {
     if (!urlInput.trim()) return
     setLoadingMeta(true)
-    setResourceField(node, { _resourceUrl: urlInput.trim() })
+    setEditingUrl(false)
+    setResourceField(node, { _resourceUrl: urlInput.trim(), _resourceMeta: null })
     unfurlUrl(urlInput.trim())
       .then(m => setResourceField(node, { _resourceMeta: m, _resourceType: m.type }))
       .catch(() => { /* ignore */ })
       .finally(() => setLoadingMeta(false))
   }
 
-  function addCustomType() {
-    const label = newTypeLabel.trim()
-    if (!label) return
-    const key = 'custom_' + label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
-    if (allTypes.some(t => t.key === key)) {
-      // Ya existe — solo seleccionar
-      setResourceField(node, { _resourceType: key })
-      setAddingType(false); setNewTypeLabel('')
-      return
-    }
-    const updated = [...customTypes, { key, label }]
-    saveCustomTypes(updated)
-    setCustomTypes(updated)
-    setResourceField(node, { _resourceType: key })
-    setAddingType(false)
-    setNewTypeLabel('')
-  }
-
-  function deleteCustomType(key: string, e: React.MouseEvent) {
-    e.preventDefault()
-    if (BUILTIN_TYPES.some(t => t.key === key)) return  // built-in no borrable
-    const def = customTypes.find(t => t.key === key)
-    if (!def) return
-    if (!confirm(`¿Eliminar el tipo "${def.label}"? Las notas que lo usaban quedarán como "Enlace".`)) return
-    const updated = customTypes.filter(t => t.key !== key)
-    saveCustomTypes(updated)
-    setCustomTypes(updated)
-    if (type === key) setResourceField(node, { _resourceType: 'url' })
-  }
+  let domain = ''
+  try { domain = url ? new URL(url).hostname.replace(/^www\./, '') : '' } catch { /* url incompleta */ }
 
   return (
-    <div className="resource-panel">
-      {/* Tipo de recurso (built-in + custom + añadir) */}
-      <div className="resource-panel-section">
-        <div className="resource-panel-label">{t('panel.resourceType')}</div>
-        <div className="resource-type-chips">
-          {allTypes.map(t => {
-            const isCustom = !BUILTIN_TYPES.some(b => b.key === t.key)
-            return (
-              <button
-                key={t.key}
-                className={`resource-type-chip${type === t.key ? ' active' : ''}`}
-                onClick={() => setResourceField(node, { _resourceType: t.key })}
-                onContextMenu={isCustom ? e => deleteCustomType(t.key, e) : undefined}
-                title={isCustom ? 'Clic derecho para eliminar' : t.label}
-              >
-                {t.label}
-              </button>
-            )
-          })}
-          {!addingType && (
-            <button
-              className="resource-type-chip resource-type-chip--add"
-              onClick={() => setAddingType(true)}
-              title={t('panel.addType')}
-            >＋</button>
-          )}
-        </div>
-        {addingType && (
-          <div className="resource-type-add-row">
-            <input
-              className="resource-type-label-input"
-              placeholder={t('panel.typePlaceholder')}
-              value={newTypeLabel}
-              autoFocus
-              onChange={e => setNewTypeLabel(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') addCustomType()
-                if (e.key === 'Escape') { setAddingType(false); setNewTypeLabel('') }
-              }}
-            />
-            <button className="resource-type-add-confirm" onClick={addCustomType} aria-label={t('common.confirm')}><Icon name="check" size={13} strokeWidth={2.2} /></button>
-          </div>
-        )}
-      </div>
-
-      {/* URL */}
-      <div className="resource-panel-section">
-        <div className="resource-panel-label">URL</div>
-        <div className="resource-url-row">
-          <input
-            className="resource-url-input"
-            placeholder="https://..."
-            value={urlInput}
-            onChange={e => setUrlInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleFetchMeta()}
-          />
-          <button
-            className="resource-url-fetch-btn"
-            onClick={handleFetchMeta}
-            disabled={loadingMeta || !urlInput.trim()}
-            title={t('panel.preview')}
-          >
-            {loadingMeta ? '⏳' : '↗'}
-          </button>
-        </div>
-      </div>
-
-      {/* Vista previa */}
-      {meta && (
-        <div className="resource-meta-card">
-          {meta.image && (
-            <img
-              src={meta.image}
-              alt={meta.title}
-              className={`resource-meta-thumb${meta.type === 'youtube' ? ' resource-meta-thumb--youtube' : ''}`}
-              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
-            />
-          )}
-          <div className="resource-meta-info">
-            <div className="resource-meta-title">{meta.title}</div>
-            {meta.channel && <div className="resource-meta-sub">{meta.channel}</div>}
-            {!meta.channel && meta.domain && <div className="resource-meta-sub">{meta.domain}</div>}
-            {meta.description && <div className="resource-meta-desc">{meta.description.slice(0, 100)}{meta.description.length > 100 ? '…' : ''}</div>}
-            {url && (
-              <a href={url} target="_blank" rel="noopener noreferrer" className="resource-meta-link" onClick={e => e.stopPropagation()}>
-                {t('panel.openArrow')}
-              </a>
-            )}
+    <div className="v2-resource-panel">
+      {/* Tarjeta de vista previa — protagonista de la ficha (antes un bloque
+          diminuto al final, después de un selector de "Tipo" que no hacía
+          nada real, ver comentario arriba del archivo). */}
+      {loadingMeta && !meta && (
+        <div className="v2-resource-card v2-resource-card--loading">
+          <div className="v2-resource-skel-thumb" />
+          <div className="v2-resource-card-body">
+            <div className="v2-resource-skel-line" style={{ width: '70%' }} />
+            <div className="v2-resource-skel-line" style={{ width: '40%' }} />
           </div>
         </div>
       )}
+      {meta && !editingUrl && (
+        <a
+          className="v2-resource-card"
+          href={url} target="_blank" rel="noopener noreferrer"
+          onClick={e => e.stopPropagation()}
+        >
+          {meta.image && (
+            <img
+              src={meta.image}
+              alt=""
+              className={`v2-resource-thumb${meta.type === 'youtube' ? ' v2-resource-thumb--wide' : ''}`}
+              onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+            />
+          )}
+          <div className="v2-resource-card-body">
+            <div className="v2-resource-title">{meta.title || domain}</div>
+            <div className="v2-resource-sub">
+              <span className="v2-resource-favicon" />
+              {meta.channel || meta.domain || domain}
+            </div>
+            {meta.description && <div className="v2-resource-desc">{meta.description.slice(0, 160)}{meta.description.length > 160 ? '…' : ''}</div>}
+          </div>
+          <span className="v2-resource-open" title={t('panel.openArrow', 'Abrir ↗')}>↗</span>
+        </a>
+      )}
+      {!meta && !loadingMeta && url && !editingUrl && (
+        <a className="v2-resource-card v2-resource-card--bare" href={url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+          <div className="v2-resource-card-body">
+            <div className="v2-resource-title">{domain || url}</div>
+          </div>
+          <span className="v2-resource-open">↗</span>
+        </a>
+      )}
 
+      {/* URL — colapsada en un botón "Editar enlace" salvo que no haya URL
+          todavía o el usuario pida cambiarla; antes era un campo fijo siempre
+          visible aunque ya hubiera una tarjeta de vista previa clara debajo. */}
+      {editingUrl ? (
+        <div className="v2-resource-url-row">
+          <input
+            className="v2-resource-url-input"
+            placeholder="https://..."
+            value={urlInput}
+            autoFocus={!!url}
+            onChange={e => setUrlInput(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter') handleFetchMeta(); if (e.key === 'Escape' && url) setEditingUrl(false) }}
+          />
+          <button
+            className="v2-resource-url-go"
+            onClick={handleFetchMeta}
+            disabled={loadingMeta || !urlInput.trim()}
+          >{t('panel.preview', 'Vista previa')}</button>
+        </div>
+      ) : (
+        (meta || url) && (
+          <button className="v2-resource-edit-url" onClick={() => setEditingUrl(true)}>
+            {t('panel.changeUrl', 'Cambiar enlace')}
+          </button>
+        )
+      )}
     </div>
   )
 }

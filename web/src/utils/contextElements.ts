@@ -24,7 +24,7 @@ import { isPromptNode } from './promptsHelper'
 import { isGroupNode } from './groups'
 import { isTaskNode } from './taskNode'
 import { classifyElement } from '../v2/elementKind'
-import { contextAndDescendantIds } from '../v2/conversations'
+import { contextAndDescendantIds } from './cajones'
 import type { Node } from '../types'
 
 export interface ContextElementEntry { id: string; title: string; kind: string }
