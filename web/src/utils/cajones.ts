@@ -61,6 +61,12 @@ export function isContextNode(nodeId: string): boolean {
 }
 
 export function isContextClosed(n: Node | null | undefined): boolean {
+  // Los contextos RAÍZ nunca están «cerrados» (ver contextState) — un `_closed`
+  // residual de antes de que el nodo fuera promovido a raíz no debe esconderlo
+  // de ningún caller (picker, firstContextOf...). Bug real visto en vivo con
+  // "Inversión"/"Recursos": se asignaban bien pero el chip nunca se pintaba
+  // porque firstContextOf() sí miraba este flag sin la excepción de raíz.
+  if (n && isRootContext(n.id)) return false
   return ed(n)._closed === '1'
 }
 

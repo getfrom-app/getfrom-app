@@ -764,7 +764,7 @@ export default function UnifiedCapture({ onClose, onSelectContext, onNavigate, e
     // resultados de búsqueda que confundan ("el resto no debe salir con ese texto").
     if (datePrediction) {
       const clean = (datePrediction.cleanText || q).trim() || q
-      const eventLike = !!datePrediction.timeStr || forceType === 'event'
+      const eventLike = !!datePrediction.timeStr || !!datePrediction.isEvent || forceType === 'event'
       const kind = eventLike ? 'evento' : (taskPrediction || forceType === 'task') ? 'tarea' : ''
       return [{
         id: 'create-item',

@@ -81,6 +81,12 @@ const TaskItemLinked = TaskItem.extend({
       ...this.parent?.(),
       dataNodeId: {
         default: null,
+        // Sin esto (default true en TipTap), Enter dentro de una casilla clona
+        // el `dataNodeId` en la NUEVA casilla vía splitListItem/getSplittedAttributes
+        // — dos checkboxes distintos en pantalla apuntaban al MISMO Node real: la
+        // fecha de una "cambiaba todas" (compartían chip/due) y en Agenda/Hoy solo
+        // salía una (solo existía un Node de verdad). 28 ago 2026.
+        keepOnSplit: false,
         parseHTML: (el: HTMLElement) => el.getAttribute('data-node-id'),
         renderHTML: (attrs: { dataNodeId?: string | null }) => (attrs.dataNodeId ? { 'data-node-id': attrs.dataNodeId } : {}),
       },
@@ -667,7 +673,13 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         const text = item.textContent.trim()
         if (!text) return true // casilla vacía: aún no es tarea (evita nodos «Sin título»)
         const status = item.attrs.checked ? 'done' : 'pending'
-        const id = item.attrs.dataNodeId as string | null
+        const rawId = item.attrs.dataNodeId as string | null
+        // Red de seguridad para documentos ya afectados por el bug de `keepOnSplit`
+        // (checkboxes creados antes del fix, o venidos de copiar/pegar, que arrastran
+        // un `dataNodeId` ya usado por OTRA casilla en este mismo recorrido): se trata
+        // como si no tuviera id, así crea su propio Node en vez de seguir compartiendo
+        // fecha/estado con la casilla original.
+        const id = rawId && !seen.has(rawId) ? rawId : null
         const existing = id ? store.getNode(id) : null
         if (existing && !existing.deletedAt) {
           // RECURRENCIA: al completar, `spawnRecurrence` no recicla el nodo — crea la

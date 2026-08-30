@@ -1178,8 +1178,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       const overdue = new Date(n.due) < startOfDay(today) && n.status !== 'done'
       out.push({ id: n.id, text: n.text || t('common.noTitle'), color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime() })
     }
+    // Mismo dedup que getTimedBlocks/getAllDayTasks más arriba: sin esto, un
+    // evento creado en Fromly y sincronizado con Google salía DOS veces en la
+    // celda del mes (nodo local + evento crudo del pull de Google).
+    const fromGcalIds = linkedGcalIdCores()
     for (const ev of gcalEvents) {
       if (ev.allDay || !sameDay(new Date(ev.start), date)) continue
+      if (fromGcalIds.has(gcalIdCore(ev.id))) continue // ya hay un nodo local enlazado a este evento
       out.push({ id: ev.id, text: ev.title || t('search.chipEvent'), color: '#16a34a', done: false, t: new Date(ev.start).getTime() })
     }
     return out.sort((a, b) => a.t - b.t)

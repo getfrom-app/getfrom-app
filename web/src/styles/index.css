@@ -7331,6 +7331,20 @@ textarea:focus-visible,
    se sigue aplicando (la usa el hover para saber qué contexto mostrar) pero
    ya no pinta nada; el único indicador visual de una cita vive en el chip
    del hover (ver .doc-cite-btn--assigned) y en el resalte de «Ir a la nota».*/
+/* Mención de contexto `#nombre` insertada en el texto del documento (28 ago
+   2026 — antes se borraba tras Enter y quedaba invisible). Estilo propio,
+   distinto del texto normal: color de acento, algo más pequeño, sin
+   subrayado — al estilo de las tags inline de Tana. */
+.doc-editor .ProseMirror a.doc-ctx-mention,
+.pizarra-text a.doc-ctx-mention {
+  color: var(--accent, #6c5ce7);
+  font-size: 0.92em;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+.doc-editor .ProseMirror a.doc-ctx-mention:hover,
+.pizarra-text a.doc-ctx-mention:hover { text-decoration: underline; }
 .doc-editor .ProseMirror [data-pid].doc-para--flash { animation: doc-para-flash 1.6s ease; }
 @keyframes doc-para-flash {
   0%, 100% { background: transparent; }

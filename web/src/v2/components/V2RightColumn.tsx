@@ -51,6 +51,8 @@ import { ensureDayPath } from '../../utils/agendaHelper'
 import { containerNotesNode } from '../../utils/cajones'
 import { markAgentResultSeen } from '../../store/aiChatStore'
 import { displayTitle } from '../../utils/displayText'
+import DailyCockpit from '../../components/views/DailyCockpit'
+import V2BriefCard from './V2BriefCard'
 
 export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda'
 
@@ -311,17 +313,27 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
         </div>
       )}
 
-      {/* Destino Agenda: el centro ya muestra el calendario completo (V2App.tsx)
-          — aquí, arriba, lo que NO cubre ese calendario (atrasadas, sin fecha,
-          futuro — hoy/futuras ya están en el planner central, Alberto 5 ago
-          2026) y, al PIE, la nota diaria del día CENTRADO en el planner (no
-          siempre hoy — sigue a `agendaDayNoteDate`, fusión de la tab «Día»,
-          retirada el 24 ago 2026 — su timeline quedó duplicado con el planner
-          central en 3 columnas; la nota es lo único que «Día» aportaba de más).
+      {/* Destino Agenda: el centro ya muestra el calendario completo, limpio
+          (V2App.tsx) — aquí, arriba: el brief del día + lo que NO cubre ese
+          calendario (atrasadas, sin fecha — hoy/futuras ya están en el
+          planner central, Alberto 5 ago 2026), y al PIE la nota diaria del
+          día CENTRADO en el planner (no siempre hoy — sigue a
+          `agendaDayNoteDate`, fusión de la tab «Día», retirada el 24 ago
+          2026 — su timeline quedó duplicado con el planner central en 3
+          columnas; la nota es lo único que «Día» aportaba de más).
+          Brief+cockpit vivieron un tiempo arriba del planner central (A3,
+          29 ago 2026) — vuelven aquí (30 ago 2026, Alberto: "lo que debe ir
+          en el chat se ha metido en la parte superior del planner... no me
+          gusta" — el planner limpio, esto en la columna derecha donde
+          también se puede arrastrar la tarea al planner central).
           `key={dayNoteId}`: mismo motivo que el visor central — sin
           desmontar al cambiar de día no hay ventana de solape entre notas. */}
       {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (
         <div className="v2-right-fill v2-agenda-col">
+          <V2BriefCard />
+          <div className="v2-agenda-cockpit-strip">
+            <DailyCockpit bare disablePlanner hideToday hideFuture />
+          </div>
           {dayNoteId && (
             <div
               className="v2-agenda-daynote--full"

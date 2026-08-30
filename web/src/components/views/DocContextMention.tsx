@@ -16,9 +16,11 @@
 // `#la-isla/marketing/emails`).
 //
 // Hermano de DocMention.tsx (mismo patrón: popup flotante en portal,
-// detección por regex antes del cursor, teclado ↑/↓/Enter/Esc), pero el `#`
-// nunca deja rastro en el texto — solo cita el párrafo, igual que el picker
-// '#' del outliner asigna contexto en vez de insertar un token.
+// detección por regex antes del cursor, teclado ↑/↓/Enter/Esc). El `#nombre`
+// SÍ queda visible en el texto (28 ago 2026: antes se borraba del todo tras
+// Enter — "desaparece, se oculta" — aunque la cita del párrafo sí se creaba;
+// ahora se inserta como enlace interno con clase `doc-ctx-mention`, estilo
+// propio en styles/index.css) y, además, cita el párrafo entero.
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Editor } from '@tiptap/react'
@@ -110,7 +112,18 @@ export default function DocContextMention({ editor, selfId, onAssign }: { editor
       ctxId = created.id
     }
     const pid = m.pid
-    editor.chain().focus().deleteRange({ from: m.start, to: m.from }).run()
+    const label = item.create ? item.create : (item.label || '')
+    // El texto de la mención se queda VISIBLE en el párrafo (antes se borraba
+    // del todo — Alberto, 28 ago: "desaparece, se oculta"). Se inserta como
+    // enlace interno al contexto con su propia clase (`doc-ctx-mention`),
+    // estilada aparte del texto normal (ver styles/index.css), al estilo Tana.
+    editor.chain().focus()
+      .deleteRange({ from: m.start, to: m.from })
+      .insertContent([
+        { type: 'text', marks: [{ type: 'link', attrs: { href: `/node/${ctxId}`, class: 'doc-ctx-mention' } }], text: `#${label}` },
+        { type: 'text', text: ' ' },
+      ])
+      .run()
     if (pid) {
       // Cita el PÁRRAFO (mismo mecanismo que el hover «?»): deja un indicador
       // visual persistente en la línea, no solo un toast efímero.

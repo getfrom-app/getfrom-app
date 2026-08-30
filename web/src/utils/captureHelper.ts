@@ -76,8 +76,17 @@ export function createNodeFromText(rawTextInput: string, opts: CreateFromTextOpt
 
   const dp = extractDateFromEnd(effectiveText)
   const cleanText = dp ? dp.cleanText : effectiveText
+  // `dp?.isEvent` cubre la detección automática por hora + palabra disparadora
+  // ("Reunión con Íñigo a las 11:30" → EVENT_KEYWORDS/timeStr en naturalDate.ts),
+  // no solo el shortcut forzado "-e" (28 ago 2026: la captura rápida no
+  // reconocía estos casos como evento).
+  const isEvent = effective === 'event' || !!dp?.isEvent
   const isTask = (
     effective === 'task' ||
+    // INVARIANTE (5 ago 2026): un evento ES una tarea con día y hora — nace
+    // siempre con `status` además de `isEvent`, o desaparece de cualquier
+    // lista de tareas de su contexto.
+    isEvent ||
     (effective !== 'note' && effective !== 'event' &&
       ((opts.taskPredictionHint ?? false) ||
         (dp !== null && buildTaskVerbRegex().test(normalizeNFD(effectiveText))) ||
@@ -87,7 +96,6 @@ export function createNodeFromText(rawTextInput: string, opts: CreateFromTextOpt
         // pongo una recurrencia es una tarea, no una nota").
         !!dp?.parsed.recurrence))
   )
-  const isEvent = effective === 'event'
 
   const types: string[] = []
   for (const ctx of opts.assignedCtx ?? []) {

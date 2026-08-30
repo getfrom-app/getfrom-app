@@ -23,8 +23,6 @@ import { pickAndImportDriveFile } from '../utils/googleDrivePicker'
 import type { DriveImportResult } from '../api/googleDrive'
 import { useV2Recorder } from './useV2Recorder'
 import PlannerPanel from '../components/panels/PlannerPanel'
-import DailyCockpit from '../components/views/DailyCockpit'
-import V2BriefCard from './components/V2BriefCard'
 import Icon from './components/Icon'
 import V2Sidebar from './components/V2Sidebar'
 import V2Chat from './components/V2Chat'
@@ -1341,16 +1339,14 @@ export default function V2App() {
         // destino «Día» aparte (rejilla horaria de una sola columna) se retiró
         // por duplicado — ver el comentario de `centerElementId` más arriba.
         //
-        // A3 de la auditoría (29 ago 2026): el cockpit (atrasadas/sin fecha)
-        // sube aquí, arriba de la rejilla — antes vivía apretado en la mitad
-        // superior de la columna derecha (440px) compartiendo sitio a medias
-        // con la nota diaria; la derecha ahora es SOLO la nota, a panel
-        // completo (ver V2RightColumn).
+        // A3 de la auditoría (29 ago 2026) había subido el cockpit
+        // (atrasadas/sin fecha) + el brief aquí arriba, apretando la rejilla.
+        // Revertido (Alberto, 30 ago 2026: "lo que debe ir en el chat se ha
+        // metido en la parte superior del planner... no me gusta" — pidió
+        // el planner limpio de nuevo y el brief+cockpit en la columna
+        // derecha, encima de la nota diaria, para poder seguir arrastrando
+        // esas tareas al planner). Ver V2RightColumn.
         <main className="v2-col v2-center v2-center--agenda">
-          <V2BriefCard />
-          <div className="v2-agenda-cockpit-strip">
-            <DailyCockpit bare disablePlanner hideToday hideFuture />
-          </div>
           <PlannerPanel initialView="week" initialDays={3} viewTabs={['week', 'month', 'year']} onClose={() => {}} centerToday onCenterDateChange={setAgendaCenterDate} />
         </main>
       ) : (

@@ -471,6 +471,18 @@ export function extractDateFromEnd(text: string): DateExtraction | null {
     }
   }
 
+  // ── Paso 3: hay hora pero ninguna palabra de fecha explícita ("Reunión con
+  // Íñigo a las 11:30") — antes se perdía TODO (hora incluida) por falta de
+  // fallback; asumir HOY, igual que hace el planificador con una hora suelta.
+  if (timeStr) {
+    const todayParsed = parseNaturalDate('hoy')
+    if (todayParsed) {
+      const cleanText = textWithoutTime
+      if (!cleanText.trim()) return null
+      return { cleanText, dateText: `hoy${timeMatchStr}`, parsed: todayParsed, timeStr, endTimeStr, isEvent: true }
+    }
+  }
+
   return null
 }
 
