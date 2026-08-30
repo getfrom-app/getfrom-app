@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## iOS build 181 — 30 agosto 2026 · Scroll del Planificador y falso error en el chat
+
+- **Arreglado**: en la vista Semana del Planificador, el scroll horizontal entre días podía quedarse
+  bloqueado según por dónde empezaras a arrastrar. En la vista Día, el scroll vertical por las horas
+  estaba completamente bloqueado.
+- **Planificador**: se acabó el "+N" que escondía tareas en la banda de "todo el día" — ahora se ven
+  todas. Tocar cualquier tarea o evento abre su ficha (antes no hacía nada).
+- **Chat**: un mensaje de charla normal ("Hola", cualquier frase con la palabra "hecho") podía
+  devolver por error "No he podido guardarlo bien" — una red de seguridad interna confundía esa
+  palabra tan común con una confirmación de guardado vacía. Corregido.
+
+---
+
 ## Web v9.10.16 · iOS — 30 agosto 2026 · El texto interno de "pregúntame algo" ya no se colaba en el chat
 
 - **Arreglado (bug real, visto en iOS)**: al pedirle a Fromly que tomara la iniciativa y preguntara algo para conocerte mejor, el texto literal de la instrucción interna se guardaba en el historial como si lo hubieras escrito tú — se veía tal cual en cualquier dispositivo. Ahora ese disparador nunca se guarda, solo la pregunta real que hace.
