@@ -36,7 +36,7 @@
 //     cockpit (atrasadas/sin fecha) + planner.
 // La nota diaria nunca tiene Tab 2 "Chat" (`centerIsDiary`, ver V2ElementView.tsx)
 // — aquí no aplica porque no vive en `elementId`/centro, sino embebida abajo.
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
@@ -53,6 +53,9 @@ import { markAgentResultSeen } from '../../store/aiChatStore'
 import { displayTitle } from '../../utils/displayText'
 import DailyCockpit from '../../components/views/DailyCockpit'
 import V2BriefCard from './V2BriefCard'
+import { TaskPropsBody } from '../../components/modals/TaskPropsModal'
+import { V2NoteContext, V2Backlinks } from './V2DetailView'
+import { elementDisplayTitle } from '../../utils/docNode'
 
 export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda'
 
@@ -106,6 +109,74 @@ interface Props {
 function fmtTimer(sec: number): string {
   const m = Math.floor(sec / 60), s = sec % 60
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+// Enlaces (internos /node/… o externos) que aparecen DENTRO de las «Notas» del
+// elemento — se extraen del HTML de su nota-hija `_containerNotes` (mismo sitio
+// que la ficha central, ver `containerNotesNode`). Solo lectura: clic navega o
+// abre en pestaña nueva, no hay edición aquí.
+function useElementLinks(nodeId: string): { href: string; label: string; internal: boolean }[] {
+  const notes = containerNotesNode(nodeId)
+  const html = notes?.body || ''
+  return useMemo(() => {
+    if (!html) return []
+    const out: { href: string; label: string; internal: boolean }[] = []
+    const seen = new Set<string>()
+    const re = /<a[^>]+href="([^"]+)"[^>]*>(.*?)<\/a>/gi
+    let m: RegExpExecArray | null
+    while ((m = re.exec(html))) {
+      const href = m[1]
+      if (seen.has(href)) continue
+      seen.add(href)
+      const label = m[2].replace(/<[^>]+>/g, '').trim() || href
+      out.push({ href, label, internal: href.startsWith('/node/') })
+    }
+    return out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [html])
+}
+
+// Panel que ACOMPAÑA, en la columna derecha, el evento/tarea/timeblock abierto
+// en el centro desde el planificador — antes la derecha seguía enseñando el
+// brief+cockpit+nota diaria de un día cualquiera, sin relación con lo abierto
+// (30 ago 2026, Alberto: "la columna derecha tiene que acompañar el evento,
+// tarea o timeblock que haya abierto en el centro"). Reutiliza piezas ya
+// existentes (TaskPropsBody, V2NoteContext, V2Backlinks) en vez de duplicar
+// lógica — nada de esto es nuevo, solo estaba repartido y no llegaba aquí.
+function V2AgendaElementSide({ nodeId, onSelectCtx, onOpenNode }: { nodeId: string; onSelectCtx: (id: string) => void; onOpenNode: (id: string) => void }) {
+  useStore()
+  const { t } = useTranslation()
+  const node = store.getNode(nodeId)
+  const links = useElementLinks(nodeId)
+  if (!node) return null
+  const isTaskLike = node.status != null || node.isEvent
+  return (
+    <div className="v2-right-body v2-agenda-elside">
+      <div className="v2-detail-dates" style={{ padding: '14px 20px 0' }}>{elementDisplayTitle(node)}</div>
+      {isTaskLike && (
+        <div style={{ padding: '0 20px' }}>
+          <TaskPropsBody nodeId={nodeId} />
+        </div>
+      )}
+      <div style={{ padding: '10px 20px 0' }}>
+        <V2NoteContext node={node} onSelectCtx={onSelectCtx} />
+      </div>
+      {links.length > 0 && (
+        <div style={{ padding: '14px 20px 0' }}>
+          <div className="v2-section-label" style={{ padding: '0 0 6px' }}>{t('v2.linksInNote', 'Enlaces en la nota')}</div>
+          {links.map(l => (
+            <a key={l.href} className="v2-el-row" href={l.internal ? undefined : l.href}
+              target={l.internal ? undefined : '_blank'} rel={l.internal ? undefined : 'noopener noreferrer'}
+              onClick={l.internal ? (e => { e.preventDefault(); const id = l.href.slice('/node/'.length); onOpenNode(id) }) : undefined}>
+              <span className="v2-el-icon"><Icon name={l.internal ? 'note' : 'link'} size={16} /></span>
+              <span className="v2-el-main"><span className="v2-el-title">{l.label}</span></span>
+            </a>
+          ))}
+        </div>
+      )}
+      <V2Backlinks nodeId={nodeId} />
+    </div>
+  )
 }
 
 export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, onOpenConversation, onNewChatInCtx, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped, agendaDayNoteDate }: Props) {
@@ -328,7 +399,10 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
           también se puede arrastrar la tarea al planner central).
           `key={dayNoteId}`: mismo motivo que el visor central — sin
           desmontar al cambiar de día no hay ventana de solape entre notas. */}
-      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (
+      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && elementId && !centerIsDiary && (
+        <V2AgendaElementSide nodeId={elementId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} />
+      )}
+      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (!elementId || centerIsDiary) && (
         <div className="v2-right-fill v2-agenda-col">
           <V2BriefCard />
           <div className="v2-agenda-cockpit-strip">

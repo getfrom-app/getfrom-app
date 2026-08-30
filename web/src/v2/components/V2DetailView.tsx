@@ -51,7 +51,7 @@ const actBtn = { background: 'none', border: '1px solid var(--border,#e2e2e2)', 
 // persiste en extraData (_v2canvas). Cabecera de una sola fila: [Nota | Lienzo] a la
 // izquierda, acciones (favorito, exportar, publicar, eliminar) a la derecha.
 // Retroenlaces: elementos cuyo cuerpo enlaza a este nodo (/node/<id>). Enlace bidireccional.
-function V2Backlinks({ nodeId }: { nodeId: string }) {
+export function V2Backlinks({ nodeId }: { nodeId: string }) {
   useStore()
   const { t } = useTranslation()
   const links = useMemo(() => {

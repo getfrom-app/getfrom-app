@@ -409,6 +409,14 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     return () => window.clearTimeout(id)
   }, [viewMode])
   const [centerDate,    setCenterDate]    = useState(today)
+  // Bug real (28 ago 2026): si ya estabas en el día de hoy (centerDate === hoy)
+  // pero habías desplazado el scroll horizontal a mano hacia otros días, el
+  // botón «Hoy» no hacía NADA — `setCenterDate(today)` no cambia el estado
+  // (mismo valor), así que el efecto de scroll de abajo, atado a
+  // `centerDate.toDateString()`, nunca se re-disparaba. Este contador se
+  // incrementa SIEMPRE al pulsar «Hoy», forzando el reset de scroll aunque la
+  // fecha centrada no haya cambiado.
+  const [recenterTick,  setRecenterTick]   = useState(0)
   const [slotH,         setSlotH]         = useState(DEFAULT_SLOT_H)
   const [visibleDayCnt, setVisibleDayCnt] = useState(initialDays ?? DEFAULT_DAY_CNT)
   // Auto-fit: el día completo (HOUR_START–HOUR_END) cuadra en el alto del timeline,
@@ -677,7 +685,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   useLayoutEffect(() => {
     if (viewMode === 'year' || !scrollHRef.current) return
     scrollHRef.current.scrollLeft = todayScrollPos()
-  }, [viewMode, centerDate.toDateString(), colW]) // eslint-disable-line
+  }, [viewMode, centerDate.toDateString(), colW, recenterTick]) // eslint-disable-line
 
   useLayoutEffect(() => {
     if (!scrollVRef.current) return
@@ -1383,7 +1391,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
               <h2 className="v2-agenda-day-title">{diaryDayTitle(centerDate)}</h2>
               <div className="v2-agenda-toolbar">
                 {!sameDay(centerDate, today) && (
-                  <button className="v2-head-action" onClick={()=>{ setCenterDate(today); setViewMode('day') }}>{t('v2.agenda.today', 'HOY')}</button>
+                  <button className="v2-head-action" onClick={()=>{ setCenterDate(today); setRecenterTick(x=>x+1); setViewMode('day') }}>{t('v2.agenda.today', 'HOY')}</button>
                 )}
                 <button className="v2-head-action" onClick={()=>setViewMode('year')} title={t('v2.agenda.openYear', 'Calendario anual')}>{t('v2.agenda.year', 'CAL')}</button>
               </div>
@@ -1403,7 +1411,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             <button className="pp-nav-btn" onClick={()=>navDelta(-1)}>‹</button>
             <span className="pp-nav-title">{navTitle}</span>
             <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
-            <button className="pp-today-btn" onClick={()=>setCenterDate(today)}>{t('common.today')}</button>
+            <button className="pp-today-btn" onClick={()=>{ setCenterDate(today); setRecenterTick(x=>x+1) }}>{t('common.today')}</button>
             <button className="pp-today-btn pp-reset-btn" onClick={resetZoom}
               title={t('tip.resetZoom', { count: visibleDayCnt })}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
