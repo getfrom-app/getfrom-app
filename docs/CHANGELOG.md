@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.16 · iOS v2.19.181 — 30 agosto 2026 · El informe del día ya tiene en cuenta la hora
+
+- **Arreglado (servidor, afecta a Web y iOS)**: el párrafo de "Atención" del informe del día se
+  generaba una vez por la mañana y se reutilizaba tal cual el resto del día — de noche seguía
+  hablando de sacar tareas de hoy adelante. Ahora, por la noche, sugiere descansar, posponer lo que
+  quede para mañana y puede mencionar algo destacado del día siguiente.
+
+---
+
 ## iOS v2.19.181 — 30 agosto 2026 · Scroll del Planificador y falso error en el chat
 
 - **Arreglado**: en la vista Semana del Planificador, el scroll horizontal entre días podía quedarse
