@@ -137,7 +137,7 @@
 }
 .v2-statusbar-left { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .v2-statusbar-spacer { flex: 1; min-width: 0; }
-.v2-statusbar-right { display: flex; align-items: center; gap: 6px; min-width: 0; max-width: min(70vw, 520px); }
+.v2-statusbar-right { display: flex; align-items: center; gap: 6px; min-width: 0; max-width: min(70vw, 520px); overflow: hidden; }
 
 .v2-statusbar-pill {
   display: flex; align-items: center; gap: 3px;
@@ -183,7 +183,11 @@
    contexto (27 ago 2026, Alberto: "siempre que esté en curso algo, debe
    salir ya la siguiente también"). */
 .v2-nextevent-after {
-  flex: 0 1 auto; opacity: 0.6; font-size: 11px;
+  /* Sin min-width:0/overflow/ellipsis, "Después: ..." se salía del borde de
+     la ventana sin ningún indicador — se veía cortado a medias en vez de
+     truncado con "…" (28 ago 2026). Mismo tratamiento que .v2-nextevent-text. */
+  flex: 1 1 auto; min-width: 40px; opacity: 0.6; font-size: 11px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   padding-left: 8px; border-left: 1px solid var(--v2-line);
   color: var(--text-secondary) !important;
 }
@@ -1401,6 +1405,16 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 }
 .v2-attach-drive:hover { background: var(--v2-hover); }
 .v2-attach-drive svg { color: var(--text-tertiary); }
+
+/* Oculto por defecto (desktop): el botón se renderiza SIEMPRE en el DOM
+   (V2App.tsx), como primer hijo de `.v2-root` (grid de 3 columnas fijas,
+   sidebar/centro/derecha). Sin esta regla base, en desktop se colaba como
+   ítem de grid sin `grid-column` propio y desplazaba TODO el layout una
+   columna — sidebar en el hueco del centro, editor apretado en una esquina,
+   columna derecha desbordada. Solo se activa (display:flex, fixed) dentro
+   del media query móvil, donde sí tiene sentido. Bug real en producción
+   visto en vivo 30 ago 2026 tras el deploy de "web móvil de una columna". */
+.v2-mobile-menu-btn { display: none; }
 
 @media (max-width: 900px) {
   .v2-root { grid-template-columns: 1fr; }
