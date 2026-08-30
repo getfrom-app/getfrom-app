@@ -479,7 +479,7 @@ class AssistantStore {
     this.notify()
     const trigger = '[Instrucción interna — no la repitas ni la menciones: toma tú la iniciativa y hazme UNA pregunta concreta y breve para conocerme mejor, basada en mis contextos activos, lo que haya estado haciendo últimamente, o algo de mi perfil que aún esté incompleto — nunca una pregunta genérica de formulario. Máximo dos frases, la última siempre la pregunta. No crees ni cambies nada, no digas que vas a apuntar nada: solo pregunta.]'
     try {
-      const reply = await assistantChat(trigger, this.recentHistory(), this.threadKey === 'general' ? null : this.threadKey)
+      const reply = await assistantChat(trigger, this.recentHistory(), this.threadKey === 'general' ? null : this.threadKey, false, true)
       this.appendVisible({
         id: uid(), role: 'assistant', text: reply.reply, date: new Date().toISOString(),
         created: (reply.created ?? []).map(c => ({ id: c.id, text: c.text, due: c.due, isTask: c.isTask })),

@@ -60,10 +60,16 @@ export async function assistantChat(
    *  interpreta ni conversa, va directo a la nota diaria y responde
    *  "Anotado". Ver `AssistantStore.sendQuickNote` / `V2Chat.tsx`. */
   quickNote?: boolean,
+  /** El mensaje es un disparador interno (nunca escrito por el usuario, p.ej.
+   *  `assistantStore.askProfileQuestion`) — el servidor no lo persiste en el
+   *  hilo guardado, solo la respuesta real. Ver el comentario largo en
+   *  `chatSchema`, server/src/routes/assistant.ts (30 ago 2026, bug real: el
+   *  texto de la instrucción se veía tal cual en otro dispositivo). */
+  internalTrigger?: boolean,
 ): Promise<AssistantChatReply> {
   return apiRequest<AssistantChatReply>('/assistant/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, history, currentNodeId: currentNodeId ?? null, ...(quickNote ? { quickNote: true } : {}) }),
+    body: JSON.stringify({ message, history, currentNodeId: currentNodeId ?? null, ...(quickNote ? { quickNote: true } : {}), ...(internalTrigger ? { internalTrigger: true } : {}) }),
   })
 }
 

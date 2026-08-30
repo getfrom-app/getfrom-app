@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.16 · iOS — 30 agosto 2026 · El texto interno de "pregúntame algo" ya no se colaba en el chat
+
+- **Arreglado (bug real, visto en iOS)**: al pedirle a Fromly que tomara la iniciativa y preguntara algo para conocerte mejor, el texto literal de la instrucción interna se guardaba en el historial como si lo hubieras escrito tú — se veía tal cual en cualquier dispositivo. Ahora ese disparador nunca se guarda, solo la pregunta real que hace.
+- **iOS**: el saludo del día ("Buenos días…") vuelve a aparecer siempre arriba del chat, aunque ya tengas mensajes de antes — antes solo se veía con el hilo completamente vacío.
+- **iOS**: quitado el botón "Cargar más antiguos" del chat — el historial se va cargando solo al hacer scroll hacia arriba.
+
+---
+
 ## Web v9.10.15 — 30 agosto 2026 · Ajustes de la Agenda viva + una tarea pegada en dos notas ya no "salta" de documento
 
 - **Arreglado**: si copiabas un checklist de una nota a otra (p. ej. de la nota libre de un contexto a la nota de un evento concreto), las casillas pegadas competían por la MISMA tarea real — cada vez que abrías uno u otro documento, la tarea "saltaba" a abrirse en el otro. Ahora cada documento se queda con su propia tarea independiente, como si nunca se hubieran compartido.
