@@ -1,7 +1,34 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-30 (Web v9.10.13, iOS build 180)
+> Última actualización: 2026-08-30 (Web v9.10.15, iOS build 180)
+
+---
+
+## Sesión 2026-08-30 (sesión 12) — Agenda como asistente vivo, historial de chats real, dos fixes de producción
+
+Web **v9.10.13 → v9.10.15**. Detalle completo en `logs/2026-08-30-sesion12-agenda-viva-y-fix-502.md`
+y los invariantes nuevos en `FROM.md` ("30 ago 2026 (sesión 12)").
+
+- **Cola de 6 bugs** reportados en vivo, misma jornada que la sesión 11 (continuación directa):
+  columna derecha desaparecía al abrir una nota con contenido largo (`min-width:0` faltante en el
+  grid), menú de botón derecho en favoritos, página de enlace rediseñada (quitado un selector "Tipo"
+  duplicado), saludo de Agenda en párrafos + eventos de hoy ya pasados dejan de contar como
+  pendientes, bandeja de revisión ya permitía asignar contexto sin abrir el elemento (sin cambios),
+  `DocEditor` se tragaba el párrafo explicativo de debajo de una casilla en su `text`.
+- **Historial de chats real**: se descubrió que el historial de conversaciones (`_aiSession`/
+  `aiChatStore`) estaba desconectado del chat real desde la migración a `assistantStore` — abrir una
+  conversación mostraba una nota vacía. Rediseñado sobre hilos reales: `GET /assistant/threads`
+  (servidor) + `V2ThreadHistory.tsx` (web), un hilo por contexto con mensajes de verdad, más
+  recientes primero. `V2ContextBrowser.tsx`/`v2/conversations.ts` eliminados.
+- **Agenda como asistente vivo**: `V2AgendaAssistant.tsx` sustituye al brief estático — el chat REAL
+  embebido (mismo motor que iOS/Telegram), que avisa solo al completar una tarea o cuando un evento
+  está a punto de empezar. Maquetado antes con el skill `design`, aprobado por Alberto.
+- **Dos fixes reales en producción**: 502 en `/assistant/chat` por una carrera al crear el diario de
+  hoy con id determinista (fix: `onConflictDoNothing` sobre la PK compuesta real de `sync_nodes`,
+  verificado con logs de Railway); una tarea pegada entre dos documentos "saltaba" de uno a otro al
+  abrirlos (mismo bug de fondo que `keepOnSplit`, pero al pegar entre documentos — ver invariante en
+  `FROM.md`).
 
 ---
 

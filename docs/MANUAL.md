@@ -373,13 +373,17 @@ ningún contexto concreto: **Agenda**, **Chat** y **Elementos** (ya no existe un
 se fusionó con Agenda). Clic en cualquiera de los tres, o en un contexto de más abajo, cambia lo que
 ves en el centro y en la columna derecha.
 
-### Agenda — el Planificador completo, con tu día abajo
+### Agenda — el Planificador completo, con un asistente vivo al lado
 
 Es el destino por defecto al abrir Fromly. El centro muestra el Planificador (semana de 3 columnas
 con el día elegido siempre en el centro, mes o año — navegable, ver sección 7), sin nada más encima
-— limpio. Mientras no tengas nada abierto, la columna derecha muestra el informe del día (resumen de
-Fromly), lo que el calendario no cubre (tareas atrasadas y tareas sin fecha, para poder arrastrarlas
-al Planificador) y, debajo, la nota del día elegido embebida con scroll propio.
+— limpio. Mientras no tengas nada abierto, la columna derecha tiene, de arriba abajo: la **nota del
+día** elegido (siempre visible, con scroll propio), la lista de **atrasadas y sin fecha** (lo que el
+calendario no cubre, para poder arrastrarlas al Planificador) y, debajo, un **chat de verdad** —
+el mismo asistente que en iPhone o Telegram: pregúntale, pídele que cree o modifique tareas, anótale
+cosas. Además de responder lo que le escribas, va soltando avisos solo, sin que hagas nada: el
+saludo del día, cuando completas una tarea de hoy o atrasada, y un recordatorio si un evento con hora
+está a punto de empezar.
 
 Abrir una tarea, evento o timeblock desde el Planificador la centra y **la columna derecha pasa a
 acompañarla**: fecha/hora/recurrencia/prioridad editables, su contexto y grupo, los enlaces que
@@ -391,16 +395,13 @@ del día en sí no tiene chat propio.
 
 Abre un composer completo en la columna derecha, con el centro en blanco — lo que crees desde ahí
 (una nota, una tarea, un documento) pasa al centro en cuanto la IA lo crea, y la conversación sigue
-disponible en su propia pestaña Chat, sin perder el hilo.
+disponible en el mismo hilo, sin perder el rastro.
 
-La columna derecha tiene aquí **dos pestañas**:
-
-- **Chat** — la conversación. Mientras no has escrito nada, en vez de un saludo vacío verás tus
-  **contextos en tarjetas**, ordenados por uso reciente y con el número de conversaciones de cada
-  uno; pulsar una abre su lista de conversaciones ahí mismo.
-- **Historial** — tus contextos en lista (pulsa uno para ver sus conversaciones) y, debajo, las
-  **últimas conversaciones** de todos ellos, con buscador. Al abrir una conversación desde aquí,
-  la columna vuelve sola a la pestaña Chat para que la veas.
+La columna derecha aquí es tu **historial de verdad**: una fila por cada conversación que tengas con
+algún mensaje (una por contexto, más "General" si has hablado sin ninguno asignado), con un avance
+del último mensaje, su contexto y la fecha — ordenadas por la más reciente. Un buscador arriba filtra
+por texto o por contexto. Clic en una fila abre ESE hilo en el centro, tal cual lo dejaste — sin
+saltar a la ficha del contexto ni perder dónde estabas en el resto de la app.
 
 ### Elementos — el buscador de todo lo que tienes guardado
 
