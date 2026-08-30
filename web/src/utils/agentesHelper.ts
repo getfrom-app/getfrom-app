@@ -174,7 +174,13 @@ export function createAgentUnder(opts: {
       _agentIcon:           icon,
       _agentSystemPrompt:   instruction,
       _agentUserMessage:    deriveAgentTrigger(instruction, conversational),
-      _agentEnabled:        opts.enabled ? 'true' : 'false',
+      // Activado por defecto (P5 auditoría, 30 ago 2026: "crear agente = frase +
+      // ejecución de prueba inmediata + activado por defecto") — antes, omitir
+      // `enabled` (como hacía el único caller real, ElementsPanel.tsx) creaba el
+      // agente desactivado en silencio, distinto del camino por chat (ya activa
+      // por defecto desde el 27-28 ago). `enabled: false` explícito lo sigue
+      // dejando desactivado (lo usa aiChatExecutor.ts, motor de chat huérfano).
+      _agentEnabled:        opts.enabled !== false ? 'true' : 'false',
       _agentSchedule:       opts.schedule ?? '',
       _agentConversational: conversational ? '1' : '',
     }),
