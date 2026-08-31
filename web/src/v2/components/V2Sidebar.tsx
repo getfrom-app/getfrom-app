@@ -22,6 +22,8 @@ import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
 import V2ReviewInbox from './V2ReviewInbox'
 import { getUnclassifiedIds } from '../../utils/unclassified'
+import { hasTimeOfDay } from '../../utils/taskNode'
+import { isInPapelera } from '../../utils/papeleraHelper'
 import NewContextModal from '../../components/modals/NewContextModal'
 import NewTaskModal from '../../components/modals/NewTaskModal'
 import ContextShareModal from '../../components/modals/ContextShareModal'
@@ -89,6 +91,20 @@ function byName(a: Node, b: Node) {
 function subContextsOf(id: string): Node[] {
   // Excluye archivados (_closed): salen del árbol pero siguen buscables + en el RAG.
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
+}
+
+/** ¿Tiene el usuario ALGO pendiente con hora, en el futuro? Condición del
+ *  aviso de notificaciones (ver render más abajo) — sin esto, un recordatorio
+ *  real está en juego ahora mismo, así que activar push tiene un motivo
+ *  concreto en vez de ser un permiso pedido en abstracto. */
+function hasUpcomingTimedTask(): boolean {
+  const now = Date.now()
+  for (const n of store.allActive()) {
+    if (n.status !== 'pending' || !n.due || isInPapelera(n.id)) continue
+    if (!hasTimeOfDay(n)) continue
+    if (new Date(n.due).getTime() > now) return true
+  }
+  return false
 }
 
 export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral, activeGeneralDest, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onOpenAttach, onRecordInCtx, onOpenSettings, onOpenConversation, onOpenNode, onOpenProfile }: Props) {
@@ -450,6 +466,21 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
       {assistantStore.hasProfileNudge && (
         <button className="v2-sidebar-notice" onClick={onOpenProfile}>
           <Icon name="profile" size={14} /> {t('v2.profileChatPending', 'Fromly quiere saber más de ti')}
+        </button>
+      )}
+      {/* Aviso de notificaciones (31 ago 2026) — sin push activado, el brief/
+          check-in/recordatorios se generan igual (siguen en el chat, ver
+          `fetchInbox`) pero solo se ven al abrir la app; con la pestaña
+          cerrada no llega nada. Se ofrece SOLO cuando de verdad haría algo
+          por el usuario ahora mismo (ya tiene algo con hora, así que un
+          recordatorio real está en juego) — pedirlo nada más entrar, sin
+          ningún motivo concreto, es la forma número uno de que lo rechacen
+          para siempre. Mismo patrón que el aviso de perfil de arriba: un
+          `Notification.permission !== 'default'` (concedido o denegado) lo
+          hace desaparecer solo, sin necesitar guardar nada aparte. */}
+      {webPush.status === 'default' && hasUpcomingTimedTask() && (
+        <button className="v2-sidebar-notice" onClick={() => webPush.enable()}>
+          <Icon name="clock" size={14} /> {t('v2.pushNudge', 'Activa los avisos — te lo recuerdo aunque no tengas la web abierta')}
         </button>
       )}
       {(() => {
