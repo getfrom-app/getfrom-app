@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## iOS v2.19.184 — 31 agosto 2026 · Ficha de nota completa + evento de Google Calendar duplicado
+
+- **Arreglado**: un evento creado en Fromly y sincronizado con Google Calendar podía verse duplicado
+  en el Planificador (Semana y Día) — sobre todo si era recurrente. Ya no.
+- **La ficha de una nota abierta desde el chat** ahora tiene lo mismo que el resto de la app: icono
+  de favorito, botón de compartir con el menú nativo del iPhone, exportar como Markdown/PDF, asignar
+  o cambiar de contexto, y eliminar.
+
+---
+
 ## Web v9.10.16 · iOS v2.19.182 — 31 agosto 2026 · Fromly ahora recuerda de verdad lo que le cuentas
 
 - **Arreglado (servidor, afecta a Web y iOS)**: el Perfil que editas a mano en Ajustes y lo que Fromly
