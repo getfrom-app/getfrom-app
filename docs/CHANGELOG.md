@@ -13,6 +13,9 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 - **"Repasa el día conmigo"** ahora sí recuerda para siempre lo importante que le cuentes por la
   noche (una mudanza, comprar una casa, un cambio de trabajo) — antes solo quedaba en la nota de ese
   día y se perdía al día siguiente.
+- Lo que Fromly aprende por su cuenta ahora REEMPLAZA lo que queda anticuado en vez de solo acumular
+  — si le dices "me mudo a Alicante" después de "vivo en Madrid", se queda con lo nuevo, no con las
+  dos cosas a la vez para siempre.
 - **iOS**: el título de la nota diaria ya no se corta con "…" en su ficha.
 
 ---
