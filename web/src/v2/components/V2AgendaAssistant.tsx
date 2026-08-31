@@ -91,7 +91,21 @@ export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: 
     (() => { try { return JSON.parse(sessionStorage.getItem('from_agenda_reminded') || '[]') } catch { return [] } })(),
   ))
 
-  useEffect(() => { injectDailyGreeting() }, [])
+  // Ambos avisos dependen del RELOJ, no de cuándo se montó el componente —
+  // la web puede quedarse abierta todo el día sin recargar (a diferencia de
+  // iOS, que se abre y cierra), así que comprobar la hora solo una vez al
+  // montar los deja pillados para siempre en la franja de cuando se abrió la
+  // pestaña por la mañana (Alberto, 31 ago 2026: "no debe depender de
+  // abrirse, debe depender de la hora, momento del día"). Se revisa cada
+  // minuto — cada función ya tiene su propio guardado en localStorage, así
+  // que llamarlas de más no duplica nada, solo detecta el cambio de franja
+  // (o de día) mientras la pestaña sigue viva.
+  useEffect(() => {
+    const checkGreeting = () => { injectDailyGreeting() }
+    checkGreeting()
+    const id = setInterval(checkGreeting, 60_000)
+    return () => clearInterval(id)
+  }, [])
 
   // Pregunta de perfil, una vez al día, dentro del propio hilo de Agenda —
   // reutiliza `assistantStore.askProfileQuestion()` (ya existía, solo se
@@ -100,20 +114,25 @@ export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: 
   // en contexto (nunca genérico — lo decide el servidor), no solo informe.
   // A media tarde, para no competir con el saludo de la mañana ni sonar a
   // interrogatorio nada más entrar. El saludo del día (`injectDailyGreeting`)
-  // sale UNA vez, a la hora a la que se abra la app por primera vez — si eso
-  // pasó por la mañana, nunca llega un "Buenas tardes" en toda la sesión
-  // (Alberto, 31 ago 2026: "aun no ha dicho buenas tardes... sigue siendo un
-  // chat sin vida"). Este es el único otro momento programado del día, así
-  // que abre con el saludo que toque antes de la pregunta — no un mensaje
-  // suelto más, es lo que hace que se note que ha cambiado de franja horaria.
+  // sale UNA vez al día — si la pestaña ya estaba abierta desde la mañana,
+  // nunca llega un "Buenas tardes" en toda la sesión (Alberto, 31 ago 2026:
+  // "aun no ha dicho buenas tardes... sigue siendo un chat sin vida"). Este
+  // es el único otro momento programado del día, así que abre con el saludo
+  // que toque antes de la pregunta — no un mensaje suelto más, es lo que
+  // hace que se note que ha cambiado de franja horaria.
   useEffect(() => {
-    const key = `from_agenda_checkin_asked_${todayKey()}`
-    if (localStorage.getItem(key) === '1') return
-    const hour = new Date().getHours()
-    if (hour < 15 || hour >= 20) return
-    localStorage.setItem(key, '1')
-    assistantStore.addNotice('Buenas tardes.')
-    assistantStore.askProfileQuestion()
+    const checkIn = () => {
+      const key = `from_agenda_checkin_asked_${todayKey()}`
+      if (localStorage.getItem(key) === '1') return
+      const hour = new Date().getHours()
+      if (hour < 15 || hour >= 20) return
+      localStorage.setItem(key, '1')
+      assistantStore.addNotice('Buenas tardes.')
+      assistantStore.askProfileQuestion()
+    }
+    checkIn()
+    const id = setInterval(checkIn, 60_000)
+    return () => clearInterval(id)
   }, [])
 
   // Tarea de hoy/atrasada completada mientras la columna está abierta → aviso
