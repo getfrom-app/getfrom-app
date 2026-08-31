@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.16 · iOS v2.19.182 — 31 agosto 2026 · Fromly ahora recuerda de verdad lo que le cuentas
+
+- **Arreglado (servidor, afecta a Web y iOS)**: el Perfil que editas a mano en Ajustes y lo que Fromly
+  aprendía solo por su cuenta podían acabar siendo dos documentos SEPARADOS sin que se enteraras — lo
+  que escribías de ti mismo no llegaba al chat, y lo que el chat aprendía no se veía en Ajustes. Ahora
+  es un único documento; si tenías los dos, se han fusionado sin perder nada.
+- **"Repasa el día conmigo"** ahora sí recuerda para siempre lo importante que le cuentes por la
+  noche (una mudanza, comprar una casa, un cambio de trabajo) — antes solo quedaba en la nota de ese
+  día y se perdía al día siguiente.
+- **iOS**: el título de la nota diaria ya no se corta con "…" en su ficha.
+
+---
+
 ## Web v9.10.16 · iOS v2.19.181 — 30 agosto 2026 · El informe del día ya tiene en cuenta la hora
 
 - **Arreglado (servidor, afecta a Web y iOS)**: el párrafo de "Atención" del informe del día se
