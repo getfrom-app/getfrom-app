@@ -4,12 +4,13 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.10.17 · iOS v2.19.185 — 31 agosto 2026 · Scroll en fichas largas + contexto más simple
+## Web v9.10.19 · iOS v2.19.185 — 31 agosto 2026 · Scroll en fichas largas + contexto más simple
 
 - **iOS, arreglado**: una nota o contexto con muchos elementos se cortaba en la primera pantalla, sin
   forma de bajar a ver el resto.
-- **Web**: en el outliner, asignar o cambiar el contexto de una línea ya se hace escribiendo `#`
-  directamente — quitado el chip/botón antiguo que hacía lo mismo con más pasos.
+- **Web**: en el outliner y en el editor de documentos, asignar o cambiar el contexto de una línea o
+  un párrafo ya se hace escribiendo `#` directamente — quitados los chips/botones antiguos que hacían
+  lo mismo con más pasos (el "+" del outliner y el "?" al pasar el ratón por un párrafo).
 
 ---
 
