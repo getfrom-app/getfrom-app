@@ -1,7 +1,22 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-31 (Web v9.10.24)
+> Última actualización: 2026-08-31 (Web v9.10.26)
+
+---
+
+## Sesión 2026-08-31 (sesión 16) — timeblocks sin checkbox + columna derecha de Agenda a tercios
+
+Web **v9.10.24 → v9.10.26**. Detalle completo en `logs/2026-08-31-sesion16-tercios-timeblocks.md`.
+
+- **Timeblocks**: un timeblock (`isTimeBlockNode`, arrastrado sobre el grid del Planificador) ya no
+  pinta checkbox — la condición `checkable` de `PlannerPanel.tsx` solo excluía eventos (`isEvent`), no
+  timeblocks.
+- **Columna derecha de Agenda**: `V2RightColumn.tsx`/`v2.css` pasan de `flex` a `grid` con
+  `grid-template-rows` animado — nota del día, cockpit (atrasadas/sin fecha) y chat reparten el alto a
+  tercios iguales cuando la nota está abierta, en vez del reparto desigual anterior donde el chat se
+  quedaba con muy poco sitio (Alberto: "la columna derecha queda muy amontonada... primer tercio nota,
+  segundo tareas, tercero chat").
 
 ---
 
