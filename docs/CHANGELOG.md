@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.17 · iOS v2.19.185 — 31 agosto 2026 · Scroll en fichas largas + contexto más simple
+
+- **iOS, arreglado**: una nota o contexto con muchos elementos se cortaba en la primera pantalla, sin
+  forma de bajar a ver el resto.
+- **Web**: en el outliner, asignar o cambiar el contexto de una línea ya se hace escribiendo `#`
+  directamente — quitado el chip/botón antiguo que hacía lo mismo con más pasos.
+
+---
+
 ## iOS v2.19.184 — 31 agosto 2026 · Ficha de nota completa + evento de Google Calendar duplicado
 
 - **Arreglado**: un evento creado en Fromly y sincronizado con Google Calendar podía verse duplicado
