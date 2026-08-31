@@ -859,17 +859,9 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     // tras el backfill de `pid` (más abajo, `onCreate`) o cualquier transacción
     // que cambie pids, recalcula el mapa contra los pids VIGENTES sin esperar
     // al siguiente render de React. `lastCiteSigRef` evita dispatch redundantes.
-    // Si el doc cambió (escribir, Enter…) el botón de hover queda obsoleto —
-    // su posición y su pid se calcularon para un párrafo que puede haber
-    // cambiado de alto/vecinos; sin este reset, mostraba el contexto del
-    // párrafo VIEJO sobre el sitio donde ahora hay uno nuevo (Alberto, 22 jul:
-    // "se pone el mismo contexto en todas las líneas... por defecto, no
-    // debería haber ningún contexto"). Se recalcula limpio en el próximo
-    // mousemove real.
-    onTransaction: ({ transaction }) => {
+    onTransaction: () => {
       notifyDocEditor()
       applyCiteIndicators()
-      if (transaction.docChanged) setCiteHover(null)
     },
     // Documentos ya existentes (creados antes de ParagraphId) no tienen `pid` en
     // ningún párrafo — el plugin de la extensión solo asigna ids en transacciones
