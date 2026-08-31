@@ -364,6 +364,12 @@ Fromly, verás un aviso en la columna izquierda («Fromly quiere saber más de t
 conversación ya empezada y varias opciones de las que hablar — o escribe cualquier otra cosa. No
 interrumpe nada: entras cuando quieras, o lo ignoras.
 
+**Notificaciones.** Si tienes algo pendiente con hora y todavía no has decidido si activar los
+avisos del navegador, verás el mismo tipo de aviso ofreciéndotelo — solo cuando de verdad hay un
+recordatorio real en juego, nunca al azar nada más entrar. Sin ellas activadas, el brief, el
+resumen de la tarde y los recordatorios siguen apareciendo en el chat al abrir Fromly; con ellas,
+también te llegan aunque tengas la pestaña cerrada.
+
 ---
 
 ## 5. Navegación — Agenda, Chat, Elementos y tus Contextos
@@ -648,7 +654,8 @@ El timeline de UN día concreto, hora a hora, vive aquí mismo, en la vista Sema
 pestaña "Día" aparte.
 
 **Tareas vs eventos de un vistazo:** las tareas se muestran sin fondo (borde fino con un toque de
-color); los eventos de Google se muestran con su color de fondo.
+color); los eventos (de Google o marcados como evento) llevan un sombreado tenue del color de su
+contexto. La línea roja marca la hora actual y se mueve sola sin recargar la página.
 
 ### Asignar hora a una tarea
 
