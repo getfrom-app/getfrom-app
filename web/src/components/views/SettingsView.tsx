@@ -33,16 +33,26 @@ import { isContextKnowledge } from '../../utils/knowledgeNodes'
 function MagicPane() {
   const { t } = useTranslation()
   const s = useStore()
-  const navigate = useNavigate()
   const ls = useLearningsStore()
 
   void s.nodesVersion
   void ls           // re-render cuando cambian las reglas de Magic
   const total = readLearnedFacts().length
 
+  // `navigate('/node/:id')` es una ruta que solo existe en el router de v1 —
+  // dentro del shell v2 (donde vive esta pantalla de Ajustes) no abre nada
+  // visible, solo cambia la URL (mismo patrón ya documentado en
+  // PlannerPanel.tsx/V2App.tsx). El mecanismo correcto es el evento
+  // `from:open-detail`, que V2App.tsx escucha globalmente y abre vía
+  // `onOpenNode` sin salir del overlay (Alberto, 31 ago 2026: "Ver y editar"
+  // cambiaba la URL pero la pantalla se quedaba en la Agenda).
+  function openNode(id: string) {
+    window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: id } }))
+  }
+
   function openLearned() {
     const node = getOrCreateProfileDoc()
-    if (node) navigate(`/node/${node.id}`)
+    if (node) openNode(node.id)
   }
 
   // Conocimiento que Fromly mantiene por contexto (nodo "🧠 Lo que Fromly sabe" dentro
@@ -86,7 +96,7 @@ function MagicPane() {
             <div className="st-row" key={c.id}>
               <div className="st-row-info"><div className="st-row-label">{c.name}</div></div>
               <div className="st-row-action">
-                <button className="btn-secondary btn-sm" onClick={() => navigate(`/node/${c.id}`)}>{t('settingsView.view')}</button>
+                <button className="btn-secondary btn-sm" onClick={() => openNode(c.id)}>{t('settingsView.view')}</button>
               </div>
             </div>
           ))}
