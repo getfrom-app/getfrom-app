@@ -70,50 +70,6 @@ function startOfDay(d: Date): Date { const r = new Date(d); r.setHours(0,0,0,0);
 function daysInMonth(d: Date): number { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() }
 function fmtHH(d: Date) { return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }
 
-// ── Pastel: hace cualquier color suave (menos saturado, más claro) ──────────
-function parseColor(input: string): [number, number, number] | null {
-  const s = (input || '').trim()
-  const hex = s.match(/^#?([0-9a-f]{6})$/i)
-  if (hex) { const n = parseInt(hex[1], 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255] }
-  const rgb = s.match(/rgba?\(([^)]+)\)/i)
-  if (rgb) { const p = rgb[1].split(',').map(x => parseFloat(x)); return [p[0], p[1], p[2]] }
-  return null
-}
-function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255; g /= 255; b /= 255
-  const mx = Math.max(r, g, b), mn = Math.min(r, g, b)
-  let h = 0; const l = (mx + mn) / 2; let sat = 0
-  if (mx !== mn) {
-    const d = mx - mn
-    sat = l > 0.5 ? d / (2 - mx - mn) : d / (mx + mn)
-    h = mx === r ? (g - b) / d + (g < b ? 6 : 0) : mx === g ? (b - r) / d + 2 : (r - g) / d + 4
-    h /= 6
-  }
-  return [h, sat, l]
-}
-function hslToHex(h: number, s: number, l: number): string {
-  const f = (n: number) => {
-    const k = (n + h * 12) % 12
-    const a = s * Math.min(l, 1 - l)
-    const c = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))
-    return Math.round(255 * c).toString(16).padStart(2, '0')
-  }
-  return `#${f(0)}${f(8)}${f(4)}`
-}
-/** ¿Color gris/desaturado? (los eventos GCal sin color propio vuelven grises). */
-function isGreyish(input: string): boolean {
-  const rgb = parseColor(input)
-  if (!rgb) return false
-  return rgbToHsl(rgb[0], rgb[1], rgb[2])[1] < 0.12
-}
-/** Versión PASTEL de un color (claro y poco saturado). */
-function pastelize(input: string): string {
-  const rgb = parseColor(input)
-  if (!rgb) return '#cdbdf2'
-  const [h, s0] = rgbToHsl(rgb[0], rgb[1], rgb[2])
-  const s = Math.min(0.62, Math.max(0.42, s0))
-  return hslToHex(h, s, 0.80)
-}
 
 /** Devuelve true si el ISO tiene hora local distinta de medianoche (= tiene hora asignada). */
 function hasTime(isoStr: string): boolean {
@@ -421,6 +377,20 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   // incrementa SIEMPRE al pulsar «Hoy», forzando el reset de scroll aunque la
   // fecha centrada no haya cambiado.
   const [recenterTick,  setRecenterTick]   = useState(0)
+  // Línea de "ahora" en el timeline: sin esto se calculaba una sola vez al
+  // montar y quedaba congelada hasta refrescar la página (31 ago 2026, Alberto:
+  // "la linea roja no se mueve cada minuto"). Se sincroniza con el cambio de
+  // minuto real en vez de un setInterval a ciegas.
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>
+    const msToNextMinute = 60000 - (Date.now() % 60000)
+    const timeout = setTimeout(() => {
+      setNow(new Date())
+      interval = setInterval(() => setNow(new Date()), 60000)
+    }, msToNextMinute)
+    return () => { clearTimeout(timeout); clearInterval(interval) }
+  }, [])
   const [slotH,         setSlotH]         = useState(DEFAULT_SLOT_H)
   const [visibleDayCnt, setVisibleDayCnt] = useState(initialDays ?? DEFAULT_DAY_CNT)
   // Auto-fit: el día completo (HOUR_START–HOUR_END) cuadra en el alto del timeline,
@@ -1043,27 +1013,27 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   }
 
   // Color base del planner: el de Ajustes (`from_planner_color`) o el acento del
-  // tema. Los bloques se pintan en su versión PASTEL (suave, poco saturada).
+  // tema. Sirve de acento por defecto cuando el bloque no tiene contexto propio.
   const plannerBase = (typeof document !== 'undefined'
     ? (localStorage.getItem('from_planner_color') || getComputedStyle(document.documentElement).getPropertyValue('--accent').trim())
     : '') || '#3E5C76'
-  const taskPastel = pastelize(plannerBase)
 
   // ── Render bloque ─────────────────────────────────────────────────────────
   function renderBlock(b: Block & { col?: number; cols?: number }) {
-    // Solo los eventos de Google llevan relleno de color (gris propio → pastel base;
-    // color propio → ese color en pastel). Las tareas NO son eventos: sin fondo,
-    // solo borde fino + barra de acento a la izquierda para verlas y arrastrarlas.
-    // Relleno solo para eventos de Google (viven en Google, no son nodos). Las
-    // tareas (nodos locales) van sin relleno: borde fino + barra de acento.
-    const isGcal = b.kind === 'gcal'
-    const bg = isGcal ? (isGreyish(b.color) ? taskPastel : pastelize(b.color)) : 'transparent'
     // Barra de acento del bloque: si el nodo tiene contexto asignado, su color
     // manda sobre el acento genérico del Planificador (Alberto, 22 jul: "si el
     // evento tiene contexto, se colorea del color del contexto").
     const blockNode = b.nodeId ? store.getNode(b.nodeId) : null
     const blockCtx = blockNode ? firstContextOf(blockNode) : null
     const accentColor = blockCtx ? contextColor(blockCtx.id) : plannerBase
+    // Eventos (evento crudo de Google o nodo marcado `isEvent`) llevan un
+    // sombreado muy débil del color de su contexto — así se distinguen de un
+    // vistazo de las tareas, que se quedan sin fondo (borde + barra de acento,
+    // sin cambios; Alberto, 31 ago 2026: "los eventos... las tareas las
+    // dejamos como están, así se diferencian").
+    const isGcal = b.kind === 'gcal'
+    const isEvent = isGcal || blockNode?.isEvent === true
+    const bg = isEvent ? `color-mix(in srgb, ${accentColor} 14%, transparent)` : 'transparent'
     // Clampar al día: un bloque NUNCA se sale del rango 06–24 (evita que un evento
     // multi-día o con duración errónea infle el scroll con espacio vacío).
     const gridH = TOTAL_HOURS * hourH
@@ -1098,7 +1068,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
         className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}${b.virtual ? ' pp-block--virtual' : ''}`}
         style={{ top: blockTop, height: blockH,
           background: bg, left: leftPos, ...(widthPos ? { width: widthPos } : { right: 2 }),
-          ...(isGcal ? {} : { border: '1px solid var(--border)', borderLeft: `3px solid ${accentColor}` }) }}
+          border: '1px solid var(--border)', borderLeft: `3px solid ${accentColor}` }}
         draggable={!b.virtual}
         onDragStart={e => { if (!b.virtual) handleBlockDragStart(e, b) }}
         onClick={e => {
@@ -1168,7 +1138,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   // ── Render columna ────────────────────────────────────────────────────────
   function renderCol(day: Date) {
     const isToday  = sameDay(day, today)
-    const nowTop   = topPx(new Date())
+    const nowTop   = topPx(now)
     return (
       <div key={day.toISOString()} className="pp-col-wrap" style={{ width: colW, flexShrink: 0 }}>
         <div className={`pp-col${isToday ? ' pp-col--today' : ''}`} style={{ height: TOTAL_HOURS * hourH }}

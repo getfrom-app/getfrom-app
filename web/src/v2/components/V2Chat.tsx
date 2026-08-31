@@ -27,6 +27,13 @@ import TaskRow from '../../components/panels/TaskRow'
 import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
 import Icon from './Icon'
 
+/** Cuánto se deja un recordatorio visible en el hilo pasado su momento — un
+ *  margen corto para no desaparecer literalmente en el segundo exacto (el
+ *  usuario aún lo está leyendo cuando toca), pero sin quedarse ahí para
+ *  siempre (Alberto, 31 ago 2026, sobre uno de hacía horas: "no tiene
+ *  sentido que se mantenga"). Ver `messages` en `V2Chat`. */
+const REMINDER_STALE_MS = 20 * 60 * 1000
+
 interface Props {
   currentNodeId: string | null
   /** null = sin contexto/elemento enfocado (chat general) — ver V2App.tsx. */
@@ -142,7 +149,7 @@ function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boo
   const { t } = useTranslation()
   const visibleCreated = m.created.filter(c => !assistantStore.isTrashed(c.id))
   return (
-    <div className={`v2-assistant-msg ${m.role}`}>
+    <div className={`v2-assistant-msg ${m.role}${m.kind === 'reminder' ? ' v2-assistant-msg--reminder' : ''}`}>
       {m.role === 'user' ? (
         <div className="v2-assistant-user-line">
           <span className="v2-assistant-prompt">›</span> {m.text}
@@ -219,6 +226,15 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   const scoped = elementScoped ?? embedded
   const chat = useAssistantStore()
   useStore()
+  // Reloj propio del hilo: solo sirve para que los recordatorios caducados
+  // (ver `messages` más abajo) desaparezcan del chat en directo, sin recargar
+  // la página — Alberto, 31 ago 2026: "no tiene sentido que se mantenga...
+  // ha acabado hace horas". Un tick por minuto basta, no hace falta más.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
   // Carga el hilo PROPIO de este elemento/contexto (o el general si
   // `currentNodeId` es null) ANTES de pintar — mismo patrón que el
   // `useLayoutEffect` de V2ElementChat con `aiChatStore.getOrCreateElementSession`:
@@ -308,9 +324,16 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     for (const m of chat.messages) {
       if (m.tag?.startsWith('daily-greeting:') && (!latestGreetingTag || m.tag > latestGreetingTag)) latestGreetingTag = m.tag
     }
-    if (!latestGreetingTag) return chat.messages
-    return chat.messages.filter(m => !m.tag?.startsWith('daily-greeting:') || m.tag === latestGreetingTag)
-  }, [chat.messages])
+    return chat.messages.filter(m => {
+      if (m.tag?.startsWith('daily-greeting:') && latestGreetingTag && m.tag !== latestGreetingTag) return false
+      // Un recordatorio deja de tener sentido pasado su momento — a
+      // diferencia de un mensaje real, "recuerda tu radio en 7 min" no vale
+      // nada como historial una vez ha pasado, así que se oculta del hilo
+      // (nunca se borra del almacenamiento local, solo del render).
+      if (m.kind === 'reminder' && m.dueAt && now - new Date(m.dueAt).getTime() > REMINDER_STALE_MS) return false
+      return true
+    })
+  }, [chat.messages, now])
   const thinking = chat.isThinking
 
   // ¿Es este el hilo GENERAL o el de Agenda (V2AgendaAssistant)? Los dos son

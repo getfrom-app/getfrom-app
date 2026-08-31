@@ -776,6 +776,14 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 .v2-assistant-user-line { color: var(--text-accent); font-weight: 500; line-height: 1.55; }
 .v2-assistant-prompt { opacity: 0.7; margin-right: 2px; }
 .v2-assistant-reply { color: var(--text-primary); line-height: 1.65; }
+/* Recordatorio (evento con hora a punto de empezar) — una barra de acento
+   ámbar, no un globo relleno: sigue siendo texto plano, solo con un color
+   propio para distinguirlo de un vistazo de una respuesta normal del chat
+   (Alberto, 31 ago 2026: "los recordatorios deberia hacerlos con algun
+   color"). Desaparece solo del hilo activo pasado un rato — ver
+   REMINDER_STALE_MS en V2Chat.tsx. */
+.v2-assistant-msg--reminder { border-left: 2px solid color-mix(in srgb, #d97706 60%, transparent); padding-left: 10px; }
+.v2-assistant-msg--reminder .v2-assistant-reply { color: color-mix(in srgb, #d97706 65%, var(--text-primary)); }
 
 /* Separador de hora — "———— 8:01 ————", siempre visible entre mensajes
    (13 ago, paridad con SessionDivider en iOS). */

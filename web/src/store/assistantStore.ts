@@ -55,6 +55,19 @@ export interface AssistantMsg {
    *  'buenas tardes' de ayer que queda raro". No se usa para nada más; un
    *  turno normal del servidor no lo trae (`turnToAssistantMsg`). */
   tag?: string | null
+  /** De qué tipo de aviso es — hoy solo `'reminder'` importa al cliente:
+   *  colorea la burbuja distinto de una respuesta normal y, junto a `dueAt`,
+   *  permite ocultarla del hilo en cuanto caduca (ver `V2Chat.tsx`). Mismos
+   *  valores que la columna `kind` de `assistant_messages` en servidor
+   *  (brief/evening/reminder/agent) más `'reminder'` para los avisos locales
+   *  de `V2AgendaAssistant` (evento < 15 min). */
+  kind?: string | null
+  /** Momento exacto de lo que el aviso recuerda (ISO) — solo relevante para
+   *  `kind === 'reminder'`. Sin esto un "recuerda tu radio en 7 minutos" se
+   *  quedaba en el chat para siempre, horas después de haber pasado (Alberto,
+   *  31 ago 2026: "no tiene sentido que se mantenga... ha acabado hace
+   *  horas"). */
+  dueAt?: string | null
 }
 
 type Listener = () => void
@@ -350,6 +363,7 @@ class AssistantStore {
           date: m.createdAt,
           created: [], linkedNodeId: m.nodeId,
           options: null, list: m.list && m.list.length > 0 ? m.list : null, agents: null,
+          kind: m.kind, dueAt: m.list && m.list.length > 0 ? m.list[0].due : null,
         })
         added++
         if (!lastDate || date > lastDate) lastDate = date
@@ -470,10 +484,11 @@ class AssistantStore {
    *  usuario responda y el turno de verdad se dispare. `tag` opcional agrupa
    *  mensajes relacionados para poder plegarlos juntos en el render (ver
    *  `AssistantMsg.tag`). */
-  addNotice(text: string, tag?: string) {
+  addNotice(text: string, tag?: string, opts?: { kind?: string; dueAt?: string }) {
     this.appendVisible({
       id: uid(), role: 'assistant', text, date: new Date().toISOString(),
       created: [], linkedNodeId: null, options: null, list: null, agents: null, tag: tag ?? null,
+      kind: opts?.kind ?? null, dueAt: opts?.dueAt ?? null,
     })
     this.save(); this.notify()
   }

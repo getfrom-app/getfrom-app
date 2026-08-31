@@ -99,13 +99,20 @@ export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: 
   // asistente tome la iniciativa aquí también: pregunte algo real, grounded
   // en contexto (nunca genérico — lo decide el servidor), no solo informe.
   // A media tarde, para no competir con el saludo de la mañana ni sonar a
-  // interrogatorio nada más entrar.
+  // interrogatorio nada más entrar. El saludo del día (`injectDailyGreeting`)
+  // sale UNA vez, a la hora a la que se abra la app por primera vez — si eso
+  // pasó por la mañana, nunca llega un "Buenas tardes" en toda la sesión
+  // (Alberto, 31 ago 2026: "aun no ha dicho buenas tardes... sigue siendo un
+  // chat sin vida"). Este es el único otro momento programado del día, así
+  // que abre con el saludo que toque antes de la pregunta — no un mensaje
+  // suelto más, es lo que hace que se note que ha cambiado de franja horaria.
   useEffect(() => {
     const key = `from_agenda_checkin_asked_${todayKey()}`
     if (localStorage.getItem(key) === '1') return
     const hour = new Date().getHours()
     if (hour < 15 || hour >= 20) return
     localStorage.setItem(key, '1')
+    assistantStore.addNotice('Buenas tardes.')
     assistantStore.askProfileQuestion()
   }, [])
 
@@ -157,7 +164,7 @@ export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: 
         if (!isSameLocalDay(due, now)) continue
         const minsUntil = (due.getTime() - now.getTime()) / 60000
         if (minsUntil > 0 && minsUntil <= 15) {
-          assistantStore.addNotice(`Recuerda: «${n.text || 'evento'}» en ${Math.round(minsUntil)} min.`)
+          assistantStore.addNotice(`Recuerda: «${n.text || 'evento'}» en ${Math.round(minsUntil)} min.`, undefined, { kind: 'reminder', dueAt: due.toISOString() })
           remindedIds.current.add(n.id)
           try { sessionStorage.setItem('from_agenda_reminded', JSON.stringify([...remindedIds.current])) } catch { /* ignore */ }
         }
