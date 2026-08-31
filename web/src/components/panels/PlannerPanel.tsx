@@ -1053,7 +1053,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     // Una proyección virtual no es un nodo propio de ese día — no se puede
     // completar ni arrastrar como si lo fuera (eso seguiría creando/tocando
     // el nodo ORIGEN, con fecha distinta). El clic sigue abriendo el origen.
-    const checkable = !isGcal && !b.virtual && !!blockNode && blockNode.status != null && !blockNode.isEvent
+    const checkable = !isGcal && !b.virtual && !!blockNode && blockNode.status != null && !blockNode.isEvent && !isTimeBlockNode(blockNode)
     const done = checkable && blockNode!.status === 'done'
     // Solapes → columnas lado a lado (ver `layoutBlocks`). Sin solape, ocupa
     // el ancho completo de la columna como siempre.

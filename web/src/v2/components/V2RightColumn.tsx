@@ -415,11 +415,20 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
         <V2AgendaElementSide nodeId={elementId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} />
       )}
       {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (!elementId || centerIsDiary) && (
-        <div className="v2-right-fill v2-agenda-col">
+        <div
+          className="v2-right-fill v2-agenda-col"
+          style={{
+            gridTemplateRows: dayNoteId
+              ? `auto ${noteOpen ? '1fr' : '0px'} 1fr 1fr`
+              : '1fr 1fr',
+          }}
+        >
           {/* Nota del día — se abre/cierra con un botón arriba de la columna,
-              animación suave (grid-template-rows, mismo criterio de "salida
-              animada, no de golpe" que `dc-row-out` en DailyCockpit). Vuelve
-              31 ago 2026 (Alberto: el botón se había quitado el 30 ago —
+              animación suave (grid-template-rows en el propio `.v2-agenda-col`:
+              nota/tareas/chat son 3 filas a partes iguales cuando la nota está
+              abierta — Alberto, 31 ago 2026: "que el chat solo sea el tercio
+              inferior... primer tercio nota, segundo tareas, tercero chat").
+              Vuelve 31 ago 2026 (Alberto: el botón se había quitado el 30 ago —
               "ponla arriba siempre abierta... quita el botón" — y ahora pide
               recuperarlo). El editor NO se desmonta al plegar (solo se
               recorta visualmente): desmontarlo perdería la posición del
@@ -435,10 +444,8 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
                 <span className="v2-agenda-note-toggle-chevron"><Icon name="chevron-right" size={12} /></span>
                 {t('v2.rightColumn.dailyNote', 'Nota del día')}
               </button>
-              <div className={`v2-agenda-note-collapse ${noteOpen ? 'open' : ''}`}>
-                <div className="v2-agenda-note-panel">
-                  <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
-                </div>
+              <div className="v2-agenda-note-panel">
+                <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
               </div>
             </>
           )}

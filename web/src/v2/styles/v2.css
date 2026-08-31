@@ -957,11 +957,14 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 
 /* Destino Agenda (rediseño 30 ago 2026, Alberto: "que sea un asistente real...
    columna derecha... formato chat"). Orden: botón nota del día (plegable) →
-   cockpit fijo (atrasadas/sin fecha) → chat, que se lleva el espacio que
-   sobra. Pasó por un botón plegable el 30 ago, revertido a "siempre abierta"
-   horas después, y ha vuelto a pedirse el 31 ago con animación suave — ver
-   `.v2-agenda-note-toggle`/`.v2-agenda-note-collapse` más abajo. */
-.v2-agenda-col { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+   nota → cockpit (atrasadas/sin fecha) → chat, a tercios iguales cuando la
+   nota está abierta (31 ago 2026, Alberto: "la columna derecha queda muy
+   amontonada... primer tercio nota, segundo tareas, tercero chat"). Grid en
+   vez de flex porque `grid-template-rows` anima el plegado de la nota a 0
+   sin medir contenido en JS (mismo criterio que el resto del rediseño); las
+   filas se fijan inline en `V2RightColumn.tsx` porque dependen de
+   `dayNoteId`/`noteOpen`. */
+.v2-agenda-col { flex: 1; min-height: 0; display: grid; transition: grid-template-rows .25s ease; }
 
 /* Botón plegar/desplegar de la nota del día — mismo lenguaje visual que las
    cabeceras de sección del cockpit (`.dc-group-label`): mayúsculas finas,
@@ -976,26 +979,22 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 .v2-agenda-note-toggle-chevron { display: inline-flex; transition: transform .25s ease; }
 .v2-agenda-note-toggle.open .v2-agenda-note-toggle-chevron { transform: rotate(90deg); }
 
-/* Animación suave de apertura/cierre — `grid-template-rows: 0fr → 1fr` anima
-   a "auto height" sin medir el contenido en JS ni tener que adivinar un
-   `max-height` fijo (el editor de la nota puede crecer o encogerse). El hijo
-   necesita `overflow: hidden` + `min-height: 0` para que el recorte del grid
-   se aplique de verdad en vez de desbordar. */
-.v2-agenda-note-collapse { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s ease; }
-.v2-agenda-note-collapse.open { grid-template-rows: 1fr; }
-.v2-agenda-note-collapse > div { overflow: hidden; min-height: 0; }
+/* La nota, el cockpit y el chat son ahora filas de grid a partes iguales
+   (ver `.v2-agenda-col` arriba) — cada una con su propio scroll interno para
+   no desbordar su tercio. `min-height: 0` es obligatorio en cada fila de
+   grid para que el `overflow-y: auto` recorte de verdad en vez de estirar
+   la fila a su contenido. */
 .v2-agenda-note-panel {
-  max-height: 210px; overflow-y: auto;
+  min-height: 0; overflow-y: auto;
   padding: 0 20px 10px; border-bottom: 1px solid var(--v2-line);
 }
 
-/* Cockpit — alto acotado con scroll propio (nunca empuja el chat fuera de
-   vista) + separador fino. */
-.v2-agenda-cockpit-strip { flex: 0 1 auto; max-height: 240px; overflow-y: auto; padding: 14px 20px 6px; border-bottom: 1px solid var(--v2-line); }
+/* Cockpit — mismo criterio: ocupa su tercio con scroll propio. */
+.v2-agenda-cockpit-strip { min-height: 0; overflow-y: auto; padding: 14px 20px 6px; border-bottom: 1px solid var(--v2-line); }
 .v2-center--agenda .pp-root { flex: 1 1 auto; height: auto; min-height: 0; }
 
-/* El chat de Agenda se lleva el resto del alto disponible. */
-.v2-agenda-assistant { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+/* El chat de Agenda ocupa su tercio. */
+.v2-agenda-assistant { min-height: 0; display: flex; flex-direction: column; }
 
 /* Tarjeta del informe del día (P4, 29 ago 2026) — arriba del todo, fuera del
    scroll acotado del cockpit: es lo primero que se lee al abrir Agenda. */
