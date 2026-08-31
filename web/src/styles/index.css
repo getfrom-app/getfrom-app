@@ -7299,38 +7299,18 @@ textarea:focus-visible,
 .doc-editor .ProseMirror s { text-decoration: line-through; }
 .doc-editor .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--text-tertiary, #aaa); float: left; pointer-events: none; height: 0; }
 .doc-title::placeholder { color: var(--text-tertiary, #bbb); }
-/* Cita de párrafo: «?» flotante al pasar el ratón (asigna el párrafo a un
-   contexto), indicador permanente de color en los ya asignados, y el resalte
-   breve al volver desde la cita con su ancla (Alberto, 22 jul: "hazlo con
-   ancla, hazlo completo"). */
-/* Posicionado con top/left calculados en JS (endOfTextPosition, DocEditor.tsx) —
-   justo después del último carácter visible de la línea, estilo Tana, NO
-   clavado al margen derecho del documento (Alberto, 22 jul). */
-.doc-cite-btn {
-  position: absolute; width: 18px; height: 18px;
-  border: 1px dashed var(--border, #ddd); border-radius: 50%; background: var(--bg-primary, #fff);
-  color: var(--text-tertiary, #bbb); cursor: pointer; padding: 0; font-weight: 700; font-size: 11px;
-  display: flex; align-items: center; justify-content: center; opacity: 0.7; z-index: 2;
-}
-.doc-cite-btn:hover { opacity: 1; color: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
-/* Párrafo YA citado: en vez del «?» ciego, un chip con el contexto actual —
-   pulsarlo abre el mismo picker para cambiarlo o quitarlo (Alberto, 22 jul). */
-.doc-cite-btn--assigned {
-  width: auto; height: auto; border-radius: 3px; border: 1px solid var(--border, #ddd);
-  padding: 2px 8px 2px 6px; font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.06em; white-space: nowrap; opacity: 1; display: inline-flex; align-items: center; gap: 5px;
-  color: var(--text-secondary, #666);
-}
-.doc-cite-btn--assigned::before {
-  content: ''; width: 6px; height: 6px; border-radius: 1.5px; flex: 0 0 auto;
-  background: var(--chip, var(--accent, #6c5ce7));
-}
-.doc-cite-btn--assigned:hover { border-color: var(--accent, #6c5ce7); color: var(--text-accent, var(--accent, #6c5ce7)); }
-/* Sin borde de color permanente en párrafos citados (Alberto, 22 jul: "sigue
+/* Cita de párrafo: se asigna escribiendo #contexto en la línea (mismo
+   picker que el outliner, DocContextMention.tsx) — el texto "#contexto" se
+   queda visible en el párrafo, ESE es el indicador de que está citado. El
+   botón flotante "?" al pasar el ratón (Alberto, 22 jul) se quitó el 31 ago
+   2026 a petición de Alberto ("lo mismo pero visualmente que se haga con #
+   en lugar de con el '?' de hover") — el motor (setCitationContext,
+   colectar hijos/heading, indicador `.doc-para--cited` para "Ir a la nota")
+   sigue igual, solo cambió cómo se dispara.
+   Sin borde de color permanente en párrafos citados (Alberto, 22 jul: "sigue
    apareciendo esa barra vertical... quítala") — la clase .doc-para--cited
-   se sigue aplicando (la usa el hover para saber qué contexto mostrar) pero
-   ya no pinta nada; el único indicador visual de una cita vive en el chip
-   del hover (ver .doc-cite-btn--assigned) y en el resalte de «Ir a la nota».*/
+   se sigue aplicando pero ya no pinta nada salvo en el resalte breve de
+   «Ir a la nota» (.doc-para--flash). */
 /* Mención de contexto `#nombre` insertada en el texto del documento (28 ago
    2026 — antes se borraba tras Enter y quedaba invisible). Estilo propio,
    distinto del texto normal: color de acento, algo más pequeño, sin

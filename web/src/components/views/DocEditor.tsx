@@ -17,7 +17,6 @@ import Color from '@tiptap/extension-color'
 import Image from '@tiptap/extension-image'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
-import { createPortal } from 'react-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { assignContext, firstContextOf, contextColor, setNodeContext, maybeUpdateContextKnowledge } from '../../utils/cajones'
 import { isContextKnowledge, isProfileKnowledge } from '../../utils/knowledgeNodes'
@@ -40,7 +39,6 @@ import type { DocSlashAction } from './DocSlashMenu'
 import NodeTableView from './NodeTableView'
 import NodeKanbanView from './NodeKanbanView'
 import NodeCalendarView from './NodeCalendarView'
-import ContextPicker from '../panels/ContextPicker'
 import { ParagraphId, dedupePids } from '../../utils/tiptapParagraphId'
 import { CiteDecorations, citeDecoKey } from '../../utils/tiptapCiteDecorations'
 import { TabIndent } from '../../utils/tiptapTabIndent'
@@ -255,9 +253,6 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // párrafo") y desde la cita se vuelve exactamente a ese párrafo, con ancla,
   // no solo se abre el documento entero ("hazlo con ancla, hazlo completo").
   const contentWrapRef = useRef<HTMLDivElement>(null)
-  const [citeHover, setCiteHover] = useState<{ pid: string; top: number; left: number } | null>(null)
-  const [citePicker, setCitePicker] = useState<{ pid: string; x: number; y: number; up: boolean } | null>(null)
-  const citePickerRef = useRef<HTMLDivElement>(null)
 
   // Todos los bloques con pid del documento, EN ORDEN — base compartida para la
   // jerarquía de citas: heading > indentación (Alberto, 22 jul: "todos los
@@ -344,52 +339,6 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     return null
   }
 
-  // Posición justo DESPUÉS del último carácter visible del párrafo (estilo Tana:
-  // el icono va pegado al final del texto de la línea, no clavado al margen
-  // derecho del documento entero — Alberto, 22 jul). `Range` sobre el último
-  // nodo de texto para medir dónde termina realmente la línea visual (con
-  // wrap, la última línea puede no llegar al borde del párrafo).
-  const endOfTextPosition = (el: HTMLElement, wrap: HTMLElement) => {
-    const wrapRect = wrap.getBoundingClientRect()
-    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
-    let lastText: Text | null = null
-    let n: Node | null
-    while ((n = walker.nextNode())) { if (n.textContent) lastText = n as Text }
-    if (lastText) {
-      const range = document.createRange()
-      range.selectNodeContents(lastText)
-      const rects = range.getClientRects()
-      const r = rects[rects.length - 1]
-      if (r) return { top: r.top - wrapRect.top, left: r.right - wrapRect.left + 6 }
-    }
-    const r = el.getBoundingClientRect()
-    return { top: r.top - wrapRect.top, left: r.left - wrapRect.left + 6 }
-  }
-
-  const onContentMouseMove = (e: React.MouseEvent) => {
-    if (citePicker) return
-    // El botón flotante vive FUERA del párrafo en el DOM (hermano, no
-    // descendiente) — sin este corte, en cuanto el ratón lo tocaba,
-    // `.closest('[data-pid]')` fallaba, se escondía, y al siguiente frame el
-    // ratón volvía a estar "sobre" el párrafo de debajo → reaparecía →
-    // parpadeo infinito (Alberto, 22 jul: "parpadea muy rápidamente"). Estar
-    // sobre el propio botón cuenta como seguir sobre el párrafo.
-    if ((e.target as HTMLElement).closest('.doc-cite-btn')) return
-    const wrap = contentWrapRef.current
-    const target = (e.target as HTMLElement).closest('[data-pid]') as HTMLElement | null
-    if (!target || !wrap) { setCiteHover(null); return }
-    const pid = target.getAttribute('data-pid')
-    if (!pid) { setCiteHover(null); return }
-    setCiteHover({ pid, ...endOfTextPosition(target, wrap) })
-  }
-
-  const openCitePicker = (e: React.MouseEvent, pid: string) => {
-    e.stopPropagation()
-    const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const up = window.innerHeight - r.bottom < 320
-    const x = Math.max(8, Math.min(r.left, window.innerWidth - 250))
-    setCitePicker(up ? { pid, x, y: window.innerHeight - r.top + 4, up: true } : { pid, x, y: r.bottom + 4, up: false })
-  }
 
   // Indicador persistente de párrafos citados — implementado como DECORACIÓN de
   // ProseMirror (ver utils/tiptapCiteDecorations.ts), NO como manipulación directa
@@ -593,16 +542,6 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: created.id } }))
   }
 
-  useEffect(() => {
-    if (!citePicker) return
-    const h = (e: PointerEvent) => {
-      const t = e.target as globalThis.Node
-      if (citePickerRef.current?.contains(t)) return
-      setCitePicker(null)
-    }
-    window.addEventListener('pointerdown', h, true)
-    return () => window.removeEventListener('pointerdown', h, true)
-  }, [citePicker])
 
   // Recalcula el mapa de citas en cada render (p.ej. cuando `useStore()` refleja
   // una cita creada desde OTRA pestaña/instancia) — `lastCiteSigRef` evita
@@ -1105,46 +1044,8 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
           </div>
         </BubbleMenu>
       )}
-      <div ref={contentWrapRef} style={{ position: 'relative' }} onClick={onContentClick}
-        onMouseMove={onContentMouseMove} onMouseLeave={() => setCiteHover(null)}>
+      <div ref={contentWrapRef} style={{ position: 'relative' }} onClick={onContentClick}>
         <EditorContent editor={editor} />
-        {/* Botón flotante al pasar el ratón por un párrafo — asigna ESE párrafo a
-            un contexto (mismo patrón que RowContextChip). Si el párrafo YA tiene
-            cita, en vez de un «?» ciego muestra el CONTEXTO actual (chip de
-            color + nombre) — al pulsarlo se puede cambiar o quitar, no solo
-            crear otra cita (Alberto, 22 jul: "no veo el contexto junto a la
-            cita ni puedo ponerlo"). */}
-        {citeHover && !citePicker && (() => {
-          const existing = findCitationForPid(citeHover.pid)
-          let existingCtx = existing ? firstContextOf(existing.node) : null
-          let inherited = false
-          if (!existingCtx) {
-            const ancestor = findAncestorContext(citeHover.pid)
-            const ancestorCtx = ancestor ? firstContextOf(ancestor.node) : null
-            if (ancestorCtx) { existingCtx = ancestorCtx; inherited = true }
-          }
-          return existingCtx ? (
-            <button className="doc-cite-btn doc-cite-btn--assigned" style={{ top: citeHover.top, left: citeHover.left, ['--chip' as string]: contextColor(existingCtx.id), opacity: inherited ? 0.6 : 1 }}
-              onMouseDown={e => e.preventDefault()}
-              onClick={e => openCitePicker(e, citeHover.pid)}
-              title={inherited ? t('v2.inheritedContext', 'Heredado de la línea de arriba — clic para asignar uno propio') : t('v2.changeContext', 'Cambiar contexto')}>{existingCtx.text}</button>
-          ) : (
-            <button className="doc-cite-btn" style={{ top: citeHover.top, left: citeHover.left }}
-              onMouseDown={e => e.preventDefault()}
-              onClick={e => openCitePicker(e, citeHover.pid)}
-              title={t('v2.assignParagraphToContext', 'Asignar este párrafo a un contexto')}>?</button>
-          )
-        })()}
-        {citePicker && createPortal((
-          <div ref={citePickerRef} className="ctx-pick"
-            style={{ position: 'fixed', ...(citePicker.up ? { bottom: citePicker.y } : { top: citePicker.y }), left: citePicker.x, zIndex: 3000 }}
-            onClick={e => e.stopPropagation()}>
-            <ContextPicker
-              currentId={findCitationForPid(citePicker.pid) ? firstContextOf(findCitationForPid(citePicker.pid)!.node)?.id ?? null : null}
-              onPick={id => { setCitationContext(citePicker.pid, id); setCitePicker(null) }}
-            />
-          </div>
-        ), document.body)}
       </div>
       {editor && <DocMention editor={editor} selfId={node.id} />}
       {editor && <DocContextMention editor={editor} selfId={node.id} onAssign={setCitationContext} />}
