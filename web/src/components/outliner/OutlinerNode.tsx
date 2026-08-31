@@ -22,8 +22,7 @@ import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
 import { updateCalendarEvent, createCalendarEvent, fromRecToRRule } from '../../api/googleCalendar'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO } from '../../utils/dates'
 import { ensureTagInTree, findTagNodeBySlug } from '../../utils/tagsHelper'
-import { listContextsForParent, createContext, assignContext, unassignContext, nodeCtxRefs, contextColor, contextParent, isContextClosed, listContextTags, normalizeContextPath, findContextByPath, ensureContextPath, contextPath } from '../../utils/cajones'
-import RowContextChip from '../panels/RowContextChip'
+import { listContextsForParent, createContext, assignContext, nodeCtxRefs, contextColor, listContextTags, normalizeContextPath, findContextByPath, ensureContextPath, contextPath } from '../../utils/cajones'
 import { findContextRoot } from '../../utils/rootLookup'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { nextRecurrence, extractDateFromEnd, recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
@@ -4013,22 +4012,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
               )
             })()}
 
-            {/* Contexto badge — tres modos:
-                1) Confirmado (manuallySetContextId): el usuario asignó contexto via badge.
-                   Siempre visible, estilo sólido sin ✦. Click abre dropdown para cambiar.
-                2) Sugerencia IA (autoCtxResult): la IA clasificó el nodo. Solo cuando no
-                   hay contexto manual. Muestra ✦ y el nombre del contexto sugerido.
-                3) Placeholder "+ Contexto": el nodo es candidato a clasificación pero la IA
-                   no lo ha procesado aún (autoCtxResult===null) y no tiene contexto manual.
-                   Siempre visible para que el usuario pueda asignar contexto manualmente. */}
-            {/* Badge de contexto: no mostrar en nodos restringidos (dentro de contextos, perfil, papelera) */}
-            {/* Contexto: sistema único por _ctxRefs. Si el nodo NO tiene contexto y es
-                clasificable (ancla, fuera de contextos/perfil/papelera/diaria), mostrar
-                el chip «?» para asignarlo a mano. Si lo tiene, se ve en su chip abajo. */}
-            {!isContextNode && !isInsideRestrictedAncestor && !node.isDiaryEntry && isContextAnchor && nodeCtxRefs(node).length === 0 && (
-              <RowContextChip node={node} />
-            )}
-
             {/* Event badge — fecha/hora/lugar, click abre popup de propiedades del evento */}
             {node.isEvent && (
               <div className="node-qp-wrap">
@@ -4215,47 +4198,6 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   )
                 })
                 .filter(Boolean)
-            })()}
-
-            {/* Chips de CONTEXTO/PROYECTO asignados por ID vía extraData._ctxRefs.
-                Se pintan como un contexto (con caja) y el color del contexto. Clic →
-                abre el contexto. Cerrado → tachado y atenuado. */}
-            {!isContextNode && !isInsideRestrictedAncestor && (() => {
-              const ids = nodeCtxRefs(node)
-              if (ids.length === 0) return null
-              return ids.map(cid => {
-                const cj = store.getNode(cid)
-                if (!cj || cj.deletedAt) return null
-                const color = contextColor(cid)
-                const closed = isContextClosed(cj)
-                const parent = contextParent(cid)
-                return (
-                  <span
-                    key={`ctxref-${cid}`}
-                    className="context-inline"
-                    title={closed ? t('tip.contextClosed') : (parent ? `${parent.text} › ${cj.text}` : t('tip.openContext'))}
-                    onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
-                    onClick={e => { e.preventDefault(); e.stopPropagation(); navigate(`/node/${cid}`) }}
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 3,
-                      background: color + '18', color, border: `1px solid ${color}40`,
-                      borderRadius: 4, fontSize: '0.8em', fontWeight: 500,
-                      padding: '0 4px 0 5px', marginLeft: 4, cursor: 'pointer',
-                      textDecoration: closed ? 'line-through' : 'none',
-                      opacity: closed ? 0.6 : 1,
-                    }}
-                  >
-                    {cj.text || 'Contexto'}
-                    <button
-                      className="ctx-chip-remove"
-                      title={t('tip.removeContext')}
-                      onMouseDown={e => { e.preventDefault(); e.stopPropagation() }}
-                      onClick={e => { e.preventDefault(); e.stopPropagation(); unassignContext(mirrorOfId ?? node.id, cid) }}
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color, opacity: 0.6, padding: 0, fontSize: '1em', lineHeight: 1, display: 'flex' }}
-                    >×</button>
-                  </span>
-                )
-              }).filter(Boolean)
             })()}
 
             {/* Badge de fecha + botones de acción rápida en hover */}
