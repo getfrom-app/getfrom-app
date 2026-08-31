@@ -1,7 +1,43 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-30 (Web v9.10.15, iOS build 180)
+> Última actualización: 2026-08-31 (Web v9.10.24)
+
+---
+
+## Sesión 2026-08-31 (sesión 15) — planner en vivo, chat de Agenda con recordatorios reales, memoria del perfil unificada
+
+Web **v9.10.20 → v9.10.24**. Detalle completo en
+`logs/2026-08-31-sesion15-planner-vivo-memoria-unificada.md`.
+
+- **Planner**: línea de "ahora" congelada desde el montaje → tick por minuto sincronizado al reloj real
+  (`PlannerPanel.tsx`; el primer intento se aplicó por error a `CalendarPlanner.tsx`, código huérfano
+  nunca importado — revertido). Eventos (gcal crudo o nodo `isEvent`) llevan ahora un sombreado tenue
+  del color de su CONTEXTO en vez de relleno pastel del color crudo de Google; las tareas se quedan sin
+  relleno (borde + barra de acento), diferenciándose de un vistazo.
+- **Bug de arquitectura real, fix de raíz**: `assistantCron.ts` (brief/evening/reminders/checkin) solo
+  procesaba usuarios con push o Telegram registrado — pero `notifyUser()` siempre escribe en
+  `assistant_messages` (lo que sirve el chat vía `GET /assistant/inbox`) ANTES de intentar cualquier
+  canal, así que sin push esa proactividad NUNCA se generaba, ni siquiera para verla en el propio chat.
+  Ahora procesa a cualquier usuario con fila de `assistantPrefs` (se crea sola al primer uso),
+  independiente del canal de notificación.
+- **Chat**: recordatorios con `kind`/`dueAt` de extremo a extremo (color propio, desaparecen del hilo
+  activo ~20 min tras su hora); saludo/check-in de tarde pasan de comprobar la hora solo al montar el
+  componente a revisarla cada minuto; fix de un bug donde un disparador interno
+  (`askProfileQuestion`) podía disparar la red de seguridad `isFalseConfirmation` y mostrar "No he
+  podido guardarlo bien" sin ningún mensaje de usuario delante (`internalTrigger` ahora viaja hasta el
+  servidor). Acciones de chat nuevas sobre tareas existentes: renombrar, reasignar contexto, posponer a
+  fecha exacta.
+- **Memoria del perfil, unificada de verdad**: "lo aprendido" vivía en CUATRO sitios distintos bajo el
+  mismo nodo Perfil de IA (tres formatos de hijos + el `body` que de verdad leen iOS/Telegram/chat
+  real) — solo convergían de forma perezosa al abrir la pantalla de Perfil, mientras los escritores de
+  hijos seguían creando hijos nuevos. Unificado en un único escritor (`rememberFactsLocal` en el
+  cliente, mismo formato/lógica que `rememberFacts` del servidor) que escribe directo en `body`.
+  Retirados 7 funciones/endpoint ya sin llamadores. Tope duro nuevo (200 líneas, antes ninguno) y
+  compactación semántica en segundo plano (funde duplicados dichos con otras palabras, nunca bloquea
+  el turno del usuario).
+- **Aviso de notificaciones push**: se ofrece en la sidebar (mismo patrón que el aviso de perfil) solo
+  cuando el permiso sigue sin decidir Y hay algo pendiente con hora en el futuro.
 
 ---
 
