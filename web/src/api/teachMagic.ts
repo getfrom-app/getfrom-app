@@ -14,7 +14,7 @@ import { apiRequest } from './client'
 import { store } from '../store/nodeStore'
 import { learningsStore } from '../store/learningsStore'
 import { buildClassifyContexts } from './autoClassify'
-import { PROFILE_KNOWLEDGE, isProfileKnowledge } from '../utils/knowledgeNodes'
+import { readProfileLines, rememberFactsLocal } from './userKnowledge'
 
 const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
 
@@ -36,16 +36,6 @@ function nodeTypeLabel(node: { status?: string | null; isEvent?: boolean; types?
 function currentContextLabel(node: { types?: string[] }): string {
   const userTypes = (node.types || []).filter(t => !BUILTIN_TAGS.has(t))
   return userTypes.length > 0 ? userTypes.join(', ') : ''
-}
-
-/** Líneas del perfil IA del usuario (hijos directos del nodo perfil). */
-function readProfileLines(): string[] {
-  const perfil = store.perfilIANode?.() ?? null
-  if (!perfil) return []
-  return store.children(perfil.id)
-    .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
-    .slice(0, 50)
-    .map(n => (n.text || '').trim())
 }
 
 /** Envía la corrección al servidor y devuelve las acciones interpretadas. */
@@ -107,25 +97,10 @@ function applyType(nodeId: string, setType: NonNullable<TeachResult['setType']>)
   }
 }
 
-/** Añade un hecho al perfil IA del usuario, bajo "🧠 Lo que From sabe sobre ti". */
-async function addProfileFact(fact: string): Promise<void> {
-  let perfil = store.perfilIANode?.() ?? null
-  if (!perfil) {
-    try { perfil = await store.getOrCreatePerfilIA() } catch { return }
-  }
-  if (!perfil) return
-  const LEARN_SECTION = PROFILE_KNOWLEDGE  // Fase 1: crea con texto viejo; reconoce ambos
-  let learnNode = store.children(perfil.id).find(n => !n.deletedAt && isProfileKnowledge(n.text))
-  if (!learnNode) {
-    const sibs = store.children(perfil.id).filter(n => !n.deletedAt)
-    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
-    learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfil.id, siblingOrder: maxOrder + 1000 })
-  }
-  const children = store.children(learnNode.id).filter(n => !n.deletedAt)
-  // Evitar duplicado exacto
-  if (children.some(n => (n.text || '').trim().toLowerCase() === fact.trim().toLowerCase())) return
-  const maxOrder = children.length > 0 ? Math.max(...children.map(c => c.siblingOrder)) : 0
-  store.createNode({ text: fact.trim(), parentId: learnNode.id, siblingOrder: maxOrder + 1000 })
+/** Añade un hecho al perfil IA del usuario — mismo escritor único que
+ *  cualquier otro hecho aprendido (chat, notas), ver userKnowledge.ts. */
+function addProfileFact(fact: string): void {
+  rememberFactsLocal([fact])
 }
 
 /**
@@ -145,7 +120,7 @@ export async function applyTeachResult(nodeId: string, result: TeachResult): Pro
     if (label) summary.push(`Tipo → ${label}`)
   }
   if (result.profileFact) {
-    await addProfileFact(result.profileFact)
+    addProfileFact(result.profileFact)
     summary.push(`Perfil: ${result.profileFact}`)
   }
   if (result.rule && result.rule.trim()) {

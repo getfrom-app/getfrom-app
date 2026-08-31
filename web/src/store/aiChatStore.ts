@@ -24,7 +24,7 @@ import { resolvePrompt } from '../utils/promptsHelper'
 import { extractUserKnowledge } from '../api/autoClassify'
 import { isProfileChatSession, PROFILE_CHAT_INSTRUCTIONS } from '../v2/profileChat'
 import { aiLangBase, aiLangBCP47 } from '../utils/aiLang'
-import { saveUserKnowledgeToProfile, readProfileLines } from '../api/userKnowledge'
+import { rememberFactsLocal, readProfileLines } from '../api/userKnowledge'
 import { getAgentData, getAgentReferencedElements, readElementContent } from '../utils/agentesHelper'
 import { isInPapelera, parseExtraData } from '../utils/papeleraHelper'
 import { listContextElementsDeep } from '../utils/contextElements'
@@ -768,7 +768,7 @@ class AIChatStore {
       const today = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
       const knowledge = await extractUserKnowledge(trimmed, existingProfile || undefined, contextName, today)
       if (!knowledge) return
-      await saveUserKnowledgeToProfile(knowledge.people, knowledge.facts, knowledge.obsolete)
+      rememberFactsLocal([...knowledge.people, ...knowledge.facts], knowledge.obsolete)
       // En el CHAT DE PERFIL, lo que se guarda se dice en voz alta (Alberto, 5 ago
       // 2026: "la IA lo adaptará para que encaje en el perfil y lo añadirá
       // directamente, avisando al usuario de que lo ha hecho"). Determinista: es lo

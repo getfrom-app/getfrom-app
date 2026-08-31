@@ -1,22 +1,34 @@
 /**
  * userKnowledge — Persistencia del conocimiento que Fromly aprende sobre el usuario.
  *
- * Fromly extrae personas y hechos del usuario desde dos fuentes:
- *  · Nodos que el usuario escribe (OutlinerNode → extractUserKnowledge)
- *  · Conversaciones con Magic en el chat (aiChatStore → learnFromUserMessage)
+ * Fromly extrae personas y hechos del usuario desde varias fuentes — notas que
+ * escribe (OutlinerNode → extractUserKnowledge), conversaciones con Magic en
+ * el chat (aiChatStore → learnFromUserMessage), correcciones ("enseñar a
+ * Magic", teachMagic.ts → addProfileFact) — y TODAS convergen en un único
+ * escritor (`rememberFactsLocal`, más abajo) que guarda en el `body` del
+ * nodo Perfil de IA, sección "🧠 Lo que Fromly ha aprendido".
  *
- * Todo se guarda bajo "🧠 Lo que From sabe sobre ti" en el perfil IA, de forma
- * que el chat y el clasificador lo reciben de forma integral en cada interacción.
+ * ⚠️ Hasta el 31 ago 2026 esto NO era así: había tres formatos de
+ * almacenamiento distintos conviviendo bajo el mismo perfil — hijos
+ * "Personas: X, Y" / "Hechos: A, B" (este fichero), un hijo por hecho suelto
+ * (teachMagic.ts) y el `body` (servidor, `assistantMemory.ts`, usado por
+ * iOS/Telegram/chat vía servidor). Solo `getOrCreateProfileDoc` migraba
+ * hijos→body, y encima de forma PEREZOSA (solo al abrir la pantalla de
+ * Perfil) — así que lo aprendido conversando en la web nunca llegaba a
+ * Telegram/iOS hasta que el usuario abría esa pantalla, y mientras tanto
+ * cada escritor seguía creando hijos nuevos, deshaciendo cualquier
+ * convergencia (Alberto, 31 ago 2026: "lo que el usuario cuenta en el chat
+ * debe quedar en la memoria de fromly para todo... hay que organizar esta
+ * info, no acumular lo innecesario"). Mismo formato/lógica que
+ * `assistantMemory.ts` en el servidor (normalización, "obsolete" retira en
+ * vez de acumular, tope duro) — mantenerlos alineados si uno cambia.
  */
 
 import { store } from '../store/nodeStore'
 import type { Node } from '../types'
-import { PROFILE_KNOWLEDGE, PROFILE_KNOWLEDGE_OLD, CONTEXT_KNOWLEDGE, CONTEXT_KNOWLEDGE_OLD, CONTEXT_KNOWLEDGE_OLD_FROMLY, isProfileKnowledge, isContextKnowledge } from '../utils/knowledgeNodes'
+import { PROFILE_KNOWLEDGE, PROFILE_KNOWLEDGE_OLD, CONTEXT_KNOWLEDGE, CONTEXT_KNOWLEDGE_OLD, CONTEXT_KNOWLEDGE_OLD_FROMLY, isContextKnowledge } from '../utils/knowledgeNodes'
 import { markdownToHtml } from '../utils/importMarkdown'
 import { htmlToMarkdown } from '../utils/htmlMarkdown'
-
-// Canónico de creación (Fase 2 = texto nuevo "Fromly"). Los finders reconocen viejo + nuevo.
-const LEARN_SECTION = PROFILE_KNOWLEDGE
 
 /**
  * Devuelve el nodo perfil IA, creándolo de forma SÍNCRONA si no existe.
@@ -90,97 +102,94 @@ export function readProfileLines(): string[] {
     .map(n => (n.text || '').trim())
 }
 
-/**
- * Guarda personas y hechos bajo "🧠 Lo que From sabe sobre ti".
- * Crea el nodo de sección si no existe y deduplica items dentro de cada sublínea.
- */
-// Normaliza para comparar (sin acentos, minúsculas, espacios colapsados).
-const _norm = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
+// ── Escritor único de lo aprendido ("🧠 Lo que Fromly ha aprendido") ────────
+//
+// Mismo formato y misma lógica que `rememberFacts` en el servidor
+// (`server/src/services/assistantMemory.ts`): una sección al final del
+// `body` del Perfil, un `<p>hecho</p>` por línea, deduplicada por texto
+// normalizado, con "obsolete" retirando en vez de acumular, y un tope duro
+// para que crecer sin límite no sea posible. TODOS los escritores de hechos
+// del usuario (chat, notas, "enseñar a Magic") pasan por aquí — ver el
+// comentario de cabecera del fichero.
 
-export async function saveUserKnowledgeToProfile(people: string[], facts: string[], obsolete: string[] = []): Promise<void> {
-  if (!people.length && !facts.length && !obsolete.length) return
+const LEARNED_HEADING = '🧠 Lo que Fromly ha aprendido'
+const LEARNED_HEADING_HTML = `<p><strong>${LEARNED_HEADING}</strong></p>`
+const LEARNED_HEADING_RE = /<p>(?:(?!<\/p>)[\s\S])*🧠 Lo que Fromly ha aprendido(?:(?!<\/p>)[\s\S])*<\/p>/i
+/** Cuántas líneas aprendidas se guardan como máximo — pasado esto, se
+ *  descartan las MÁS ANTIGUAS (nunca las recién aprendidas). Puro freno de
+ *  seguridad: la deduplicación de abajo ya evita que un mismo hecho repetido
+ *  infle el documento; esto solo cubre el caso de muchos hechos DISTINTOS de
+ *  verdad acumulados durante meses. */
+const MAX_LEARNED_LINES = 200
 
-  let perfil = store.perfilIANode?.() ?? null
-  if (!perfil) {
-    try { perfil = await store.getOrCreatePerfilIA() } catch { return }
-  }
-  if (!perfil) return
-
-  let learnNode = store.children(perfil.id).find(n => !n.deletedAt && isProfileKnowledge(n.text))
-  if (!learnNode) {
-    const sibs = store.children(perfil.id).filter(n => !n.deletedAt)
-    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
-    learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfil.id, siblingOrder: maxOrder + 1000 })
-  }
-
-  // Limpiar línea antigua "Palabras clave:" (formato obsoleto)
-  const kwNode = store.children(learnNode.id).filter(n => !n.deletedAt).find(n => (n.text || '').startsWith('Palabras clave:'))
-  if (kwNode) store.deleteNode(kwNode.id)
-
-  // Items OBSOLETOS a eliminar (normalizados, con longitud mínima para no borrar por
-  // coincidencias triviales). Un item existente se quita si comparte texto sustancial
-  // con alguno de los obsoletos (en cualquier dirección).
-  const obs = obsolete.map(_norm).filter(o => o.length >= 8)
-  const isObsolete = (item: string) => {
-    const ni = _norm(item)
-    return obs.some(o => ni.includes(o) || o.includes(ni))
-  }
-
-  const upsertSub = (prefix: string, items: string[], order: number) => {
-    const cleanItems = items
-      .map(item => item.replace(new RegExp(`^${prefix}:\\s*`, 'i'), '').trim())
-      .filter(Boolean)
-    const sub = store.children(learnNode!.id).filter(n => !n.deletedAt).find(n => (n.text || '').startsWith(prefix + ':'))
-    if (!sub) {
-      if (cleanItems.length) store.createNode({ text: prefix + ': ' + cleanItems.join(', '), parentId: learnNode!.id, siblingOrder: order })
-      return
-    }
-    // Parte los items existentes, ELIMINA los obsoletos, y AÑADE los nuevos (sin duplicar).
-    const body = (sub.text || '').replace(new RegExp(`^${prefix}:\\s*`, 'i'), '')
-    let existing = body.split(/\s*,\s*/).map(s => s.trim()).filter(Boolean)
-    const before = existing.length
-    if (obs.length) existing = existing.filter(it => !isObsolete(it))
-    const existLower = existing.map(_norm)
-    let added = 0
-    for (const it of cleanItems) {
-      const nit = _norm(it)
-      if (!existLower.some(e => e.includes(nit) || nit.includes(e))) { existing.push(it); existLower.push(nit); added++ }
-    }
-    if (added > 0 || existing.length !== before) {
-      store.updateNode(sub.id, { text: prefix + ': ' + existing.join(', ') })
-    }
-  }
-
-  const flc = store.children(learnNode.id).filter(n => !n.deletedAt)
-  const maxBase = flc.length > 0 ? Math.max(...flc.map(c => c.siblingOrder)) : 0
-  upsertSub('Personas', people, maxBase + 1000)
-  upsertSub('Hechos', facts, maxBase + 2000)
-
-  // Curador automático: si el conocimiento acumulado supera el umbral, compacta.
-  maybeCompactProfile()
+function stripHtmlLine(html: string): string {
+  return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
-// ── Curador del perfil (tope + compactación inteligente) ──────────────────────
+function splitLearnedSection(rawBody: string): { userHtml: string; learnedLines: string[] } {
+  const idx = rawBody.search(LEARNED_HEADING_RE)
+  if (idx === -1) return { userHtml: rawBody, learnedLines: [] }
+  const userHtml = rawBody.slice(0, idx)
+  const learnedHtml = rawBody.slice(idx).replace(LEARNED_HEADING_RE, '')
+  const learnedLines = learnedHtml.split(/<\/p>|<br\s*\/?>|\n/i).map(stripHtmlLine).filter(Boolean)
+  return { userHtml, learnedLines }
+}
 
-const COMPACT_THRESHOLD = 40   // nº total de items aprendidos que dispara la limpieza
+/** Compara sin acentos, sin mayúsculas y sin puntuación final. */
+function normalizeFact(s: string): string {
+  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[.,;:!?]+$/, '').replace(/\s+/g, ' ').trim()
+}
 
-/** Lee las listas actuales de Personas/Hechos del nodo de aprendizaje. */
-export function readLearnedItems(): { people: string[]; facts: string[]; learnNodeId: string | null } {
+function escapeHtmlFact(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+/** Lo que Fromly ha aprendido, ya sin HTML — para mostrarlo (Ajustes → Magic)
+ *  o darle contexto al extractor. */
+export function readLearnedFacts(): string[] {
   const perfil = store.perfilIANode?.() ?? null
-  if (!perfil) return { people: [], facts: [], learnNodeId: null }
-  const learnNode = store.children(perfil.id).find(n => !n.deletedAt && isProfileKnowledge(n.text))
-  if (!learnNode) return { people: [], facts: [], learnNodeId: null }
-  const parseSub = (prefix: string): string[] => {
-    const sub = store.children(learnNode.id).filter(n => !n.deletedAt).find(n => (n.text || '').startsWith(prefix + ':'))
-    if (!sub) return []
-    return (sub.text || '').slice(prefix.length + 1).split(',').map(s => s.trim()).filter(Boolean)
-  }
-  return { people: parseSub('Personas'), facts: parseSub('Hechos'), learnNodeId: learnNode.id }
+  if (!perfil) return []
+  return splitLearnedSection(perfil.body || '').learnedLines
 }
 
-function countLearnedItems(): number {
-  const { people, facts } = readLearnedItems()
-  return people.length + facts.length
+/**
+ * Guarda hechos nuevos del usuario y retira los que `obsolete` deja
+ * anticuados — misma sección, mismo documento que el servidor, así que lo
+ * aprendido en la web ya está ahí para Telegram/iOS en el siguiente turno,
+ * sin esperar a que se abra la pantalla de Perfil. Síncrono (usa
+ * `getOrCreateProfileDoc`, que ya migra cualquier hijo legacy que quedara de
+ * antes de este cambio) — se puede llamar directamente desde cualquier flujo
+ * sin `await`.
+ */
+export function rememberFactsLocal(facts: string[], obsolete: string[] = []): void {
+  const clean = facts.map(f => f.trim()).filter(f => f.length > 3 && f.length < 300)
+  const obsoleteClean = obsolete.map(f => f.trim()).filter(f => f.length > 3)
+  if (clean.length === 0 && obsoleteClean.length === 0) return
+
+  const perfil = getOrCreateProfileDoc()
+  const { userHtml, learnedLines } = splitLearnedSection(perfil.body || '')
+
+  const obsoleteNorm = obsoleteClean.map(normalizeFact)
+  const survivors = obsoleteNorm.length === 0
+    ? learnedLines
+    : learnedLines.filter(line => {
+        const n = normalizeFact(line)
+        return !obsoleteNorm.some(o => n.includes(o) || o.includes(n))
+      })
+
+  const known = new Set(survivors.map(normalizeFact))
+  const fresh = clean.filter(f => !known.has(normalizeFact(f)))
+  if (fresh.length === 0 && survivors.length === learnedLines.length) return
+
+  let newLearnedLines = [...survivors, ...fresh]
+  if (newLearnedLines.length > MAX_LEARNED_LINES) {
+    newLearnedLines = newLearnedLines.slice(newLearnedLines.length - MAX_LEARNED_LINES)
+  }
+
+  const learnedHtml = newLearnedLines.length > 0
+    ? LEARNED_HEADING_HTML + newLearnedLines.map(f => `<p>${escapeHtmlFact(f)}</p>`).join('')
+    : ''
+  store.updateNode(perfil.id, { body: userHtml + learnedHtml })
 }
 
 /** Limpia el nodo huérfano "🧠 Lo que From sabe" (sin "sobre ti") que quedó como
@@ -231,60 +240,3 @@ export function migrateContextKnowledgeToMemoria(): void {
   try { localStorage.setItem('from_knowledge_memoria_v1', '1') } catch { /* */ }
 }
 
-/** Devuelve (creando si falta) el nodo "🧠 Lo que From sabe sobre ti" — lo que
- *  Fromly escribe de forma autónoma en el Perfil. Para abrirlo y revisarlo. */
-export function getOrCreateLearnNode(): Node | null {
-  const perfil = ensurePerfilSync()
-  if (!perfil) return null
-  let learnNode = store.children(perfil.id).find(n => !n.deletedAt && isProfileKnowledge(n.text))
-  if (!learnNode) {
-    const sibs = store.children(perfil.id).filter(n => !n.deletedAt)
-    const maxOrder = sibs.length > 0 ? Math.max(...sibs.map(c => c.siblingOrder)) : 0
-    learnNode = store.createNode({ text: LEARN_SECTION, parentId: perfil.id, siblingOrder: maxOrder + 1000 })
-  }
-  return learnNode
-}
-
-/** Sobrescribe las sublíneas Personas/Hechos con listas ya compactadas. */
-function writeLearnedItems(learnNodeId: string, people: string[], facts: string[]) {
-  const setSub = (prefix: string, items: string[]) => {
-    const sub = store.children(learnNodeId).filter(n => !n.deletedAt).find(n => (n.text || '').startsWith(prefix + ':'))
-    const text = items.length ? `${prefix}: ${items.join(', ')}` : ''
-    if (sub) {
-      if (text) store.updateNode(sub.id, { text })
-      else store.deleteNode(sub.id)  // sin items → quitar la línea
-    } else if (text) {
-      store.createNode({ text, parentId: learnNodeId })
-    }
-  }
-  setSub('Personas', people)
-  setSub('Hechos', facts)
-}
-
-let _compacting = false
-
-/** Compacta el conocimiento del perfil vía el curador del servidor.
- *  Seguro: ante cualquier fallo el servidor devuelve las listas intactas. */
-export async function compactProfileKnowledge(): Promise<{ before: number; after: number } | null> {
-  if (_compacting) return null
-  const { people, facts, learnNodeId } = readLearnedItems()
-  if (!learnNodeId || people.length + facts.length === 0) return null
-  _compacting = true
-  try {
-    const { compactKnowledge } = await import('./autoClassify')
-    const r = await compactKnowledge(people, facts)
-    writeLearnedItems(learnNodeId, r.people, r.facts)
-    return { before: people.length + facts.length, after: r.people.length + r.facts.length }
-  } catch {
-    return null
-  } finally {
-    _compacting = false
-  }
-}
-
-/** Dispara el curador si se supera el umbral. Fire-and-forget, una vez a la vez. */
-function maybeCompactProfile() {
-  if (_compacting) return
-  if (countLearnedItems() <= COMPACT_THRESHOLD) return
-  void compactProfileKnowledge()
-}

@@ -30,7 +30,7 @@ import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, buildClassifyContexts, CONFIDENCE_THRESHOLD, type ClassifyResult } from '../../api/autoClassify'
-import { saveUserKnowledgeToProfile } from '../../api/userKnowledge'
+import { rememberFactsLocal, readProfileLines } from '../../api/userKnowledge'
 import Icon from '../../v2/components/Icon'
 import { sanitizeHtml } from '../../utils/sanitizeHtml'
 
@@ -380,19 +380,12 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
     extractedKnowledgeNodes.add(nodeId)
     hasExtractedUserKnowledgeRef.current = true
     try {
-      const perfilNode = store.perfilIANode?.() ?? null
-      const existingProfileLines: string[] = perfilNode
-        ? store.children(perfilNode.id)
-            .filter(n => !n.deletedAt && (n.text || '').trim().length > 3)
-            .slice(0, 50)
-            .map(n => (n.text || '').trim())
-        : []
-      const existingProfile = existingProfileLines.join('. ')
+      const existingProfile = readProfileLines().join('. ')
       // Enrutado: si el nodo está dentro de un contexto, solo extraer lo GLOBAL.
       const contextName = store.primaryContextName(nodeId)
       const knowledge = await extractUserKnowledge(text.trim(), existingProfile || undefined, contextName)
       if (!knowledge) return
-      await saveUserKnowledgeToProfile(knowledge.people, knowledge.facts)
+      rememberFactsLocal([...knowledge.people, ...knowledge.facts])
     } catch { /* silencioso */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

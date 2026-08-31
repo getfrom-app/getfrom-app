@@ -18,7 +18,7 @@ import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
 import { useLearningsStore } from '../../store/learningsStore'
 import { ALL_ITEMS, SUBTITLES, type Tab } from './settingsNav'
-import { readLearnedItems, getOrCreateLearnNode } from '../../api/userKnowledge'
+import { readLearnedFacts, getOrCreateProfileDoc } from '../../api/userKnowledge'
 import { findContextRoot } from '../../utils/rootLookup'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
 
@@ -38,11 +38,10 @@ function MagicPane() {
 
   void s.nodesVersion
   void ls           // re-render cuando cambian las reglas de Magic
-  const learned = readLearnedItems()
-  const total = learned.people.length + learned.facts.length
+  const total = readLearnedFacts().length
 
   function openLearned() {
-    const node = getOrCreateLearnNode()
+    const node = getOrCreateProfileDoc()
     if (node) navigate(`/node/${node.id}`)
   }
 
