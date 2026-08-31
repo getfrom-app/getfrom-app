@@ -20,7 +20,7 @@
  */
 import { store } from '../store/nodeStore'
 import { findAgendaRoot } from './agendaHelper'
-import { nodeCtxRefs } from './cajones'
+import { firstContextOf } from './cajones'
 import { CONFIDENCE_THRESHOLD } from '../api/autoClassify'
 import type { Node } from '../types'
 
@@ -44,12 +44,18 @@ export function getAgendaDescendantIds(): Set<string> {
   return ids
 }
 
-/** ¿Tiene el nodo un contexto REALMENTE aplicado (manual, _ctxRefs, o IA con confianza suficiente)? */
+/** ¿Tiene el nodo un contexto REALMENTE aplicado (manual, _ctxRefs, heredado por
+ *  posición en el árbol, o IA con confianza suficiente)? Mismo criterio que
+ *  `firstContextOf` (el que pinta el chip `#contexto` en cada fila) — antes esta
+ *  función solo miraba `_ctxRefs` propios, así que un elemento escrito dentro de
+ *  la nota de un contexto (herencia por posición) enseñaba su chip en pantalla y
+ *  A LA VEZ caía en "por revisar", vaciando de sentido la bandeja (Alberto, 31
+ *  ago 2026: "veo que algunos elementos ya tienen contexto"). */
 function hasAnyContext(node: Node): boolean {
   const userTypes = (node.types || []).filter(t => !BUILTIN_TAGS.has(t))
   if (userTypes.length > 0) return true
   if (/@\w/.test(node.text || '')) return true
-  if (nodeCtxRefs(node).length > 0) return true
+  if (firstContextOf(node)) return true
   try {
     const ed = JSON.parse(node.extraData || '{}')
     if (ed._contextManuallySet === '1') return true

@@ -36,7 +36,7 @@
 //     cockpit (atrasadas/sin fecha) + planner.
 // La nota diaria nunca tiene Tab 2 "Chat" (`centerIsDiary`, ver V2ElementView.tsx)
 // — aquí no aplica porque no vive en `elementId`/centro, sino embebida abajo.
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore, store } from '../../store/nodeStore'
 import ElementsPanel, { type ElemKind } from '../../components/panels/ElementsPanel'
@@ -228,6 +228,19 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
     if (mode === 'agenda' && dayNoteId) markAgentResultSeen(dayNoteId)
   }, [mode, dayNoteId])
 
+  // Nota del día — botón plegar/desplegar arriba de la columna (31 ago 2026,
+  // Alberto: vuelve el botón que se había quitado el 30 ago — "que se abra con
+  // un botón en la parte superior... y se cierre con el mismo botón, con la
+  // animación suave de Fromly"). Persistida: recuerda la preferencia entre
+  // sesiones, igual que `COLLAPSE_KEY` en DailyCockpit.tsx. Abierta por
+  // defecto — mismo estado final al que había llegado sin botón.
+  const [noteOpen, setNoteOpen] = useState(() => localStorage.getItem('from_agenda_note_open') !== '0')
+  const toggleNoteOpen = () => setNoteOpen(v => {
+    const next = !v
+    localStorage.setItem('from_agenda_note_open', next ? '1' : '0')
+    return next
+  })
+
   const TAB1_LABEL: Record<RightMode, string> = {
     contexto: t('v2.rightColumn.tabContext', 'Contexto'),
     chat: t('v2.rightColumn.tabChat', 'Chat'),
@@ -403,15 +416,31 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
       )}
       {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (!elementId || centerIsDiary) && (
         <div className="v2-right-fill v2-agenda-col">
-          {/* Nota del día — siempre abierta arriba, panel fijo (30 ago 2026,
-              Alberto: revertido desde el botón plegable de la misma tarde —
-              "ponla arriba siempre abierta... quita el botón de nota del
-              día"). Altura propia + scroll interno, no se lleva todo el
-              alto de la columna. */}
+          {/* Nota del día — se abre/cierra con un botón arriba de la columna,
+              animación suave (grid-template-rows, mismo criterio de "salida
+              animada, no de golpe" que `dc-row-out` en DailyCockpit). Vuelve
+              31 ago 2026 (Alberto: el botón se había quitado el 30 ago —
+              "ponla arriba siempre abierta... quita el botón" — y ahora pide
+              recuperarlo). El editor NO se desmonta al plegar (solo se
+              recorta visualmente): desmontarlo perdería la posición del
+              cursor y podría solaparse con el siguiente montaje. */}
           {dayNoteId && (
-            <div className="v2-agenda-note-panel">
-              <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
-            </div>
+            <>
+              <button
+                type="button"
+                className={`v2-agenda-note-toggle ${noteOpen ? 'open' : ''}`}
+                onClick={toggleNoteOpen}
+                aria-expanded={noteOpen}
+              >
+                <span className="v2-agenda-note-toggle-chevron"><Icon name="chevron-right" size={12} /></span>
+                {t('v2.rightColumn.dailyNote', 'Nota del día')}
+              </button>
+              <div className={`v2-agenda-note-collapse ${noteOpen ? 'open' : ''}`}>
+                <div className="v2-agenda-note-panel">
+                  <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
+                </div>
+              </div>
+            </>
           )}
 
           <div className="v2-agenda-cockpit-strip">

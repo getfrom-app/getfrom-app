@@ -1138,7 +1138,37 @@ export class NodeStore {
     this.notify()
     this.scheduleSyncDebounced()
     opsClient.onCreate(node)  // Fase 3: doble escritura en sombra (flag from_ops_v1)
+    this.inheritContextFromParent(node, params)
     return node
+  }
+
+  /** Si el nodo nace dentro de una nota/documento/tarea/evento/timeblock que YA
+   *  tiene contexto, se le asigna el MISMO contexto de verdad (`_ctxRefs`, no
+   *  solo herencia visual) — salvo que el usuario lo cambie después (Alberto,
+   *  31 ago 2026: "si una tarea se crea en cualquier nota o documento o dentro
+   *  de otra tarea... que ya tiene contexto, se debe aplicar automáticamente
+   *  el mismo contexto"). `import()` dinámico a propósito: `utils/cajones.ts`
+   *  importa `store` de ESTE archivo — un `import` estático arriba crearía un
+   *  ciclo top-level (mismo motivo por el que `AGENDA_THREAD_KEY` se movió a
+   *  `assistantStore.ts` en vez de vivir en el componente que lo usa); el
+   *  dinámico se resuelve en runtime, sin ciclo de evaluación. Best-effort:
+   *  si falla (import, nodo ya no existe…) no bloquea la creación, que ya
+   *  ocurrió arriba.
+   *  Se excluyen: nodos sin padre (nada que heredar), nodos con id
+   *  determinista (estructura del sistema: Agenda/Año/Mes/Perfil/diario — ver
+   *  «IDs deterministas» en FROM.md) y nodos que nacen YA marcados como
+   *  contexto/conocimiento (`_ctx`/`_areaCtx`) — esos cuelgan del árbol por
+   *  posición, no por `_ctxRefs`, y no deben heredar el de un contexto padre. */
+  private inheritContextFromParent(node: Node, params: { parentId: string | null; predefinedId?: string; isDiaryEntry?: boolean; extraData?: Record<string, unknown> }) {
+    if (!params.parentId || params.predefinedId || params.isDiaryEntry) return
+    const ex = params.extraData
+    if (ex && (ex._ctx || ex._areaCtx || ex._ctxRefs)) return
+    import('../utils/cajones').then(({ firstContextOf, setNodeContext }) => {
+      const fresh = this.nodes.get(node.id)
+      if (!fresh || fresh.deletedAt) return
+      const ctx = firstContextOf(fresh)
+      if (ctx) setNodeContext(node.id, ctx.id)
+    }).catch(() => { /* best-effort */ })
   }
 
   updateNode(id: string, changes: Partial<Node>): void {

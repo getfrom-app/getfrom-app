@@ -14,6 +14,7 @@
  */
 
 import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
@@ -22,7 +23,10 @@ import { ensureDayPath, diaryDayTitle } from '../../utils/agendaHelper'
 import { bumpReschedule, toggleTaskDone, detachFromRecurrence } from '../../utils/dailyCockpit'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { gcalEventNodeId } from '../../utils/deterministicId'
-import { firstContextOf, contextColor } from '../../utils/cajones'
+import {
+  firstContextOf, contextColor, listContextTags, setNodeContext, normalizeContextPath,
+  findContextByPath, ensureContextPath, type ContextTag,
+} from '../../utils/cajones'
 import {
   getCalendarEventsRange,
   createCalendarEvent,
@@ -460,6 +464,20 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const newBlockRef                   = useRef<HTMLInputElement>(null)
   const [newAllDay, setNewAllDay]     = useState<{day:Date;text:string}|null>(null)
   const newAllDayRef                  = useRef<HTMLInputElement>(null)
+  // Mismo motivo que `newBlockCommittedRef` (ver más abajo) — Enter desmonta
+  // el input, el desmontaje dispara un blur nativo que volvería a llamar a
+  // commitNewAllDay con el cierre de ANTES del `setNewAllDay(null)`, creando
+  // la tarea dos veces. También se marca en Escape (no solo tras commitir),
+  // para que un blur tardío tras cancelar no la cree igualmente.
+  const newAllDayCommittedRef         = useRef(false)
+  // Contexto elegido con el predictivo «#» dentro de la tarea del planner
+  // (Alberto, 31 ago 2026: "me gustaría poder poner contextos con # también
+  // en las tareas del planner, con un predictivo igual que en cualquier
+  // texto") — mismo mecanismo que `DocContextMention.tsx`, adaptado a un
+  // `<input>` plano en vez del editor TipTap.
+  const [allDayCtxMention, setAllDayCtxMention] = useState<{ query: string; start: number } | null>(null)
+  const [allDayCtxSel, setAllDayCtxSel]         = useState(0)
+  const [allDayPickedCtxId, setAllDayPickedCtxId] = useState<string | null>(null)
   const [snapLine, setSnapLine]       = useState<{dayKey:string;top:number}|null>(null)
   // Clic en el hueco vacío de una celda del mes → elegir tarea o evento
   // (Alberto, 27 ago 2026: el número del día abre el día; el resto de la
@@ -884,21 +902,78 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   }
 
   // ── Nueva tarea «todo el día» (fecha sin hora) ───────────────────────────
-  function commitNewAllDay(keepOpen = false) {
-    if (!newAllDay) return
-    const day = newAllDay.day
+  // `keepOpen` retirado (31 ago 2026, Alberto: "al escribir una tarea y dar
+  // enter se crea otro placeholder para otra tarea, y no debería, simplemente
+  // se debe confirmar la tarea que se está escribiendo") — Enter ya no
+  // encadena un input en blanco, solo confirma y cierra, igual que el bloque
+  // con hora (`commitNewBlock`).
+  function commitNewAllDay() {
+    if (!newAllDay || newAllDayCommittedRef.current) return
+    newAllDayCommittedRef.current = true
     if (newAllDay.text.trim()) {
-      store.createNode({
+      const newNode = store.createNode({
         text:     newAllDay.text.trim(),
-        parentId: ensureDayPath(day).id,
-        due:      toMidnight(day),   // medianoche = todo el día (sin hora)
+        parentId: ensureDayPath(newAllDay.day).id,
+        due:      toMidnight(newAllDay.day),   // medianoche = todo el día (sin hora)
         isTask:   true,
       })
+      if (allDayPickedCtxId) setNodeContext(newNode.id, allDayPickedCtxId)
       showToast(t('ai.actionTaskCreated', 'Tarea creada'))
     }
-    // keepOpen: encadenar varias tareas el mismo día sin reabrir
-    if (keepOpen) setNewAllDay({ day, text: '' })
-    else setNewAllDay(null)
+    setNewAllDay(null)
+    setAllDayCtxMention(null)
+    setAllDayPickedCtxId(null)
+  }
+
+  // ── Predictivo «#contexto» dentro de la tarea del planner ────────────────
+  const normCtx = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+
+  // Posición del popup — anclado al input (no a la posición del caret dentro
+  // del texto, más simple y de sobra para un campo de una sola línea corta).
+  function allDayMentionPos(el: HTMLInputElement | null): { top: number; left: number } {
+    if (!el) return { top: 0, left: 0 }
+    const r = el.getBoundingClientRect()
+    return { top: Math.min(r.bottom + 4, window.innerHeight - 220), left: Math.min(r.left, window.innerWidth - 280) }
+  }
+
+  function detectAllDayCtxMention(value: string, caret: number) {
+    const before = value.slice(0, caret)
+    const match = /(^|\s)#([^\s#]{0,60})$/.exec(before)
+    if (!match) { setAllDayCtxMention(null); return }
+    setAllDayCtxMention({ query: match[2], start: caret - match[2].length - 1 })
+    setAllDayCtxSel(0)
+  }
+
+  const allDayCtxMatches = useMemo((): (ContextTag | { create: string })[] => {
+    if (!allDayCtxMention) return []
+    const q = normCtx(allDayCtxMention.query.trim())
+    const tags = listContextTags().filter(tg => !q || normCtx(tg.path).includes(q) || normCtx(tg.label).includes(q)).slice(0, 8)
+    const typed = normalizeContextPath(allDayCtxMention.query)
+    const out: (ContextTag | { create: string })[] = [...tags]
+    if (typed && !findContextByPath(typed)) out.push({ create: allDayCtxMention.query.trim() })
+    return out
+  }, [allDayCtxMention])
+
+  function pickAllDayCtx(item: ContextTag | { create: string }) {
+    if (!allDayCtxMention || !newAllDay) return
+    let ctxId: string | null
+    let label: string
+    if ('create' in item) {
+      const created = ensureContextPath(item.create)
+      if (!created) { setAllDayCtxMention(null); return }
+      ctxId = created.id
+      label = item.create
+    } else {
+      ctxId = item.node.id
+      label = item.path
+    }
+    const { start, query } = allDayCtxMention
+    const value = newAllDay.text
+    const next = `${value.slice(0, start)}#${label} ${value.slice(start + 1 + query.length)}`
+    setNewAllDay(s => s ? { ...s, text: next } : s)
+    setAllDayPickedCtxId(ctxId)
+    setAllDayCtxMention(null)
+    setTimeout(() => newAllDayRef.current?.focus(), 0)
   }
 
   // ── Drag bloque en timeline ───────────────────────────────────────────────
@@ -1029,22 +1104,28 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
         onClick={e => {
           e.stopPropagation()
           if (justResized.current || justDragged.current) return
-          // CONSISTENCIA: cualquier evento de Google abre el modal de edición. Para
-          // un evento crudo es directo; para una tarea materializada (con gcalEventId)
-          // buscamos su evento. Una tarea pura (sin GCal) abre su nodo.
-          if (b.kind === 'gcal' && b.gcalEvent) { setEditingGcal(b.gcalEvent); return }
+          // Un bloque con `nodeId` es una TAREA de Fromly (con o sin hora — un
+          // evento no es más que una tarea con día y hora, ver FROM.md "Tarea y
+          // evento son lo mismo") — abre SIEMPRE su propio modal de tarea, con
+          // recurrencia y el resto de opciones, nunca el editor de Google
+          // Calendar (revertido 31 ago 2026, Alberto, con captura real: "esto es
+          // una tarea pero al hacer clic se abre el modal diciendo editar evento
+          // en Google Calendar... debería ser el modal normal de una tarea").
+          // La sincronización con Google sigue pasando igual en segundo plano
+          // (`syncNodeToGcal`/`pushEventToGcal`) — solo cambia qué modal se ve.
+          // Únicamente el evento CRUDO de Google (sin nodo propio en Fromly,
+          // `b.kind==='gcal'` sin `nodeId`) sigue abriendo `GCalEventEditor`: no
+          // hay ninguna tarea que mostrar en su lugar.
           if (b.nodeId) {
-            const node = store.getNode(b.nodeId)
-            const gid = node?.gcalEventId
-            const ev = gid ? gcalEvents.find(x => x.id === gid) : null
-            if (ev) { setEditingGcal(ev); return }
             // `navigate('/node/:id')` es una ruta que solo existe en el router de
             // v1 — el Planificador se reutiliza dentro del overlay del shell v2
             // (V2Chat.tsx), así que navegar por URL rompía el overlay en vez de
             // abrir nada (Alberto, 21 jul: "no se abre el modal"). Mismo patrón
             // que ya usa ElementsPanel para abrir nodos sin salir de v2.
             window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: b.nodeId } }))
+            return
           }
+          if (b.kind === 'gcal' && b.gcalEvent) { setEditingGcal(b.gcalEvent); return }
         }}
         onContextMenu={e => {
           e.preventDefault(); e.stopPropagation()
@@ -1483,7 +1564,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                   <div key={d.toISOString()} className="pp-allday-col" style={{width:colW, flexShrink:0}}
                     onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}
                     title={t('tip.clickAddUntimed')}
-                    onClick={e=>{ if ((e.target as HTMLElement).closest('.pp-allday-chip, input')) return; setNewAllDay({ day: d, text: '' }); setTimeout(()=>newAllDayRef.current?.focus(), 20) }}>
+                    onClick={e=>{ if ((e.target as HTMLElement).closest('.pp-allday-chip, input')) return; newAllDayCommittedRef.current = false; setAllDayPickedCtxId(null); setNewAllDay({ day: d, text: '' }); setTimeout(()=>newAllDayRef.current?.focus(), 20) }}>
                     {/* SIEMPRE todos los items — antes se cortaba en 5 con un "+N" que
                         obligaba a adivinar qué faltaba (Alberto, 26 ago 2026: "deben
                         caber todas por mucha que sean, es importante que se vean todas"). */}
@@ -1525,12 +1606,45 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                       )
                     })}
                     {editing ? (
-                      <input ref={newAllDayRef} className="pp-allday-new" value={newAllDay!.text}
-                        placeholder={t('ph.newTaskEllipsis')}
-                        onClick={e=>e.stopPropagation()}
-                        onChange={e=>setNewAllDay(s=>s?{...s,text:e.target.value}:s)}
-                        onKeyDown={e=>{ if (e.key==='Enter') commitNewAllDay(true); else if (e.key==='Escape') setNewAllDay(null) }}
-                        onBlur={()=>commitNewAllDay(false)} />
+                      <>
+                        <input ref={newAllDayRef} className="pp-allday-new" value={newAllDay!.text}
+                          placeholder={t('ph.newTaskEllipsis')}
+                          onClick={e=>e.stopPropagation()}
+                          onChange={e=>{
+                            const v = e.target.value
+                            setNewAllDay(s=>s?{...s,text:v}:s)
+                            detectAllDayCtxMention(v, e.target.selectionStart ?? v.length)
+                          }}
+                          onKeyDown={e=>{
+                            if (allDayCtxMention && allDayCtxMatches.length > 0) {
+                              if (e.key === 'ArrowDown') { e.preventDefault(); setAllDayCtxSel(s => Math.min(s + 1, allDayCtxMatches.length - 1)); return }
+                              if (e.key === 'ArrowUp') { e.preventDefault(); setAllDayCtxSel(s => Math.max(s - 1, 0)); return }
+                              if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); pickAllDayCtx(allDayCtxMatches[allDayCtxSel]); return }
+                              if (e.key === 'Escape') { e.preventDefault(); setAllDayCtxMention(null); return }
+                            }
+                            // ESC cancela la tarea (Alberto, 31 ago 2026: "para cancelar un
+                            // placeholder o una tarea que se está escribiendo, se debe usar
+                            // la tecla ESC") — se marca "ya resuelto" antes de desmontar, para
+                            // que un blur nativo tardío no la cree de todos modos.
+                            if (e.key === 'Enter') { e.preventDefault(); commitNewAllDay() }
+                            if (e.key === 'Escape') { e.preventDefault(); newAllDayCommittedRef.current = true; setNewAllDay(null); setAllDayCtxMention(null); setAllDayPickedCtxId(null) }
+                          }}
+                          onBlur={()=>commitNewAllDay()} />
+                        {allDayCtxMention && allDayCtxMatches.length > 0 && createPortal((
+                          <div className="doc-mention-pop" onMouseDown={e=>e.preventDefault()}
+                            style={{ position: 'fixed', ...allDayMentionPos(newAllDayRef.current) }}>
+                            {allDayCtxMatches.map((item, i) => (
+                              <button key={'create' in item ? '__create__' : item.node.id}
+                                className={`doc-mention-item${i === allDayCtxSel ? ' active' : ''}`}
+                                onMouseEnter={()=>setAllDayCtxSel(i)}
+                                onMouseDown={e=>{ e.preventDefault(); pickAllDayCtx(item) }}>
+                                <span className="doc-mention-icon"><Icon name={'create' in item ? 'plus' : 'folder'} size={13} /></span>
+                                <span className="doc-mention-title">{'create' in item ? `Crear "${item.create}"` : item.path}</span>
+                              </button>
+                            ))}
+                          </div>
+                        ), document.body)}
+                      </>
                     ) : (
                       <div className="pp-allday-add" aria-hidden>+</div>
                     )}

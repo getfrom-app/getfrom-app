@@ -102,22 +102,32 @@ export function listPendingAgentConversations(): Node[] {
   return store.allActive().filter(n => ed(n)._pendingReply === '1' && !isInPapelera(n.id))
 }
 
-/** ¿Es esta sesión `_aiSession` una cáscara vacía — sin mensajes reales, sin
- *  audio, sin nada creado dentro? Mismo criterio que `discardEmptyVoiceSession`
- *  (arriba de `AIChatStore`), pero sin depender de `this.messages` (esa
- *  versión solo sirve para la sesión activa en memoria) — aquí se comprueba
- *  cualquier nodo desde sus hijos reales, para poder barrer TODAS las
- *  sesiones vacías, no solo la que se acaba de abandonar. */
+/** ¿Es esta sesión `_aiSession` una cáscara vacía o "casi vacía" — sin mensajes
+ *  reales, sin audio, sin nada creado dentro, o con solo el saludo del
+ *  asistente y NINGÚN turno real del usuario? Mismo criterio que
+ *  `discardEmptyVoiceSession` (arriba de `AIChatStore`), pero sin depender de
+ *  `this.messages` (esa versión solo sirve para la sesión activa en memoria) —
+ *  aquí se comprueba cualquier nodo desde sus hijos reales, para poder barrer
+ *  TODAS las sesiones vacías, no solo la que se acaba de abandonar.
+ *
+ *  Ampliado el 31 ago 2026 (Alberto: "hay muchas conversaciones casi vacías
+ *  que son antiguas... las puedes eliminar directamente"): una sesión sin
+ *  ningún turno de rol `user` no es una conversación real, aunque tenga un
+ *  mensaje de bienvenida del asistente — se descarta igual, salvo que siga
+ *  esperando activamente esa primera respuesta (`_pendingReply`, ver
+ *  `listPendingAgentConversations`), que se enseña aparte a propósito. */
 function isEmptyAiSession(n: Node): boolean {
   if (n.isDiaryEntry) return false
   const e = ed(n)
+  if (e._pendingReply === '1') return false
   if (Array.isArray(e._audios) && e._audios.length > 0) return false
   const children = store.children(n.id)
   const transcript = children.find(c => ed(c)._aiTranscript === '1')
   const realChildren = children.filter(c => c.id !== transcript?.id)
   if (realChildren.length > 0) return false
   if (!transcript) return true
-  return !store.children(transcript.id).some(m => !m.deletedAt && ed(m)._aiMsgRole)
+  const msgs = store.children(transcript.id).filter(m => !m.deletedAt && ed(m)._aiMsgRole)
+  return !msgs.some(m => ed(m)._aiMsgRole === 'user')
 }
 
 /** Barre y borra (a la papelera, con undo) las sesiones `_aiSession` vacías —

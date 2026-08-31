@@ -15,7 +15,7 @@ import { assistantListThreads, type AssistantThreadSummary } from '../../api/ass
 import { contextColor } from '../../utils/cajones'
 import { displayTitle } from '../../utils/displayText'
 import { fmtRelative } from '../../utils/formatDate'
-import { AGENDA_THREAD_KEY } from './V2AgendaAssistant'
+import { AGENDA_THREAD_KEY } from '../../store/assistantStore'
 import Icon from './Icon'
 
 interface Props {

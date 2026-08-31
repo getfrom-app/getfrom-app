@@ -20,16 +20,14 @@
 // Todo esto es LOCAL a esta pestaña — no reclama servidor nuevo, y no
 // interfiere con el envío real de mensajes (`assistantStore.send`, intacto).
 import { useEffect, useRef } from 'react'
-import { assistantStore } from '../../store/assistantStore'
+import { assistantStore, AGENDA_THREAD_KEY } from '../../store/assistantStore'
 import { store, useStore } from '../../store/nodeStore'
 import { assistantGetBrief } from '../../api/assistant'
 import { isInPapelera } from '../../utils/papeleraHelper'
+import { hasTimeOfDay } from '../../utils/taskNode'
 import V2Chat from './V2Chat'
 
-/** `threadKey` estable del chat de Agenda — nunca un nodeId real (evita
- *  colisión con el hilo de un contexto/elemento cualquiera), mismo patrón que
- *  `'__ctx_sin_contexto__'` en V2RightColumn.tsx. */
-export const AGENDA_THREAD_KEY = '__agenda__'
+export { AGENDA_THREAD_KEY }
 
 function todayKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -53,22 +51,63 @@ async function injectDailyGreeting() {
   localStorage.setItem(key, '1')
   try {
     const brief = await assistantGetBrief()
-    if (brief.overnight) assistantStore.addNotice(brief.overnight)
-    assistantStore.addNotice(brief.title + (brief.lead ? ' — ' + brief.lead : ''))
-    if (brief.attention) assistantStore.addNotice(brief.attention)
+    // Etiquetados como el saludo DE HOY — V2Chat.tsx pliega el bloque de un
+    // día anterior (p.ej. un "Buenas tardes" que se quedó ahí) en cuanto este
+    // ya está en el hilo, en vez de enseñar los dos seguidos.
+    const tag = `daily-greeting:${todayKey()}`
+    if (brief.overnight) assistantStore.addNotice(brief.overnight, tag)
+    assistantStore.addNotice(brief.title + (brief.lead ? ' — ' + brief.lead : ''), tag)
+    if (brief.attention) assistantStore.addNotice(brief.attention, tag)
   } catch {
     localStorage.removeItem(key) // sin brief esta vez — reintentar en el próximo montaje
   }
 }
 
+// Variantes de aviso de tarea completada — antes SIEMPRE el mismo "Has
+// completado «X»." en cada finalización, por muchas que fueran seguidas
+// (Alberto, 31 ago 2026: "tiene que ser un chat mucho más dinámico...
+// ahora es muy mecánico, pobre"). Un poco de variación + reconocer una
+// racha corta le da algo de calidez sin caer en la palmadita en la espalda
+// por cada checkbox — sigue siendo una frase, no un párrafo.
+const DONE_PHRASES = [
+  (t: string) => `Hecho: «${t}».`,
+  (t: string) => `«${t}», tachada.`,
+  (t: string) => `Una menos: «${t}».`,
+  (t: string) => `«${t}» fuera de la lista.`,
+]
+function completionNotice(text: string, streak: number): string {
+  const label = text || 'una tarea'
+  if (streak >= 5) return `«${label}» — van ${streak} hoy, buen ritmo.`
+  if (streak === 3) return `«${label}» — tres seguidas.`
+  const phrase = DONE_PHRASES[Math.floor(Math.random() * DONE_PHRASES.length)]
+  return phrase(label)
+}
+
 export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: (files: File[]) => void }) {
   useStore()
   const seenPendingIds = useRef<Set<string> | null>(null)
+  const doneStreakToday = useRef(0)
   const remindedIds = useRef<Set<string>>(new Set(
     (() => { try { return JSON.parse(sessionStorage.getItem('from_agenda_reminded') || '[]') } catch { return [] } })(),
   ))
 
   useEffect(() => { injectDailyGreeting() }, [])
+
+  // Pregunta de perfil, una vez al día, dentro del propio hilo de Agenda —
+  // reutiliza `assistantStore.askProfileQuestion()` (ya existía, solo se
+  // ofrecía manualmente al abrir "Perfil" desde Ajustes) para que el
+  // asistente tome la iniciativa aquí también: pregunte algo real, grounded
+  // en contexto (nunca genérico — lo decide el servidor), no solo informe.
+  // A media tarde, para no competir con el saludo de la mañana ni sonar a
+  // interrogatorio nada más entrar.
+  useEffect(() => {
+    const key = `from_agenda_checkin_asked_${todayKey()}`
+    if (localStorage.getItem(key) === '1') return
+    const hour = new Date().getHours()
+    if (hour < 15 || hour >= 20) return
+    localStorage.setItem(key, '1')
+    assistantStore.askProfileQuestion()
+  }, [])
 
   // Tarea de hoy/atrasada completada mientras la columna está abierta → aviso
   // corto. `seenPendingIds` arranca en el primer render con lo que YA está
@@ -88,7 +127,8 @@ export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: 
         if (pending.has(id)) continue
         const n = store.getNode(id)
         if (n && n.status === 'done') {
-          assistantStore.addNotice(`Has completado «${n.text || 'una tarea'}».`)
+          doneStreakToday.current += 1
+          assistantStore.addNotice(completionNotice(n.text, doneStreakToday.current))
         }
       }
     }
@@ -104,7 +144,14 @@ export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: 
     const check = () => {
       const now = new Date()
       for (const n of store.allActive()) {
-        if (!n.isEvent || n.status !== 'pending' || !n.due || isInPapelera(n.id)) continue
+        // `hasTimeOfDay`, no `isEvent` — mismo criterio que el recordatorio por
+        // push del servidor (`assistantReminders.ts`, el que SÍ le llegó a
+        // Alberto en iOS para "Estudiar" a las 11:00): cualquier tarea pendiente
+        // con hora, tenga o no `isEvent` puesto. Antes exigir `isEvent` dejaba
+        // fuera tareas con hora que nunca pasaron por la vía que fija ese flag
+        // (p.ej. una recurrente creada antes de esa migración) — el aviso nunca
+        // llegaba en web aunque la tarea SÍ tuviera hora (Alberto, 31 ago 2026).
+        if (!hasTimeOfDay(n) || n.status !== 'pending' || !n.due || isInPapelera(n.id)) continue
         if (remindedIds.current.has(n.id)) continue
         const due = new Date(n.due)
         if (!isSameLocalDay(due, now)) continue

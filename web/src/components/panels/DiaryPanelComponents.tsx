@@ -95,7 +95,17 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
   // sucesor y la deja suelta) antes de mostrar el formulario; "todas las
   // siguientes" edita el nodo recurrente tal cual, como ya funcionaba.
   const [scopeChoice, setScopeChoice] = useState<'this' | 'all' | null>(null)
-  const needsScopeChoice = !!node.recurrence && scopeChoice === null
+  // Capturado UNA vez, al abrir — si la tarea NO tenía recurrencia todavía,
+  // añadírsela AQUÍ MISMO (`applyRec`/`toggleCustomDay`, más abajo) no debe
+  // disparar la pregunta: no hay ninguna serie previa de la que "solo esta" o
+  // "esta y las siguientes" tengan sentido, se aplica sin más (Alberto, 31 ago
+  // 2026: "estoy editando una recurrencia en una tarea que no la tenía... se
+  // aplica la recurrencia"). Sin este snapshot, `node.recurrence` es el valor
+  // EN VIVO del store — en cuanto el usuario la fija en este mismo popover, el
+  // siguiente render ya la ve puesta y pediría el alcance sobre su propio
+  // cambio recién hecho.
+  const [hadRecurrenceOnOpen] = useState(() => !!node.recurrence)
+  const needsScopeChoice = hadRecurrenceOnOpen && scopeChoice === null
 
   // Bucles no son agendables: si por error se intenta abrir un bucle, cerrar
   // inmediatamente y navegar a su nota (es un contenedor, no una tarea).
@@ -600,7 +610,14 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, l
           </button>
         )}
         {ctxPicker && createPortal((
-          <div ref={ctxPickerRef} style={{ position: 'fixed', top: ctxPicker.y, left: ctxPicker.x, zIndex: 3001 }} onClick={e => e.stopPropagation()}>
+          // z-index por encima de `.task-props-modal-backdrop` (100000, ver
+          // CenteredModal.tsx) — en modo `modal` este editor VIVE dentro de ese
+          // backdrop, así que el 3001 de antes quedaba por DEBAJO de él: el
+          // selector se veía "sin fondo blanco" porque en realidad el fondo
+          // semitransparente del modal lo tapaba entero (Alberto, 31 ago 2026,
+          // con captura real). Mismo motivo por el que otros pickers dentro de
+          // un modal (p.ej. `TaskPropsPopover`) necesitan superar ese z-index.
+          <div ref={ctxPickerRef} style={{ position: 'fixed', top: ctxPicker.y, left: ctxPicker.x, zIndex: 100001 }} onClick={e => e.stopPropagation()}>
             <ContextPicker currentId={currentCtx?.id ?? null} onPick={pickContext} />
           </div>
         ), document.body)}

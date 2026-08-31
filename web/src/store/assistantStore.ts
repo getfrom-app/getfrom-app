@@ -48,6 +48,13 @@ export interface AssistantMsg {
   /** Contextos/favoritos nombrados en la respuesta — listas tocables (paridad iOS). */
   contexts?: AssistantListedContext[] | null
   favorites?: AssistantListedContext[] | null
+  /** Etiqueta local de agrupación — hoy solo `daily-greeting:<YYYY-MM-DD>`
+   *  (V2AgendaAssistant.injectDailyGreeting). Sirve para plegar en el render
+   *  el saludo de un día anterior (p.ej. el "Buenas tardes" de ayer) en cuanto
+   *  ya ha entrado el de HOY — Alberto, 31 ago 2026: "debería ocultar el
+   *  'buenas tardes' de ayer que queda raro". No se usa para nada más; un
+   *  turno normal del servidor no lo trae (`turnToAssistantMsg`). */
+  tag?: string | null
 }
 
 type Listener = () => void
@@ -56,6 +63,13 @@ const STORAGE_KEY = 'assistant.web.thread'
 const PAGE_SIZE = 40
 const SAVE_CAP = 2000
 const HISTORY_WINDOW = 10
+
+/** `threadKey` estable del chat de Agenda (V2AgendaAssistant.tsx) — nunca un
+ *  nodeId real, evita colisión con el hilo de un contexto/elemento cualquiera,
+ *  mismo patrón que `'__ctx_sin_contexto__'` en V2RightColumn.tsx. Vive aquí
+ *  (no en V2AgendaAssistant.tsx) para que V2Chat.tsx pueda importarlo sin
+ *  crear un ciclo (V2AgendaAssistant ya importa V2Chat). */
+export const AGENDA_THREAD_KEY = '__agenda__'
 
 function uid(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -453,11 +467,13 @@ class AssistantStore {
 
   /** Mete un mensaje del asistente en el hilo SIN llamar al servidor — para
    *  preguntas locales tipo "¿qué prompt quieres crear?" antes de que el
-   *  usuario responda y el turno de verdad se dispare. */
-  addNotice(text: string) {
+   *  usuario responda y el turno de verdad se dispare. `tag` opcional agrupa
+   *  mensajes relacionados para poder plegarlos juntos en el render (ver
+   *  `AssistantMsg.tag`). */
+  addNotice(text: string, tag?: string) {
     this.appendVisible({
       id: uid(), role: 'assistant', text, date: new Date().toISOString(),
-      created: [], linkedNodeId: null, options: null, list: null, agents: null,
+      created: [], linkedNodeId: null, options: null, list: null, agents: null, tag: tag ?? null,
     })
     this.save(); this.notify()
   }

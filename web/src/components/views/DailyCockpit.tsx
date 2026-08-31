@@ -181,16 +181,18 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
         // unificado «Todo el día» (Alberto, 22 jul: "agrupar ambas cosas... que
         // se llame Todo el día"). Aquí solo quedan las atrasadas, así que el
         // título cambia de "Tareas para hoy" a "Atrasadas" para que no mienta.
-        // Sin atrasadas → sin cabecera (27 ago 2026, Alberto: "cuando no hay
-        // tareas atrasadas se puede ocultar el heading") — a diferencia de
-        // «Tareas para hoy» (sigue SIEMPRE visible para poder crear la
-        // primera con el «+»), «Atrasadas» vacía no aporta nada que crear:
-        // una tarea nueva nace hoy o en el futuro, nunca ya atrasada.
-        if (hideToday && openOverdue.length === 0) return null
+        // Cabecera SIEMPRE visible, aunque no haya atrasadas — con «· 0», igual
+        // que Sin fecha/Completadas (revertido 31 ago 2026, Alberto: "cuando
+        // no hay atrasadas... desaparece su heading. haz que estén siempre
+        // visibles aunque ponga 0" — el hueco entre secciones sin cabecera
+        // desorientaba más de lo que "ahorraba").
+        const overdueLabel = hideToday
+          ? `${t('daily.overdue', 'Atrasadas')} · ${openOverdue.length}`
+          : t('daily.tasksToday', 'Tareas para hoy')
         return (
           <div className="dc-group">
             <div className="dc-group-headrow">
-              {gHeader('porhacer', hideToday ? t('daily.overdue', 'Atrasadas') : t('daily.tasksToday', 'Tareas para hoy'))}
+              {gHeader('porhacer', overdueLabel)}
               <button className="dc-group-add" onClick={() => setShowNewTask(true)} title={t('modal.newTask')}>+</button>
             </div>
             {open && openOverdue.map(n => renderTaskRow(n, { showDue: true }))}
@@ -206,22 +208,20 @@ export default function DailyCockpit({ disablePlanner = false, bare = false, hid
           {!collapsedG.has('futuro') && upcoming.map(n => renderTaskRow(n, { showDue: true }))}
         </div>
       )}
-      {/* SIN FECHA — SIEMPRE el último bloque de la columna, colapsado por defecto. */}
-      {data.seguimiento.length > 0 && (
-        <div className="dc-group">
-          {gHeader('algundia', `${t('daily.noDate', 'Sin fecha')} · ${data.seguimiento.length}`)}
-          {!collapsedG.has('algundia') && data.seguimiento.map(n => renderTaskRow(n, {}))}
-        </div>
-      )}
+      {/* SIN FECHA — SIEMPRE el último bloque de la columna (cabecera siempre
+          visible con «· 0», ver nota de Atrasadas arriba), colapsado por defecto. */}
+      <div className="dc-group">
+        {gHeader('algundia', `${t('daily.noDate', 'Sin fecha')} · ${data.seguimiento.length}`)}
+        {!collapsedG.has('algundia') && data.seguimiento.map(n => renderTaskRow(n, {}))}
+      </div>
       {/* COMPLETADAS — tachadas hoy, aparte en vez de mezcladas con lo pendiente
           (27 ago 2026, Alberto: "quiero un desplegable pequeño con
-          Completadas"). Colapsado por defecto, igual que Sin fecha/Futuro. */}
-      {doneToday.length > 0 && (
-        <div className="dc-group">
-          {gHeader('completadas', `${t('daily.completed', 'Completadas')} · ${doneToday.length}`)}
-          {!collapsedG.has('completadas') && doneToday.map(n => renderTaskRow(n, { showDue: true }))}
-        </div>
-      )}
+          Completadas"). Cabecera siempre visible con «· 0», colapsado por
+          defecto, igual que Sin fecha/Futuro. */}
+      <div className="dc-group">
+        {gHeader('completadas', `${t('daily.completed', 'Completadas')} · ${doneToday.length}`)}
+        {!collapsedG.has('completadas') && doneToday.map(n => renderTaskRow(n, { showDue: true }))}
+      </div>
     </>
   )
 

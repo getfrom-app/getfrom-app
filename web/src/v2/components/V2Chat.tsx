@@ -11,7 +11,7 @@
 // de TaskRow — se reutilizan tal cual, no se reinventa nada.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useAssistantStore, assistantStore } from '../../store/assistantStore'
+import { useAssistantStore, assistantStore, AGENDA_THREAD_KEY } from '../../store/assistantStore'
 import type { AssistantMsg } from '../../store/assistantStore'
 import type { AssistantListedTask, AssistantListedAgent } from '../../api/assistant'
 import { store, useStore } from '../../store/nodeStore'
@@ -275,19 +275,61 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   }, [chat.pendingAutoOpen])
   const scrollRef = useRef<HTMLDivElement>(null)
   const taRef = useRef<HTMLTextAreaElement>(null)
+  const isLoadingMoreRef = useRef(false)
 
-  const messages = chat.messages
+  // Scroll infinito hacia arriba — sustituye al botón "Cargar más antiguos"
+  // (Alberto, 31 ago 2026: "no hace nada. quítalo, y simplemente si se hace
+  // scroll hacia arriba que cargue automáticamente los más antiguos"). Guarda
+  // alto y scroll ANTES de pedir más — al insertar mensajes arriba el
+  // `scrollHeight` crece, así que hay que compensar el `scrollTop` en el mismo
+  // delta o la vista "saltaría" hacia abajo en cuanto llegasen.
+  const onChatScroll = () => {
+    const el = scrollRef.current
+    if (!el || isLoadingMoreRef.current || !chat.hasMoreHistory) return
+    if (el.scrollTop > 80) return
+    isLoadingMoreRef.current = true
+    const prevHeight = el.scrollHeight
+    const prevTop = el.scrollTop
+    assistantStore.loadMoreHistory().finally(() => {
+      requestAnimationFrame(() => {
+        const el2 = scrollRef.current
+        if (el2) el2.scrollTop = el2.scrollHeight - prevHeight + prevTop
+        isLoadingMoreRef.current = false
+      })
+    })
+  }
+
+  // Pliega el bloque de saludo de un día anterior (`tag`, ver AssistantMsg) en
+  // cuanto el de HOY ya está en el hilo — solo se enseña el más reciente,
+  // aunque el resto sigue en el historial real (visible al cargar más
+  // antiguos). No afecta a mensajes normales, que nunca llevan `tag`.
+  const messages = useMemo(() => {
+    let latestGreetingTag: string | null = null
+    for (const m of chat.messages) {
+      if (m.tag?.startsWith('daily-greeting:') && (!latestGreetingTag || m.tag > latestGreetingTag)) latestGreetingTag = m.tag
+    }
+    if (!latestGreetingTag) return chat.messages
+    return chat.messages.filter(m => !m.tag?.startsWith('daily-greeting:') || m.tag === latestGreetingTag)
+  }, [chat.messages])
   const thinking = chat.isThinking
+
+  // ¿Es este el hilo GENERAL o el de Agenda (V2AgendaAssistant)? Los dos son
+  // buzones de fondo (brief del día, informes de agentes, recordatorios) — el
+  // chat de un elemento/contexto concreto es una conversación sobre ESO, no un
+  // buzón. Antes solo el general recibía `fetchInbox()`, así que el informe de
+  // un agente terminado nunca llegaba con su enlace al hilo de Agenda: solo el
+  // texto suelto de `brief.overnight` (sin `linkedNodeId`, ver
+  // `V2AgendaAssistant.injectDailyGreeting`) — Alberto, 31 ago 2026: "aparece
+  // a las 8:02 pero sin el enlace para verlo".
+  const isBackgroundInboxThread = !currentNodeId || currentNodeId === AGENDA_THREAD_KEY
 
   // Trae el brief/avisos que hayan llegado mientras la pestaña no estaba
   // delante, igual que hace iOS al abrir — el hilo web es también el
-  // registro completo de lo que el asistente ha dicho por su cuenta. Solo el
-  // hilo GENERAL recibe avisos de fondo (brief del día, informes de agentes) —
-  // el chat de un elemento/contexto concreto es una conversación sobre ESO,
-  // no el buzón general.
+  // registro completo de lo que el asistente ha dicho por su cuenta.
   useEffect(() => {
-    if (currentNodeId) return
+    if (!isBackgroundInboxThread) return
     assistantStore.fetchInbox().catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNodeId])
 
   // Línea "No leído" (13 ago 2026, estilo WhatsApp) — se congela el id al
@@ -295,12 +337,13 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   // desaparecería sola en cuanto markRead() corriera). Se marca todo como
   // leído poco después de abrir — igual que WhatsApp, "abrir el chat" ya
   // cuenta como haberlo visto, sin esperar más gesto del usuario. Solo aplica
-  // al hilo general (ver comentario de `fetchInbox` arriba).
-  const [unreadId] = useState(() => (currentNodeId ? null : assistantStore.firstUnreadId))
+  // a los hilos de buzón (ver comentario de `fetchInbox` arriba).
+  const [unreadId] = useState(() => (isBackgroundInboxThread ? assistantStore.firstUnreadId : null))
   useEffect(() => {
-    if (currentNodeId) return
+    if (!isBackgroundInboxThread) return
     const t = setTimeout(() => assistantStore.markRead(), 1500)
     return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNodeId])
 
   // Al abrir, directo al final del hilo — sin depender de que cambie el
@@ -460,7 +503,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
         </div>
       )}
 
-      <div className="v2-chat-scroll" ref={scrollRef}>
+      <div className="v2-chat-scroll" ref={scrollRef} onScroll={onChatScroll}>
         {isEmpty ? (
           <div className="v2-chat-empty">
             {scoped ? (
@@ -476,11 +519,6 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
           </div>
         ) : (
           <div className="v2-chat-inner v2-assistant-inner">
-            {chat.hasMoreHistory && (
-              <button className="v2-done-toggle" onClick={() => assistantStore.loadMoreHistory()}>
-                {t('v2.chat.loadMore', 'Cargar más antiguos')}
-              </button>
-            )}
             {messages.map((m, i) => {
               // Igual que en iOS (AssistantChatView.swift, gapMinutes): antes
               // bastaba cruzar un borde de minuto (p.ej. 14:59:59→15:00:01)

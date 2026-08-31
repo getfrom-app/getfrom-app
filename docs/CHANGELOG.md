@@ -4,6 +4,30 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.20 · iOS v2.19.186 — 31 agosto 2026 · Chat de Agenda más vivo, contexto automático, tareas y eventos unificados
+
+- **Web, Agenda**: el botón "Cargar más antiguos" del chat (que no hacía nada) se sustituye por scroll
+  automático — sube en el historial y carga solo. El aviso de un agente que termina un trabajo ya
+  llega con su enlace para abrir el resultado. La nota del día vuelve a abrirse/cerrarse con un botón
+  arriba de la columna, con una animación suave. El recordatorio de un evento próximo (menos de 15
+  minutos) ya avisa también en web, no solo en iPhone.
+- **Web**: crear una tarea dentro de una nota, otra tarea o un evento que ya tiene un contexto asignado
+  se lo aplica automáticamente — antes había que asignarlo a mano cada vez.
+- **Web, Planificador**: al escribir una tarea sin hora y pulsar Enter, ya no se abre otro hueco en
+  blanco encadenado — confirma y cierra. Escape cancela de verdad. Se puede escribir `#contexto`
+  directamente en la tarea, con autocompletado.
+- **Web, Planificador**: una tarea con hora sincronizada con Google Calendar ya abre su propio modal
+  completo (con recurrencia) en vez del editor simplificado de Google — ese editor queda solo para
+  eventos que viven exclusivamente en Google.
+- **Web**: añadir una recurrencia nueva a una tarea que no la tenía ya no pregunta "¿solo esta o todas
+  las siguientes?" — esa pregunta solo aparece al editar una tarea que YA era recurrente.
+- **Web**: la bandeja de revisión ya no repite elementos que ya tienen contexto asignado. Las
+  conversaciones vacías del sistema antiguo (nunca respondidas) se limpian solas.
+- **iOS**: las notificaciones suenan con un aviso propio, corto y discreto, en vez del tono estándar
+  de iPhone — se puede quitar del todo desde Ajustes → Notificaciones → Fromly → Sonidos.
+
+---
+
 ## Web v9.10.19 · iOS v2.19.185 — 31 agosto 2026 · Scroll en fichas largas + contexto más simple
 
 - **iOS, arreglado**: una nota o contexto con muchos elementos se cortaba en la primera pantalla, sin
