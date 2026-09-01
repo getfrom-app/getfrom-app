@@ -1,7 +1,28 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-01 (Web v9.10.31, server únicamente esta sesión)
+> Última actualización: 2026-09-01 (Web v9.10.32)
+
+---
+
+## Sesión 2026-09-01 (sesión 21) — Fromly obedece instrucciones de tono + Ajustes → Cómo quiero que me hable
+
+Server `14d1e34`, web `dcb8c75b` (v9.10.31 → v9.10.32). Detalle completo en
+`logs/2026-09-01-sesion21-tono-de-fromly-ajustes-y-chat.md`.
+
+- **Bug encontrado probando en vivo**: "sé más breve"/"sé más directo" se perdían en silencio (el chat
+  contestaba bien pero no lo recordaba); "sé más entretenido" a veces sí funcionaba — azar del modelo.
+  `missedStandingInstruction` (sesión 20) gana un segundo patrón para órdenes de tono DIRECTAS sin
+  ninguna frase de permanencia, más una red de seguridad: si el reintento sigue sin guardar, se guarda
+  el mensaje del usuario tal cual en vez de perderlo del todo.
+- **Nuevo, a petición explícita**: Ajustes → "Cómo quiero que me hable Fromly" — 6 chips de tono (Muy
+  breve/Detallado/Directo/Cercano/Desenfadado/Formal, toggle) + texto libre. Cada chip es una píldora de
+  conocimiento normal (mismo sistema de la sesión 19) con una clave para que la UI sepa qué está
+  encendido sin adivinar comparando texto — lo dicho por chat sigue entrando por la misma vía de siempre,
+  sin clave. `GET/PUT /assistant/tone` nuevos; reutiliza el componente de chip ya existente en el
+  frontend, sin CSS nuevo.
+- Verificado en vivo (API + UI real, cuenta de prueba): chips y texto libre persistiendo correctamente;
+  `bun test` 403/403.
 
 ---
 

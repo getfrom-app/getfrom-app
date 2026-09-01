@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 1 septiembre 2026 (Web v9.10.30)
+> Web · Mac · iPhone · fromly.app · Última actualización: 1 septiembre 2026 (Web v9.10.32)
 
 ---
 
@@ -53,6 +53,9 @@ navegador si algún día quieres repasarlo.
   antiguo se retira solo; si Fromly no está seguro, te lo pregunta.
 - **El historial de chats se puede leer entero**: en el destino Chat, la flecha de cada conversación
   del Historial despliega la conversación completa ahí mismo, sin tener que abrirla.
+- **Elige cómo quieres que te hable Fromly**: en Ajustes → Asistente, "Cómo quiero que me hable Fromly" —
+  chips (muy breve, detallado, directo, cercano, desenfadado, formal) o escríbelo con tus palabras.
+  Decírselo directamente en el chat ("sé más breve") también lo guarda ahí.
 
 ## Novedades (agosto 2026)
 

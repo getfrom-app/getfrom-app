@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.32 — 1 septiembre 2026 · Elige cómo quieres que te hable Fromly
+
+- **Web, Ajustes → Asistente**: nueva sección "Cómo quiero que me hable Fromly" — chips (muy breve,
+  detallado, directo, cercano, desenfadado, formal) o escríbelo con tus palabras en el hueco libre.
+- **Web, Chat**: pedirle directamente "sé más breve" o "sé más directo" ahora se lo toma en serio y lo
+  recuerda de verdad, no solo para esa respuesta.
+
+---
+
 ## Web v9.10.31 — 1 septiembre 2026 · Lo que Fromly sabe de ti, visible; menciona un contexto con "#" en el chat
 
 - **Web, Perfil**: la columna derecha lista ahora cada cosa que Fromly ha aprendido de ti hablando o
