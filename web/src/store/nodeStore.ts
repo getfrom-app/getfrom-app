@@ -356,6 +356,22 @@ export class NodeStore {
     return null
   }
 
+  /// Nodo contenedor de las píldoras de conocimiento que Fromly ha aprendido
+  /// del usuario (extraData._knowledgeRoot == "1") — rediseño 1 sept 2026, ver
+  /// server/src/services/assistantMemory.ts. El SERVIDOR es quien lo crea la
+  /// primera vez que aprende algo; el cliente solo lo LEE (columna derecha del
+  /// Perfil) — nunca escribe conocimiento directamente.
+  knowledgeRootNode(): Node | null {
+    for (const n of this.nodes.values()) {
+      if (n.deletedAt) continue
+      try {
+        const ed = JSON.parse(n.extraData || '{}')
+        if (ed._knowledgeRoot === '1') return n
+      } catch { /* ignore */ }
+    }
+    return null
+  }
+
   /// Crea (si no existe) o devuelve el nodo perfil IA.
   /// Lo crea dentro de 🧠 Contexto si existe, o en root como fallback.
   async getOrCreatePerfilIA(): Promise<Node> {

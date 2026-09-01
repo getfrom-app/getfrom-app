@@ -30,7 +30,7 @@ import type { RecurrenceConfig, DateExtraction } from '../../utils/naturalDate'
 import { buildTaskVerbRegex } from '../../store/predictionStore'
 import { TaskPropsPopover } from '../panels/DiaryPanelComponents'
 import { scheduleClassify, cancelClassify, getCachedClassify, extractUserKnowledge, extractContextKnowledge, buildClassifyContexts, CONFIDENCE_THRESHOLD, type ClassifyResult } from '../../api/autoClassify'
-import { rememberFactsLocal, readProfileLines } from '../../api/userKnowledge'
+import { readProfileLines } from '../../api/userKnowledge'
 import Icon from '../../v2/components/Icon'
 import { sanitizeHtml } from '../../utils/sanitizeHtml'
 
@@ -383,9 +383,10 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       const existingProfile = readProfileLines().join('. ')
       // Enrutado: si el nodo está dentro de un contexto, solo extraer lo GLOBAL.
       const contextName = store.primaryContextName(nodeId)
-      const knowledge = await extractUserKnowledge(text.trim(), existingProfile || undefined, contextName)
-      if (!knowledge) return
-      rememberFactsLocal([...knowledge.people, ...knowledge.facts])
+      // El SERVIDOR extrae Y guarda en el mismo paso (assistantMemory.ts,
+      // rediseño 1 sept 2026) — aquí solo se dispara la llamada, no se
+      // escribe nada más en el cliente.
+      await extractUserKnowledge(text.trim(), existingProfile || undefined, contextName, undefined, `note:${nodeId}`)
     } catch { /* silencioso */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

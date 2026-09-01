@@ -4,7 +4,7 @@
 // en node.text). En el lienzo, el MISMO body se muestra como vista ligera; abrir el
 // elemento (su dot) trae aquí el editor completo.
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useEditor, EditorContent, BubbleMenu, ReactNodeViewRenderer } from '@tiptap/react'
 import { DOMSerializer } from '@tiptap/pm/model'
@@ -20,6 +20,8 @@ import TaskItem from '@tiptap/extension-task-item'
 import { store, useStore } from '../../store/nodeStore'
 import { assignContext, firstContextOf, contextColor, setNodeContext, maybeUpdateContextKnowledge } from '../../utils/cajones'
 import { isContextKnowledge, isProfileKnowledge } from '../../utils/knowledgeNodes'
+import { extractUserKnowledge } from '../../api/autoClassify'
+import { readProfileLines } from '../../api/userKnowledge'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { firstLineTitle, DOC } from '../../utils/docNode'
 import { markdownToHtml } from '../../utils/importMarkdown'
@@ -112,6 +114,13 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // versión por cada autosave de 500ms (llenaría el tope de 50 en minutos).
   const lastSavedBodyRef = useRef(node.body || '')
   const lastVersionSavedAtRef = useRef(0)
+  // Extracción de conocimiento del usuario (5s tras dejar de escribir) — el
+  // documento es hoy la superficie principal donde se escribe contenido
+  // largo, pero hasta el rediseño de píldoras (1 sept 2026) no tenía NINGÚN
+  // gancho de aprendizaje (solo lo tenían las viñetas sueltas del outliner,
+  // OutlinerNode.tsx). Una vez por documento por sesión, igual que allí.
+  const knowledgeExtractTimerRef = useRef<number | null>(null)
+  const hasExtractedKnowledgeRef = useRef(false)
   const [showColors, setShowColors] = useState(false)
   // Fechas pendientes de aplicar a la próxima tarea creada por el magic (clave = texto limpio
   // en minúsculas). El ghost quita la fecha del título al aceptar; aquí la recuperamos cuando
@@ -790,6 +799,24 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: msg, type: 'success' } }))
   }
 
+  // Ver refs declarados arriba. No en el Perfil (`isProfileKnowledge`, ya se
+  // le da entero al modelo como texto libre — extraerlo aquí solo
+  // duplicaría su propio contenido como píldoras) ni en la Memoria de un
+  // contexto (`isContextKnowledge`, otro sistema, ver `maybeUpdateContextKnowledge`
+  // más arriba en este mismo archivo).
+  const doExtractDocKnowledge = useCallback(async (plainText: string) => {
+    if (hasExtractedKnowledgeRef.current) return
+    if (plainText.trim().length < 20) return
+    if (isProfileKnowledge(node.text) || isContextKnowledge(node.text)) return
+    hasExtractedKnowledgeRef.current = true
+    try {
+      const existingProfile = readProfileLines().join('. ')
+      const contextName = firstContextOf(store.getNode(node.id) ?? null)?.text || null
+      await extractUserKnowledge(plainText.trim(), existingProfile || undefined, contextName, undefined, `note:${node.id}`)
+    } catch { /* silencioso */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, node.text])
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
@@ -844,6 +871,14 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         pendingSaveRef.current = false
       }, 500)
       detectSlash()
+
+      // Extracción de conocimiento — debounce largo (5s) e independiente del
+      // autoguardado de 500ms, mismo criterio que OutlinerNode.tsx.
+      if (knowledgeExtractTimerRef.current) clearTimeout(knowledgeExtractTimerRef.current)
+      knowledgeExtractTimerRef.current = window.setTimeout(() => {
+        knowledgeExtractTimerRef.current = null
+        doExtractDocKnowledge(editor.getText())
+      }, 5000)
     },
     onSelectionUpdate: () => {
       notifyDocEditor()
@@ -951,6 +986,14 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     if (editor) {
       syncTasksToNodes() // reconcilia y asigna ids al doc ANTES de guardar el HTML final
       store.updateNode(node.id, bodySave(editor.getHTML()))
+    }
+    // Si había una extracción de conocimiento pendiente, dispararla ya
+    // (fire-and-forget) en vez de perderla por cerrar el documento antes de
+    // los 5s — mismo criterio que el cleanup de OutlinerNode.tsx.
+    if (knowledgeExtractTimerRef.current) {
+      clearTimeout(knowledgeExtractTimerRef.current)
+      knowledgeExtractTimerRef.current = null
+      if (editor) doExtractDocKnowledge(editor.getText())
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, node.id])

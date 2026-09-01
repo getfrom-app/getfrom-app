@@ -1315,6 +1315,20 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 /* Punto de color del contexto — mismo lenguaje que .v2-ctx-dot de la sidebar. */
 .v2-hist-ctxdot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; margin-top: 6px; }
 
+/* ── Fila expandible: leer el contenido completo sin salir del historial ── */
+.v2-hist-item { display: flex; flex-direction: column; }
+.v2-hist-row-expand {
+  flex: 0 0 auto; align-self: center; margin: 0; padding: 4px;
+  border: none; background: transparent; color: var(--text-tertiary);
+  cursor: pointer; display: flex; align-items: center; border-radius: var(--v2-r-sm);
+  transition: transform 0.12s, color var(--v2-fast), background var(--v2-fast);
+}
+.v2-hist-row-expand:hover { color: var(--text-primary); background: var(--v2-hover); }
+.v2-hist-expand {
+  padding: 2px 14px 14px 33px; display: flex; flex-direction: column; gap: 10px;
+}
+.v2-hist-expand-error { color: var(--text-tertiary); font-size: 12.5px; }
+
 /* ── Buscador del Historial ───────────────────────────────────────────── */
 .v2-hist-search {
   display: flex; align-items: center; gap: 8px; margin-bottom: 14px;

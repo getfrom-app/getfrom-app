@@ -15,6 +15,7 @@ import { useAssistantStore, assistantStore, AGENDA_THREAD_KEY } from '../../stor
 import type { AssistantMsg } from '../../store/assistantStore'
 import type { AssistantListedTask, AssistantListedAgent } from '../../api/assistant'
 import { store, useStore } from '../../store/nodeStore'
+import { listContextTags, type ContextTag } from '../../utils/cajones'
 import { opsClient } from '../../store/opsClient'
 import { renderChatContent } from '../../components/outliner/InlineRenderer'
 import { getShortcuts, tryExpand } from '../../hooks/useTextExpansion'
@@ -397,12 +398,31 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
 
   const [mentionQuery, setMentionQuery] = useState<string | null>(null)
   const mentionStartRef = useRef<number>(0)
+  // Mención de CONTEXTO con «#» — mismo trigger que el editor de documento
+  // (DocContextMention.tsx) y el outliner, pero aquí el texto insertado
+  // ("#Título ") es simple: no hace falta enlace ni cita, basta con que las
+  // palabras del título lleguen al mensaje — `loadNamedContexts` en el
+  // servidor (assistantTurn.ts) ya busca esas palabras en cada turno y
+  // vuelca el contenido del contexto que encuentre, así que escribir el
+  // título completo (en vez de que el usuario lo teclee de memoria, con
+  // erratas) es lo único que hacía falta para que el chat "lo entienda y lo
+  // lea" (Alberto, 1 sept 2026).
+  const [hashQuery, setHashQuery] = useState<string | null>(null)
+  const hashStartRef = useRef<number>(0)
   function updateMentionQuery(ta: HTMLTextAreaElement) {
     const pos = ta.selectionStart ?? ta.value.length
     const before = ta.value.slice(0, pos)
-    const m = before.match(/(?:^|\s)@([^\s@[\]]*)$/)
-    if (m) { mentionStartRef.current = pos - m[1].length - 1; setMentionQuery(m[1]) }
-    else setMentionQuery(null)
+    const atMatch = before.match(/(?:^|\s)@([^\s@[\]]*)$/)
+    if (atMatch) {
+      mentionStartRef.current = pos - atMatch[1].length - 1
+      setMentionQuery(atMatch[1])
+      setHashQuery(null)
+      return
+    }
+    setMentionQuery(null)
+    const hashMatch = before.match(/(?:^|\s)#([^\s#]*)$/)
+    if (hashMatch) { hashStartRef.current = pos - hashMatch[1].length - 1; setHashQuery(hashMatch[1]) }
+    else setHashQuery(null)
   }
   const mentionResults = useMemo(() => {
     if (mentionQuery == null) return []
@@ -412,6 +432,13 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
       .sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
       .slice(0, 8)
   }, [mentionQuery]) // eslint-disable-line react-hooks/exhaustive-deps
+  const hashResults = useMemo(() => {
+    if (hashQuery == null) return []
+    const q = hashQuery.trim().toLowerCase()
+    return listContextTags()
+      .filter(tg => !q || tg.path.toLowerCase().includes(q) || tg.label.toLowerCase().includes(q))
+      .slice(0, 8)
+  }, [hashQuery]) // eslint-disable-line react-hooks/exhaustive-deps
   function pickMention(title: string) {
     const ta = taRef.current
     if (!ta) return
@@ -421,6 +448,17 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     setInput(next)
     setMentionQuery(null)
     requestAnimationFrame(() => { ta.focus(); const p = start + title.length + 5; ta.setSelectionRange(p, p) })
+  }
+  function pickHash(tag: ContextTag) {
+    const ta = taRef.current
+    if (!ta) return
+    const start = hashStartRef.current
+    const end = ta.selectionStart ?? input.length
+    const title = tag.node.text || tag.label
+    const next = input.slice(0, start) + `#${title} ` + input.slice(end)
+    setInput(next)
+    setHashQuery(null)
+    requestAnimationFrame(() => { ta.focus(); const p = start + title.length + 2; ta.setSelectionRange(p, p) })
   }
 
   const doSend = (text: string, quickNote = false) => {
@@ -447,6 +485,12 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
       return
     }
     if (e.key === 'Escape' && mentionQuery != null) { e.preventDefault(); setMentionQuery(null); return }
+    if (hashQuery != null && hashResults.length > 0 && (e.key === 'Enter' || e.key === 'Tab')) {
+      e.preventDefault()
+      pickHash(hashResults[0])
+      return
+    }
+    if (e.key === 'Escape' && hashQuery != null) { e.preventDefault(); setHashQuery(null); return }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       doSend(input)
@@ -595,6 +639,15 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
                 ))}
               </div>
             )}
+            {hashQuery != null && hashResults.length > 0 && (
+              <div className="v2-doc-menu v2-doc-menu-up" style={{ left: 0, right: 'auto' }}>
+                {hashResults.map(tg => (
+                  <button key={tg.node.id} onClick={() => pickHash(tg)}>
+                    <Icon name="folder" size={14} /> {tg.label || t('common.noTitle', 'Sin título')}
+                  </button>
+                ))}
+              </div>
+            )}
             {/* Vaciar el hilo en DOS toques (el segundo confirma): borrar es
                 irreversible (el hilo solo vive en este navegador) y un clic
                 accidental se llevaba semanas de conversación. Sin
@@ -703,7 +756,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               placeholder={isRecording ? t('v2.chat.voiceRecording', 'Escuchando…') : `${t('v2.chat.composerPlaceholder', 'Escribe a Fromly')}${contextLabel ? ` · ${contextLabel}` : ''}…`}
               onChange={onInputChange}
               onKeyDown={onKeyDown}
-              onBlur={() => setTimeout(() => setMentionQuery(null), 150)}
+              onBlur={() => setTimeout(() => { setMentionQuery(null); setHashQuery(null) }, 150)}
             />
             <button
               className="v2-iconbtn"

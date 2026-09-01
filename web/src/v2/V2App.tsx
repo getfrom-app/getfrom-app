@@ -1383,6 +1383,7 @@ export default function V2App() {
       )}
       <V2RightColumn
         mode={rightMode}
+        showProfile={showProfile}
         selectedCtxId={selectedCtxId}
         onOpenNode={onOpenNode}
         onSelectCtx={onSelectCtx}

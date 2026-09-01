@@ -11,12 +11,15 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
-import { assistantListThreads, type AssistantThreadSummary } from '../../api/assistant'
+import { assistantListThreads, assistantThreadTurns, type AssistantThreadSummary, type AssistantStoredTurn } from '../../api/assistant'
 import { contextColor } from '../../utils/cajones'
 import { displayTitle } from '../../utils/displayText'
 import { fmtRelative } from '../../utils/formatDate'
 import { AGENDA_THREAD_KEY } from '../../store/assistantStore'
+import { renderChatContent } from '../../components/outliner/InlineRenderer'
 import Icon from './Icon'
+
+type TurnsState = AssistantStoredTurn[] | 'loading' | 'error'
 
 interface Props {
   /** Hilo activo en el centro — `null` = general. Para resaltar su fila. */
@@ -30,6 +33,8 @@ export default function V2ThreadHistory({ activeThreadKey, onOpenThread }: Props
   useStore()
   const [threads, setThreads] = useState<AssistantThreadSummary[] | null>(null)
   const [q, setQ] = useState('')
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [turnsByKey, setTurnsByKey] = useState<Record<string, TurnsState>>({})
 
   useEffect(() => {
     let cancelled = false
@@ -38,6 +43,16 @@ export default function V2ThreadHistory({ activeThreadKey, onOpenThread }: Props
   }, [])
 
   const needle = q.trim().toLowerCase()
+
+  const toggleExpand = (threadKey: string) => {
+    setExpanded(prev => ({ ...prev, [threadKey]: !prev[threadKey] }))
+    if (!turnsByKey[threadKey]) {
+      setTurnsByKey(prev => ({ ...prev, [threadKey]: 'loading' }))
+      assistantThreadTurns(threadKey)
+        .then(turns => setTurnsByKey(prev => ({ ...prev, [threadKey]: turns })))
+        .catch(() => setTurnsByKey(prev => ({ ...prev, [threadKey]: 'error' })))
+    }
+  }
 
   const rows = (threads ?? [])
     // El hilo de Agenda (`AGENDA_THREAD_KEY`, V2AgendaAssistant.tsx) vive en OTRO
@@ -69,24 +84,63 @@ export default function V2ThreadHistory({ activeThreadKey, onOpenThread }: Props
         </div>
       ) : (
         <div className="v2-hist-list">
-          {rows.map(r => (
-            <button
-              key={r.threadKey}
-              className={`v2-hist-row ${(activeThreadKey ?? 'general') === r.threadKey ? 'active' : ''}`}
-              onClick={() => onOpenThread(r.ctx ? r.ctx.id : null)}
-            >
-              <Icon name="conversation" size={15} className="v2-hist-row-icon" />
-              <span className="v2-hist-row-main">
-                <span className="v2-hist-row-title">{r.preview}</span>
-                <span className="v2-hist-row-meta">
-                  <span className="v2-el-ctxchip" style={{ ['--chip' as string]: r.ctx ? contextColor(r.ctx.id) : 'var(--text-tertiary)' }}>
-                    {r.ctx ? displayTitle(r.ctx.text) : t('v2.general', 'General')}
+          {rows.map(r => {
+            const isExpanded = !!expanded[r.threadKey]
+            const turnState = turnsByKey[r.threadKey]
+            return (
+              <div key={r.threadKey} className="v2-hist-item">
+                <div
+                  className={`v2-hist-row ${(activeThreadKey ?? 'general') === r.threadKey ? 'active' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onOpenThread(r.ctx ? r.ctx.id : null)}
+                  onKeyDown={e => { if (e.key === 'Enter') onOpenThread(r.ctx ? r.ctx.id : null) }}
+                >
+                  <Icon name="conversation" size={15} className="v2-hist-row-icon" />
+                  <span className="v2-hist-row-main">
+                    <span className="v2-hist-row-title">{r.preview}</span>
+                    <span className="v2-hist-row-meta">
+                      <span className="v2-el-ctxchip" style={{ ['--chip' as string]: r.ctx ? contextColor(r.ctx.id) : 'var(--text-tertiary)' }}>
+                        {r.ctx ? displayTitle(r.ctx.text) : t('v2.general', 'General')}
+                      </span>
+                      {fmtRelative(r.updatedAt, i18n.language)}
+                    </span>
                   </span>
-                  {fmtRelative(r.updatedAt, i18n.language)}
-                </span>
-              </span>
-            </button>
-          ))}
+                  <button
+                    type="button"
+                    className="v2-hist-row-expand"
+                    onClick={e => { e.stopPropagation(); toggleExpand(r.threadKey) }}
+                    aria-label={isExpanded ? t('v2.history.collapse', 'Colapsar') : t('v2.history.expand', 'Leer completo')}
+                    style={{ transform: isExpanded ? 'rotate(90deg)' : undefined }}
+                  >
+                    <Icon name="chevron-right" size={13} />
+                  </button>
+                </div>
+                {isExpanded && (
+                  <div className="v2-hist-expand">
+                    {!turnState || turnState === 'loading' ? (
+                      <span className="v2-creating">
+                        {t('v2.history.loading', 'Cargando')}
+                        <span className="v2-creating-dots" />
+                      </span>
+                    ) : turnState === 'error' ? (
+                      <span className="v2-hist-expand-error">{t('v2.history.loadError', 'No se pudo cargar.')}</span>
+                    ) : turnState.length === 0 ? (
+                      <span className="v2-hist-expand-error">{t('v2.history.empty', 'Sin mensajes.')}</span>
+                    ) : (
+                      turnState.map(turn => (
+                        <div key={turn.id} className={turn.role === 'user' ? 'v2-assistant-user-line' : 'v2-assistant-reply v2-msg-body'}>
+                          {turn.role === 'user' ? (
+                            <><span className="v2-assistant-prompt">›</span> {turn.content}</>
+                          ) : renderChatContent(turn.content)}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       )}
     </div>

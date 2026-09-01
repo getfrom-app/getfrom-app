@@ -24,7 +24,7 @@ import { resolvePrompt } from '../utils/promptsHelper'
 import { extractUserKnowledge } from '../api/autoClassify'
 import { isProfileChatSession, PROFILE_CHAT_INSTRUCTIONS } from '../v2/profileChat'
 import { aiLangBase, aiLangBCP47 } from '../utils/aiLang'
-import { rememberFactsLocal, readProfileLines } from '../api/userKnowledge'
+import { readProfileLines } from '../api/userKnowledge'
 import { getAgentData, getAgentReferencedElements, readElementContent } from '../utils/agentesHelper'
 import { isInPapelera, parseExtraData } from '../utils/papeleraHelper'
 import { listContextElementsDeep } from '../utils/contextElements'
@@ -768,7 +768,9 @@ class AIChatStore {
       const today = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
       const knowledge = await extractUserKnowledge(trimmed, existingProfile || undefined, contextName, today)
       if (!knowledge) return
-      rememberFactsLocal([...knowledge.people, ...knowledge.facts], knowledge.obsolete)
+      // El servidor ya extrajo Y guardó en el mismo paso (assistantMemory.ts,
+      // rediseño 1 sept 2026) — este motor de chat está muerto igualmente
+      // (ver cabecera del archivo), se deja solo por el aviso de abajo.
       // En el CHAT DE PERFIL, lo que se guarda se dice en voz alta (Alberto, 5 ago
       // 2026: "la IA lo adaptará para que encaje en el perfil y lo añadirá
       // directamente, avisando al usuario de que lo ha hecho"). Determinista: es lo

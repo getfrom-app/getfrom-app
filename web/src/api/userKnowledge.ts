@@ -1,27 +1,23 @@
 /**
- * userKnowledge — Persistencia del conocimiento que Fromly aprende sobre el usuario.
+ * userKnowledge — lo que Fromly aprende sobre el usuario, del lado del CLIENTE.
  *
- * Fromly extrae personas y hechos del usuario desde varias fuentes — notas que
- * escribe (OutlinerNode → extractUserKnowledge), conversaciones con Magic en
- * el chat (aiChatStore → learnFromUserMessage), correcciones ("enseñar a
- * Magic", teachMagic.ts → addProfileFact) — y TODAS convergen en un único
- * escritor (`rememberFactsLocal`, más abajo) que guarda en el `body` del
- * nodo Perfil de IA, sección "🧠 Lo que Fromly ha aprendido".
+ * Rediseño 1 sept 2026 (Alberto: "quiero un sistema único y centralizado...
+ * que no aprenda información por tres sitios distintos y los guarde en cuatro
+ * sitios"). Hasta entonces este fichero era un ESCRITOR completo, gemelo a
+ * mano del servidor (`server/src/services/assistantMemory.ts`) — cada uno
+ * hacía "leer todo el body del Perfil → modificarlo → reescribirlo entero"
+ * sobre el mismo nodo, sin candado entre ambos (causó un incidente real, 30
+ * ago 2026). Ahora:
  *
- * ⚠️ Hasta el 31 ago 2026 esto NO era así: había tres formatos de
- * almacenamiento distintos conviviendo bajo el mismo perfil — hijos
- * "Personas: X, Y" / "Hechos: A, B" (este fichero), un hijo por hecho suelto
- * (teachMagic.ts) y el `body` (servidor, `assistantMemory.ts`, usado por
- * iOS/Telegram/chat vía servidor). Solo `getOrCreateProfileDoc` migraba
- * hijos→body, y encima de forma PEREZOSA (solo al abrir la pantalla de
- * Perfil) — así que lo aprendido conversando en la web nunca llegaba a
- * Telegram/iOS hasta que el usuario abría esa pantalla, y mientras tanto
- * cada escritor seguía creando hijos nuevos, deshaciendo cualquier
- * convergencia (Alberto, 31 ago 2026: "lo que el usuario cuenta en el chat
- * debe quedar en la memoria de fromly para todo... hay que organizar esta
- * info, no acumular lo innecesario"). Mismo formato/lógica que
- * `assistantMemory.ts` en el servidor (normalización, "obsolete" retira en
- * vez de acumular, tope duro) — mantenerlos alineados si uno cambia.
+ *  · El SERVIDOR es el ÚNICO que aprende y escribe — vía `/ai/extract-user-
+ *    knowledge` (notas/documentos), `/ai/teach` (corrección manual) o el chat
+ *    (`/assistant/chat`). Lo aprendido son PÍLDORAS: nodos reales, hijos del
+ *    nodo `_knowledgeRoot` ("🧠 Conocimiento"), que sincronizan al cliente
+ *    como cualquier otro nodo — no hay API nueva que consultar, `store` ya
+ *    las tiene.
+ *  · Este fichero queda SOLO para LEER: `listActiveKnowledgePills` (columna
+ *    derecha del Perfil) y `readProfileLines` (contexto para el extractor
+ *    antes de llamar al servidor, evita mandar de más).
  */
 
 import { store } from '../store/nodeStore'
@@ -102,94 +98,40 @@ export function readProfileLines(): string[] {
     .map(n => (n.text || '').trim())
 }
 
-// ── Escritor único de lo aprendido ("🧠 Lo que Fromly ha aprendido") ────────
+// ── Píldoras de conocimiento (lectura) ──────────────────────────────────────
 //
-// Mismo formato y misma lógica que `rememberFacts` en el servidor
-// (`server/src/services/assistantMemory.ts`): una sección al final del
-// `body` del Perfil, un `<p>hecho</p>` por línea, deduplicada por texto
-// normalizado, con "obsolete" retirando en vez de acumular, y un tope duro
-// para que crecer sin límite no sea posible. TODOS los escritores de hechos
-// del usuario (chat, notas, "enseñar a Magic") pasan por aquí — ver el
-// comentario de cabecera del fichero.
+// Una píldora es un nodo real, hijo de `store.knowledgeRootNode()`
+// (`extraData._knowledgeFact === '1'`), escrito ÚNICAMENTE por el servidor
+// (`rememberFacts` en `assistantMemory.ts`) y sincronizado al cliente como
+// cualquier otro nodo — no hace falta ninguna llamada de red para listarlas.
 
-const LEARNED_HEADING = '🧠 Lo que Fromly ha aprendido'
-const LEARNED_HEADING_HTML = `<p><strong>${LEARNED_HEADING}</strong></p>`
-const LEARNED_HEADING_RE = /<p>(?:(?!<\/p>)[\s\S])*🧠 Lo que Fromly ha aprendido(?:(?!<\/p>)[\s\S])*<\/p>/i
-/** Cuántas líneas aprendidas se guardan como máximo — pasado esto, se
- *  descartan las MÁS ANTIGUAS (nunca las recién aprendidas). Puro freno de
- *  seguridad: la deduplicación de abajo ya evita que un mismo hecho repetido
- *  infle el documento; esto solo cubre el caso de muchos hechos DISTINTOS de
- *  verdad acumulados durante meses. */
-const MAX_LEARNED_LINES = 200
-
-function stripHtmlLine(html: string): string {
-  return html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+export interface KnowledgePill {
+  id: string
+  text: string
+  /** De dónde salió — "chat", "note:<nodeId>", "teach", "evening", "migracion". */
+  source: string
+  createdAt: string
 }
 
-function splitLearnedSection(rawBody: string): { userHtml: string; learnedLines: string[] } {
-  const idx = rawBody.search(LEARNED_HEADING_RE)
-  if (idx === -1) return { userHtml: rawBody, learnedLines: [] }
-  const userHtml = rawBody.slice(0, idx)
-  const learnedHtml = rawBody.slice(idx).replace(LEARNED_HEADING_RE, '')
-  const learnedLines = learnedHtml.split(/<\/p>|<br\s*\/?>|\n/i).map(stripHtmlLine).filter(Boolean)
-  return { userHtml, learnedLines }
+function parsePillSource(extraData: string | null | undefined): string {
+  try { return (JSON.parse(extraData || '{}').source as string) || 'chat' } catch { return 'chat' }
 }
 
-/** Compara sin acentos, sin mayúsculas y sin puntuación final. */
-function normalizeFact(s: string): string {
-  return s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[.,;:!?]+$/, '').replace(/\s+/g, ' ').trim()
-}
-
-function escapeHtmlFact(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+/** Píldoras activas, más recientes primero — para la columna derecha del
+ *  Perfil (ver V2KnowledgePills.tsx). */
+export function listActiveKnowledgePills(): KnowledgePill[] {
+  const root = store.knowledgeRootNode()
+  if (!root) return []
+  return store.children(root.id)
+    .filter(n => !n.deletedAt && (n.text || '').trim())
+    .map(n => ({ id: n.id, text: (n.text || '').trim(), source: parsePillSource(n.extraData), createdAt: n.createdAt || '' }))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
 }
 
 /** Lo que Fromly ha aprendido, ya sin HTML — para mostrarlo (Ajustes → Magic)
  *  o darle contexto al extractor. */
 export function readLearnedFacts(): string[] {
-  const perfil = store.perfilIANode?.() ?? null
-  if (!perfil) return []
-  return splitLearnedSection(perfil.body || '').learnedLines
-}
-
-/**
- * Guarda hechos nuevos del usuario y retira los que `obsolete` deja
- * anticuados — misma sección, mismo documento que el servidor, así que lo
- * aprendido en la web ya está ahí para Telegram/iOS en el siguiente turno,
- * sin esperar a que se abra la pantalla de Perfil. Síncrono (usa
- * `getOrCreateProfileDoc`, que ya migra cualquier hijo legacy que quedara de
- * antes de este cambio) — se puede llamar directamente desde cualquier flujo
- * sin `await`.
- */
-export function rememberFactsLocal(facts: string[], obsolete: string[] = []): void {
-  const clean = facts.map(f => f.trim()).filter(f => f.length > 3 && f.length < 300)
-  const obsoleteClean = obsolete.map(f => f.trim()).filter(f => f.length > 3)
-  if (clean.length === 0 && obsoleteClean.length === 0) return
-
-  const perfil = getOrCreateProfileDoc()
-  const { userHtml, learnedLines } = splitLearnedSection(perfil.body || '')
-
-  const obsoleteNorm = obsoleteClean.map(normalizeFact)
-  const survivors = obsoleteNorm.length === 0
-    ? learnedLines
-    : learnedLines.filter(line => {
-        const n = normalizeFact(line)
-        return !obsoleteNorm.some(o => n.includes(o) || o.includes(n))
-      })
-
-  const known = new Set(survivors.map(normalizeFact))
-  const fresh = clean.filter(f => !known.has(normalizeFact(f)))
-  if (fresh.length === 0 && survivors.length === learnedLines.length) return
-
-  let newLearnedLines = [...survivors, ...fresh]
-  if (newLearnedLines.length > MAX_LEARNED_LINES) {
-    newLearnedLines = newLearnedLines.slice(newLearnedLines.length - MAX_LEARNED_LINES)
-  }
-
-  const learnedHtml = newLearnedLines.length > 0
-    ? LEARNED_HEADING_HTML + newLearnedLines.map(f => `<p>${escapeHtmlFact(f)}</p>`).join('')
-    : ''
-  store.updateNode(perfil.id, { body: userHtml + learnedHtml })
+  return listActiveKnowledgePills().map(p => p.text)
 }
 
 /** Limpia el nodo huérfano "🧠 Lo que From sabe" (sin "sobre ti") que quedó como

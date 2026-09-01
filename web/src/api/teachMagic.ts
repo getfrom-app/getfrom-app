@@ -14,7 +14,7 @@ import { apiRequest } from './client'
 import { store } from '../store/nodeStore'
 import { learningsStore } from '../store/learningsStore'
 import { buildClassifyContexts } from './autoClassify'
-import { readProfileLines, rememberFactsLocal } from './userKnowledge'
+import { readProfileLines } from './userKnowledge'
 
 const BUILTIN_TAGS = new Set(['tarea','evento','agente','prompt','proyecto','busqueda','panel','archivo','enlace','chat','favorito','seguimiento','quick','magic','rec','nota'])
 
@@ -97,12 +97,6 @@ function applyType(nodeId: string, setType: NonNullable<TeachResult['setType']>)
   }
 }
 
-/** Añade un hecho al perfil IA del usuario — mismo escritor único que
- *  cualquier otro hecho aprendido (chat, notas), ver userKnowledge.ts. */
-function addProfileFact(fact: string): void {
-  rememberFactsLocal([fact])
-}
-
 /**
  * Aplica el resultado de teach al nodo y guarda la regla.
  * Devuelve un resumen legible de lo que se aplicó (para feedback al usuario).
@@ -120,7 +114,8 @@ export async function applyTeachResult(nodeId: string, result: TeachResult): Pro
     if (label) summary.push(`Tipo → ${label}`)
   }
   if (result.profileFact) {
-    addProfileFact(result.profileFact)
+    // El servidor ya lo guardó al calcularlo (POST /ai/teach → rememberFacts,
+    // ver assistantMemory.ts) — aquí solo se refleja en el resumen.
     summary.push(`Perfil: ${result.profileFact}`)
   }
   if (result.rule && result.rule.trim()) {

@@ -46,6 +46,7 @@ import V2Chat from './V2Chat'
 import V2ElementChat from './V2ElementChat'
 import V2ElementView from './V2ElementView'
 import V2ThreadHistory from './V2ThreadHistory'
+import V2KnowledgePills from './V2KnowledgePills'
 import Icon from './Icon'
 import { ensureDayPath } from '../../utils/agendaHelper'
 import { containerNotesNode } from '../../utils/cajones'
@@ -71,6 +72,11 @@ export type RightSubTab = 'primary' | 'chat'
 interface Props {
   /** Destino activo (elegido en la sidebar) — decide el contenido de la Tab 1. */
   mode: RightMode
+  /** El centro está mostrando el Perfil (`V2App.showProfile`) — reutiliza el
+   *  destino Chat (mismo truco que siempre, ver comentario en V2App.onOpenProfile)
+   *  pero la Tab 1 enseña las píldoras de conocimiento en vez del historial de
+   *  hilos, que ahí no pinta nada. */
+  showProfile?: boolean
   selectedCtxId: string | null
   importDragOver?: boolean
   onOpenNode: (id: string) => void
@@ -181,7 +187,7 @@ function V2AgendaElementSide({ nodeId, onSelectCtx, onOpenNode }: { nodeId: stri
   )
 }
 
-export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, chatThreadId, onOpenChatThread, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped, agendaDayNoteDate }: Props) {
+export default function V2RightColumn({ mode, showProfile, selectedCtxId, importDragOver, onOpenNode, onSelectCtx, elementId, onResize, rightSubTab, onSubTabChange, chatThreadId, onOpenChatThread, elementsFilter, onOpenElementsFiltered, recorder, onFilesDropped, agendaDayNoteDate }: Props) {
   useStore()
   const { t } = useTranslation()
 
@@ -377,7 +383,9 @@ export default function V2RightColumn({ mode, selectedCtxId, importDragOver, onO
           sigue sin cabecera de tabs). */}
       {!isRecordingActive && mode === 'chat' && (
         <div className="v2-right-body">
-          <V2ThreadHistory activeThreadKey={chatThreadId} onOpenThread={onOpenChatThread} />
+          {showProfile
+            ? <V2KnowledgePills />
+            : <V2ThreadHistory activeThreadKey={chatThreadId} onOpenThread={onOpenChatThread} />}
         </div>
       )}
 
