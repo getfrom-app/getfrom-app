@@ -5,6 +5,20 @@
 
 ---
 
+## Sesión 2026-09-01 (sesión 23) — el repaso nocturno podía perder una respuesta sin guardarla
+
+Server `1fe7ef6`, sin cambios de web. Detalle completo en
+`logs/2026-09-01-sesion23-repaso-nocturno-perdia-respuestas.md`.
+
+- Bug reportado en vivo: contestar al repaso nocturno y que no quedara anotado en la nota diaria. Causa:
+  el mensaje del usuario solo se guardaba DESPUÉS de que la llamada a IA terminara bien — un fallo a
+  mitad de turno lo perdía sin que ni el cierre automático por inactividad pudiera rescatarlo.
+- Fix: el mensaje se persiste inmediatamente al recibirlo; la carga de contexto (`dayStateText`,
+  `loadUserKnowledge`) deja de usar un `Promise.all` sin red de seguridad.
+- `bun test` 405/405.
+
+---
+
 ## Sesión 2026-09-01 (sesión 22) — el chat distingue evento de tarea + prioriza novedades de vida sobre tareas
 
 Server `84d14f7` → `ae178b1`, sin cambios de web. Detalle completo en
