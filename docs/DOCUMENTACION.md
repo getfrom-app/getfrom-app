@@ -1,7 +1,20 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-08-31 (Web v9.10.26)
+> Última actualización: 2026-09-01 (Web v9.10.27)
+
+---
+
+## Sesión 2026-09-01 (sesión 17) — fix del bug flageado en la sesión 15: "Ver y editar"/"Ver" de Ajustes → Memoria no abrían nada
+
+Web **v9.10.26 → v9.10.27**. Detalle completo en
+`logs/2026-09-01-sesion17-fix-ver-y-editar-memoria.md`.
+
+- `SettingsView.tsx` (`MagicPane`): "Ver y editar" (Perfil) y "Ver" (conocimiento por contexto) usaban
+  `navigate('/node/:id')` — ruta de v1 que dentro del shell v2 cambia la URL sin abrir ningún overlay
+  visible. Sustituido por el evento `from:open-detail` que `V2App.tsx` ya escucha globalmente. Bug
+  preexistente encontrado y flageado aparte durante la sesión 15, resuelto ahora tal cual se dejó
+  anotado. Verificado en vivo: ambos botones abren el nodo correcto.
 
 ---
 
