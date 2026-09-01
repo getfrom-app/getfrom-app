@@ -36,12 +36,36 @@ function isSameLocalDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
-/** Saludo del día → 1-3 mensajes cortos, una vez por día. Reutiliza el mismo
+// Franja para el guardado del saludo — a propósito NO es la misma función que
+// `dayPart()` del servidor (assistantBrief.ts), que clasifica 00:00-04:59
+// como "evening" (para no llamar "buenos días" a las 2 de la mañana). Aquí
+// hace falta distinguir esa franja de la noche real (20h-24h): si se
+// reutilizara la etiqueta "evening" del servidor como clave del guardado,
+// un tick del setInterval a las 00:30 con la pestaña abierta desde ayer
+// consumía el ÚNICO saludo del día como "Buenas noches" y el de verdad — el
+// de las 8-9 de la mañana — nunca llegaba a inyectarse (Alberto, 1 sept
+// 2026: seguía viendo "Buenas noches" a las 8 de la mañana sin recargar).
+// `null` = madrugada, no hay saludo que mostrar, no gasta turno.
+type GreetSlot = 'morning' | 'afternoon' | 'evening'
+function greetSlot(d = new Date()): GreetSlot | null {
+  const h = d.getHours()
+  if (h < 5) return null
+  if (h < 12) return 'morning'
+  if (h < 20) return 'afternoon'
+  return 'evening'
+}
+const SLOT_ORDER: Record<GreetSlot, number> = { morning: 1, afternoon: 2, evening: 3 }
+
+/** Saludo del día → 1-3 mensajes cortos, una vez por franja (mañana/tarde/
+ *  noche), no una vez por día — así el cambio de franja con la pestaña
+ *  abierta desde antes también dispara el saludo nuevo. Reutiliza el mismo
  *  endpoint que antes pintaba V2BriefCard (`GET /assistant/brief`), solo que
  *  ahora sus piezas (`lead`/`overnight`/`attention`) entran en el hilo real
  *  como turnos del asistente, no como texto suelto fuera del chat. */
 async function injectDailyGreeting() {
-  const key = `from_agenda_brief_injected_${todayKey()}`
+  const slot = greetSlot()
+  if (!slot) return // madrugada: nada que enseñar, no se toca el guardado
+  const key = `from_agenda_brief_injected_${todayKey()}_${slot}`
   // ⚠️ Marca el flag ANTES del await, no después: en React 18 StrictMode (dev)
   // el efecto se invoca dos veces seguidas — con el guard solo al final, las
   // dos llamadas pasan el `if` (ninguna ha terminado su `fetch` todavía) y el
@@ -51,10 +75,13 @@ async function injectDailyGreeting() {
   localStorage.setItem(key, '1')
   try {
     const brief = await assistantGetBrief()
-    // Etiquetados como el saludo DE HOY — V2Chat.tsx pliega el bloque de un
-    // día anterior (p.ej. un "Buenas tardes" que se quedó ahí) en cuanto este
-    // ya está en el hilo, en vez de enseñar los dos seguidos.
-    const tag = `daily-greeting:${todayKey()}`
+    // Etiquetados por día+franja — V2Chat.tsx pliega el bloque de una franja
+    // anterior (p.ej. un "Buenos días" que se quedó ahí al llegar la tarde,
+    // o el "Buenas tardes" de un día previo) en cuanto este ya está en el
+    // hilo, en vez de enseñar los dos seguidos. El orden numérico al final
+    // garantiza que la comparación de texto (`m.tag > latestGreetingTag`)
+    // coincide con el orden cronológico real dentro del mismo día.
+    const tag = `daily-greeting:${todayKey()}-${SLOT_ORDER[slot]}`
     if (brief.overnight) assistantStore.addNotice(brief.overnight, tag)
     assistantStore.addNotice(brief.title + (brief.lead ? ' — ' + brief.lead : ''), tag)
     if (brief.attention) assistantStore.addNotice(brief.attention, tag)
