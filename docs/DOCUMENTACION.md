@@ -1,7 +1,26 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-01 (Web v9.10.30)
+> Última actualización: 2026-09-01 (Web v9.10.31, server únicamente esta sesión)
+
+---
+
+## Sesión 2026-09-01 (sesión 20) — check-in de tareas más elegante, instrucciones permanentes que se perdían
+
+Server `8ddd9f9`→`359c08e`, sin cambios de web. Detalle completo en
+`logs/2026-09-01-sesion20-checkin-elegante-instrucciones-permanentes.md`.
+
+- **Auditoría previa**: el check-in de tareas estancadas (preguntar si una tarea atascada sigue vigente)
+  ya existía desde el 12 ago — se confirmó antes de tocar nada, para no duplicarlo.
+- **Check-in menos repetitivo**: si el usuario ignoraba la pregunta, el siguiente check-in volvía a
+  preguntar por la MISMA tarea. Ahora salta a otra estancada distinta si la hay, y si es la única lo
+  reconoce en el mensaje en vez de fingir que es la primera vez. Menciona el contexto de la tarea cuando
+  lo tiene. Las plantillas de "organizar tareas sueltas" ganan variedad (antes eran fijas).
+- **Instrucciones permanentes que se perdían en silencio**: "a partir de ahora sé siempre muy breve" →
+  el modelo contestaba "entendido" sin guardar nada, sin ninguna mentira que la red de seguridad
+  existente pudiera detectar. `missedStandingInstruction()` (misma familia y mecanismo de reintento que
+  `isFalseConfirmation`) cierra ese hueco.
+- Verificado en vivo vía API con la cuenta de prueba real; `bun test` 401/401.
 
 ---
 
