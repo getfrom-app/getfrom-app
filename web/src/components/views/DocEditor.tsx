@@ -811,7 +811,8 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     hasExtractedKnowledgeRef.current = true
     try {
       const existingProfile = readProfileLines().join('. ')
-      const contextName = firstContextOf(store.getNode(node.id) ?? null)?.text || null
+      const selfNode = store.getNode(node.id)
+      const contextName = (selfNode ? firstContextOf(selfNode)?.text : null) || null
       await extractUserKnowledge(plainText.trim(), existingProfile || undefined, contextName, undefined, `note:${node.id}`)
     } catch { /* silencioso */ }
   // eslint-disable-next-line react-hooks/exhaustive-deps
