@@ -1,7 +1,22 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-01 (server, sin cambios de web esta sesión)
+> Última actualización: 2026-09-01, sesión 24 (server, sin cambios de web esta sesión)
+
+---
+
+## Sesión 2026-09-01 (sesión 24) — "lo guardo en tu perfil" en presente se colaba sin remember
+
+Server `6dadb39`, sin cambios de web. Detalle completo en
+`logs/2026-09-01-sesion24-guardo-presente-sin-remember.md`.
+
+- Bug real reportado: el chat dijo "Lo guardo en tu perfil: compraventa de casa..." (un dato importante,
+  compra de casa) y nunca quedó guardado. Causa: `isFalseConfirmation` solo reconocía el verbo en
+  participio ("guardado"), no en presente ("guardo").
+- Fix: `CONFIRM_VERB_RE` gana formas en presente (sin "creo", que dispararía en falso con "creo que...").
+  El presente aparece también en preguntas legítimas ("¿en qué contexto lo anoto?") — resuelto evaluando
+  frase a frase en vez de la respuesta entera.
+- `bun test` 408/408. Verificado en vivo con la frase exacta reportada.
 
 ---
 
