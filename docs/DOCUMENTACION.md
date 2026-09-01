@@ -1,7 +1,27 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-01 (Web v9.10.32)
+> Última actualización: 2026-09-01 (server, sin cambios de web esta sesión)
+
+---
+
+## Sesión 2026-09-01 (sesión 22) — el chat distingue evento de tarea + prioriza novedades de vida sobre tareas
+
+Server `84d14f7` → `ae178b1`, sin cambios de web. Detalle completo en
+`logs/2026-09-01-sesion22-evento-vs-tarea-novedades-de-vida.md`.
+
+- **Bug real (captura)**: el repaso nocturno llamó "tarea" a una cita con el notario (evento con hora) y
+  dijo "te dejo la tarea... como hecha" al cerrarla. `isEvent` ahora llega a los bloques de texto que lee
+  el modelo (`AgendaEntry`, `BriefItem` vía `labelForModel()`, separada de `label()` para que la marca
+  nunca llegue al texto del usuario) — sin tocar el invariante "tarea y evento son la misma fila de
+  datos" de `FROM.md`, esto es solo lenguaje. Bug de segunda vuelta encontrado probando en vivo: el
+  modelo copiaba "(evento)" dentro del título al crear una cita — corregido.
+- **A petición explícita**: el repaso nocturno preguntaba por tareas de trabajo en vez de por novedades
+  de vida (una mudanza, una compra de casa) que el usuario había contado el día anterior — el hecho
+  estaba guardado pero enterrado sin fecha entre hasta 60 líneas planas. `loadRecentPills()` nueva
+  (últimos 2 días, mismo sistema de píldoras) — el repaso nocturno las antepone y el prompt prioriza
+  preguntar por ahí antes que por tareas sueltas.
+- Verificado en vivo (API, cuenta de prueba); `bun test` 405/405.
 
 ---
 
