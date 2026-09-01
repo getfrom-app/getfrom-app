@@ -455,10 +455,17 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     const start = hashStartRef.current
     const end = ta.selectionStart ?? input.length
     const title = tag.node.text || tag.label
-    const next = input.slice(0, start) + `#${title} ` + input.slice(end)
+    // "#" solo si el título es UNA palabra: "#Título Con Espacios" se rompe
+    // en cuanto ese texto pasa por cualquier renderizador de etiquetas de la
+    // app (p.ej. al crear una tarea desde este mensaje) — solo "Título" queda
+    // como chip y "Con Espacios" cuelga suelto detrás, visualmente roto. Sin
+    // "#" el servidor lo sigue encontrando igual (`loadNamedContexts` busca
+    // por palabras del mensaje, no por el símbolo).
+    const inserted = /\s/.test(title) ? title : `#${title}`
+    const next = input.slice(0, start) + `${inserted} ` + input.slice(end)
     setInput(next)
     setHashQuery(null)
-    requestAnimationFrame(() => { ta.focus(); const p = start + title.length + 2; ta.setSelectionRange(p, p) })
+    requestAnimationFrame(() => { ta.focus(); const p = start + inserted.length + 1; ta.setSelectionRange(p, p) })
   }
 
   const doSend = (text: string, quickNote = false) => {

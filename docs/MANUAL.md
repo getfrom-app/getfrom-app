@@ -1,6 +1,6 @@
 # Fromly — Manual de usuario
 
-> Web · Mac · iPhone · fromly.app · Última actualización: 25 agosto 2026 (Web v9.6.984)
+> Web · Mac · iPhone · fromly.app · Última actualización: 1 septiembre 2026 (Web v9.10.30)
 
 ---
 
@@ -41,6 +41,18 @@ explicando estas mismas piezas. Puedes saltarlo o revisarlo de nuevo borrando el
 navegador si algún día quieres repasarlo.
 
 ---
+
+## Novedades (septiembre 2026)
+
+- **Menciona un contexto con `#` en el chat**: escribe `#` en el chat y elige un contexto de la
+  lista — así Fromly lo lee de verdad al responder, en vez de tener que teclear el nombre exacto de
+  memoria.
+- **Lo que Fromly sabe de ti, ahora visible**: en **Perfil**, la columna derecha lista cada cosa que
+  Fromly ha aprendido por su cuenta hablando contigo o leyendo lo que escribes — más reciente arriba,
+  con un clic para ver de dónde salió y cuándo. Cuando algo nuevo contradice algo viejo, el dato
+  antiguo se retira solo; si Fromly no está seguro, te lo pregunta.
+- **El historial de chats se puede leer entero**: en el destino Chat, la flecha de cada conversación
+  del Historial despliega la conversación completa ahí mismo, sin tener que abrirla.
 
 ## Novedades (agosto 2026)
 

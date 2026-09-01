@@ -1,7 +1,43 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-01 (Web v9.10.27)
+> Última actualización: 2026-09-01 (Web v9.10.30)
+
+---
+
+## Sesión 2026-09-01 (sesión 19) — memoria del usuario en píldoras, un único escritor, mención "#" de contextos en el chat
+
+Web **v9.10.28 → v9.10.30**, server `d4625dd`→`4bcb7d7`. Detalle completo en
+`logs/2026-09-01-sesion19-memoria-en-pildoras-mencion-contextos.md`.
+
+- **Historial de chats**: cada fila de `V2ThreadHistory.tsx` (columna derecha del destino Chat) gana una
+  flecha que despliega, en la misma columna, la conversación completa del hilo — antes solo se veía la
+  primera línea, truncada a 140 caracteres.
+- **El caso que disparó el rediseño**: el chat dijo "lo guardo bajo el nodo La Isla del Trading" sin que
+  apareciera nada ahí (sí en el Perfil) — `remember` solo sabe escribir en el perfil global, la frase la
+  inventaba el modelo sin ningún cruce contra la acción real. Regla nueva en el prompt prohibiendo esa
+  confirmación, y `remember` añadido como acción de respaldo válida en `isFalseConfirmation`.
+- **Rediseño de fondo, a petición explícita** ("sistema único y centralizado... que no aprenda
+  información por tres sitios distintos y los guarde en cuatro sitios"): auditoría confirmó DOS
+  escritores completos del mismo formato (servidor `assistantMemory.ts` + cliente `userKnowledge.ts`,
+  mantenidos a mano en paralelo, mismo riesgo de carrera de un incidente real anterior) y un hueco real
+  (`DocEditor.tsx`, la superficie principal de escritura hoy, sin ningún gancho de aprendizaje).
+- Lo aprendido pasa de líneas de texto dentro de un documento a **píldoras**: nodos reales
+  (`🧠 Conocimiento` como contenedor, `_knowledgeFact` por hecho, `source` + `createdAt` real). **Único
+  escritor, en servidor** (`rememberFacts`) — el cliente deja de escribir del todo, solo lee para pintar
+  la nueva **columna de píldoras en el Perfil** (`V2KnowledgePills.tsx`, mismo patrón que el Historial).
+  Gancho de extracción nuevo en documentos (cerraba el hueco real). Reconciliación en segundo plano
+  (`maybeReconcilePills`, cada 6h con 6+ píldoras activas) que archiva duplicados/contradicciones con
+  alta confianza y, en los casos dudosos, deja una PREGUNTA pendiente que el disparador de "Fromly
+  quiere saber más de ti" prioriza en vez de decidir sola.
+- **Mención "#" de contextos en el chat** (`V2Chat.tsx`): mismo patrón que la mención "@" ya existente —
+  al elegir un contexto inserta su título, que la búsqueda por palabras del servidor ya encuentra sola.
+  Bug real encontrado probando en vivo: con títulos de más de una palabra, el "#" rompía el renderizado
+  de etiquetas al crear una tarea desde ese mensaje — se omite el símbolo en esos casos.
+- Verificado en vivo (cuenta de prueba real, vía API directa y por UI): píldoras creadas/archivadas
+  correctamente, sin duplicados ni basura de intentos fallidos; mención "#" funcional; columna de
+  píldoras ordena y expande bien; documento editado genera píldora nueva. Datos de prueba limpiados al
+  terminar.
 
 ---
 
