@@ -4,6 +4,18 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.31 — 1 septiembre 2026 · Lo que Fromly sabe de ti, visible; menciona un contexto con "#" en el chat
+
+- **Web, Perfil**: la columna derecha lista ahora cada cosa que Fromly ha aprendido de ti hablando o
+  escribiendo — más reciente arriba, con un clic para ver de dónde salió y cuándo. Cuando algo nuevo
+  contradice algo que ya sabía, lo viejo se retira solo; si no está seguro, te lo pregunta él mismo.
+- **Web, Chat**: escribe `#` para mencionar un contexto — igual que ya podías mencionar notas y tareas
+  con `@`. Así Fromly lo tiene en cuenta de verdad al responder.
+- **Web, Historial de chats**: la flecha de cada conversación despliega el contenido completo ahí
+  mismo, sin tener que abrirla en el centro.
+
+---
+
 ## Web v9.10.20 · iOS v2.19.186 — 31 agosto 2026 · Chat de Agenda más vivo, contexto automático, tareas y eventos unificados
 
 - **Web, Agenda**: el botón "Cargar más antiguos" del chat (que no hacía nada) se sustituye por scroll
