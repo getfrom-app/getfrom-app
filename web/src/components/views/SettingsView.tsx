@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { assistantGetPrefs, assistantUpdatePrefs, assistantTelegramLink, assistantTelegramUnlink, type AssistantPrefs, type AssistantPrefsPatch, type AssistantTelegramLink } from '../../api/assistant'
+import { assistantGetPrefs, assistantUpdatePrefs, assistantTelegramLink, assistantTelegramUnlink, assistantGetTonePrefs, assistantSetTonePref, type AssistantPrefs, type AssistantPrefsPatch, type AssistantTelegramLink, type AssistantTonePref } from '../../api/assistant'
 import {
   CuentaPane,
   AparienciaPane,
@@ -126,6 +126,92 @@ function CuentaViewPane() {
 // `assistantPrefs` por usuario que ya lee/escribe iOS (`IOSSettingsView.swift`,
 // sección Asistente). Antes solo existía ahí; la web no tenía ningún ajuste
 // para esto (24 ago 2026, paridad web/iOS).
+
+// ── Cómo quiero que me hable Fromly (1 sept 2026) ───────────────────────────
+// Alberto: "un espacio en opciones para que el usuario diga cómo quiere que
+// sea fromly... con opciones para elegir y un espacio en blanco para
+// escribir". Cada chip es una preferencia de tono con su propia clave — al
+// encenderla se guarda como una píldora de conocimiento normal (MISMO
+// escritor único que usa el chat cuando el usuario dice "sé más breve"), así
+// que Ajustes y el chat alimentan exactamente el mismo sitio, nunca dos.
+// El texto que de verdad se recuerda queda en español a propósito (es lo que
+// lee el modelo como instrucción, no lo que ve el usuario) — solo la
+// ETIQUETA del chip pasa por i18n. Mismo criterio que el resto de hechos
+// guardados por Fromly, que tampoco cambian de idioma con la UI.
+const TONE_PRESETS: { key: string; labelKey: string; labelFallback: string; text: string }[] = [
+  { key: 'brevity', labelKey: 'settingsView.toneBrevity', labelFallback: 'Muy breve', text: 'Sé siempre muy breve y directo en tus respuestas, sin rodeos ni relleno.' },
+  { key: 'detailed', labelKey: 'settingsView.toneDetailed', labelFallback: 'Detallado', text: 'Da respuestas detalladas y completas — no tengas prisa por acortar.' },
+  { key: 'direct', labelKey: 'settingsView.toneDirect', labelFallback: 'Directo', text: 'Sé directo y ve al grano, sin suavizar las cosas innecesariamente.' },
+  { key: 'warm', labelKey: 'settingsView.toneWarm', labelFallback: 'Cercano', text: 'Sé cercano y cálido, como hablaría un amigo de confianza.' },
+  { key: 'fun', labelKey: 'settingsView.toneFun', labelFallback: 'Desenfadado', text: 'Sé desenfadado y con sentido del humor cuando venga a cuento — nada de tono corporativo.' },
+  { key: 'formal', labelKey: 'settingsView.toneFormal', labelFallback: 'Formal', text: 'Mantén un tono formal y profesional en todo momento.' },
+]
+const TONE_CUSTOM_KEY = 'custom'
+
+function TonePrefsSection() {
+  const { t } = useTranslation()
+  const [prefs, setPrefs] = useState<AssistantTonePref[] | null>(null)
+  const [busyKey, setBusyKey] = useState<string | null>(null)
+  const [customText, setCustomText] = useState('')
+  const [customDirty, setCustomDirty] = useState(false)
+  const [customSaving, setCustomSaving] = useState(false)
+
+  useEffect(() => {
+    assistantGetTonePrefs().then(p => {
+      setPrefs(p)
+      const custom = p.find(x => x.key === TONE_CUSTOM_KEY)
+      if (custom) setCustomText(custom.text)
+    }).catch(() => setPrefs([]))
+  }, [])
+
+  const isActive = (key: string) => !!prefs?.some(p => p.key === key)
+
+  async function toggle(preset: { key: string; text: string }) {
+    if (busyKey) return
+    const active = isActive(preset.key)
+    setBusyKey(preset.key)
+    setPrefs(prev => (prev ?? []).filter(p => p.key !== preset.key).concat(active ? [] : [{ id: 'optimistic', key: preset.key, text: preset.text }]))
+    try { setPrefs(await assistantSetTonePref(preset.key, active ? null : preset.text)) }
+    catch { /* deja el valor optimista */ }
+    finally { setBusyKey(null) }
+  }
+
+  async function saveCustom() {
+    const clean = customText.trim()
+    setCustomSaving(true)
+    try { setPrefs(await assistantSetTonePref(TONE_CUSTOM_KEY, clean || null)); setCustomDirty(false) }
+    finally { setCustomSaving(false) }
+  }
+
+  return (
+    <>
+      <div className="st-section-title" style={{ marginTop: 24 }}>{t('settingsView.toneTitle', 'Cómo quiero que me hable Fromly')}</div>
+      <div className="st-row" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 12 }}>
+        <div className="st-row-hint">{t('settingsView.toneHint', 'Elige uno o varios, o descríbelo con tus palabras. Decirlo en el chat ("sé más breve") también lo guarda aquí.')}</div>
+        <div className="nqp-chips-row">
+          {TONE_PRESETS.map(preset => (
+            <button
+              key={preset.key}
+              type="button"
+              className={`nqp-chip${isActive(preset.key) ? ' active' : ''}`}
+              disabled={busyKey === preset.key}
+              onClick={() => toggle(preset)}
+            >{t(preset.labelKey, preset.labelFallback)}</button>
+          ))}
+        </div>
+        <textarea
+          value={customText}
+          onChange={e => { setCustomText(e.target.value); setCustomDirty(true) }}
+          onBlur={() => customDirty && saveCustom()}
+          placeholder={t('settingsView.toneCustomPlaceholder', 'O escríbelo con tus palabras — p. ej. "háblame de tú, sin emojis, y ve directo al grano".')}
+          rows={3}
+          style={{ width: '100%', resize: 'vertical', fontFamily: 'inherit', fontSize: 13, padding: '8px 10px', borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', boxSizing: 'border-box' }}
+        />
+        {customSaving && <div className="st-row-hint">{t('settingsView.saving', 'Guardando…')}</div>}
+      </div>
+    </>
+  )
+}
 
 function AsistentePane() {
   const { t } = useTranslation()
@@ -288,6 +374,8 @@ function AsistentePane() {
             style={{ width: 16, height: 16, cursor: 'pointer' }} />
         </div>
       </div>
+
+      <TonePrefsSection />
 
       <div className="st-section-title" style={{ marginTop: 24 }}>{t('settingsView.telegramTitle', 'Telegram')}</div>
       <div className="st-row">

@@ -206,6 +206,30 @@ export async function assistantUpdatePrefs(patch: AssistantPrefsPatch): Promise<
   return apiRequest<AssistantPrefs>('/assistant/prefs', { method: 'PUT', body: JSON.stringify(patch) })
 }
 
+// ── Ajustes → Cómo quiero que me hable Fromly (1 sept 2026) ─────────────────
+// Cada preferencia es una píldora de conocimiento normal (mismo escritor
+// único que el chat, ver server/src/services/assistantMemory.ts), con una
+// clave (`key`) para que la UI sepa qué chip está encendido sin comparar
+// texto. Lo que el usuario pida en el chat ("sé más breve") entra por la vía
+// de siempre (`remember`, sin clave) — esto es solo la puerta de Ajustes.
+
+export interface AssistantTonePref {
+  id: string
+  key: string
+  text: string
+}
+
+export async function assistantGetTonePrefs(): Promise<AssistantTonePref[]> {
+  const res = await apiRequest<{ prefs: AssistantTonePref[] }>('/assistant/tone')
+  return res.prefs
+}
+
+/** `text: null` apaga esa preferencia (borra su píldora). */
+export async function assistantSetTonePref(key: string, text: string | null): Promise<AssistantTonePref[]> {
+  const res = await apiRequest<{ prefs: AssistantTonePref[] }>('/assistant/tone', { method: 'PUT', body: JSON.stringify({ key, text }) })
+  return res.prefs
+}
+
 export interface AssistantTelegramLink {
   code: string
   expiresInMinutes: number
