@@ -86,6 +86,13 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
   const popNavigate = useNavigate()
   const { t } = useTranslation()
   const [movePickerOpen, setMovePickerOpen] = useState(false)
+  // Contexto — mismo patrón que en `GCalEventEditor` (líneas de arriba en este
+  // fichero): chip con el contexto actual, o botón «Sin contexto», que abre
+  // `ContextPicker` en un portal por encima del backdrop del modal.
+  const [ctxPicker, setCtxPicker] = useState<{ x: number; y: number } | null>(null)
+  const ctxBtnRef = useRef<HTMLButtonElement>(null)
+  const ctxPickerRef = useRef<HTMLDivElement>(null)
+  const currentCtx = firstContextOf(node)
   // «¿Solo esta instancia o todas las siguientes?» (27 ago 2026, Alberto: "cuando
   // se edita... un evento recurrente... debe preguntar igual que Apple
   // Calendar"). Se pregunta UNA vez al abrir este popover sobre una tarea
@@ -118,6 +125,18 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
   }, [isBucle, node.id, onClose, popNavigate])
 
   // ESC + click-out gestionados ahora por <CenteredModal>. Sin handler local.
+
+  useEffect(() => {
+    if (!ctxPicker) return
+    function onDoc(e: MouseEvent) { if (ctxPickerRef.current && !ctxPickerRef.current.contains(e.target as globalThis.Node)) setCtxPicker(null) }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [ctxPicker])
+
+  function openCtxPicker(e?: React.MouseEvent) {
+    const r = (e?.currentTarget as HTMLElement | undefined)?.getBoundingClientRect() ?? ctxBtnRef.current?.getBoundingClientRect()
+    if (r) setCtxPicker({ x: r.left, y: r.bottom + 4 })
+  }
 
   const dueDate = isoToLocalDate(node.due)
   const dueTime = isoToLocalTime(node.due)
@@ -332,6 +351,27 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
             onClick={() => store.updateNode(node.id, { priority: opt.v })}
           >{opt.l}</button>
         ))}
+      </div>
+
+      {/* Contexto */}
+      <div className="tpp-section-label">{t('gcal.context', 'Contexto')}</div>
+      <div className="nqp-chips-row" style={{ alignItems: 'center' }}>
+        {currentCtx ? (
+          <ContextChip context={currentCtx} title={t('noteColumn.changeContext')}
+            onClick={openCtxPicker} onRemove={() => setNodeContext(node.id, null)} />
+        ) : (
+          <button ref={ctxBtnRef} className="dc-ctx-chip dc-ctx-chip--empty" onClick={openCtxPicker} title={t('rowContextChip.assign')}
+            style={{ width: 'auto', height: 'auto', padding: '2px 8px', whiteSpace: 'nowrap' }}>
+            {t('gcal.noContext', 'Sin contexto')}
+          </button>
+        )}
+        {ctxPicker && createPortal((
+          // Mismo z-index que en `GCalEventEditor` — por encima del backdrop de
+          // `CenteredModal` (100000).
+          <div ref={ctxPickerRef} style={{ position: 'fixed', top: ctxPicker.y, left: ctxPicker.x, zIndex: 100001 }} onClick={e => e.stopPropagation()}>
+            <ContextPicker currentId={currentCtx?.id ?? null} onPick={id => { setNodeContext(node.id, id); setCtxPicker(null) }} />
+          </div>
+        ), document.body)}
       </div>
 
       {/* Repetición */}

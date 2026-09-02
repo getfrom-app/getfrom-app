@@ -12881,8 +12881,20 @@ textarea:focus-visible,
 /* background era var(--bg-elevated, #fff) — esa variable no existe en el tema,
    así que siempre caía al blanco fijo del fallback: en modo oscuro, texto claro
    (--text-primary) sobre fondo blanco, prácticamente invisible (Alberto, 17 jul). */
-.pp-month-chip { font-size: 10.5px; color: var(--text-primary); background: var(--bg-secondary); border-radius: 3px; padding: 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; cursor: pointer; }
+.pp-month-chip { position: relative; font-size: 10.5px; color: var(--text-primary); background: var(--bg-secondary); border-radius: 3px; padding: 1px 15px 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; cursor: pointer; }
 .pp-month-chip:hover { background: var(--bg-hover, rgba(108,92,231,0.08)); }
+/* «+» en hover — abre edición completa (fecha/recurrencia/contexto) sin
+   navegar a la tarea, mismo patrón que `.pp-block-props` en semana/día. */
+.pp-month-chip-props {
+  position: absolute; top: 50%; right: 2px; transform: translateY(-50%);
+  width: 12px; height: 12px; z-index: 2;
+  border: none; border-radius: 3px; background: var(--bg-primary);
+  color: var(--text-tertiary); cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .1s, color .1s;
+}
+.pp-month-chip:hover .pp-month-chip-props { opacity: .85; }
+.pp-month-chip-props:hover { opacity: 1 !important; color: var(--accent); }
 .pp-month-more { font-size: 10px; color: var(--text-tertiary); padding: 0 4px; }
 
 .pp-year-grid {

@@ -44,7 +44,6 @@ import { useUserStore } from '../../store/userStore'
 import { useToast } from '../Toast'
 import Icon from '../../v2/components/Icon'
 import { usePlannerHours } from '../../utils/plannerHours'
-import NewTaskModal from '../modals/NewTaskModal'
 import NewEventModal from '../modals/NewEventModal'
 
 // ── Geometría fija ────────────────────────────────────────────────────────
@@ -463,7 +462,6 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   // (Alberto, 27 ago 2026: el número del día abre el día; el resto de la
   // celda debe permitir crear directamente).
   const [monthAddMenu, setMonthAddMenu] = useState<{day: Date; x: number; y: number} | null>(null)
-  const [monthNewTaskDay, setMonthNewTaskDay] = useState<Date | null>(null)
   const [monthNewEventDay, setMonthNewEventDay] = useState<Date | null>(null)
 
   // ── GCal ──────────────────────────────────────────────────────────────────
@@ -1377,6 +1375,16 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                       }}
                       title={it.text}>
                       {it.text}
+                      {/* «+» en hover — abre edición (fecha/recurrencia/contexto) sin
+                          navegar a la nota, mismo patrón que `.pp-block-props` en las
+                          vistas semana/día. Solo para nodos reales (no eventos GCal
+                          crudos, que no tienen props que editar aquí). */}
+                      {store.getNode(it.id) && (
+                        <button className="pp-month-chip-props" title={t('dailyCockpit.editDateRecurrence')}
+                          onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === it.id ? null : it.id) }}>
+                          <Icon name="plus" size={10} />
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1388,7 +1396,21 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           <>
             <div style={{position:'fixed',inset:0,zIndex:998}} onClick={()=>setMonthAddMenu(null)} />
             <div className="pp-ctx" style={{left:monthAddMenu.x,top:monthAddMenu.y}}>
-              <button onClick={()=>{ setMonthNewTaskDay(monthAddMenu.day); setMonthAddMenu(null) }}>
+              <button onClick={()=>{
+                // Tarea nueva desde el mes → misma edición completa (recurrencia +
+                // contexto) que el resto de la app, no el modal simple: se crea el
+                // nodo ya con la fecha del día clicado y se abre TaskPropsPopover
+                // (allowRename edita el título ahí mismo).
+                const diaryNode = store.todayDiary()
+                const node = store.createNode({
+                  text: '',
+                  parentId: diaryNode?.id || null,
+                  isTask: true,
+                  due: toMidnight(monthAddMenu.day),
+                })
+                setPropsNodeId(node.id)
+                setMonthAddMenu(null)
+              }}>
                 {t('modal.newTask')}
               </button>
               <button onClick={()=>{ setMonthNewEventDay(monthAddMenu.day); setMonthAddMenu(null) }}>
@@ -1396,12 +1418,6 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
               </button>
             </div>
           </>
-        )}
-        {monthNewTaskDay && (
-          <NewTaskModal
-            defaultDateStr={localDateStr(monthNewTaskDay)}
-            onClose={() => setMonthNewTaskDay(null)}
-          />
         )}
         {monthNewEventDay && (
           <NewEventModal
