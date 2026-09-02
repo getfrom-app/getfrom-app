@@ -406,12 +406,13 @@ ves en el centro y en la columna derecha.
 Es el destino por defecto al abrir Fromly. El centro muestra el Planificador (semana de 3 columnas
 con el día elegido siempre en el centro, mes o año — navegable, ver sección 7), sin nada más encima
 — limpio. Mientras no tengas nada abierto, la columna derecha tiene, de arriba abajo: la **nota del
-día** elegido (siempre visible, con scroll propio), la lista de **atrasadas y sin fecha** (lo que el
-calendario no cubre, para poder arrastrarlas al Planificador) y, debajo, un **chat de verdad** —
-el mismo asistente que en iPhone o Telegram: pregúntale, pídele que cree o modifique tareas, anótale
-cosas. Además de responder lo que le escribas, va soltando avisos solo, sin que hagas nada: el
-saludo del día, cuando completas una tarea de hoy o atrasada, y un recordatorio si un evento con hora
-está a punto de empezar.
+día** elegido (siempre visible, con scroll propio), **Tareas** — la lista de atrasadas y sin fecha
+(lo que el calendario no cubre, para poder arrastrarlas al Planificador) — y, debajo, **Asistente**:
+un **chat de verdad**, el mismo asistente que en iPhone o Telegram: pregúntale, pídele que cree o
+modifique tareas, anótale cosas. Además de responder lo que le escribas, va soltando avisos solo, sin
+que hagas nada: el saludo del día (con repaso de lo de ayer si lo hay), a media tarde una pregunta
+real para completar tu perfil, y un recordatorio si un evento con hora está a punto de empezar —
+completar una tarea, en cambio, no dispara ningún aviso.
 
 Abrir una tarea, evento o timeblock desde el Planificador la centra y **la columna derecha pasa a
 acompañarla**: fecha/hora/recurrencia/prioridad editables, su contexto y grupo, los enlaces que

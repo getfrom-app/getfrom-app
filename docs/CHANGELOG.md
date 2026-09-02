@@ -4,6 +4,16 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.39 — 2 septiembre 2026 · Cabeceras "Tareas"/"Asistente" en Agenda, chat menos parlanchín
+
+- **Agenda, columna derecha**: "Tareas" y "Asistente" tienen ahora una pequeña cabecera, igual que
+  ya tenía "Nota del día".
+- **Asistente de Agenda**: ya no dice nada al completar una tarea — sigue siendo proactivo con el
+  saludo del día, la pregunta de la tarde y los recordatorios de eventos próximos, solo que sin
+  comentar cada tarea marcada como hecha.
+
+---
+
 ## Web v9.10.38 — 2 septiembre 2026 · Archivar contextos, crear tarea desde el mes con recurrencia y contexto
 
 - **Sidebar**: nueva opción **Archivar** en el clic derecho de cualquier contexto (antes solo

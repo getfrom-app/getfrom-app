@@ -1,7 +1,26 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-02, sesión 28 (web)
+> Última actualización: 2026-09-02, sesión 29 (web)
+
+---
+
+## Sesión 2026-09-02 (sesión 29) — headings "Tareas"/"Asistente" en Agenda + quita el aviso al completar tarea
+
+Web `62688caa` (v9.10.39). Detalle completo en
+`logs/2026-09-02-sesion29-headings-agenda-sin-aviso-completado.md`.
+
+- **Agenda, columna derecha**: nueva clase `.v2-agenda-section-heading` (mismo lenguaje visual que
+  el toggle de "Nota del día", pero estática) sobre el cockpit de Tareas y sobre el chat del
+  Asistente — antes solo "Nota del día" tenía cabecera. `V2RightColumn.tsx` gana dos filas `auto`
+  más en su `gridTemplateRows`.
+- **`V2AgendaAssistant.tsx`**: retirado el `useEffect` que soltaba un aviso ("Una menos: «X»" y
+  variantes) cada vez que se completaba una tarea con la columna abierta — Alberto: "no es necesario
+  que diga nada cuando termino una tarea". Se mantiene el resto de avisos proactivos (saludo por
+  franja horaria con repaso de la noche anterior, pregunta de perfil a media tarde, recordatorio de
+  eventos con hora próxima).
+- `tsc --noEmit` limpio; no se pudo probar en vivo (sesión de desarrollo con cuenta real expirada,
+  sin credenciales para reentrar).
 
 ---
 
