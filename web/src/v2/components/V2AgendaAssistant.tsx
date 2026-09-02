@@ -14,9 +14,14 @@
 // mensaje LOCAL, sin turno de servidor — ver assistantStore.ts) cuando pasa
 // algo real:
 //   · el saludo del día (antes V2BriefCard, un párrafo estático que solo se
-//     calculaba una vez) — una vez por día, como 1-3 mensajes cortos.
-//   · una tarea de hoy/atrasada se completa mientras la columna está abierta.
+//     calculaba una vez) — una vez por día, como 1-3 mensajes cortos, con el
+//     repaso de la noche anterior (`brief.overnight`) cuando lo hay.
+//   · a media tarde, "Buenas tardes" + una pregunta real de perfil.
 //   · un evento con hora está a punto de empezar (< 15 min).
+// (Retirado 2 sep 2026, Alberto: "no es necesario que diga nada cuando
+// termino una tarea" — completar una tarea ya NO dispara ningún aviso; el
+// chat debe ser proactivo por sí mismo — saludos, comentarios, repaso — no
+// reactivo a cada checkbox.)
 // Todo esto es LOCAL a esta pestaña — no reclama servidor nuevo, y no
 // interfiere con el envío real de mensajes (`assistantStore.send`, intacto).
 import { useEffect, useRef } from 'react'
@@ -90,30 +95,8 @@ async function injectDailyGreeting() {
   }
 }
 
-// Variantes de aviso de tarea completada — antes SIEMPRE el mismo "Has
-// completado «X»." en cada finalización, por muchas que fueran seguidas
-// (Alberto, 31 ago 2026: "tiene que ser un chat mucho más dinámico...
-// ahora es muy mecánico, pobre"). Un poco de variación + reconocer una
-// racha corta le da algo de calidez sin caer en la palmadita en la espalda
-// por cada checkbox — sigue siendo una frase, no un párrafo.
-const DONE_PHRASES = [
-  (t: string) => `Hecho: «${t}».`,
-  (t: string) => `«${t}», tachada.`,
-  (t: string) => `Una menos: «${t}».`,
-  (t: string) => `«${t}» fuera de la lista.`,
-]
-function completionNotice(text: string, streak: number): string {
-  const label = text || 'una tarea'
-  if (streak >= 5) return `«${label}» — van ${streak} hoy, buen ritmo.`
-  if (streak === 3) return `«${label}» — tres seguidas.`
-  const phrase = DONE_PHRASES[Math.floor(Math.random() * DONE_PHRASES.length)]
-  return phrase(label)
-}
-
 export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: (files: File[]) => void }) {
   useStore()
-  const seenPendingIds = useRef<Set<string> | null>(null)
-  const doneStreakToday = useRef(0)
   const remindedIds = useRef<Set<string>>(new Set(
     (() => { try { return JSON.parse(sessionStorage.getItem('from_agenda_reminded') || '[]') } catch { return [] } })(),
   ))
@@ -161,33 +144,6 @@ export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: 
     const id = setInterval(checkIn, 60_000)
     return () => clearInterval(id)
   }, [])
-
-  // Tarea de hoy/atrasada completada mientras la columna está abierta → aviso
-  // corto. `seenPendingIds` arranca en el primer render con lo que YA está
-  // pendiente (nunca avisa de nada anterior a abrir la pantalla); cada
-  // cambio de store compara contra esa foto — lo que faltaba y ahora está
-  // `done` se acaba de completar aquí mismo.
-  useEffect(() => {
-    const now = new Date()
-    const pending = new Set(
-      store.allActive()
-        .filter(n => n.status === 'pending' && !n.isEvent && !n.isDiaryEntry && !isInPapelera(n.id))
-        .filter(n => !n.due || new Date(n.due) <= new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59))
-        .map(n => n.id),
-    )
-    if (seenPendingIds.current) {
-      for (const id of seenPendingIds.current) {
-        if (pending.has(id)) continue
-        const n = store.getNode(id)
-        if (n && n.status === 'done') {
-          doneStreakToday.current += 1
-          assistantStore.addNotice(completionNotice(n.text, doneStreakToday.current))
-        }
-      }
-    }
-    seenPendingIds.current = pending
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [store.nodesVersion])
 
   // Recordatorio de un evento con hora que empieza en menos de 15 min —
   // revisa cada 60s mientras la columna está montada (Alberto: "que me

@@ -427,8 +427,8 @@ export default function V2RightColumn({ mode, showProfile, selectedCtxId, import
           className="v2-right-fill v2-agenda-col"
           style={{
             gridTemplateRows: dayNoteId
-              ? `auto ${noteOpen ? '1fr' : '0px'} 1fr 1fr`
-              : '1fr 1fr',
+              ? `auto ${noteOpen ? '1fr' : '0px'} auto 1fr auto 1fr`
+              : 'auto 1fr auto 1fr',
           }}
         >
           {/* Nota del día — se abre/cierra con un botón arriba de la columna,
@@ -458,10 +458,12 @@ export default function V2RightColumn({ mode, showProfile, selectedCtxId, import
             </>
           )}
 
+          <div className="v2-agenda-section-heading">{t('v2.tasks', 'Tareas')}</div>
           <div className="v2-agenda-cockpit-strip">
             <DailyCockpit bare disablePlanner hideToday hideFuture />
           </div>
 
+          <div className="v2-agenda-section-heading">{t('v2.rightColumn.assistant', 'Asistente')}</div>
           {/* El chat real de Agenda — sustituye al brief estático (V2AgendaAssistant.tsx). */}
           <V2AgendaAssistant onFilesDropped={onFilesDropped} />
         </div>

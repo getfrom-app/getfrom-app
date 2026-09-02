@@ -985,6 +985,14 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 .v2-agenda-note-toggle-chevron { display: inline-flex; transition: transform .25s ease; }
 .v2-agenda-note-toggle.open .v2-agenda-note-toggle-chevron { transform: rotate(90deg); }
 
+/* Cabeceras de "Tareas" y "Asistente" — mismo lenguaje visual que el toggle de
+   "Nota del día" de arriba, pero estáticas (sin botón/chevron/plegado). */
+.v2-agenda-section-heading {
+  padding: 10px 20px 4px;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
 /* La nota, el cockpit y el chat son ahora filas de grid a partes iguales
    (ver `.v2-agenda-col` arriba) — cada una con su propio scroll interno para
    no desbordar su tercio. `min-height: 0` es obligatorio en cada fila de
