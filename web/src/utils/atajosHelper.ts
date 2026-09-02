@@ -52,16 +52,32 @@ export function createFilterShortcut(name: string, query: string, view?: string)
   return node.id
 }
 
+/** Solo una vez por dispositivo — ver el bug de abajo. */
+const FAVORITES_MIGRATION_FLAG = 'from-migrate-shortcuts-to-favorites-v1'
+
 /**
  * migrateNodeShortcutsToFavorites — unifica el concepto de "favorito".
  *
  * Los favoritos antiguos creaban un nodo-puntero (`_shortcutNodeId`) bajo el
  * contenedor de filtros ADEMÁS de marcar `isFavorite` en el nodo destino. Ahora la
- * única fuente de verdad es `node.isFavorite`. Esta migración (idempotente) recorre
- * los punteros, asegura `isFavorite=true` en el destino (por si alguno se creó sin
+ * única fuente de verdad es `node.isFavorite`. Esta migración recorre los
+ * punteros, asegura `isFavorite=true` en el destino (por si alguno se creó sin
  * marcarlo) y borra el nodo-puntero redundante. Op-based → reversible.
+ *
+ * ⚠️ Bug real (Alberto, 2 sep 2026: "he quitado de favoritos... y han vuelto a
+ * aparecer, en web y en app"): esto se llamaba en CADA arranque de la web (ver
+ * `appInit.ts`, sin flag de "ya migrado"), y si el borrado de un puntero no
+ * llegaba a confirmarse en el servidor a tiempo (offline, pestaña cerrada a
+ * mitad de sync…), el puntero "resucitaba" en la siguiente carga — esta
+ * función lo volvía a encontrar y forzaba `isFavorite=true` OTRA VEZ, sin
+ * mirar si el usuario ya lo había desmarcado a mano después. El iPhone, con
+ * su bootstrap completo al abrir la app, heredaba ese `true` del servidor sin
+ * poder defenderse (no compara frescura en una carga completa). Fix: correr
+ * como mucho una vez por dispositivo — los punteros que sobrevivan a partir
+ * de ahí no vuelven a tocar `isFavorite`, solo se limpian en silencio.
  */
 export function migrateNodeShortcutsToFavorites(): void {
+  try { if (localStorage.getItem(FAVORITES_MIGRATION_FLAG) === '1') return } catch { /* sin localStorage: sigue una vez, no persiste */ }
   const parent = getAtajosNode()
   if (!parent) return
   for (const child of store.children(parent.id)) {
@@ -75,6 +91,7 @@ export function migrateNodeShortcutsToFavorites(): void {
     }
     store.deleteNode(child.id)  // borrar el puntero redundante
   }
+  try { localStorage.setItem(FAVORITES_MIGRATION_FLAG, '1') } catch { /* noop */ }
 }
 
 // Get shortcut data from a node

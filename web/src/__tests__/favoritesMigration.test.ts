@@ -12,7 +12,13 @@ import {
 // contenedor de filtros se convierten en node.isFavorite y se borran. Los filtros
 // de query reales NO se tocan.
 describe('migrateNodeShortcutsToFavorites', () => {
-  beforeEach(() => { store.nodes.clear() })
+  beforeEach(() => {
+    store.nodes.clear()
+    // La migración ahora corre como mucho una vez por dispositivo (flag en
+    // localStorage) — sin limpiarlo, la segunda prueba heredaría el flag que
+    // dejó la primera y `migrateNodeShortcutsToFavorites()` no haría nada.
+    localStorage.clear()
+  })
 
   it('convierte punteros legacy en isFavorite y los borra; respeta filtros reales', () => {
     // ensureAtajosNode no crea en store casi vacío (<3 nodos): sembramos relleno
@@ -51,5 +57,29 @@ describe('migrateNodeShortcutsToFavorites', () => {
     migrateNodeShortcutsToFavorites()
     const live = store.children(container.id).filter(n => !n.deletedAt)
     expect(live.length).toBe(1)
+  })
+
+  it('no reactiva isFavorite si el usuario lo desmarcó tras la primera pasada (bug 2 sep 2026)', () => {
+    store.createNode({ text: 'a', parentId: null })
+    store.createNode({ text: 'b', parentId: null })
+    const target = store.createNode({ text: 'Desarrollo From', parentId: null })
+    const container = ensureAtajosNode()
+    const pointer = store.createNode({ text: 'Desarrollo From', parentId: container.id })
+    store.updateNode(pointer.id, { extraData: JSON.stringify({ _shortcutNodeId: target.id }) })
+
+    migrateNodeShortcutsToFavorites()
+    expect(store.getNode(target.id)?.isFavorite).toBe(true)
+
+    // El usuario lo desmarca a mano después de la migración.
+    store.updateNode(target.id, { isFavorite: false })
+
+    // Un puntero "resucita" (p.ej. el borrado no llegó a confirmarse en el
+    // servidor a tiempo) — sin el flag de "ya migrado", una segunda pasada
+    // lo volvería a forzar a `true` sin mirar la decisión del usuario.
+    const revived = store.createNode({ text: 'Desarrollo From', parentId: container.id })
+    store.updateNode(revived.id, { extraData: JSON.stringify({ _shortcutNodeId: target.id }) })
+
+    migrateNodeShortcutsToFavorites()
+    expect(store.getNode(target.id)?.isFavorite).toBe(false)
   })
 })
