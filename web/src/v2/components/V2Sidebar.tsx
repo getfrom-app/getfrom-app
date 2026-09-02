@@ -13,13 +13,14 @@ import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { WEB_VERSION } from '../../components/layout/StatusBar'
-import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent, reparentContext, listContextsForParent, getOrCreateContextKnowledgeDoc } from '../../utils/cajones'
+import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent, reparentContext, listContextsForParent, getOrCreateContextKnowledgeDoc, archiveContext, unarchiveContext } from '../../utils/cajones'
 import { listPendingAgentConversations, listUnseenAgentResults } from '../../store/aiChatStore'
 import { useAssistantStore, assistantStore } from '../../store/assistantStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useWebPush } from '../../hooks/useWebPush'
 import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
+import V2ArchivedContexts from './V2ArchivedContexts'
 import V2ReviewInbox from './V2ReviewInbox'
 import { getUnclassifiedIds } from '../../utils/unclassified'
 import { hasTimeOfDay } from '../../utils/taskNode'
@@ -123,6 +124,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   const [expanded, setExpanded] = useState<Set<string>>(new Set())
   const [userMenu, setUserMenu] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
+  const [showArchivedContexts, setShowArchivedContexts] = useState(false)
   const [showReviewInbox, setShowReviewInbox] = useState(false)
   // La v1 (donde antes había que crear contextos para que "aparecieran aquí") ya no
   // existe — el sidebar de v2 necesita su propio botón para crear contextos, con
@@ -206,6 +208,21 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   const commitRename = () => {
     if (renaming && renameVal.trim()) store.updateNode(renaming, { text: renameVal.trim() })
     setRenaming(null); setRenameVal('')
+  }
+  // Archivar (distinto de Eliminar/papelera, ver comentario en cajones.ts):
+  // se lleva con él todo el contenido del contexto y es recuperable entero
+  // desde «Archivo de contextos» en Ajustes (Alberto, 2 sep 2026).
+  const archiveContextRow = (id: string) => {
+    archiveContext(id)
+    setCtxMenu(null)
+    if (selectedCtxId === id) onSelectCtx(null)
+    window.dispatchEvent(new CustomEvent('from:toast', {
+      detail: {
+        message: t('v2.ctxArchivedToast', 'Contexto archivado'),
+        type: 'success',
+        action: { label: t('tip.undo', 'Deshacer'), onClick: () => unarchiveContext(id) },
+      },
+    }))
   }
   const deleteContext = (id: string) => {
     const deletedIds = store.deleteNode(id)
@@ -626,6 +643,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
                 <button className="v2-ctx-menu-item" onClick={() => { setShareCtxId(ctxMenu.id); setCtxMenu(null) }}>
                   {t('v2.ctxMenu.publish', 'Publicar contexto…')}
                 </button>
+                <button className="v2-ctx-menu-item" onClick={() => archiveContextRow(ctxMenu.id)}>{t('v2.ctxMenu.archive', 'Archivar')}</button>
                 <div className="v2-ctx-menu-sep" />
                 <button className="v2-ctx-menu-item v2-ctx-menu-item--danger" onClick={() => deleteContext(ctxMenu.id)}>{t('v2.ctxMenu.delete', 'Eliminar')}</button>
               </>
@@ -666,6 +684,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
             <button className="v2-usermenu-item" onClick={() => { onOpenProfile(); setUserMenu(false) }}><Icon name="profile" size={15} /> {t('v2.profile.title', 'Perfil')}</button>
             <button className="v2-usermenu-item" onClick={() => { onOpenSettings(); setUserMenu(false) }}><Icon name="settings" size={15} /> {t('v2.settings', 'Ajustes')}</button>
             <button className="v2-usermenu-item" onClick={() => { setShowTrash(true); setUserMenu(false) }}><Icon name="trash" size={15} /> {t('v2.trash', 'Papelera')}</button>
+            <button className="v2-usermenu-item" onClick={() => { setShowArchivedContexts(true); setUserMenu(false) }}><Icon name="archive" size={15} /> {t('v2.archivedContexts.menuItem', 'Archivo de contextos')}</button>
             <div className="v2-usermenu-sep" />
             <div className="v2-usermenu-label">{t('v2.theme', 'Tema')}</div>
             <div className="v2-theme-seg">
@@ -732,6 +751,7 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         </button>
       </div>
       {showTrash && <V2Trash onClose={() => setShowTrash(false)} onOpenNode={onOpenNode} />}
+      {showArchivedContexts && <V2ArchivedContexts onClose={() => setShowArchivedContexts(false)} />}
       {showReviewInbox && <V2ReviewInbox onClose={() => setShowReviewInbox(false)} onOpenNode={id => onOpenNode?.(id)} />}
       {showNewContext && (
         <NewContextModal

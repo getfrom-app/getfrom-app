@@ -25,7 +25,7 @@ import { exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/n
 import { convertNoteToBlock } from '../../utils/noteBlocks'
 import { promoteCitationWithFeedback } from '../../utils/citations'
 import V2DocTasks from './V2DocTasks'
-import { firstContextOf, setNodeContext, contextColor } from '../../utils/cajones'
+import { firstContextOf, setNodeContext, contextColor, isContextNode } from '../../utils/cajones'
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from '../../components/panels/ContextPicker'
 import V2TaskDetailView from './V2TaskDetailView'
@@ -223,9 +223,15 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
               <button title={t('export.pdf')} onClick={() => exportNodePdf(node)} style={actBtn}>PDF</button>
               <PublishButton node={node} contextId={parseExtraData(node.extraData)._containerNotes === '1' ? (node.parentId ?? undefined) : undefined} />
             </>}
-            <button title={t('tip.delete', 'Eliminar')} onClick={deleteCard} style={{ ...actBtn, color: 'var(--text-tertiary,#999)' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-            </button>
+            {/* Un contexto no es un "documento": es su nota anclaje, no se elimina
+                como si fuera uno cualquiera — se ARCHIVA (menú de la sidebar,
+                Alberto 2 sep 2026: "una nota de contexto no necesita botón de
+                eliminar... no se pueden ni deben eliminar"). */}
+            {!isContextNode(node.id) && (
+              <button title={t('tip.delete', 'Eliminar')} onClick={deleteCard} style={{ ...actBtn, color: 'var(--text-tertiary,#999)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+              </button>
+            )}
           </div>
         </div>
       )}

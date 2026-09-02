@@ -233,6 +233,82 @@ export function convertToContext(nodeId: string): boolean {
   return true
 }
 
+// ── Archivo de contextos ──────────────────────────────────────────────────
+// Distinto de `_closed` (arriba): cerrar solo esconde de pickers/ghost-text y
+// SOLO aplica a subcontextos. Archivar es más fuerte — aplica a CUALQUIER
+// contexto (raíz incluida, "las áreas") y se lleva con él TODO su contenido:
+// el propio nodo desaparece de la sidebar y de cualquier listado (mismo
+// soft-delete que usa `store.deleteNode`, así que todo lo que ya filtra por
+// `deletedAt` lo oculta gratis), pero es 100% recuperable desde un "Archivo
+// de contextos" dedicado (Alberto, 2 sep 2026: "archivar un contexto archiva
+// con él todos los elementos que tenga internamente... y se debe poder
+// recuperar todo"). NO reparenta a la Papelera (`trashNode`): así no
+// aparece mezclado en "vaciar papelera" ni se purga con ella.
+
+/** ¿Es un CONTEXTO archivado (no cualquier nodo borrado)? */
+export function isContextArchived(n: Node | null | undefined): boolean {
+  return !!n && !!n.deletedAt && ed(n)._archivedContext === '1'
+}
+
+/** Todos los contextos archivados, más recientes primero. */
+export function listArchivedContexts(): Node[] {
+  const out: Node[] = []
+  for (const n of store.nodes.values()) if (isContextArchived(n)) out.push(n)
+  return out.sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))
+}
+
+/** Archiva un contexto (raíz o subcontexto) + sus subcontextos anidados +
+ *  todo su contenido: lo que cuelga de él en el árbol (`deleteNode` ya hace
+ *  esa cascada) Y lo asignado por referencia en cualquier otro sitio del
+ *  árbol (`nodesInContext`, `_ctxRefs`) — ninguno de los dos por sí solo
+ *  cubre ambos casos. Cada nodo tocado se marca con
+ *  `extraData._archivedFromContext` ANTES de borrarse, para poder
+ *  restaurar exactamente ese conjunto desde `unarchiveContext`. */
+export function archiveContext(contextId: string): void {
+  const root = store.getNode(contextId)
+  if (!root) return
+  const ctxIds = contextAndDescendantIds(contextId)
+  const toMark = new Set<string>()
+  for (const cid of ctxIds) {
+    toMark.add(cid)
+    for (const n of nodesInContext(cid)) toMark.add(n.id)
+  }
+  for (const id of toMark) {
+    const n = store.getNode(id)
+    if (!n) continue
+    const e = ed(n)
+    e._archivedFromContext = contextId
+    store.updateNode(id, { extraData: JSON.stringify(e) })
+  }
+  const ce = ed(store.getNode(contextId)); ce._archivedContext = '1'
+  store.updateNode(contextId, { extraData: JSON.stringify(ce) })
+  const deletedByTree = new Set(store.deleteNode(contextId))
+  for (const id of toMark) {
+    if (deletedByTree.has(id)) continue
+    const n = store.getNode(id)
+    if (n && !n.deletedAt) store.deleteNode(id)
+  }
+}
+
+/** Restaura un contexto archivado y TODO lo que se archivó con él (mismo
+ *  `contextId` en `_archivedFromContext`), y limpia las marcas de archivo. */
+export function unarchiveContext(contextId: string): void {
+  const ids: string[] = []
+  for (const n of store.nodes.values()) {
+    if (n.deletedAt && ed(n)._archivedFromContext === contextId) ids.push(n.id)
+  }
+  if (!ids.includes(contextId)) ids.push(contextId)
+  store.restoreDeleted(ids)
+  for (const id of ids) {
+    const n = store.getNode(id)
+    if (!n) continue
+    const e = ed(n)
+    delete e._archivedFromContext
+    if (id === contextId) delete e._archivedContext
+    store.updateNode(id, { extraData: JSON.stringify(e) })
+  }
+}
+
 export function setContextClosed(nodeId: string, closed: boolean): void {
   const n = store.getNode(nodeId)
   if (!n) return
