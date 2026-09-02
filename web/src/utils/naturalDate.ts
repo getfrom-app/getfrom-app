@@ -346,6 +346,41 @@ export function nextRecurrence(from: Date, rec: RecurrenceConfig): Date {
   const d = new Date(base); d.setDate(d.getDate() + 7 * interval); return d
 }
 
+/**
+ * Próxima ocurrencia de una recurrencia EN O DESPUÉS de `from` — para saber
+ * "cuándo toca lo siguiente" de un nodo recurrente sin tener que recorrer día
+ * a día desde fuera (2 sep 2026, Alberto: la barra "Lo próximo" no incluía un
+ * timeblock recurrente porque su instancia de hoy es solo una PROYECCIÓN
+ * virtual — `origin.due` sigue en el pasado hasta que alguien lo completa a
+ * mano y `spawnRecurrence` crea el nodo real siguiente. `nextEvent.ts` no
+ * tenía ninguna noción de recurrencia, solo miraba `due` real de cada nodo).
+ * Mismo límite de búsqueda (120 pasos) que `PlannerPanel.recurrenceOccursOn`
+ * usa para proyectar la vista mes — no reinventa el criterio, solo lo hace
+ * consultable con "dame la siguiente" en vez de "¿cae en este día concreto?".
+ */
+export function nextRecurrenceOccurrenceOnOrAfter(
+  origin: { due: string | null; recurrence?: string | null },
+  from: Date,
+  maxLookaheadSteps = 120,
+): Date | null {
+  if (!origin.due || !origin.recurrence) return null
+  const rec = recurrenceFromString(origin.recurrence)
+  if (!rec) return null
+  const originDue = new Date(origin.due)
+  const originDay = new Date(originDue.getFullYear(), originDue.getMonth(), originDue.getDate())
+  const fromDay = new Date(from.getFullYear(), from.getMonth(), from.getDate())
+  const withTime = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), originDue.getHours(), originDue.getMinutes())
+  if (originDay.getTime() >= fromDay.getTime()) return withTime(originDay)
+  const horizon = new Date(fromDay); horizon.setDate(horizon.getDate() + maxLookaheadSteps)
+  let cursor = originDay
+  for (let i = 0; i < maxLookaheadSteps; i++) {
+    cursor = nextRecurrence(cursor, rec)
+    if (cursor.getTime() > horizon.getTime()) return null
+    if (cursor.getTime() >= fromDay.getTime()) return withTime(cursor)
+  }
+  return null
+}
+
 // ── Detección de fecha al final del texto de una tarea ───────────────────────
 
 const TIME_PATTERN = /\s+a\s+las?\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?$/i

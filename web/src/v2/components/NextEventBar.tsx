@@ -28,6 +28,11 @@ const FIVE_MIN_MS = 300_000
 
 function startOfDay(x: Date): number { return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime() }
 
+// Una proyección virtual de recurrencia (`nextEvent.listUpcomingTimed`) usa un
+// id sintético `<nodeId>::virtual::<isoDate>` — no existe como nodo propio,
+// así que al abrir el detalle hay que apuntar siempre al nodo ORIGEN.
+function realNodeId(id: string): string { return id.split('::virtual::')[0] }
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fmtWhen(d: Date, now: Date, t: any): string {
   const dayMs = 86400_000
@@ -193,7 +198,7 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
             className="v2-nextevent-text"
             onClick={() => {
               if (blinking) { setBlinkStopped(s => new Set(s).add(first!.id)); return }
-              window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: first!.id } }))
+              window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: realNodeId(first!.id) } }))
             }}
             title={blinking ? t('nextEvent.tapToStopBlink', 'Toca para dejar de parpadear') : label}
           >
@@ -202,7 +207,7 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
           {second && (
             <button
               className="v2-nextevent-text v2-nextevent-after"
-              onClick={() => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: second.id } }))}
+              onClick={() => window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: realNodeId(second.id) } }))}
               title={afterLabel}
             >
               <span className="v2-nextevent-prefix">{t('nextEvent.after', 'Después:')}</span> {second.text || t('common.noTitle', 'Sin título')} — {fmtWhen(second.due, now, t)}
