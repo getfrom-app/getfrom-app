@@ -683,9 +683,11 @@ puedes hacer clic en una hora vacía para crear una tarea nueva directamente ah�
 Para algo que necesitas bloquear en tu agenda pero que no es una tarea que marcar como hecha ni una
 reunión a la que asistir obligatoriamente (por ejemplo, "estudiar" o "tiempo para escribir"), usa un
 **TimeBlock**: botón derecho sobre un hueco vacío del Planificador (en el móvil, mantener pulsado).
-Se ve con un rayado diagonal distinto al de una tarea o un evento, no lleva casilla de completar, y
-no aparece en ninguna lista de tareas de Fromly — solo en el Planificador. Se sincroniza con Google
-Calendar igual que cualquier otro bloque.
+Se ve con un rayado diagonal distinto al de una tarea o un evento, y no lleva casilla de completar.
+Aparece en todo el planificador (Día, Semana y la banda de "todo el día") y también en el chat —
+"Buenos días", el resumen de mañana, avisos push — igual que una tarea o un evento; Fromly lo
+reconoce como un hueco reservado, no como algo que "se hace" o "se completa". Se sincroniza con
+Google Calendar igual que cualquier otro bloque.
 
 ### "Lo próximo" — siempre a la vista
 

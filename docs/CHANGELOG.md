@@ -4,6 +4,26 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.35 · iOS (en la próxima versión) — 2 septiembre 2026 · TimeBlocks en todo el chat, favoritos que se quedan quitados
+
+- **iPhone, pestaña Anotar**: crear una tarea ya deja elegir repetición y contexto ahí mismo, igual
+  que en la ficha de una tarea — antes solo dejaba fecha y hora.
+- **iPhone**: crear una tarea desde el chat confirma y se queda en el chat — antes abría la ficha de
+  golpe.
+- **iPhone**: eventos con hora ya no aparecen como tareas sueltas al principio del día — un dato que
+  el servidor mandaba y el cliente no leía.
+- **Planificador**: los TimeBlocks (huecos reservados) ya se ven en la vista Semana y en la banda de
+  "todo el día", no solo en la vista Día.
+- **iPhone**: volver del Planificador al chat ya no pierde el "Buenos días" en favor del historial
+  completo.
+- **Chat, Web e iPhone**: los TimeBlocks aparecen ahora en todos los sitios igual que tareas y
+  eventos — el "Buenos días", "SU AGENDA" del chat en vivo, el resumen de mañana y los avisos push.
+  Fromly los reconoce como lo que son (un hueco reservado, no algo que "se completa").
+- **Web e iPhone**: arreglado un bug real donde un favorito que se quitaba a mano (p. ej. un
+  documento concreto) podía volver a aparecer solo, en ambos sitios, tras reabrir la app.
+
+---
+
 ## Web v9.10.32 — 1 septiembre 2026 · Elige cómo quieres que te hable Fromly
 
 - **Web, Ajustes → Asistente**: nueva sección "Cómo quiero que me hable Fromly" — chips (muy breve,
