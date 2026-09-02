@@ -4,6 +4,21 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.38 — 2 septiembre 2026 · Archivar contextos, crear tarea desde el mes con recurrencia y contexto
+
+- **Sidebar**: nueva opción **Archivar** en el clic derecho de cualquier contexto (antes solo
+  existía para subcontextos). Archiva el contexto y TODO su contenido interno de una vez, y
+  desaparece de la lista.
+- **Menú de cuenta**: nueva pantalla **Archivo de contextos**, junto a Papelera — lista todo lo
+  archivado y lo devuelve entero (contexto + contenido) con un clic en Desarchivar.
+- La nota de un contexto ya no muestra el botón Eliminar — se archiva desde la sidebar, no se borra
+  como un documento cualquiera.
+- **Planificador, vista Mes**: crear una tarea desde una celda vacía abre ahora el mismo modal
+  completo que semana/día (recurrencia, contexto, estado, color), no el simplificado de antes.
+  Las tarjetas del mes muestran un "+" al pasar el ratón para editarlas sin salir del mes.
+
+---
+
 ## Web v9.10.35 · iOS (en la próxima versión) — 2 septiembre 2026 · TimeBlocks en todo el chat, favoritos que se quedan quitados
 
 - **iPhone, pestaña Anotar**: crear una tarea ya deja elegir repetición y contexto ahí mismo, igual

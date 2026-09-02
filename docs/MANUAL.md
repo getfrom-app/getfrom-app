@@ -308,8 +308,15 @@ Los contextos son la forma en la que Fromly organiza tu vida: cada nota, tarea o
 - **Áreas**: contextos de nivel superior, siempre activos (por ejemplo "Trabajo", "Personal",
   "Familia"). Son los grandes cajones de tu vida.
 - **Proyectos**: subcontextos dentro de un Área, pensados para cosas que **se abren y se cierran**
-  (un lanzamiento, una mudanza, un viaje). Puedes archivarlos cuando terminan sin perder su
-  contenido.
+  (un lanzamiento, una mudanza, un viaje).
+
+### Archivar un contexto
+
+Cualquier contexto (Área o Proyecto) se puede archivar con clic derecho sobre él en la columna
+izquierda → **Archivar**. Se lleva con él TODO su contenido — tareas, notas, cualquier elemento
+asignado — y desaparece de la sidebar y de cualquier listado. Es totalmente reversible: entra en
+**Archivo de contextos** (menú de tu cuenta, junto a Papelera) para ver todo lo archivado y pulsar
+**Desarchivar** — el contexto vuelve, con todo su contenido intacto, tal como estaba.
 
 Clic en cualquier contexto de la columna izquierda para centrar la conversación en él — el centro
 abre su Memoria y la columna derecha su Ficha (tareas y elementos de ese contexto). Elementos, en

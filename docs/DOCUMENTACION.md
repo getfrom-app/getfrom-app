@@ -1,7 +1,35 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-01, sesión 24 (server, sin cambios de web esta sesión)
+> Última actualización: 2026-09-02, sesión 28 (web)
+
+---
+
+## Sesión 2026-09-02 (sesión 28) — mes del planificador con modal completo + archivar contextos
+
+Web `94083617` → `57b9ca2b` (v9.10.36 → v9.10.38). Detalle completo en
+`logs/2026-09-02-sesion28-mes-modal-completo-archivar-contextos.md`.
+
+- **Planificador, vista Mes**: crear tarea desde una celda vacía ya no abre el modal simple
+  (`NewTaskModal`) — crea el nodo y abre `TaskPropsPopover` (recurrencia + estado + color, el mismo
+  que usan semana/día), que además ganó un selector de CONTEXTO que no tenía (patrón copiado de
+  `GCalEventEditor`). Tarjetas del mes con "+" en hover para editar sin navegar (`.pp-block-props`
+  extendido a `.pp-month-chip-props`).
+- **Archivar contextos (nuevo mecanismo, `cajones.ts`)**: `archiveContext`/`unarchiveContext` —
+  distinto del `_closed` existente (que solo esconde de pickers/RAG, no toca contenido, y estaba
+  restringido a subcontextos: "las áreas no se archivan"). El nuevo SÍ aplica a cualquier contexto
+  (raíz incluido) y archiva con él todo su contenido interno: lo que cuelga de él en el árbol
+  (`deleteNode`) + lo asignado por `_ctxRefs` en cualquier otro sitio (`nodesInContext`, que
+  `deleteNode` solo no cubre). Soft-delete normal (`deletedAt`), sin reparentar a la Papelera — no
+  se mezcla con "vaciar papelera". Cada nodo tocado se marca con `extraData._archivedFromContext`
+  para poder restaurar el conjunto exacto. Nueva pantalla "Archivo de contextos"
+  (`V2ArchivedContexts.tsx`, menú de cuenta junto a Papelera) y opción "Archivar" en el clic derecho
+  de la sidebar (`V2Sidebar.tsx`). El botón "Archivar" antiguo de subcontextos (`V2ContextView.tsx`,
+  mapea a `_closed`) se dejó intacto — sigue siendo una feature distinta.
+- La nota-ancla de un contexto ya no muestra "Eliminar" en su toolbar (`V2DetailView.tsx`, gate por
+  `isContextNode`) — no es un documento, se archiva, no se borra.
+- `tsc --noEmit` limpio en ambos cambios. El primero se verificó en vivo (cuenta de pruebas); el
+  segundo no se pudo probar en vivo (sesión de desarrollo expiró) — pendiente de verificación real.
 
 ---
 
