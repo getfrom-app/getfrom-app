@@ -12756,6 +12756,10 @@ textarea:focus-visible,
    centrado en toda la altura del bloque, que en bloques cortos se solapaba
    con la hora). */
 .pp-block-titlerow { display: flex; align-items: flex-start; gap: 4px; margin-top: 1px; }
+/* Icono de "tiene notas" — discreto, color secundario, nunca compite con el
+   título (2 sep 2026: aviso visual de que la tarea/evento/timeblock tiene
+   contenido en su nota, sin tener que abrirla). */
+.pp-block-notes-icon { flex: 0 0 auto; margin-top: 2px; color: var(--text-tertiary); opacity: .75; }
 .pp-block-check {
   flex: 0 0 auto; margin-top: 1px; width: 11px; height: 11px;
   border: 1.3px solid var(--text-tertiary); border-radius: 3px; background: var(--bg-primary);

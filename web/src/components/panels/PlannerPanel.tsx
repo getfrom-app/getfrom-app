@@ -25,7 +25,7 @@ import { isInPapelera } from '../../utils/papeleraHelper'
 import { gcalEventNodeId } from '../../utils/deterministicId'
 import {
   firstContextOf, contextColor, listContextTags, setNodeContext, normalizeContextPath,
-  findContextByPath, ensureContextPath, type ContextTag,
+  findContextByPath, ensureContextPath, containerNotesNode, type ContextTag,
 } from '../../utils/cajones'
 import {
   getCalendarEventsRange,
@@ -67,6 +67,16 @@ function sameDay(a: Date, b: Date) {
 }
 function addDays(d: Date, n: number): Date { const r = new Date(d); r.setDate(r.getDate() + n); return r }
 function startOfDay(d: Date): Date { const r = new Date(d); r.setHours(0,0,0,0); return r }
+// ¿La "Notas" (containerNotesNode) de este nodo tiene contenido real, no solo
+// HTML vacío (`<p></p>`)? — icono discreto en la tarjeta del planner para
+// saber que hay algo dentro sin tener que abrirla (2 sep 2026, Alberto: "me
+// gustaría... un pequeño icono en su tarjeta del planner, para saber que ese
+// elemento tiene contenido dentro").
+function hasNoteContent(nodeId: string): boolean {
+  const notes = containerNotesNode(nodeId)
+  if (!notes?.body) return false
+  return notes.body.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().length > 0
+}
 function daysInMonth(d: Date): number { return new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() }
 function fmtHH(d: Date) { return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` }
 
@@ -1055,6 +1065,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     // el nodo ORIGEN, con fecha distinta). El clic sigue abriendo el origen.
     const checkable = !isGcal && !b.virtual && !!blockNode && blockNode.status != null && !blockNode.isEvent && !isTimeBlockNode(blockNode)
     const done = checkable && blockNode!.status === 'done'
+    const hasNotes = !!blockNode && hasNoteContent(blockNode.id)
     // Solapes → columnas lado a lado (ver `layoutBlocks`). Sin solape, ocupa
     // el ancho completo de la columna como siempre.
     const cols = b.cols ?? 1
@@ -1119,6 +1130,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
               title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
           )}
           <div className="pp-block-text">{b.text || t('common.noTitle')}</div>
+          {hasNotes && <Icon name="note" size={10} className="pp-block-notes-icon" />}
         </div>
         {/* «+» — abre solo la ventana de fecha/recurrencia, sin navegar a la
             nota. Solo para bloques con nodo real (tarea/timeblock/evento ya
@@ -1337,16 +1349,18 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
               <div key={date.toISOString()} className={`pp-month-cell ${isTod ? 'pp-month-cell--today' : ''}`}
                 onDragOver={e => e.preventDefault()}
                 onDrop={e => handleMonthDrop(e, date)}
-                // Hueco en blanco de la celda (fuera del número y de los chips) → elegir
-                // tarea o evento para ese día. El número del día tiene su propio onClick
-                // para abrir el día (más abajo).
-                onClick={e => { if (e.target === e.currentTarget) setMonthAddMenu({ day: date, x: e.clientX, y: e.clientY }) }}
+                // Hueco en blanco de la celda (fuera del número y de los chips) → cambia
+                // la nota diaria de la columna derecha a ESE día (mismo criterio que la
+                // cabecera de vista semana) y además ofrece elegir tarea o evento para
+                // ese día. El número del día tiene su propio onClick para abrir el día
+                // (más abajo).
+                onClick={e => { if (e.target === e.currentTarget) { setCenterDate(date); setMonthAddMenu({ day: date, x: e.clientX, y: e.clientY }) } }}
                 title={date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}>
                 <div className={`pp-month-daynum ${isTod ? 'pp-month-daynum--today' : ''}`}
                   onClick={e => { e.stopPropagation(); const dn = ensureDayPath(date); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: dn.id } })) }}>
                   {date.getDate()}
                 </div>
-                <div className="pp-month-items" onClick={e => { if (e.target === e.currentTarget) setMonthAddMenu({ day: date, x: e.clientX, y: e.clientY }) }}>
+                <div className="pp-month-items" onClick={e => { if (e.target === e.currentTarget) { setCenterDate(date); setMonthAddMenu({ day: date, x: e.clientX, y: e.clientY }) } }}>
                   {items.map(it => (
                     <div key={it.id} className="pp-month-chip" style={{ borderLeft: `2px solid ${it.color}`, opacity: it.done ? 0.45 : 1, textDecoration: it.done ? 'line-through' : 'none' }}
                       onClick={e => {
@@ -1512,7 +1526,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                 <div style={{width: AXIS_W, flexShrink:0, position:'sticky', left:0, background:'var(--bg-primary)', zIndex:10}} />
                 {visibleDays.map(d => (
                   <div key={d.toISOString()} className={`pp-col-head ${sameDay(d,today)?'pp-col-head--today':''} ${sameDay(d,centerDate)?'pp-col-head--center':''}`}
-                    style={{width:colW, flexShrink:0}}>
+                    style={{width:colW, flexShrink:0, cursor:'pointer'}}
+                    title={t('tip.openDayNote', 'Abrir la nota de este día')}
+                    onClick={() => setCenterDate(d)}>
                     {dayLabel(d, i18n.language)}
                   </div>
                 ))}
@@ -1572,6 +1588,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                             title={t('daily.markDone')} aria-label={t('daily.markDone')}>{chipDone ? <Icon name="check" size={10} strokeWidth={2.6} /> : null}</button>
                         )}
                         {n.text || t('common.noTitle')}
+                        {hasNoteContent(n.id) && <Icon name="note" size={9} className="pp-block-notes-icon" />}
                       </div>
                       )
                     })}

@@ -26,10 +26,11 @@ import Icon from './Icon'
 const FIFTEEN_MIN_MS = 900_000
 const FIVE_MIN_MS = 300_000
 
+function startOfDay(x: Date): number { return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime() }
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function fmtWhen(d: Date, now: Date, t: any): string {
   const dayMs = 86400_000
-  const startOfDay = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
   const diffDays = Math.round((startOfDay(d) - startOfDay(now)) / dayMs)
   const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
   const dayLabel =
@@ -155,7 +156,13 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
   const urgent = hasEvent && (state === 'soon' || state === 'blink')
 
   const label = hasEvent ? `${first!.text || t('common.noTitle', 'Sin título')} — ${fmtWhen(first!.due, now, t)}` : ''
-  const prefix = state === 'ongoing' ? t('nextEvent.ongoing', 'En curso:') : t('nextEvent.next', 'Siguiente:')
+  // "Para mañana:" en vez de "Siguiente:" cuando el próximo elemento es de
+  // mañana, no de hoy (2 sep 2026, Alberto: "esos detalles cuentan") — ayuda a
+  // distinguir de un vistazo "hoy me queda esto" de "esto es ya para mañana".
+  const isTomorrow = hasEvent && Math.round((startOfDay(first!.due) - startOfDay(now)) / 86400_000) === 1
+  const prefix = state === 'ongoing' ? t('nextEvent.ongoing', 'En curso:')
+    : isTomorrow ? t('nextEvent.forTomorrow', 'Para mañana:')
+    : t('nextEvent.next', 'Siguiente:')
   const second = state === 'ongoing' ? items[1] : undefined
   const afterLabel = second ? `${t('nextEvent.after', 'Después:')} ${second.text || t('common.noTitle', 'Sin título')} — ${fmtWhen(second.due, now, t)}` : ''
 

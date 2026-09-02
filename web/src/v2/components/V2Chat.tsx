@@ -349,10 +349,19 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
 
   // Trae el brief/avisos que hayan llegado mientras la pestaña no estaba
   // delante, igual que hace iOS al abrir — el hilo web es también el
-  // registro completo de lo que el asistente ha dicho por su cuenta.
+  // registro completo de lo que el asistente ha dicho por su cuenta. Además
+  // de al montar, se repite cada minuto (2 sep 2026, Alberto: "el repasa el
+  // día conmigo y el buenos días deben saltar solos, aunque no esté el
+  // usuario en la página" — antes solo se pedía UNA vez al abrir el hilo, así
+  // que el aviso que el cron del servidor ya había generado (brief/"Repasa el
+  // día conmigo") se quedaba esperando en el buzón hasta la siguiente
+  // interacción del usuario en vez de aparecer solo, igual que el resto de
+  // avisos de `V2AgendaAssistant` que sí corren con su propio `setInterval`).
   useEffect(() => {
     if (!isBackgroundInboxThread) return
     assistantStore.fetchInbox().catch(() => {})
+    const id = setInterval(() => { assistantStore.fetchInbox().catch(() => {}) }, 60_000)
+    return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNodeId])
 
