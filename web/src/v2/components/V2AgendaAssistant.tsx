@@ -17,28 +17,30 @@
 //     calculaba una vez) — una vez por día, como 1-3 mensajes cortos, con el
 //     repaso de la noche anterior (`brief.overnight`) cuando lo hay.
 //   · a media tarde, "Buenas tardes" + una pregunta real de perfil.
-//   · un evento con hora está a punto de empezar (< 15 min).
 // (Retirado 2 sep 2026, Alberto: "no es necesario que diga nada cuando
 // termino una tarea" — completar una tarea ya NO dispara ningún aviso; el
 // chat debe ser proactivo por sí mismo — saludos, comentarios, repaso — no
 // reactivo a cada checkbox.)
+// (Retirado el aviso "un evento con hora está a punto de empezar", 3 sep
+// 2026: era un SEGUNDO proceso, local a esta pestaña e independiente del
+// recordatorio real por push (`assistantCron.ts` → `assistantReminders.ts`,
+// que SÍ respeta la antelación elegida en Ajustes y llega también aquí vía
+// `assistantStore.fetchInbox`) — con los dos activos, Alberto veía la misma
+// tarea avisada dos veces en pocos minutos, con formatos distintos (con
+// tarjeta la del servidor, texto suelto la de aquí). Con uno solo, siempre
+// llega con la antelación correcta y con la tarjeta de la tarea.)
 // Todo esto es LOCAL a esta pestaña — no reclama servidor nuevo, y no
 // interfiere con el envío real de mensajes (`assistantStore.send`, intacto).
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { assistantStore, AGENDA_THREAD_KEY } from '../../store/assistantStore'
-import { store, useStore } from '../../store/nodeStore'
+import { useStore } from '../../store/nodeStore'
 import { assistantGetBrief } from '../../api/assistant'
-import { isInPapelera } from '../../utils/papeleraHelper'
-import { hasTimeOfDay } from '../../utils/taskNode'
 import V2Chat from './V2Chat'
 
 export { AGENDA_THREAD_KEY }
 
 function todayKey(d = new Date()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-function isSameLocalDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
 // Franja para el guardado del saludo — a propósito NO es la misma función que
@@ -97,9 +99,6 @@ async function injectDailyGreeting() {
 
 export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: (files: File[]) => void }) {
   useStore()
-  const remindedIds = useRef<Set<string>>(new Set(
-    (() => { try { return JSON.parse(sessionStorage.getItem('from_agenda_reminded') || '[]') } catch { return [] } })(),
-  ))
 
   // Ambos avisos dependen del RELOJ, no de cuándo se montó el componente —
   // la web puede quedarse abierta todo el día sin recargar (a diferencia de
@@ -142,38 +141,6 @@ export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: 
     }
     checkIn()
     const id = setInterval(checkIn, 60_000)
-    return () => clearInterval(id)
-  }, [])
-
-  // Recordatorio de un evento con hora que empieza en menos de 15 min —
-  // revisa cada 60s mientras la columna está montada (Alberto: "que me
-  // recuerde"). Una vez por evento y sesión (`remindedIds`, persistido en
-  // sessionStorage para no repetirlo si el componente se remonta).
-  useEffect(() => {
-    const check = () => {
-      const now = new Date()
-      for (const n of store.allActive()) {
-        // `hasTimeOfDay`, no `isEvent` — mismo criterio que el recordatorio por
-        // push del servidor (`assistantReminders.ts`, el que SÍ le llegó a
-        // Alberto en iOS para "Estudiar" a las 11:00): cualquier tarea pendiente
-        // con hora, tenga o no `isEvent` puesto. Antes exigir `isEvent` dejaba
-        // fuera tareas con hora que nunca pasaron por la vía que fija ese flag
-        // (p.ej. una recurrente creada antes de esa migración) — el aviso nunca
-        // llegaba en web aunque la tarea SÍ tuviera hora (Alberto, 31 ago 2026).
-        if (!hasTimeOfDay(n) || n.status !== 'pending' || !n.due || isInPapelera(n.id)) continue
-        if (remindedIds.current.has(n.id)) continue
-        const due = new Date(n.due)
-        if (!isSameLocalDay(due, now)) continue
-        const minsUntil = (due.getTime() - now.getTime()) / 60000
-        if (minsUntil > 0 && minsUntil <= 15) {
-          assistantStore.addNotice(`Recuerda: «${n.text || 'evento'}» en ${Math.round(minsUntil)} min.`, undefined, { kind: 'reminder', dueAt: due.toISOString() })
-          remindedIds.current.add(n.id)
-          try { sessionStorage.setItem('from_agenda_reminded', JSON.stringify([...remindedIds.current])) } catch { /* ignore */ }
-        }
-      }
-    }
-    check()
-    const id = setInterval(check, 60_000)
     return () => clearInterval(id)
   }, [])
 

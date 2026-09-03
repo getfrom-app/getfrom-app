@@ -202,7 +202,11 @@ function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boo
         </div>
       )}
 
-      {m.linkedNodeId && (
+      {/* Sin el botón cuando ya se pinta la tarjeta del elemento (`m.list`,
+          ver `AssistantTaskList` arriba) — clicar la tarjeta ya abre el nodo,
+          así que el botón era un segundo camino a lo mismo (Alberto, 3 sep
+          2026: "pinchando en el elemento ya se abre así que es redundante"). */}
+      {m.linkedNodeId && !(m.list && m.list.length > 0) && (
         // "→", no "›" — el "›" ya lo usa el prefijo de los mensajes del
         // usuario (línea ~112) y se confundían al leer rápido (Alberto, 13
         // ago: paridad con el mismo fix en AssistantChatView.swift).
