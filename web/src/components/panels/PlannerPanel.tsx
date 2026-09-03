@@ -147,7 +147,16 @@ function recurrenceOccursOn(origin: Node, day: Date): Date | null {
   const horizon = addDays(startOfDay(new Date()), MAX_RECURRENCE_LOOKAHEAD_DAYS)
   if (dayStart.getTime() > horizon.getTime()) return null
   let cursor = startOfDay(originDue)
-  for (let i = 0; i < MAX_RECURRENCE_LOOKAHEAD_DAYS; i++) {
+  // Nº de pasos, no de días: una recurrencia DIARIA nunca completada se queda
+  // con `due` clavado en el día que se creó — si eso fue hace más de
+  // MAX_RECURRENCE_LOOKAHEAD_DAYS, el bucle se agotaba antes de alcanzar
+  // siquiera "hoy" (un paso = un día) y la proyección desaparecía del
+  // Planificador para siempre, aunque `day` sí cayera dentro del horizonte
+  // visible (3 sep 2026). El tope real depende de la distancia real hasta el
+  // horizonte, no de una constante pensada solo como límite de seguridad.
+  const daysToHorizon = Math.ceil((horizon.getTime() - cursor.getTime()) / 86400000)
+  const maxIterations = Math.min(Math.max(MAX_RECURRENCE_LOOKAHEAD_DAYS, daysToHorizon + 1), 5000)
+  for (let i = 0; i < maxIterations; i++) {
     cursor = nextRecurrence(cursor, rec)
     if (cursor.getTime() > horizon.getTime()) return null
     if (sameDay(cursor, day)) {
@@ -250,15 +259,16 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
   // INSTANCIA que no coincide con el gcalEventId maestro guardado en el nodo
   // local, así que fromGcalIds no lo detecta y el mismo evento se pinta dos
   // veces (nodo local 'task' + crudo 'gcal'). Nos quedamos con la versión
-  // editable (nodo local) cuando coinciden título+hora de inicio.
-  const byKey = new Map<string, Block>()
-  for (const b of blocks) {
-    const key = `${b.text.trim().toLowerCase()}|${b.start.getTime()}`
-    const existing = byKey.get(key)
-    if (!existing || (existing.kind === 'gcal' && b.kind !== 'gcal')) byKey.set(key, b)
-  }
+  // editable (nodo local) cuando coinciden título+hora de inicio. SOLO entre
+  // un bloque 'gcal' y uno que no lo es — antes la clave (texto+hora) también
+  // colapsaba dos bloques LOCALES distintos que coincidían en título y hora
+  // (dos "Llamada" a las 09:00, por ejemplo): el segundo desaparecía sin más
+  // del timeline (3 sep 2026).
+  const nonGcalBlocks = blocks.filter(b => b.kind !== 'gcal')
+  const nonGcalKeys = new Set(nonGcalBlocks.map(b => `${b.text.trim().toLowerCase()}|${b.start.getTime()}`))
+  const gcalBlocks = blocks.filter(b => b.kind === 'gcal' && !nonGcalKeys.has(`${b.text.trim().toLowerCase()}|${b.start.getTime()}`))
 
-  return [...byKey.values()].sort((a, b) => a.start.getTime() - b.start.getTime())
+  return [...nonGcalBlocks, ...gcalBlocks].sort((a, b) => a.start.getTime() - b.start.getTime())
 }
 
 // ── Bloques solapados → columnas lado a lado ─────────────────────────────
@@ -1287,8 +1297,16 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     if (!nodeId) return
     const n = store.getNode(nodeId); if (!n) return
     const had = !!n.due
-    store.updateNode(nodeId, { due: toMidnight(date), dueEnd: null, status: n.status ?? 'pending' })
-    if (had) bumpReschedule(nodeId)
+    // `guardRecurrence` — mismo criterio que soltar en el timeline
+    // (`handleDrop`), sin esto arrastrar una tarea/evento RECURRENTE a una
+    // celda del mes reescribía en silencio la fecha del nodo origen, sin
+    // preguntar "¿solo esta o todas las siguientes?" como en el resto del
+    // Planificador (3 sep 2026).
+    guardRecurrence(nodeId, t('planner.moveVerb', 'mover'), scope => {
+      if (scope === 'this') detachFromRecurrence(n)
+      store.updateNode(nodeId, { due: toMidnight(date), dueEnd: null, status: n.status ?? 'pending' })
+      if (had) bumpReschedule(nodeId)
+    })
   }
 
   // ── Franja «todo el día»: tareas con fecha ese día pero SIN hora ────────────
@@ -1320,13 +1338,15 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       ...gcalAllDay.map(ev => ({ kind: 'gcal' as const, ev })),
     ]
     // Dedup por título: un nodo local siempre gana sobre su crudo de Google.
-    const byKey = new Map<string, AllDayItem>()
-    for (const it of items) {
-      const key = (it.kind === 'node' ? it.node.text : it.ev.title || '').trim().toLowerCase()
-      const existing = byKey.get(key)
-      if (!existing || (existing.kind === 'gcal' && it.kind === 'node')) byKey.set(key, it)
-    }
-    return [...byKey.values()]
+    // SOLO entre nodo y gcal — antes la clave (solo el título) también
+    // colapsaba dos tareas LOCALES sin hora que coincidían en título ese
+    // mismo día (dos "Revisar contrato", por ejemplo): la segunda
+    // desaparecía sin más de la franja «todo el día» (3 sep 2026).
+    const nodeItems = items.filter((it): it is AllDayItem & { kind: 'node' } => it.kind === 'node')
+    const nodeKeys = new Set(nodeItems.map(it => it.node.text.trim().toLowerCase()))
+    const gcalItems = items.filter((it): it is AllDayItem & { kind: 'gcal' } =>
+      it.kind === 'gcal' && !nodeKeys.has((it.ev.title || '').trim().toLowerCase()))
+    return [...nodeItems, ...gcalItems]
   }
   function handleAllDayDrop(e: React.DragEvent, day: Date) {
     e.preventDefault(); e.stopPropagation()
@@ -1339,11 +1359,18 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     if (!nodeId) return
     const n = store.getNode(nodeId); if (!n) return
     const had = !!n.due
-    // Evento o tarea, da igual: los dos llevan `status` desde el 5 ago 2026 (un
-    // evento es una tarea con día y hora — utils/taskNode.ts). Soltar en «todo el
-    // día» quita la hora, no el hecho de ser tarea.
-    store.updateNode(nodeId, { due: toMidnight(day), dueEnd: null, status: n.status ?? 'pending' })
-    if (had) bumpReschedule(nodeId)
+    // `guardRecurrence` — mismo criterio que el resto de drops del
+    // Planificador (ver `handleMonthDrop`): sin esto, soltar una tarea/evento
+    // RECURRENTE en la franja «todo el día» quitaba la hora del nodo origen
+    // sin preguntar "¿solo esta o todas las siguientes?" (3 sep 2026).
+    guardRecurrence(nodeId, t('planner.moveVerb', 'mover'), scope => {
+      if (scope === 'this') detachFromRecurrence(n)
+      // Evento o tarea, da igual: los dos llevan `status` desde el 5 ago 2026 (un
+      // evento es una tarea con día y hora — utils/taskNode.ts). Soltar en «todo el
+      // día» quita la hora, no el hecho de ser tarea.
+      store.updateNode(nodeId, { due: toMidnight(day), dueEnd: null, status: n.status ?? 'pending' })
+      if (had) bumpReschedule(nodeId)
+    })
   }
 
   function renderMonth() {
@@ -1738,8 +1765,16 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
               <button onClick={()=>{
                 const nodeId = ctxMenu.b.nodeId!
                 const day = ctxMenu.b.start
-                store.updateNode(nodeId, { due: toMidnight(day), dueEnd: null })
-                removeNodeFromGcal(nodeId)
+                // `guardRecurrence` — mismo criterio que arrastrar/redimensionar:
+                // sin esto, quitar la hora de un bloque RECURRENTE desde el menú
+                // contextual reescribía en silencio el nodo origen de la serie,
+                // sin preguntar "¿solo esta o todas las siguientes?" (3 sep 2026).
+                guardRecurrence(nodeId, t('tip.removeTime'), scope => {
+                  const n = store.getNode(nodeId)
+                  if (scope === 'this' && n) detachFromRecurrence(n)
+                  store.updateNode(nodeId, { due: toMidnight(day), dueEnd: null })
+                  removeNodeFromGcal(nodeId)
+                })
                 setCtxMenu(null)
               }}>
                 ⊘ {t('tip.removeTime')}
@@ -1766,8 +1801,14 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             )}
             {ctxMenu.b.kind !== 'gcal' && ctxMenu.b.nodeId && (
               <button onClick={()=>{
-                store.updateNode(ctxMenu.b.nodeId!, { due: null, dueEnd: null })
-                removeNodeFromGcal(ctxMenu.b.nodeId!)
+                const nodeId = ctxMenu.b.nodeId!
+                // Mismo motivo que «Quitar hora» arriba.
+                guardRecurrence(nodeId, t('tip.removeFromPlanner'), scope => {
+                  const n = store.getNode(nodeId)
+                  if (scope === 'this' && n) detachFromRecurrence(n)
+                  store.updateNode(nodeId, { due: null, dueEnd: null })
+                  removeNodeFromGcal(nodeId)
+                })
                 setCtxMenu(null)
               }}>
                 {t('tip.removeFromPlanner')}
