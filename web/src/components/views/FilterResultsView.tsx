@@ -6,7 +6,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
-import { firstContextOf } from '../../utils/cajones'
+import { firstContextOf, isMarkedContext } from '../../utils/cajones'
 import { fmtDate } from '../../utils/formatDate'
 import RowContextChip from '../panels/RowContextChip'
 import Icon, { type IconName } from '../../v2/components/Icon'
@@ -18,6 +18,10 @@ import type { Node } from '../../types'
 function kindOf(n: Node): { label: string; icon: IconName } {
   let e: Record<string, unknown> = {}
   try { e = JSON.parse(n.extraData || '{}') } catch { /* vacío */ }
+  // Un nodo-CONTEXTO puede conservar `_docSelection` (cita de párrafo) de antes de
+  // convertirse en contexto — sin este chequeo primero caía en la rama "Cita" más
+  // abajo en vez de etiquetarse como lo que realmente es.
+  if (isMarkedContext(n)) return { label: 'Contexto', icon: 'folder' }
   // Un elemento de TIPO PERSONALIZADO (Libro, Persona…) enseña el nombre de su
   // tipo, no «Texto» — antes la columna Tipo lo desmentía (auditoría 28 ago 2026).
   if (typeof e._typeId === 'string' && e._typeId) {

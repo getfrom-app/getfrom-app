@@ -45,6 +45,10 @@ export function firstLineTitle(html: string | null | undefined): string {
   // seguridad, 28 ago 2026) — sanear antes de parsear.
   const d = document.createElement('div')
   d.innerHTML = sanitizeHtml(html || '')
+  // La mención de #contexto se pinta como chip vía CSS pero el texto del enlace
+  // sigue siendo el "#contexto" literal (DocContextMention.tsx) — quitarlo antes
+  // de derivar el título, si no se cuela crudo pegado al resto de la línea.
+  d.querySelectorAll('a.doc-ctx-mention').forEach((el) => el.remove())
   const txt = (d.textContent || '').replace(/ /g, ' ').trim()
   // Primer NODO hijo con texto, RECORRIENDO también los nodos de texto sueltos:
   // en un contentEditable la 1ª línea suele ir SIN envolver en <div>/<p>, así que

@@ -603,6 +603,22 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // en la columna del contexto/día. Solo corre para el editor en edición (el activo).
   const syncingRef = useRef(false)
   const lastDetailRef = useRef<string | null>(null)
+  // Texto de un nodo PM sin el `#contexto` de `DocContextMention` — ese texto se
+  // pinta como chip vía CSS pero sigue siendo un `text` normal con marca
+  // `link.doc-ctx-mention`, así que `.textContent` lo arrastra crudo pegado al
+  // resto del título de la casilla.
+  const textExcludingCtxMention = (pmNode: import('@tiptap/pm/model').Node): string => {
+    let out = ''
+    pmNode.forEach((child) => {
+      if (child.isText) {
+        const isCtxMention = child.marks.some((m) => m.type.name === 'link' && m.attrs?.class === 'doc-ctx-mention')
+        if (!isCtxMention) out += child.text ?? ''
+      } else {
+        out += textExcludingCtxMention(child)
+      }
+    })
+    return out
+  }
   const syncTasksToNodes = () => {
     const ed = editorRef.current
     if (!ed || syncingRef.current) return
@@ -627,7 +643,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         // "TítuloExplicación" pegados sin espacio — el nodo de la tarea se
         // guardaba con ese texto entero). El primer hijo de un taskItem es
         // SIEMPRE su párrafo de título (lo exige el content spec).
-        const text = (item.firstChild?.textContent ?? item.textContent).trim()
+        const text = textExcludingCtxMention(item.firstChild ?? item).trim()
         if (!text) return true // casilla vacía: aún no es tarea (evita nodos «Sin título»)
         const status = item.attrs.checked ? 'done' : 'pending'
         const rawId = item.attrs.dataNodeId as string | null

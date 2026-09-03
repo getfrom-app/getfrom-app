@@ -81,12 +81,15 @@ export function classify(n: Node): ElemKind | null {
   // Perfil de IA ("Quién soy", "Cómo quiero que me responda"…): infraestructura
   // del asistente, se edita desde Ajustes → IA, nunca es un elemento del usuario.
   if (isInsidePerfilIA(n)) return null
+  // Un nodo puede conservar `_docSelection`/`_pdfSelection` de antes de convertirse
+  // en contexto (p.ej. `ensureContextPath` sobre un párrafo ya citado) — mirar
+  // PRIMERO si es contexto, si no las ramas de abajo lo listaban igual como "cita".
+  if (isMarkedContext(n)) return null   // contexto = lugar, no elemento (ver ElemKind)
   if (e._pdfSelection != null) return 'highlight'   // subrayado guardado de un PDF (cita)
   if (e._docSelection != null) return 'cita'        // párrafo de otra nota asignado a este contexto
   if (e._agentDef === '1') return 'agent'           // agente (v2: puede colgar de cualquier contexto)
   if (e._promptDef === '1') return 'prompt'         // prompt (v2: puede colgar de cualquier contexto)
   if (e._group === '1') return 'group'              // grupo de elementos (varios ids en _groupRefs)
-  if (isMarkedContext(n)) return null   // contexto = lugar, no elemento (ver ElemKind)
   if (isTaskNode(n)) return 'task'      // evento = tarea con día y hora (utils/taskNode.ts)
   if (isTimeBlockNode(n)) return null   // TimeBlock: solo vive en el planificador, no en Elementos
   const rt = e._resourceType as string | undefined

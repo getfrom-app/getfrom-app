@@ -72,10 +72,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
   // libre del usuario dentro de la memoria y le dejaba la nota vacía — con el centro
   // del contexto siendo ya esa nota libre (V2App.onSelectCtx), esa fusión se llevaría
   // por delante justo lo que el usuario acaba de escribir.
-  useMemo(() => {
-    if (ctxId === null) return null
-    return getOrCreateContextKnowledgeDoc(ctxId)
-  }, [ctxId]) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (ctxId === null) return
+    getOrCreateContextKnowledgeDoc(ctxId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctxId])
 
   // TAREAS del contexto, estilo Hoy.
   // ⚠️ BUG REAL (Alberto, 5 ago 2026: "hay una tarea que no tenía contexto, le he
