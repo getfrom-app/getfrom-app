@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.10.47 · iOS (en la próxima versión) — 3 septiembre 2026 · Checkboxes estilo Logseq, Planner sin bugs sueltos
+## Web v9.10.47 · Mac v9.5.81 · iOS (en la próxima versión) — 3 septiembre 2026 · Checkboxes estilo Logseq, Planner sin bugs sueltos
 
 - **Checkboxes de tarea, en toda la app** (web e iPhone/iPad): ahora son cuadrados rellenos de
   color según el estado — verde completada, naranja atrasada, amarillo para hoy, azul futura, gris
