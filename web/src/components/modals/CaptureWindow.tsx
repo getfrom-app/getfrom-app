@@ -20,7 +20,14 @@ async function hideSelf() {
   try {
     const { getCurrentWindow } = await import('@tauri-apps/api/window')
     await getCurrentWindow().hide()
-  } catch { /* no-op fuera de Tauri */ }
+  } catch (err) {
+    // Fuera de Tauri esto es normal (dev server en el navegador) — pero si
+    // ocurre DENTRO de la app de Mac es justo el tipo de fallo silencioso
+    // que hacía parecer que "ESC no hace nada": queda en consola para poder
+    // diagnosticarlo desde el inspector de la ventana, sin cambiar el
+    // comportamiento (sigue sin propagar el error al que llama).
+    console.error('[CaptureWindow] no se pudo ocultar la ventana:', err)
+  }
 }
 
 // Muestra la ventana principal y le pide navegar a una ruta; luego oculta esta.
@@ -62,6 +69,26 @@ export default function CaptureWindow() {
       }).then(fn => { unlisten = fn })
     }).catch(() => {})
     return () => { unlisten?.() }
+  }, [])
+
+  // ESC cierra esta ventana SIEMPRE, pase lo que pase dentro de UnifiedCapture
+  // (Alberto, 3 sep 2026, con captura real: "aquí, la tecla ESC debe cerrar
+  // la ventana de quick capture. no funciona"). UnifiedCapture YA maneja
+  // Escape en su propio `onKeyDown` de React y ahí sí cierra (verificado: la
+  // misma pieza embebida en la app principal cierra bien con ESC) — pero esta
+  // ventana flotante es una WKWebView aparte, y un listener nativo en fase de
+  // CAPTURA a nivel de `window` no depende de que el foco esté exactamente
+  // dentro del contentEditable ni de cómo WebKit entregue el evento sintético
+  // de React en esta ventana. Registrado directamente sobre `window`, no
+  // sobre React, para no depender del árbol de componentes montado en cada
+  // instante (openKey puede estar remontando UnifiedCapture justo entonces).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      hideSelf()
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
   }, [])
 
   if (!hasToken) {
