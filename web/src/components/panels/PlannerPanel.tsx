@@ -457,6 +457,15 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const [allDayCtxMention, setAllDayCtxMention] = useState<{ query: string; start: number } | null>(null)
   const [allDayCtxSel, setAllDayCtxSel]         = useState(0)
   const [allDayPickedCtxId, setAllDayPickedCtxId] = useState<string | null>(null)
+  // Dónde quedó insertado el «#label » al elegir contexto — a diferencia de
+  // `DocContextMention.tsx` (que SÍ deja el `#texto` visible, como enlace
+  // estilado, dentro de un documento rico), aquí el título es texto plano de
+  // la tarea: se ve tal cual en cualquier lista (Alberto, 3 sep 2026, con
+  // captura real: "debería eliminarse el texto del #mediasector... que se
+  // quede el contexto pero que no se vea el #"). Se recorta este tramo exacto
+  // al guardar — el contexto ya quedó asignado aparte (`setNodeContext`), el
+  // texto no lo necesita.
+  const [allDayPickedCtxSpan, setAllDayPickedCtxSpan] = useState<{ start: number; text: string } | null>(null)
   const [snapLine, setSnapLine]       = useState<{dayKey:string;top:number}|null>(null)
   // Clic en el hueco vacío de una celda del mes → elegir tarea o evento
   // (Alberto, 27 ago 2026: el número del día abre el día; el resto de la
@@ -888,9 +897,19 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   function commitNewAllDay() {
     if (!newAllDay || newAllDayCommittedRef.current) return
     newAllDayCommittedRef.current = true
-    if (newAllDay.text.trim()) {
+    // Quita el «#label » insertado al elegir contexto — el contexto ya se
+    // asigna aparte (`setNodeContext`), el título no debe repetirlo. Solo si
+    // el tramo sigue intacto donde se insertó (el usuario no lo tocó a mano).
+    let rawText = newAllDay.text
+    if (allDayPickedCtxSpan) {
+      const { start, text: mentionText } = allDayPickedCtxSpan
+      if (rawText.slice(start, start + mentionText.length) === mentionText) {
+        rawText = rawText.slice(0, start) + rawText.slice(start + mentionText.length)
+      }
+    }
+    if (rawText.trim()) {
       const newNode = store.createNode({
-        text:     newAllDay.text.trim(),
+        text:     rawText.trim(),
         parentId: ensureDayPath(newAllDay.day).id,
         due:      toMidnight(newAllDay.day),   // medianoche = todo el día (sin hora)
         isTask:   true,
@@ -901,6 +920,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     setNewAllDay(null)
     setAllDayCtxMention(null)
     setAllDayPickedCtxId(null)
+    setAllDayPickedCtxSpan(null)
   }
 
   // ── Predictivo «#contexto» dentro de la tarea del planner ────────────────
@@ -947,9 +967,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     }
     const { start, query } = allDayCtxMention
     const value = newAllDay.text
-    const next = `${value.slice(0, start)}#${label} ${value.slice(start + 1 + query.length)}`
+    const mentionText = `#${label} `
+    const next = `${value.slice(0, start)}${mentionText}${value.slice(start + 1 + query.length)}`
     setNewAllDay(s => s ? { ...s, text: next } : s)
     setAllDayPickedCtxId(ctxId)
+    setAllDayPickedCtxSpan({ start, text: mentionText })
     setAllDayCtxMention(null)
     setTimeout(() => newAllDayRef.current?.focus(), 0)
   }
@@ -1566,7 +1588,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                   <div key={d.toISOString()} className="pp-allday-col" style={{width:colW, flexShrink:0}}
                     onDragOver={e=>e.preventDefault()} onDrop={e=>handleAllDayDrop(e,d)}
                     title={t('tip.clickAddUntimed')}
-                    onClick={e=>{ if ((e.target as HTMLElement).closest('.pp-allday-chip, input')) return; newAllDayCommittedRef.current = false; setAllDayPickedCtxId(null); setNewAllDay({ day: d, text: '' }); setTimeout(()=>newAllDayRef.current?.focus(), 20) }}>
+                    onClick={e=>{ if ((e.target as HTMLElement).closest('.pp-allday-chip, input')) return; newAllDayCommittedRef.current = false; setAllDayPickedCtxId(null); setAllDayPickedCtxSpan(null); setNewAllDay({ day: d, text: '' }); setTimeout(()=>newAllDayRef.current?.focus(), 20) }}>
                     {/* SIEMPRE todos los items — antes se cortaba en 5 con un "+N" que
                         obligaba a adivinar qué faltaba (Alberto, 26 ago 2026: "deben
                         caber todas por mucha que sean, es importante que se vean todas"). */}
@@ -1637,7 +1659,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                             // la tecla ESC") — se marca "ya resuelto" antes de desmontar, para
                             // que un blur nativo tardío no la cree de todos modos.
                             if (e.key === 'Enter') { e.preventDefault(); commitNewAllDay() }
-                            if (e.key === 'Escape') { e.preventDefault(); newAllDayCommittedRef.current = true; setNewAllDay(null); setAllDayCtxMention(null); setAllDayPickedCtxId(null) }
+                            if (e.key === 'Escape') { e.preventDefault(); newAllDayCommittedRef.current = true; setNewAllDay(null); setAllDayCtxMention(null); setAllDayPickedCtxId(null); setAllDayPickedCtxSpan(null) }
                           }}
                           onBlur={()=>commitNewAllDay()} />
                         {allDayCtxMention && allDayCtxMatches.length > 0 && createPortal((
