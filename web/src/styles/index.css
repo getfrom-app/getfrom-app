@@ -13541,6 +13541,17 @@ textarea:focus-visible,
   cursor: pointer;
   padding: 0;
 }
+/* Filas de DOS líneas (`.dc-row:has(.dc-row-main)` → align-items: flex-start,
+   para que el checkbox se quede pegado a la primera línea de un título que
+   puede envolver a varias) dejan el checkbox pegado al borde superior de la
+   CAJA de línea del texto, más arriba que la altura de mayúscula real (el
+   line-height añade aire por encima del glifo). Este nudge compensa ese aire
+   para que ambos queden a la misma altura óptica (Alberto, 3 sep 2026: "el
+   checkbox está algo desalineado, sale visualmente un poco más arriba que el
+   texto"). Scoped a `.dc-row-main` a propósito — en una fila de UNA línea
+   (p.ej. la cabecera de V2TaskDetailView) ya centra bien con
+   `align-items: center` y este nudge la desalinearía. */
+.dc-row:has(.dc-row-main) > .dc-check { margin-top: 2px; }
 .dc-check:hover { border-color: #8b5cf6; background: rgba(62,92,118,0.12); }
 .dc-text {
   font-size: 13.5px;

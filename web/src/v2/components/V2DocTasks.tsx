@@ -14,25 +14,46 @@ import { useStore } from '../../store/nodeStore'
 import { tasksOfDoc } from '../../utils/docTasks'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { recurrenceFromString } from '../../utils/naturalDate'
-import { fmtDate } from '../../utils/formatDate'
+import { dueLabel, dueColor } from '../../components/panels/TaskRow'
 import Icon from './Icon'
 import type { Node } from '../../types'
 
+// Mismas clases `dc-*` que TaskRow.tsx (la fila de tarea única del resto de la
+// app: Hoy, Elementos, otros días…) — no una copia con estilo propio (Alberto,
+// 3 sep 2026: "que sea el mismo estilo que las tareas de la columna
+// derecha"). Checkbox + título en la primera línea, fecha + «+» en la
+// segunda — sin chip de contexto: aquí siempre es el del propio documento,
+// repetirlo no aporta nada.
 function TaskRow({ task, flash }: { task: Node; flash: boolean }) {
   const { t, i18n } = useTranslation()
   const done = task.status === 'done'
   const rec = task.recurrence ? recurrenceFromString(task.recurrence) : null
+  const due = dueLabel(task, i18n.language)
   // Fecha y recurrencia se editan en el MISMO sitio que cualquier tarea (TaskPropsModal,
   // vía el evento global) — nada de un editor propio que se desincronice.
   const openProps = () => window.dispatchEvent(new CustomEvent('from:open-task-props', { detail: { nodeId: task.id } }))
   return (
-    <div className={`v2-doctask${done ? ' v2-doctask--done' : ''}${flash ? ' v2-doctask--flash' : ''}`}>
-      <input type="checkbox" checked={done} onChange={() => toggleTaskDone(task)} title={done ? t('tip.reopen', 'Reabrir') : t('tip.complete', 'Completar')} />
-      <span className="v2-doctask-title">{task.text}</span>
-      <button className="v2-doctask-chip" onClick={openProps} title={t('taskPropsModal.title', 'Fecha, recurrencia y prioridad')}>
-        {task.due ? fmtDate(task.due, i18n.language) : '···'}
-        {rec && <span className="v2-doctask-rec"><Icon name="repeat" size={11} /> {rec.display}</span>}
+    <div className={`dc-row${done ? ' dc-row--done' : ''}${flash ? ' v2-doctask--flash' : ''}`}>
+      <button className={`dc-check ${done ? 'dc-check--done' : ''}`} onClick={() => toggleTaskDone(task)}
+        title={done ? t('tip.reopen', 'Reabrir') : t('tip.complete', 'Completar')}>
+        {done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}
       </button>
+      <div className="dc-row-main">
+        <div className="dc-row-l1">
+          <span className="dc-text dc-text--wrap">{task.text}</span>
+        </div>
+        <div className="dc-row-l2">
+          {due && (
+            <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(task) }}
+              title={t('taskPropsModal.title', 'Fecha, recurrencia y prioridad')} onClick={openProps}>{due}</span>
+          )}
+          {!done && (
+            <span className="dc-due dc-due--empty" title={t('taskPropsModal.title', 'Fecha, recurrencia y prioridad')}
+              onClick={openProps}>+</span>
+          )}
+          {rec && <span className="dc-rec" title={rec.display}><Icon name="repeat" size={12} /> {rec.display}</span>}
+        </div>
+      </div>
     </div>
   )
 }
