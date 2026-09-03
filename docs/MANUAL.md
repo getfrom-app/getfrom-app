@@ -510,7 +510,9 @@ tareas y eventos.
 
 ### Tarea
 
-Las tareas tienen un checkbox ☐/☑. Márcala como hecha para archivarla y actualizar su estado.
+Las tareas tienen un checkbox ☐/☑. Márcala como hecha para archivarla y actualizar su estado. El
+color del checkbox te dice de un vistazo su estado: **verde** completada, **naranja** atrasada,
+**amarillo** para hoy, **azul** futura, **gris** sin fecha.
 
 **Cómo crear una tarea:** con **☑️ Tarea** en el menú "+" de un contexto, o pidiéndoselo a la IA
 en lenguaje natural ("recuérdame llamar a Ana el lunes"). Fromly interpreta la fecha, la prioridad
