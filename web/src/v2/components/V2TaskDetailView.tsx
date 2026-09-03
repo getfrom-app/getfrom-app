@@ -13,6 +13,7 @@ import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
 import { containerNotesNode, getOrCreateContainerNotes } from '../../utils/cajones'
 import { timeLabel, dueLabel, dueColor, recLabel } from '../../components/panels/TaskRow'
+import { taskCheckState } from '../../utils/taskNode'
 import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
 import { V2NoteBody, V2NoteContext } from './V2DetailView'
 import Icon from './Icon'
@@ -49,7 +50,7 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0' }}>
         {node.status != null && (
           <button
-            className={`dc-check ${done ? 'dc-check--done' : ''}`}
+            className={`dc-check dc-check--${taskCheckState(node)}`}
             onClick={() => toggleTaskDone(node)}
             title={t('daily.markDone')} aria-label={t('daily.markDone')}
           >{done ? <Icon name="check" size={12} strokeWidth={2.4} /> : null}</button>

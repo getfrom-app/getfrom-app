@@ -53,3 +53,33 @@ export function isTimeBlockNode(n: Node): boolean {
     return false
   }
 }
+
+/**
+ * Checkbox estilo Logseq (Alberto, 3 sep 2026: "quiero que sean estilo
+ * logseq, cuadrados rellenos completos con esquinas... verde para
+ * completada, naranja para atrasada, amarilla para tareas de hoy, azul para
+ * futuras y gris para tareas sin fecha"). Un solo criterio de color para
+ * TODA la app — outliner, columna derecha, chat, documentos, planner — en
+ * vez de que cada sitio decida por su cuenta si algo es "urgente".
+ */
+export type TaskCheckState = 'done' | 'overdue' | 'today' | 'future' | 'nodate'
+
+export const TASK_CHECK_COLORS: Record<TaskCheckState, string> = {
+  done: '#22c55e',
+  overdue: '#f97316',
+  today: '#fbbf24',
+  future: '#60a5fa',
+  nodate: '#94a3b8',
+}
+
+export function taskCheckState(n: Node): TaskCheckState {
+  if (n.status === 'done') return 'done'
+  if (!n.due) return 'nodate'
+  const d = new Date(n.due)
+  const now = new Date()
+  const t0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()
+  const dd = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
+  if (dd < t0) return 'overdue'
+  if (dd === t0) return 'today'
+  return 'future'
+}

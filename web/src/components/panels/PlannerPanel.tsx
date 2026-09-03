@@ -35,7 +35,7 @@ import {
   type CalendarEvent,
 } from '../../api/googleCalendar'
 import { getGcalEventId, gcalIdCore, linkedGcalIdCores } from '../../utils/gcalNodesSync'
-import { isTimeBlockNode } from '../../utils/taskNode'
+import { isTimeBlockNode, taskCheckState } from '../../utils/taskNode'
 import { recurrenceFromString, nextRecurrence } from '../../utils/naturalDate'
 import { GCalEventEditor } from './DiaryRightPanel'
 import { TaskPropsPopover } from './DiaryPanelComponents'
@@ -1155,7 +1155,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             su propia fila, debajo de `.pp-block-time`. */}
         <div className="pp-block-titlerow">
           {checkable && (
-            <button className={`pp-block-check ${done ? 'pp-block-check--done' : ''}`}
+            <button className={`pp-block-check pp-block-check--${taskCheckState(blockNode!)}`}
               onClick={e => { e.stopPropagation(); toggleTaskDone(blockNode!) }}
               title={t('daily.markDone')} aria-label={t('daily.markDone')}>{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
           )}
@@ -1648,7 +1648,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                         onContextMenu={e=>{ e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
                         title={n.text}>
                         {chipCheckable && (
-                          <button className={`pp-allday-check ${chipDone ? 'pp-allday-check--done' : ''}`}
+                          <button className={`pp-allday-check pp-allday-check--${taskCheckState(n)}`}
                             onClick={e=>{ e.stopPropagation(); toggleTaskDone(n) }}
                             title={t('daily.markDone')} aria-label={t('daily.markDone')}>{chipDone ? <Icon name="check" size={10} strokeWidth={2.6} /> : null}</button>
                         )}

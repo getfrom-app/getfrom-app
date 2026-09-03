@@ -7357,22 +7357,26 @@ textarea:focus-visible,
    Igualamos: en el preview los párrafos vacíos reservan también una línea (1lh) → altura
    idéntica en lectura y edición, cero salto. Aplica a líneas vacías y a tareas sin texto. */
 .pizarra-text p:empty { min-height: 1lh; }
-/* Checkbox estilo From (rect redondeado 1.5px). Pending = amarillo, done = verde + check. */
+/* Checkbox estilo Logseq — cuadrado relleno sólido, color por estado (fecha,
+   no solo pendiente/hecha), aplicado desde React vía `style` (TaskItemChip.tsx
+   → `taskCheckState()`, utils/taskNode.ts, un solo criterio para toda la app,
+   Alberto 3 sep 2026). El color de fondo real lo pone el `style` inline; aquí
+   solo la forma y el check blanco al marcarla. */
 .doc-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"],
 .pizarra-text ul[data-type="taskList"] li > label input[type="checkbox"] {
   appearance: none; -webkit-appearance: none; margin: 0; position: relative; flex-shrink: 0;
-  width: 15px; height: 15px; border-radius: 3px; cursor: pointer;
-  border: 1.5px solid #fbbf24; background: rgba(251,191,36,0.08);
-  transition: border-color .1s, background .1s;
+  width: 15px; height: 15px; border-radius: 4px; cursor: pointer;
+  border: none; background: #94a3b8;
+  transition: filter .1s;
 }
-.doc-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > label input[type="checkbox"],
-.pizarra-text ul[data-type="taskList"] li[data-checked="true"] > label input[type="checkbox"] {
-  border-color: #22c55e; background: rgba(34,197,94,0.15);
+.doc-editor .ProseMirror ul[data-type="taskList"] li > label input[type="checkbox"]:hover,
+.pizarra-text ul[data-type="taskList"] li > label input[type="checkbox"]:hover {
+  filter: brightness(0.9);
 }
 .doc-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > label input[type="checkbox"]::after,
 .pizarra-text ul[data-type="taskList"] li[data-checked="true"] > label input[type="checkbox"]::after {
   content: ''; position: absolute; left: 4px; top: 1px; width: 4px; height: 8px;
-  border: solid #22c55e; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg);
+  border: solid #fff; border-width: 0 1.6px 1.6px 0; transform: rotate(45deg);
 }
 .doc-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div,
 .pizarra-text ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--text-tertiary, #999); text-decoration: line-through; }
@@ -8631,10 +8635,11 @@ textarea:focus-visible,
 
 /* ── Checkboxes cuadrados de tarea (outliner) ────────────────────────────── */
 /* Color del checkbox según estado — se aplica como clase en bullet-btn.task */
-.bullet-btn.task.task-sq--pending  { color: #fbbf24; } /* amarillo */
-.bullet-btn.task.task-sq--overdue  { color: #f97316; } /* naranja */
-.bullet-btn.task.task-sq--done     { color: #22c55e; } /* verde */
-.bullet-btn.task.task-sq--future   { color: #60a5fa; } /* azul claro */
+.bullet-btn.task.task-sq--pending  { color: #fbbf24; } /* amarillo — hoy */
+.bullet-btn.task.task-sq--overdue  { color: #f97316; } /* naranja — atrasada */
+.bullet-btn.task.task-sq--done     { color: #22c55e; } /* verde — completada */
+.bullet-btn.task.task-sq--future   { color: #60a5fa; } /* azul claro — futura */
+.bullet-btn.task.task-sq--nodate   { color: #94a3b8; } /* gris — sin fecha */
 .bullet-btn.task.task-sq--resource { color: #06b6d4; } /* cian — recurso pendiente */
 .bullet-btn.task:hover { opacity: 0.75; }
 /* Evento: icono calendario azul como bullet */
@@ -12715,13 +12720,20 @@ textarea:focus-visible,
 .pp-allday-props:hover { opacity: 1 !important; background: rgba(0,0,0,.35); }
 /* Checkbox SOLO en tareas (nunca en eventos) — distingue a golpe de vista en
    el planificador y la tab Día (Alberto, 22 jul). */
+/* Checkbox estilo Logseq, mismo criterio de color que `.dc-check`/`.task-sq`
+   (Alberto, 3 sep 2026 — ver utils/taskNode.ts). */
 .pp-allday-check {
-  flex-shrink: 0; width: 12px; height: 12px; border: 1.4px solid var(--text-tertiary);
-  border-radius: 3px; background: transparent; cursor: pointer; padding: 0;
+  flex-shrink: 0; width: 12px; height: 12px; border: none;
+  border-radius: 3px; background: #94a3b8; cursor: pointer; padding: 0;
   display: flex; align-items: center; justify-content: center; font-size: 8px; line-height: 1; color: #fff;
+  transition: filter .1s;
 }
-.pp-allday-check:hover { border-color: var(--accent); }
-.pp-allday-check--done { background: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
+.pp-allday-check:hover { filter: brightness(0.9); }
+.pp-allday-check--done    { background: #22c55e; }
+.pp-allday-check--overdue { background: #f97316; }
+.pp-allday-check--today   { background: #fbbf24; }
+.pp-allday-check--future  { background: #60a5fa; }
+.pp-allday-check--nodate  { background: #94a3b8; }
 
 .pp-now { position: absolute; left: 0; right: 0; height: 2px; background: var(--danger, #e03131); z-index: 6; pointer-events: none; }
 .pp-now::before { content:''; position:absolute; left:-4px; top:-4px; width:10px; height:10px; background:var(--danger, #e03131); border-radius:50%; }
@@ -12772,14 +12784,21 @@ textarea:focus-visible,
    título (2 sep 2026: aviso visual de que la tarea/evento/timeblock tiene
    contenido en su nota, sin tener que abrirla). */
 .pp-block-notes-icon { flex: 0 0 auto; margin-top: 2px; color: var(--text-tertiary); opacity: .75; }
+/* Checkbox estilo Logseq, mismo criterio de color que `.dc-check`/`.task-sq`
+   (Alberto, 3 sep 2026 — ver utils/taskNode.ts). */
 .pp-block-check {
   flex: 0 0 auto; margin-top: 1px; width: 11px; height: 11px;
-  border: 1.3px solid var(--text-tertiary); border-radius: 3px; background: var(--bg-primary);
+  border: none; border-radius: 3px; background: #94a3b8;
   cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;
   font-size: 8px; line-height: 1; color: #fff;
+  transition: filter .1s;
 }
-.pp-block-check:hover { border-color: var(--accent); }
-.pp-block-check--done { background: var(--accent, #6c5ce7); border-color: var(--accent, #6c5ce7); }
+.pp-block-check:hover { filter: brightness(0.9); }
+.pp-block-check--done    { background: #22c55e; }
+.pp-block-check--overdue { background: #f97316; }
+.pp-block-check--today   { background: #fbbf24; }
+.pp-block-check--future  { background: #60a5fa; }
+.pp-block-check--nodate  { background: #94a3b8; }
 .pp-block--done .pp-block-text { text-decoration: line-through; opacity: .55; }
 
 /* «+» — abre solo la ventana de fecha/recurrencia (27 ago 2026). ARRIBA del
@@ -13531,16 +13550,33 @@ textarea:focus-visible,
   font-size: 12px;
   letter-spacing: -1px;
 }
+/* Checkbox estilo Logseq (Alberto, 3 sep 2026: "cuadrados rellenos completos
+   con esquinas... verde para completada, naranja para atrasada, amarilla
+   para tareas de hoy, azul para futuras y gris para tareas sin fecha" —
+   "para todos los checkboxes de Fromly"). Cuadrado macizo de color — el color
+   YA dice el estado, así que ya no hace falta el check blanco salvo en
+   "hecha" (`taskCheckState()`, utils/taskNode.ts, un solo criterio para toda
+   la app: outliner, columna derecha, chat, documentos, planner). */
 .dc-check {
   flex-shrink: 0;
   width: 15px;
   height: 15px;
-  border: 1.5px solid var(--text-tertiary);
+  border: none;
   border-radius: 4px;
-  background: transparent;
+  background: var(--text-tertiary);
   cursor: pointer;
   padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  transition: filter .1s;
 }
+.dc-check--done    { background: #22c55e; }
+.dc-check--overdue { background: #f97316; }
+.dc-check--today   { background: #fbbf24; }
+.dc-check--future  { background: #60a5fa; }
+.dc-check--nodate  { background: #94a3b8; }
 /* Filas de DOS líneas (`.dc-row:has(.dc-row-main)` → align-items: flex-start,
    para que el checkbox se quede pegado a la primera línea de un título que
    puede envolver a varias) dejan el checkbox pegado al borde superior de la
@@ -13552,7 +13588,7 @@ textarea:focus-visible,
    (p.ej. la cabecera de V2TaskDetailView) ya centra bien con
    `align-items: center` y este nudge la desalinearía. */
 .dc-row:has(.dc-row-main) > .dc-check { margin-top: 2px; }
-.dc-check:hover { border-color: #8b5cf6; background: rgba(62,92,118,0.12); }
+.dc-check:hover { filter: brightness(0.9); }
 .dc-text {
   font-size: 13.5px;
   color: var(--text-primary);
@@ -13634,14 +13670,6 @@ textarea:focus-visible,
 .dc-group--focus .dc-row { min-height: 32px; }
 .dc-group--focus .dc-text { font-size: 14.5px; font-weight: 600; }
 .dc-row--done .dc-text { text-decoration: line-through; opacity: 0.55; font-weight: 400; }
-.dc-check--done {
-  background: #10b981;
-  border-color: #10b981;
-  color: #fff;
-  font-size: 10px;
-  line-height: 1;
-}
-.dc-check--done:hover { border-color: #059669; background: #059669; }
 .dc-focus-hint {
   font-size: 11px;
   color: #7c3aed;

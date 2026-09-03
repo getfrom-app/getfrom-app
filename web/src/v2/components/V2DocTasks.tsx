@@ -15,6 +15,7 @@ import { tasksOfDoc } from '../../utils/docTasks'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { recurrenceFromString } from '../../utils/naturalDate'
 import { dueLabel, dueColor } from '../../components/panels/TaskRow'
+import { taskCheckState } from '../../utils/taskNode'
 import Icon from './Icon'
 import type { Node } from '../../types'
 
@@ -34,7 +35,7 @@ function TaskRow({ task, flash }: { task: Node; flash: boolean }) {
   const openProps = () => window.dispatchEvent(new CustomEvent('from:open-task-props', { detail: { nodeId: task.id } }))
   return (
     <div className={`dc-row${done ? ' dc-row--done' : ''}${flash ? ' v2-doctask--flash' : ''}`}>
-      <button className={`dc-check ${done ? 'dc-check--done' : ''}`} onClick={() => toggleTaskDone(task)}
+      <button className={`dc-check dc-check--${taskCheckState(task)}`} onClick={() => toggleTaskDone(task)}
         title={done ? t('tip.reopen', 'Reabrir') : t('tip.complete', 'Completar')}>
         {done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}
       </button>

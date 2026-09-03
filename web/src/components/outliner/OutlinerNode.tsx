@@ -3183,7 +3183,9 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
       ? 'task-sq--overdue'
       : isToday
         ? 'task-sq--pending'         // amarillo — tarea de hoy
-        : 'task-sq--future'          // azul — futura o sin fecha
+        : effectiveNode.due
+          ? 'task-sq--future'        // azul — futura
+          : 'task-sq--nodate'        // gris — sin fecha
 
   // ── Recurso ──────────────────────────────────────────────────────────────
   const resourceData = (() => {
@@ -3473,14 +3475,18 @@ export default function OutlinerNode({ node, depth, isSelected, selectedId, isMu
                   aria-label={t('aria.toggleTask')}
                   title={t('tip.toggleTaskDone')}
                 >
+                  {/* Relleno SÓLIDO (Alberto, 3 sep 2026: "estilo logseq, cuadrados
+                      rellenos completos") — antes era un tinte del 8-15%, casi
+                      invisible; ahora el color de `taskCheckClass` manda entero y
+                      el check (solo en "hecha") va en blanco para leerse encima. */}
                   {effectiveNode.status === 'done' ? (
                     <svg width="14" height="14" viewBox="0 0 14 14">
-                      <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.15"/>
-                      <path d="M3.5 7l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      <rect x="1" y="1" width="12" height="12" rx="3" fill="currentColor"/>
+                      <path d="M3.5 7l2.5 2.5 4.5-4.5" stroke="#fff" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   ) : (
                     <svg width="14" height="14" viewBox="0 0 14 14">
-                      <rect x="1" y="1" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" fill="currentColor" fillOpacity="0.08"/>
+                      <rect x="1" y="1" width="12" height="12" rx="3" fill="currentColor"/>
                     </svg>
                   )}
                 </button>

@@ -6,6 +6,7 @@
 import type { NodeViewProps } from '@tiptap/react'
 import { NodeViewWrapper, NodeViewContent } from '@tiptap/react'
 import { store, useStore } from '../../store/nodeStore'
+import { taskCheckState, TASK_CHECK_COLORS } from '../../utils/taskNode'
 
 function formatDue(due: string | null | undefined): string | null {
   if (!due) return null
@@ -31,6 +32,11 @@ export default function TaskItemChip({ node, updateAttributes }: NodeViewProps) 
 
   const dueLabel = linked ? formatDue(linked.due) : null
   const dot = linked?.priority ? PRIORITY_DOT[linked.priority] : null
+  // Checkbox estilo Logseq, mismo color que el resto de la app (Alberto, 3
+  // sep 2026, ver utils/taskNode.ts). Sin nodo-tarea enlazado todavía (recién
+  // creada, llega en <500ms) solo sabemos si está marcada o no — sin fecha,
+  // así que gris/verde según `checked` hasta que el nodo real aparezca.
+  const checkColor = TASK_CHECK_COLORS[linked ? taskCheckState(linked) : (checked ? 'done' : 'nodate')]
 
   return (
     <NodeViewWrapper as="li" data-checked={checked ? 'true' : 'false'}>
@@ -39,6 +45,7 @@ export default function TaskItemChip({ node, updateAttributes }: NodeViewProps) 
           type="checkbox"
           checked={checked}
           onChange={() => updateAttributes({ checked: !checked })}
+          style={{ background: checkColor }}
         />
       </label>
       <NodeViewContent as="div" />

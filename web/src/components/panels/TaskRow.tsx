@@ -15,6 +15,7 @@ import { toggleTaskDone } from '../../utils/dailyCockpit'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
 import { docOfTask } from '../../utils/docTasks'
+import { taskCheckState } from '../../utils/taskNode'
 import Icon from '../../v2/components/Icon'
 
 // Exportadas: las reutiliza V2TaskDetailView (chips de fecha/hora/repetición en el
@@ -140,7 +141,7 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
         <span className="dc-event-dot" title={t('search.chipEvent')} />
       ) : (
         <button
-          className={`dc-check ${done ? 'dc-check--done' : ''}`}
+          className={`dc-check dc-check--${taskCheckState(node)}`}
           onClick={e => { e.stopPropagation(); toggleTaskDone(node) }}
           title={t('daily.markDone')} aria-label={t('daily.markDone')}
         >{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
