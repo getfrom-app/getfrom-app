@@ -1605,6 +1605,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                         )}
                         {n.text || t('common.noTitle')}
                         {hasNoteContent(n.id) && <Icon name="note" size={9} className="pp-block-notes-icon" />}
+                        {/* «+» en hover — mismo patrón que `.pp-block-props` en los
+                            bloques con hora: abre solo fecha/recurrencia/contexto,
+                            sin navegar a la nota (Alberto, 3 sep 2026). */}
+                        <button className="pp-allday-props" title={t('dailyCockpit.editDateRecurrence')}
+                          onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === n.id ? null : n.id) }}>
+                          <Icon name="plus" size={10} />
+                        </button>
                       </div>
                       )
                     })}

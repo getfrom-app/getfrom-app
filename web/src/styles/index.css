@@ -12698,9 +12698,21 @@ textarea:focus-visible,
 .pp-allday-add { font-size: 11px; line-height: 1; color: var(--text-tertiary); opacity: 0; text-align: center; padding: 1px 0; transition: opacity .1s; }
 .pp-allday-col:hover .pp-allday-add { opacity: .5; }
 .pp-allday-new { font-size: 11px; border: 1px solid var(--accent, #6c5ce7); border-radius: 4px; padding: 1px 5px; outline: none; background: var(--bg-primary); color: var(--text-primary); width: 100%; box-sizing: border-box; }
-.pp-allday-chip { font-size: 11px; background: var(--accent, #6c5ce7); color: #fff; border-radius: 5px; padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; display: flex; align-items: center; gap: 5px; }
+.pp-allday-chip { position: relative; font-size: 11px; background: var(--accent, #6c5ce7); color: #fff; border-radius: 5px; padding: 3px 18px 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: grab; display: flex; align-items: center; gap: 5px; }
 .pp-allday-chip:active { cursor: grabbing; }
 .pp-allday-chip--done { opacity: 0.5; text-decoration: line-through; }
+/* «+» en hover — mismo patrón que `.pp-block-props`/`.pp-month-chip-props`:
+   abre solo fecha/recurrencia/contexto sin navegar a la nota (3 sep 2026). */
+.pp-allday-props {
+  position: absolute; top: 50%; right: 3px; transform: translateY(-50%);
+  width: 12px; height: 12px; z-index: 2;
+  border: none; border-radius: 3px; background: rgba(0,0,0,.2);
+  color: #fff; cursor: pointer; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity .1s;
+}
+.pp-allday-chip:hover .pp-allday-props { opacity: .85; }
+.pp-allday-props:hover { opacity: 1 !important; background: rgba(0,0,0,.35); }
 /* Checkbox SOLO en tareas (nunca en eventos) — distingue a golpe de vista en
    el planificador y la tab Día (Alberto, 22 jul). */
 .pp-allday-check {
