@@ -4,6 +4,27 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.47 · iOS (en la próxima versión) — 3 septiembre 2026 · Checkboxes estilo Logseq, Planner sin bugs sueltos
+
+- **Checkboxes de tarea, en toda la app** (web e iPhone/iPad): ahora son cuadrados rellenos de
+  color según el estado — verde completada, naranja atrasada, amarillo para hoy, azul futura, gris
+  sin fecha. Mismo criterio en el outliner, la columna derecha, el chat, los documentos y el
+  Planificador.
+- **Documentos**: el bloque "Tareas" de un documento pasa a tener el mismo diseño que las tareas de
+  la columna derecha (checkbox + título, fecha debajo) — antes tenía su propio estilo.
+- **Planificador**: arreglado que dos tareas distintas con el mismo título y hora se solapaban y
+  una desaparecía; una recurrencia diaria muy atrasada dejaba de proyectarse en el calendario;
+  arrastrar una tarea recurrente al mes o quitarle la hora ya pregunta "¿solo esta o todas las
+  siguientes?", como el resto de acciones sobre recurrencias.
+- **Planificador**: asignar un contexto con `#` a una tarea de todo el día ya no deja el texto
+  `#contexto` pegado en el título.
+- **Barra "Lo próximo"**: ya no trunca el texto del evento en curso cuando sobra sitio en pantalla.
+- **Recordatorios**: se había duplicado el aviso de una tarea próxima (dos procesos avisando por
+  separado) — ahora avisa una sola vez, con la antelación elegida en Ajustes.
+- **Mac, ventana de captura rápida**: la tecla Esc ya cierra la ventana correctamente.
+
+---
+
 ## Web v9.10.39 — 2 septiembre 2026 · Cabeceras "Tareas"/"Asistente" en Agenda, chat menos parlanchín
 
 - **Agenda, columna derecha**: "Tareas" y "Asistente" tienen ahora una pequeña cabecera, igual que
