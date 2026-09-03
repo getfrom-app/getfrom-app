@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useUserStore } from '../../store/userStore'
+import { useUserStore, userStore } from '../../store/userStore'
 import { getToken } from '../../api/client'
 import { openUpgradeCheckout } from '../../utils/upgradeCheckout'
 
@@ -21,6 +21,14 @@ export default function PricingView() {
 
   const isPaid = !!us.isPremium
   const isLifetime = us.user?.licenseStatus === 'active'
+
+  // /pricing es una ruta pública, fuera de PrivateRoute/V2App — nadie más carga
+  // el usuario aquí. Sin esto, quien acaba de registrarse llega con `user: null`
+  // y ve "Tu prueba ha terminado" en vez de "Te quedan 15 días" (bug real,
+  // probado en vivo con cuenta nueva el 3 sep 2026).
+  useEffect(() => {
+    if (!isGuest && !us.user) userStore.fetchMe().catch(() => {})
+  }, [isGuest, us.user])
 
   async function startPro() {
     if (isGuest) { navigate('/register'); return }
