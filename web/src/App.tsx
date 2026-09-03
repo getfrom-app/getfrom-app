@@ -2,6 +2,7 @@ import { Component, ErrorInfo, ReactNode, Suspense, lazy, useEffect, useRef, use
 import { useTranslation } from 'react-i18next'
 import { Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import { getToken, setTokens } from './api/client'
+import { assistantGetPrefs, assistantUpdatePrefs } from './api/assistant'
 import { store } from './store/nodeStore'
 import { userStore } from './store/userStore'
 import { connectGoogle } from './api/googleCalendar'
@@ -163,6 +164,28 @@ function useDesktopOAuthCallback() {
   }, [])
 }
 
+// Manda el huso horario del dispositivo al arrancar, igual que ya hace iOS
+// (`AssistantStore.syncTimeZone`) — web nunca lo hacía, así que cualquier
+// cuenta que solo usa web/Mac se quedaba fijada al "UTC" por defecto del
+// esquema para siempre. Sin esto, una tarea creada "sin hora" se guarda a
+// medianoche UTC y se pinta en local con el offset del usuario (probado en
+// vivo: cuenta nueva en Madrid, tarea "mañana" salía con las 02:00 puestas).
+// El servidor (`assistantPrefs.ts`) ya solo aplica esto si el usuario no ha
+// fijado un huso a mano (`timezoneAuto`), así que es seguro mandarlo siempre.
+function useTimeZoneSync() {
+  useEffect(() => {
+    if (!getToken()) return
+    let tz: string
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone } catch { return }
+    if (!tz) return
+    assistantGetPrefs()
+      .then(current => {
+        if (current.timezone !== tz) return assistantUpdatePrefs({ timezone: tz })
+      })
+      .catch(() => {})
+  }, [])
+}
+
 // Detecta ?welcome=1 al volver del checkout de LemonSqueezy y refresca el estado del usuario
 // hasta que isPremium sea true (máx 30s con polling cada 2s)
 function usePostCheckoutRefresh() {
@@ -226,6 +249,7 @@ function useTauriSyncListener() {
 function AppInner() {
   useDesktopOAuthCallback()
   useTauriSyncListener()
+  useTimeZoneSync()
   usePostCheckoutRefresh()
   return (
     <Routes>
