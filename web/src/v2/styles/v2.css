@@ -137,7 +137,14 @@
 }
 .v2-statusbar-left { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .v2-statusbar-spacer { flex: 1; min-width: 0; }
-.v2-statusbar-right { display: flex; align-items: center; gap: 6px; min-width: 0; max-width: min(70vw, 520px); overflow: hidden; }
+/* Sin max-width fijo (antes 520px): con ventana ancha sobraba hueco vacío en
+   el centro (a propósito, ver arriba) mientras "En curso"/"Después" ya se
+   truncaban con "…" aunque hubiera sitio de sobra (Alberto, 3 sep 2026:
+   "hay espacio, podemos extenderlo más a la izquierda"). Sin el tope, el
+   propio algoritmo flex (spacer con basis 0%, este bloque con basis auto)
+   solo encoge cuando la ventana entera se queda sin sitio de verdad —
+   la ellipsis de cada botón sigue ahí como último recurso. */
+.v2-statusbar-right { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
 
 .v2-statusbar-pill {
   display: flex; align-items: center; gap: 3px;
