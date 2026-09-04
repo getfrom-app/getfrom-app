@@ -691,7 +691,25 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
             }
           }
           if (existing.text !== text) store.updateNode(id!, { text })
-          if (existing.status !== status) {
+          // ⚠️ BUG REAL (Alberto, capturas de «Unidad Diabéticos Alicante»): completar
+          // una tarea-casilla desde FUERA del documento (checkbox del cockpit en
+          // Agenda, «Sin fecha») marca `status: 'done'` en el nodo, pero la casilla
+          // dentro del texto del documento se queda tal cual — sin marcar. Este sync
+          // corre de nuevo al guardar/cerrar el documento (debounce de `onUpdate` o el
+          // cleanup al desmontar) y, hasta ahora, la casilla del texto mandaba siempre:
+          // como seguía desmarcada, volvía a poner `status: 'pending'`, revirtiendo la
+          // tarea recién completada en cuanto el documento se sincronizaba — la tarea
+          // "reaparecía abierta" sin que el usuario la hubiera reabierto.
+          // Fix: solo dejamos que la casilla del texto mande cuando ELLA es la que
+          // cambió desde la última reconciliación (el usuario la tocó de verdad en
+          // este documento). Si sigue igual que la última vez pero el status del nodo
+          // cambió por otro sitio (cockpit, planner, iPhone…), no la pisamos — ese
+          // cambio externo es el que manda.
+          const embedMeta = parseExtraData(existing.extraData)
+          const lastSyncedChecked = embedMeta._taskEmbedChecked as boolean | undefined
+          const attrsChecked = !!item.attrs.checked
+          const checkboxToggledHere = lastSyncedChecked === undefined || lastSyncedChecked !== attrsChecked
+          if (existing.status !== status && checkboxToggledHere) {
             if (status === 'done') {
               // Por `toggleTaskDone`, no por un `updateNode` a pelo: marcar la casilla
               // tiene que hacer lo MISMO que completar la tarea en el cockpit (estampar
@@ -704,6 +722,13 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
               store.updateNode(id!, { status })
             }
           }
+          // Recuerda el estado de la casilla ya reconciliado, para poder distinguir
+          // "el usuario tocó esta casilla" de "el status cambió por fuera" la próxima
+          // vez que se sincronice este documento.
+          if (lastSyncedChecked !== attrsChecked) {
+            const freshExtra = parseExtraData(store.getNode(id!)?.extraData)
+            store.updateNode(id!, { extraData: JSON.stringify({ ...freshExtra, _taskEmbedChecked: attrsChecked }) })
+          }
           // Legado: las casillas anteriores a `_taskOf` solo se enlazaban por parentId,
           // que se pierde en cuanto la recurrencia reubica la tarea (utils/docTasks.ts).
           if (docIdOfTask(existing) !== node.id) {
@@ -712,7 +737,10 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
           }
           seen.add(id!)
         } else {
-          const created = store.createNode({ text, parentId: node.id, extraData: { _taskEmbed: '1', [TASK_OF]: node.id } })
+          // `_taskEmbedChecked` arranca en línea con `status` (recién creada desde
+          // esta misma casilla) — ver el fix de arriba: sin esta base, la primera
+          // reconciliación posterior no tendría con qué comparar.
+          const created = store.createNode({ text, parentId: node.id, extraData: { _taskEmbed: '1', [TASK_OF]: node.id, _taskEmbedChecked: status === 'done' } })
           const updates: Record<string, unknown> = { status }
           // Fecha del magic (ghost): el título ya viene limpio, la fecha se guardó aparte.
           const pend = pendingDueRef.current.get(text.toLowerCase())
