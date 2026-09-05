@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { login, register, apiRequest, setTokens } from '../../api/client'
+import { assistantUpdatePrefs } from '../../api/assistant'
 
 // Google / Apple client IDs (web)
 const GOOGLE_WEB_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID as string | undefined
@@ -34,6 +35,22 @@ function loadScript(src: string, id: string): Promise<void> {
     script.onerror = () => resolve() // silencia errores de red
     document.head.appendChild(script)
   })
+}
+
+// Cuenta recién creada → fija el huso horario del navegador antes de entrar a la
+// app. `useTimeZoneSync()` en App.tsx hace lo mismo pero en un useEffect sin
+// esperar (fire-and-forget): si el usuario le habla al chat a los pocos segundos
+// de registrarse, esa llamada puede no haber terminado y el servidor crea tareas
+// "sin hora" con el "UTC" por defecto del esquema en vez de la hora local
+// (probado en vivo: cuenta nueva en Madrid, tarea "el lunes" salía a las 02:00).
+// Aquí se espera explícitamente antes de navegar, solo para cuentas nuevas.
+async function syncTimeZoneOnSignup() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (tz) await assistantUpdatePrefs({ timezone: tz })
+  } catch {
+    // best-effort — no bloquear el alta por esto
+  }
 }
 
 declare global {
@@ -101,6 +118,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         body: JSON.stringify({ idToken: credential }),
       })
       setTokens(data.accessToken, data.refreshToken)
+      if (data.isNew) await syncTimeZoneOnSignup()
       // Solo mostramos el onboarding/pricing si la cuenta es NUEVA. Si ya existía
       // (aunque el usuario pulsara "registrarse"), va directo a la app.
       navigate(data.isNew ? '/pricing' : '/', { replace: true })
@@ -185,6 +203,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         }),
       })
       setTokens(data.accessToken, data.refreshToken)
+      if (data.isNew) await syncTimeZoneOnSignup()
       // Cuenta existente → app; solo cuenta nueva ve el onboarding/pricing.
       navigate(data.isNew ? '/pricing' : '/', { replace: true })
     } catch (err: unknown) {
@@ -209,6 +228,7 @@ export default function AuthPage({ initialMode = 'login' }: AuthPageProps) {
         await login(email, password)
       } else {
         await register(email, password)
+        await syncTimeZoneOnSignup()
         // Tras registro → elegir plan
         navigate('/pricing', { replace: true })
         return
