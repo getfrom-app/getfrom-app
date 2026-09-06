@@ -9,12 +9,14 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { Node } from '../../types'
+import { store } from '../../store/nodeStore'
 import { renderInline } from '../outliner/InlineRenderer'
 import { openNodeDetail } from '../../utils/canvasNav'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import RowContextChip from './RowContextChip'
 import TaskHoverActions from './TaskHoverActions'
-import { docOfTask } from '../../utils/docTasks'
+import { docOfTask, TASK_ROW } from '../../utils/docTasks'
+import { parseExtraData } from '../../utils/papeleraHelper'
 import { taskCheckState } from '../../utils/taskNode'
 import Icon from '../../v2/components/Icon'
 
@@ -121,6 +123,11 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
   const due = showDue ? dueLabel(node, i18n.language) : ''
   const rec = recLabel(node, t)
   const taskDoc = docOfTask(node)
+  // Tarea de la columna «Tareas» de una TABLA (NodeTableView): se dice en qué
+  // fila está, además del documento — «UDA · Facturas» (Alberto, 6 sep 2026).
+  const rowIdOfTask = parseExtraData(node.extraData)[TASK_ROW]
+  const taskRow = typeof rowIdOfTask === 'string' ? store.getNode(rowIdOfTask) : null
+  const rowLabel = taskRow && !taskRow.deletedAt ? (taskRow.text || t('common.noTitle')) : null
   return (
     <div
       ref={rowRef}
@@ -195,9 +202,9 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
           {/* Tarea DE UN DOCUMENTO: se dice de cuál. Sin esto, en el cockpit un
               «seguimiento» suelto no dice de quién es — y pulsar la fila abre ese
               documento (V2App.onOpenNode), así que el chip explica adónde lleva. */}
-          {taskDoc && (
-            <span className="dc-rec" title={taskDoc.text || ''}>
-              <Icon name="document" size={12} /> {taskDoc.text || t('common.noTitle')}
+          {(taskDoc || rowLabel) && (
+            <span className="dc-rec" title={[rowLabel, taskDoc?.text].filter(Boolean).join(' · ')}>
+              <Icon name="document" size={12} /> {rowLabel ? `${rowLabel} · ` : ''}{taskDoc ? (taskDoc.text || t('common.noTitle')) : ''}
             </span>
           )}
           <span style={{ flex: 1 }} />

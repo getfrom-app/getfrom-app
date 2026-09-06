@@ -1542,6 +1542,22 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             <span className="pp-nav-title">{navTitle}</span>
             <button className="pp-nav-btn" onClick={()=>navDelta(1)}>›</button>
             <button className="pp-today-btn" onClick={()=>{ setCenterDate(today); setRecenterTick(x=>x+1) }}>{t('common.today')}</button>
+            {/* Ancho de columna con botones, no solo arrastrando la cabecera (que
+                nadie descubre): «+» = columnas más anchas (menos días visibles),
+                «−» = más estrechas (más días). Mismo rango que el arrastre
+                (Alberto, 6 sep 2026: "no hay forma de modificar el zoom, el ancho
+                de las columnas"). Solo en Semana: día tiene una columna y
+                mes/año no usan columnas de días. */}
+            {viewMode === 'week' && (
+              <>
+                <button className="pp-today-btn pp-reset-btn pp-zoom-btn" title={t('tip.zoomOut')}
+                  disabled={visibleDayCnt >= MAX_DAY_CNT}
+                  onClick={() => setVisibleDayCnt(c => Math.min(MAX_DAY_CNT, c + 1))}>−</button>
+                <button className="pp-today-btn pp-reset-btn pp-zoom-btn" title={t('tip.zoomIn')}
+                  disabled={visibleDayCnt <= MIN_DAY_CNT}
+                  onClick={() => setVisibleDayCnt(c => Math.max(MIN_DAY_CNT, c - 1))}>+</button>
+              </>
+            )}
             <button className="pp-today-btn pp-reset-btn" onClick={resetZoom}
               title={t('tip.resetZoom', { count: visibleDayCnt })}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">

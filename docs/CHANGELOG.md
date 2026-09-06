@@ -4,6 +4,26 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.53 — 6 septiembre 2026 · Tablas con tareas de verdad, fecha "Hoy" correcta, zoom del Planificador con botones
+
+- **Fecha de tarea**: el botón "Hoy" (y "Mañana", "+7d", "+30d") del modal de propiedades guardaba
+  el día anterior por la tarde-noche en España, y el campo de fecha mostraba un día menos. Corregido:
+  siempre en hora local.
+- **Documentos**: las casillas de tarea escritas en el texto ya no se cuelan como filas de una tabla
+  insertada en el mismo documento. Desaparece el bloque "Tareas" que se repetía encima del texto
+  (la tarea ya está en el propio cuerpo). Cada casilla lleva ahora debajo su fecha y el "+" para
+  editarla, con el mismo formato que el resto de tareas de Fromly.
+- **Tablas, columna "Tareas"**: el "+ Tarea" abre el mismo modal de nueva tarea que la sidebar; cada
+  tarea se ve con checkbox, título y, debajo, fecha, "+" (fecha, hora, recurrencia y prioridad,
+  mismo modal que cualquier tarea) y chip de repetición. Una fila puede tener varias columnas de
+  tareas sin que se mezclen. Fuera de la tabla (Agenda, contexto, Elementos) la tarea muestra su
+  contexto y "fila · documento" para saber de dónde viene, y pulsarla abre el documento.
+- **Tablas**: se retira el tipo de columna "Recordatorio" — una tarea con fecha y recurrencia en la
+  columna "Tareas" hace lo mismo. Las columnas antiguas de ese tipo se ven vacías hasta cambiarles
+  el tipo.
+- **Planificador, vista Semana**: botones "−" y "+" junto a "Restablecer zoom" para cambiar el ancho
+  de las columnas de día (antes solo arrastrando la cabecera, que casi nadie descubría).
+
 ## Web v9.10.47 · Mac v9.5.81 · iOS (en la próxima versión) — 3 septiembre 2026 · Checkboxes estilo Logseq, Planner sin bugs sueltos
 
 - **Checkboxes de tarea, en toda la app** (web e iPhone/iPad): ahora son cuadrados rellenos de

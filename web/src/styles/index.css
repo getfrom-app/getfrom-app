@@ -7381,15 +7381,13 @@ textarea:focus-visible,
 .doc-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div,
 .pizarra-text ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--text-tertiary, #999); text-decoration: line-through; }
 
-/* Chip clicable junto a cada casilla — abre el modal de fecha/recurrencia/prioridad
-   (mismo modal que el outliner, `TaskPropsModal`, vía el evento `from:open-task-props`). */
-.doc-editor .ProseMirror ul[data-type="taskList"] li .task-item-chip {
-  flex-shrink: 0; border: 1px solid var(--border, #e2e2e2); background: var(--bg-elevated, #fff);
-  border-radius: 6px; padding: 1px 6px; font-size: 11px; color: var(--text-tertiary, #999);
-  cursor: pointer; margin-top: 0.1em; display: inline-flex; align-items: center; gap: 4px;
-  line-height: 1.5; white-space: nowrap;
-}
-.doc-editor .ProseMirror ul[data-type="taskList"] li .task-item-chip:hover { background: var(--bg-subtle, #f5f5f5); color: var(--text-secondary, #666); }
+/* Segunda línea de cada casilla (TaskItemChip.tsx): fecha + «+» con las mismas
+   clases `dc-due` que TaskRow — el formato de tarea de toda la app. Va DENTRO del
+   `div` de contenido (li > div.task-item-body > [contenido, l2]) para quedar bajo
+   el título; el tachado de la casilla marcada no debe alcanzarla. */
+.doc-editor .ProseMirror ul[data-type="taskList"] li .task-item-body { flex: 1; min-width: 0; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li .task-item-l2 { margin: 1px 0 2px; text-decoration: none; user-select: none; line-height: 1.3; }
+.doc-editor .ProseMirror ul[data-type="taskList"] li[data-checked="true"] .task-item-l2 { text-decoration: none; }
 .task-item-chip-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
 
 /* En el lienzo (compact) el editor debe calcar al preview estático .pizarra-text
@@ -8053,6 +8051,11 @@ textarea:focus-visible,
   display: flex; flex-direction: column; gap: 2px;
   font-size: 11px; cursor: pointer;
 }
+/* Tareas de la fila con las clases `dc-*` de TaskRow: sin fondo de hover ni
+   padding lateral dentro de la celda, y a ancho natural. */
+.node-table-tasks-cell .dc-row { padding: 2px 0; min-height: 0; cursor: default; }
+.node-table-tasks-cell .dc-row:hover { background: transparent; }
+.node-table-tasks-cell .dc-text { font-size: 12.5px; }
 .node-table-tasks-item {
   display: flex; align-items: center; gap: 4px;
 }
@@ -13022,6 +13025,9 @@ textarea:focus-visible,
 }
 .pp-reset-btn { padding: 3px 7px; border-color: var(--border) !important; color: var(--text-secondary) !important; display: flex; align-items: center; }
 .pp-reset-btn:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: rgba(74,144,217,0.08) !important; }
+.pp-zoom-btn { font-size: 13px; line-height: 1; padding: 1px 7px 2px; }
+.pp-zoom-btn:disabled { opacity: 0.35; cursor: default; }
+.pp-zoom-btn:disabled:hover { border-color: var(--border) !important; color: var(--text-secondary) !important; background: none !important; }
 
 /* ── Filtro IA — indicador de interpretación ─────────────────────────────── */
 .wf-topbar-filter-ai-hint {

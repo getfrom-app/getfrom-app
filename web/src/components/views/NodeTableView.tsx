@@ -1,21 +1,29 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { Fragment, useState, useMemo, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import Icon from '../../v2/components/Icon'
+import NewTaskModal from '../modals/NewTaskModal'
+import { parseExtraData } from '../../utils/papeleraHelper'
+import { isDocNode } from '../../utils/docNode'
+import { TASK_OF, TASK_ROW } from '../../utils/docTasks'
+import { assignContext, nodeCtxRefs } from '../../utils/cajones'
+import { toggleTaskDone } from '../../utils/dailyCockpit'
+import { taskCheckState } from '../../utils/taskNode'
+import { dueLabel, dueColor, recLabel } from '../panels/TaskRow'
 
 interface Props { parentId: string }
 
-type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'tag' | 'task' | 'reminder' | 'rating'
+type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'tag' | 'task' | 'rating'
 type SelectOption = { id: string; label: string; color?: string }
 type PropDef = { id: string; name: string; type: string; options?: SelectOption[] }
 type SortDir = 'asc' | 'desc' | null
 
 const COL_TYPE_LABEL_KEYS: Record<ColType, string> = {
   text: 'colType.text', number: 'colType.number', select: 'colType.select', multi_select: 'colType.multiSelect',
-  date: 'colType.date', checkbox: 'colType.checkbox', url: 'colType.url', tag: 'colType.tag', task: 'colType.task', reminder: 'colType.reminder',
+  date: 'colType.date', checkbox: 'colType.checkbox', url: 'colType.url', tag: 'colType.tag', task: 'colType.task',
   rating: 'colType.rating',
 }
 
@@ -97,152 +105,77 @@ function SelectEditor({ currentValueId, options, onPick, onCreate, onClose }: {
   )
 }
 
-function ReminderEditor({ existing, colName, onSave, onClear, onClose }: {
-  existing: Node | null
-  colName: string
-  onSave: (data: { due: string; recurrence: string | null }) => void
-  onClear: () => void
-  onClose: () => void
-}) {
-  const { t } = useTranslation()
-  const initialDate = existing?.due ? existing.due.slice(0, 10) : ''
-  const initialTime = existing?.due ? (() => {
-    const d = new Date(existing.due!)
-    const hh = String(d.getHours()).padStart(2, '0')
-    const mm = String(d.getMinutes()).padStart(2, '0')
-    return d.getHours() === 0 && d.getMinutes() === 0 ? '' : `${hh}:${mm}`
-  })() : ''
-  // Parsear recurrencia legacy: "daily" | "weekly" | "daily:3" | "weekly:2" | null
-  type RecUnit = 'daily' | 'weekly' | 'monthly' | 'yearly' | ''
-  const parseRec = (r: string | null | undefined): { n: number; unit: RecUnit } => {
-    if (!r) return { n: 1, unit: '' }
-    const [unit, nStr] = r.split(':')
-    const n = parseInt(nStr || '1') || 1
-    if (unit === 'daily' || unit === 'weekly' || unit === 'monthly' || unit === 'yearly') {
-      return { n, unit }
-    }
-    return { n: 1, unit: '' }
+// Sin «Recordatorio» (quitado 6 sep 2026, Alberto: "vamos a quitar la opción
+// recordatorios y vamos a mejorar la opción tareas"): una tarea con fecha y
+// recurrencia en la columna «Tareas» cubre exactamente ese caso. Las columnas
+// antiguas de ese tipo siguen existiendo en el schema — se ven vacías hasta
+// cambiarles el tipo desde el menú de columna.
+
+/** Documento (`_doc`) que contiene la tabla: el propio `parentId` cuando la tabla
+ *  vive dentro de un documento (DocEditor pasa `parentId = doc.id`), o el primer
+ *  documento ancestro si la tabla es un nodo suelto del outliner/lienzo. */
+function docIdOfTable(parentId: string): string | null {
+  let cur = store.getNode(parentId)
+  for (let i = 0; cur && i < 12; i++) {
+    if (isDocNode(cur)) return cur.id
+    cur = cur.parentId ? store.getNode(cur.parentId) : undefined
   }
-  const initRec = parseRec(existing?.recurrence)
-  const [date, setDate] = useState(initialDate)
-  const [time, setTime] = useState(initialTime)
-  const [recN, setRecN] = useState<number>(initRec.n)
-  const [recUnit, setRecUnit] = useState<RecUnit>(initRec.unit)
-
-  function quickDate(days: number) {
-    const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + days)
-    setDate(d.toISOString().slice(0, 10))
-  }
-
-  function commit() {
-    if (!date) return
-    const iso = time
-      ? new Date(`${date}T${time}:00`).toISOString()
-      : new Date(`${date}T00:00:00`).toISOString()
-    const recurrence = recUnit ? (recN === 1 ? recUnit : `${recUnit}:${recN}`) : null
-    onSave({ due: iso, recurrence })
-  }
-
-  const recUnits: { key: 'daily' | 'weekly' | 'monthly' | 'yearly'; label: string }[] = [
-    { key: 'daily',   label: t('reminder.unitDays') },
-    { key: 'weekly',  label: t('reminder.unitWeeks') },
-    { key: 'monthly', label: t('reminder.unitMonths') },
-    { key: 'yearly',  label: t('reminder.unitYears') },
-  ]
-
-  return (
-    <div className="reminder-editor" onMouseDown={e => e.stopPropagation()}>
-      <div className="reminder-editor-title">⏰ {colName}</div>
-
-      <div className="reminder-editor-label">{t('reminder.quickDate')}</div>
-      <div className="reminder-editor-quick">
-        {[[t('common.today'), 0], [t('common.tomorrow'), 1], ['+7d', 7], ['+30d', 30]].map(([label, days]) => (
-          <button key={String(label)} className="reminder-editor-chip" onClick={() => quickDate(days as number)}>
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="reminder-editor-row">
-        <input type="date" className="node-table-cell-editor" value={date} onChange={e => setDate(e.target.value)} />
-        <input type="time" className="node-table-cell-editor" value={time} onChange={e => setTime(e.target.value)} disabled={!date} />
-      </div>
-
-      <div className="reminder-editor-label">{t('reminder.repeatEvery')}</div>
-      <div className="reminder-editor-rec-row">
-        <button
-          className={`reminder-editor-chip ${!recUnit ? 'active' : ''}`}
-          onClick={() => setRecUnit('')}
-        >{t('common.no')}</button>
-        <input
-          type="number"
-          min={1}
-          max={999}
-          className="reminder-editor-rec-n"
-          value={recN}
-          disabled={!recUnit}
-          onChange={e => {
-            const v = Math.max(1, parseInt(e.target.value) || 1)
-            setRecN(v)
-            if (!recUnit) setRecUnit('daily')
-          }}
-        />
-        {recUnits.map(({ key, label }) => (
-          <button
-            key={key}
-            className={`reminder-editor-chip ${recUnit === key ? 'active' : ''}`}
-            onClick={() => setRecUnit(key)}
-          >{label}</button>
-        ))}
-      </div>
-
-      <div className="reminder-editor-actions">
-        {existing && <button className="reminder-editor-clear" onClick={onClear}><Icon name="trash" size={13} /> {t('common.delete')}</button>}
-        <button className="reminder-editor-cancel" onClick={onClose}>{t('common.cancel')}</button>
-        <button className="reminder-editor-save" onClick={commit} disabled={!date}>{t('common.save')}</button>
-      </div>
-    </div>
-  )
+  return null
 }
 
-function TaskListEditor({ tasks, onAdd, onToggle, onClose }: {
-  tasks: Node[]
-  onAdd: (text: string) => void
-  onToggle: (t: Node) => void
-  onClose: () => void
-}) {
-  const { t: tr } = useTranslation()
-  const [text, setText] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-  useEffect(() => { inputRef.current?.focus() }, [])
+/** ¿Es una tarea del documento (casilla del cuerpo o tarea con `_taskOf`)? Son
+ *  hijas del mismo nodo que las filas, pero NO son filas: sin este filtro cada
+ *  casilla escrita en el texto aparecía como una fila más de la tabla (Alberto,
+ *  6 sep 2026: "la tarea que está fuera de la tabla se cuela dentro de la tabla"). */
+function isDocTaskNode(n: Node): boolean {
+  const e = parseExtraData(n.extraData)
+  return e._taskEmbed === '1' || !!e._absorbedBy || (typeof e[TASK_OF] === 'string' && !!e[TASK_OF])
+}
+
+/** Columna «Tareas» a la que pertenece la tarea (una fila puede tener varias). */
+const TASK_COL = '_taskCol'
+
+/** Tareas de una fila PARA una columna «Tareas» concreta: hijas de la fila con
+ *  `status` y `_taskCol` = esa columna. Las anteriores a `_taskCol` (sin marca)
+ *  se muestran en la PRIMERA columna de tareas de la tabla, no en todas. */
+function tasksOfRow(rowId: string, colId: string, isFirstTaskCol: boolean): Node[] {
+  return store.children(rowId).filter(c => {
+    if (c.deletedAt || c.status === null) return false
+    const col = parseExtraData(c.extraData)[TASK_COL]
+    return col ? col === colId : isFirstTaskCol
+  })
+}
+
+/** Fila de tarea DENTRO de una celda: mismas clases `dc-*` que TaskRow.tsx (la
+ *  fila única de tarea del resto de la app) — checkbox + título arriba, fecha +
+ *  «+» abajo. Sin chip de contexto ni de documento: aquí es obvio, la tabla ya
+ *  está en el documento (Alberto, 6 sep 2026). El «+» abre el MISMO modal de
+ *  propiedades (fecha/recurrencia/prioridad) que cualquier otra tarea. */
+function TaskCellRow({ task }: { task: Node }) {
+  const { t, i18n } = useTranslation()
+  const done = task.status === 'done'
+  const due = dueLabel(task, i18n.language)
+  const rec = recLabel(task, t)
+  const openProps = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    window.dispatchEvent(new CustomEvent('from:open-task-props', { detail: { nodeId: task.id } }))
+  }
   return (
-    <div className="task-list-editor" onMouseDown={e => e.stopPropagation()}>
-      <div className="task-list-editor-rows">
-        {tasks.map(t => (
-          <div key={t.id} className="task-list-editor-row">
-            <button
-              className={`task-list-editor-check ${t.status === 'done' ? 'done' : ''}`}
-              onClick={() => onToggle(t)}
-            >{t.status === 'done' ? '✓' : ''}</button>
-            <span className={`task-list-editor-text ${t.status === 'done' ? 'done' : ''}`}>{t.text || tr('common.noTitle')}</span>
-          </div>
-        ))}
+    <div className={`dc-row${done ? ' dc-row--done' : ''}`} onClick={e => e.stopPropagation()}
+      onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: task.id, x: e.clientX, y: e.clientY } })) }}>
+      <button className={`dc-check dc-check--${taskCheckState(task)}`}
+        onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
+        title={t('daily.markDone')} aria-label={t('daily.markDone')}>
+        {done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}
+      </button>
+      <div className="dc-row-main">
+        <div className="dc-row-l1"><span className="dc-text dc-text--wrap">{task.text || t('common.noTitle')}</span></div>
+        <div className="dc-row-l2">
+          {due && <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(task) }} title={t('dailyCockpit.editDateRecurrence')} onClick={openProps}>{due}</span>}
+          {!done && <span className="dc-due dc-due--empty" title={t('dailyCockpit.editDateRecurrence')} onClick={openProps}>+</span>}
+          {rec && <span className="dc-rec" title={rec}><Icon name="repeat" size={12} /> {rec}</span>}
+        </div>
       </div>
-      <input
-        ref={inputRef}
-        className="node-table-cell-editor"
-        placeholder={tr('table.newTaskPlaceholder')}
-        value={text}
-        onChange={e => setText(e.target.value)}
-        onKeyDown={e => {
-          if (e.key === 'Enter') {
-            if (text.trim()) { onAdd(text.trim()); setText('') }
-            else onClose()
-          }
-          if (e.key === 'Escape') onClose()
-        }}
-        onBlur={() => { if (!text.trim()) onClose() }}
-      />
     </div>
   )
 }
@@ -284,55 +217,6 @@ function CellEditor({ node, def, parentId, onClose, onNav }: { node: Node; def: 
           }
           commit(newOpt.id)
         }}
-        onClose={onClose}
-      />
-    )
-  }
-  if (def.type === 'reminder') {
-    const reminderTask = findReminderTaskForCol(node.id, def.id)
-    return (
-      <ReminderEditor
-        existing={reminderTask}
-        colName={def.name}
-        onSave={({ due, recurrence }) => {
-          if (reminderTask) {
-            store.updateNode(reminderTask.id, { due, recurrence, status: 'pending' })
-          } else {
-            const child = store.createNode({
-              text: def.name,
-              parentId: node.id,
-              siblingOrder: Date.now(),
-            })
-            // Marcar con _reminderColId para asociar a esta columna
-            const ed: Record<string, unknown> = { _reminderColId: def.id }
-            store.updateNode(child.id, {
-              status: 'pending',
-              due,
-              recurrence,
-              extraData: JSON.stringify(ed),
-            })
-          }
-          onClose()
-        }}
-        onClear={() => {
-          if (reminderTask) store.deleteNode(reminderTask.id)
-          onClose()
-        }}
-        onClose={onClose}
-      />
-    )
-  }
-  if (def.type === 'task') {
-    // Task editor: lista de tareas hijo + input para crear nueva
-    const tasks = store.children(node.id).filter(c => !c.deletedAt && c.status !== null)
-    return (
-      <TaskListEditor
-        tasks={tasks}
-        onAdd={text => {
-          const child = store.createNode({ text: text.trim(), parentId: node.id, siblingOrder: Date.now() })
-          store.updateNode(child.id, { status: 'pending' })
-        }}
-        onToggle={t => store.updateNode(t.id, { status: t.status === 'done' ? 'pending' : 'done' })}
         onClose={onClose}
       />
     )
@@ -399,60 +283,16 @@ function CellEditor({ node, def, parentId, onClose, onNav }: { node: Node; def: 
   )
 }
 
-// Helpers para Recordatorio: busca la tarea hija que pertenece a esta columna
-function findReminderTaskForCol(rowId: string, colId: string): Node | null {
-  for (const child of store.children(rowId)) {
-    if (child.deletedAt) continue
-    try {
-      const ed = JSON.parse(child.extraData || '{}')
-      if (ed._reminderColId === colId) return child
-    } catch { /* ignore */ }
-  }
-  return null
-}
-
-function formatReminderDate(iso: string, recurrence: string | null | undefined): string {
-  const d = new Date(iso)
-  const datePart = d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
-  const hasTime = d.getHours() !== 0 || d.getMinutes() !== 0
-  const timePart = hasTime ? ` ${d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}` : ''
-  const recPart = recurrence ? ' · ↻' : ''
-  return `${datePart}${timePart}${recPart}`
-}
-
-function CellView({ node, def, onEdit }: { node: Node; def: PropDef; onEdit: () => void }) {
+function CellView({ node, def, onEdit, onAddTask, isFirstTaskCol }: { node: Node; def: PropDef; onEdit: () => void; onAddTask?: () => void; isFirstTaskCol?: boolean }) {
   const { t: tr } = useTranslation()
-  // Reminder: muestra próxima fecha del recordatorio asociado a esta columna
-  if (def.type === 'reminder') {
-    const reminderTask = findReminderTaskForCol(node.id, def.id)
-    if (!reminderTask || !reminderTask.due) {
-      return <span className="node-table-empty-cell" onClick={onEdit}>＋ {tr('table.reminder')}</span>
-    }
-    const isDone = reminderTask.status === 'done'
-    return (
-      <div className={`node-table-reminder ${isDone ? 'done' : ''}`} onClick={onEdit}>
-        <span className="node-table-reminder-icon">{isDone ? '✓' : '⏰'}</span>
-        <span className="node-table-reminder-date">{formatReminderDate(reminderTask.due, reminderTask.recurrence)}</span>
-      </div>
-    )
-  }
-  // Task: lista compacta de tareas hijas del row (status:pending) + botón añadir
+  // Tareas de la fila: lista con el formato de tarea de Fromly + «＋ Tarea», que
+  // abre el modal de nueva tarea (el mismo de la sidebar/Hoy) — no un editor propio.
   if (def.type === 'task') {
-    const tasks = store.children(node.id).filter(c => !c.deletedAt && c.status !== null)
+    const tasks = tasksOfRow(node.id, def.id, !!isFirstTaskCol)
     return (
-      <div className="node-table-tasks-cell" onClick={e => { e.stopPropagation(); onEdit() }}>
-        {tasks.slice(0, 3).map(t => (
-          <div key={t.id} className="node-table-tasks-item">
-            <span className={`node-table-tasks-check ${t.status === 'done' ? 'done' : ''}`}>
-              {t.status === 'done' ? '✓' : '○'}
-            </span>
-            <span className={`node-table-tasks-text ${t.status === 'done' ? 'done' : ''}`}>
-              {(t.text || tr('common.noTitle')).slice(0, 28)}
-            </span>
-          </div>
-        ))}
-        {tasks.length > 3 && <span className="node-table-tasks-more">+{tasks.length - 3} {tr('calendar.more')}</span>}
-        {tasks.length === 0 && <span className="node-table-empty-cell">＋ {tr('search.chipTask')}</span>}
+      <div className="node-table-tasks-cell" onClick={e => e.stopPropagation()}>
+        {tasks.map(tk => <TaskCellRow key={tk.id} task={tk} />)}
+        <span className="node-table-empty-cell" onClick={e => { e.stopPropagation(); onAddTask?.() }}>＋ {tr('search.chipTask')}</span>
       </div>
     )
   }
@@ -511,8 +351,9 @@ export default function NodeTableView({ parentId }: Props) {
   const [groupBy, setGroupBy] = useState<string | null>(null)   // null = sin agrupar
   const [filterText, setFilterText] = useState('')
   const [resizeCol, setResizeCol] = useState<{ id: string; w: number } | null>(null)  // preview de ancho
+  const [newTaskRow, setNewTaskRow] = useState<{ rowId: string; colId: string } | null>(null)   // fila + columna para las que se abre «Nueva tarea»
 
-  const children = store.children(parentId).filter(n => !n.deletedAt)
+  const children = store.children(parentId).filter(n => !n.deletedAt && !isDocTaskNode(n))
   const customCols = store.getPropSchema(parentId)
 
   // Minimalista: la fila inicial la crea quien crea la tabla (createViewElement), para
@@ -765,7 +606,7 @@ export default function NodeTableView({ parentId }: Props) {
         </thead>
         <tbody>
           {groupedChildren.map(group => (
-            <>
+            <Fragment key={group.key}>
               {groupBy && (
                 <tr key={`group-${group.key}`} className="node-table-group-header">
                   <td colSpan={1 + (hasStatus?1:0) + (hasDue?1:0) + (hasPriority?1:0) + (hasTags?1:0) + customCols.length + 1}>
@@ -921,17 +762,19 @@ export default function NodeTableView({ parentId }: Props) {
                 )}
                 {customCols.map(col => {
                   const isEditing = editingCell?.nodeId === node.id && editingCell.colId === col.id
-                  // Reminder/Task/Tag/Select usan modal centrado en vez de cell overlay
+                  // Tag/Select usan modal centrado en vez de cell overlay
                   // porque su UI es más rica y se ve mal pegada a la celda
-                  const useModal = col.type === 'reminder' || col.type === 'task' || col.type === 'tag' || col.type === 'select'
+                  const useModal = col.type === 'tag' || col.type === 'select'
                   return (
                     <td
                       key={col.id}
                       className="node-table-td node-table-td--custom"
-                      onClick={e => { e.stopPropagation(); if (!isEditing) setEditingCell({ nodeId: node.id, colId: col.id }) }}
+                      onClick={e => { e.stopPropagation(); if (col.type !== 'task' && !isEditing) setEditingCell({ nodeId: node.id, colId: col.id }) }}
                       style={{ position: 'relative' }}
                     >
-                      <CellView node={node} def={col} onEdit={() => setEditingCell({ nodeId: node.id, colId: col.id })} />
+                      <CellView node={node} def={col} onEdit={() => setEditingCell({ nodeId: node.id, colId: col.id })}
+                        onAddTask={() => setNewTaskRow({ rowId: node.id, colId: col.id })}
+                        isFirstTaskCol={customCols.find(c => c.type === 'task')?.id === col.id} />
                       {isEditing && !useModal && (
                         <div className="node-table-cell-overlay">
                           <CellEditor node={node} def={col} parentId={parentId}
@@ -953,7 +796,7 @@ export default function NodeTableView({ parentId }: Props) {
               </tr>
             )
               })}
-            </>
+            </Fragment>
           ))}
           {/* Añadir fila rápido (además de Enter en la última celda). */}
           <tr className="node-table-addrow" onClick={addRow}>
@@ -1009,6 +852,21 @@ export default function NodeTableView({ parentId }: Props) {
           </div>
         </>
       ), document.body)}
+      {/* «Nueva tarea» de la columna «Tareas»: el MISMO modal que la sidebar y Hoy.
+          La tarea nace hija de la fila; se le cuelga `_taskOf` (documento que
+          contiene la tabla → pulsarla desde Agenda abre el documento) y `_taskRow`
+          (TaskRow muestra «fila · documento» en su 2ª línea), y hereda el contexto
+          del documento para salir en su columna. */}
+      {newTaskRow && (
+        <NewTaskModal parentId={newTaskRow.rowId} onClose={() => setNewTaskRow(null)}
+          onCreated={created => {
+            const docId = docIdOfTable(parentId)
+            const ed = { ...parseExtraData(created.extraData), [TASK_ROW]: newTaskRow.rowId, [TASK_COL]: newTaskRow.colId, ...(docId ? { [TASK_OF]: docId } : {}) }
+            store.updateNode(created.id, { extraData: JSON.stringify(ed) })
+            const src = store.getNode(docId || parentId)
+            for (const ref of nodeCtxRefs(src)) assignContext(created.id, ref)
+          }} />
+      )}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { store } from '../../store/nodeStore'
 import { useToast } from '../Toast'
 import Icon from '../../v2/components/Icon'
+import type { Node } from '../../types'
 
 // Fecha de hoy a medianoche LOCAL, formato datetime-local ("YYYY-MM-DDT00:00")
 // — medianoche es la convención de la app para "tarea de todo el día" (sin
@@ -25,9 +26,12 @@ interface Props {
   // Fecha concreta YYYY-MM-DD a precargar (p.ej. clic en una celda del mes en
   // el planificador). Tiene prioridad sobre `defaultDueToday`.
   defaultDateStr?: string
+  // Quien abre el modal puede rematar el nodo recién creado (p. ej. la columna
+  // «Tareas» de una tabla le cuelga `_taskOf`/`_taskRow` y hereda el contexto).
+  onCreated?: (node: Node) => void
 }
 
-export default function NewTaskModal({ onClose, parentId, defaultDueToday, defaultDateStr }: Props) {
+export default function NewTaskModal({ onClose, parentId, defaultDueToday, defaultDateStr, onCreated }: Props) {
   const { t } = useTranslation()
   const [text, setText] = useState('')
   // Vacío por defecto: el input es datetime-local (fecha + hora), así que un
@@ -55,6 +59,7 @@ export default function NewTaskModal({ onClose, parentId, defaultDueToday, defau
       due: due ? new Date(due).toISOString() : null,
     })
     if (priority) store.updateNode(node.id, { priority: priority as 'high' | 'medium' | 'low' })
+    onCreated?.(store.getNode(node.id) ?? node)
     showToast(t('ai.actionTaskCreated', 'Tarea creada'))
     onClose()
   }

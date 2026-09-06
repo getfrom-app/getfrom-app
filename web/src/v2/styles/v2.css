@@ -1502,19 +1502,8 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
   }
 }
 
-/* ── Tareas DE UN DOCUMENTO (V2DocTasks) ─────────────────────────────────────
-   Franja discreta encima del texto: el seguimiento del asunto se ve al abrir el
-   documento, sin competir con el propio contenido. */
-.v2-doctasks {
-  padding: 10px 20px 0;
-  display: flex; flex-direction: column; gap: 2px;
-}
-/* La fila en sí usa las clases `dc-*` de TaskRow.tsx — mismo estilo que
-   cualquier otra tarea de la app (Alberto, 3 sep 2026). Solo queda lo
-   propio de este bloque: el resalte al llegar desde otra vista. */
-.v2-doctask--flash { background: var(--accent-soft); }
-/* `.v2-done-toggle` lo comparten el bloque de tareas de un documento y la lista de
-   tareas de un contexto/conversación (V2TaskList): el mismo gesto «ver lo hecho». */
+/* `.v2-done-toggle`: lista de tareas de un contexto/conversación (V2TaskList),
+   el gesto «ver lo hecho». */
 .v2-done-toggle {
   align-self: flex-start; display: inline-flex; align-items: center; gap: 5px;
   background: none; border: none; cursor: pointer; padding: 4px 6px;

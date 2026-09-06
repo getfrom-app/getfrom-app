@@ -909,8 +909,6 @@ export default function V2App() {
     const taskDoc = docOfTask(node)
     if (taskDoc && taskDoc.id !== id) {
       onOpenNode(taskDoc.id)
-      // Tras montar el documento: resalta la tarea concreta (V2DocTasks la escucha).
-      setTimeout(() => window.dispatchEvent(new CustomEvent('from:highlight-doc-task', { detail: { docId: taskDoc.id, taskId: id } })), 250)
       return
     }
 

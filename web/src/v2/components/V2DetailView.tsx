@@ -24,7 +24,6 @@ import PublishButton from '../../components/PublishButton'
 import { exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
 import { convertNoteToBlock } from '../../utils/noteBlocks'
 import { promoteCitationWithFeedback } from '../../utils/citations'
-import V2DocTasks from './V2DocTasks'
 import { firstContextOf, setNodeContext, contextColor, isContextNode } from '../../utils/cajones'
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from '../../components/panels/ContextPicker'
@@ -261,10 +260,9 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
           ? <PizarraView parentId={node.id} flowUnpositioned globalCanvas={false} embedded />
           : asDoc
             ? <>
-                {/* Tareas DEL documento (seguimientos): encima del texto, porque son el
-                    estado del asunto, no una nota al pie. Fuera de la nota diaria (sus
-                    tareas ya son el cockpit del día) y de los usos incrustados. */}
-                {!isDayNote && !inlinePage && <V2DocTasks docId={node.id} />}
+                {/* Sin bloque «Tareas» encima del texto: las tareas del documento ya
+                    están en el propio cuerpo como casillas (y las de una tabla, en su
+                    fila) — repetirlas arriba era redundante (Alberto, 6 sep 2026). */}
                 {/* Ficha de propiedades de un TIPO custom (Persona, Libro…) — solo si
                     este documento nació de un tipo (utils/typeDefsHelper.ts). */}
                 {!inlinePage && elementTypeId(node) && <TypePropertiesBar nodeId={node.id} typeId={elementTypeId(node)!} />}

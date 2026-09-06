@@ -11,6 +11,15 @@ import Icon from '../../v2/components/Icon'
 const REC_UNITS: [string, string][] = [['daily', 'taskPropsModal.recDays'], ['weekly', 'taskPropsModal.recWeeks'], ['monthly', 'taskPropsModal.recMonths'], ['yearly', 'taskPropsModal.recYears']]
 const PRIORITIES: [string, string][] = [['high', 'priority.high'], ['medium', 'priority.medium'], ['low', 'priority.low']]
 
+// YYYY-MM-DD en hora LOCAL. Nunca `toISOString().slice(0, 10)`: un `due` a
+// medianoche local de Madrid es "…T22:00Z" del día ANTERIOR en UTC, así que el
+// input de fecha pintaba un día menos y el botón «Hoy» guardaba ayer (Alberto,
+// 6 sep 2026: "pongo fecha hoy que es día 6, pero aparece con fecha de ayer").
+export function ymdLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 /** Cuerpo reutilizable de las propiedades de tarea (fecha / hora / recurrencia /
  *  prioridad). Lo usan el MODAL (`TaskPropsModal`) y la COLUMNA DERECHA de tarea en el
  *  lienzo (panel 'task'), sin duplicar lógica. */
@@ -21,7 +30,7 @@ export function TaskPropsBody({ nodeId }: { nodeId: string }) {
   if (!node) return null
 
   const due = node.due ? new Date(node.due) : null
-  const dateStr = node.due ? node.due.slice(0, 10) : ''
+  const dateStr = due ? ymdLocal(due) : ''
   const hasTime = !!due && (due.getHours() !== 0 || due.getMinutes() !== 0)
   const timeStr = hasTime
     ? `${String(due!.getHours()).padStart(2, '0')}:${String(due!.getMinutes()).padStart(2, '0')}`
@@ -37,7 +46,7 @@ export function TaskPropsBody({ nodeId }: { nodeId: string }) {
   }
   function quick(days: number) {
     const dd = new Date(); dd.setHours(0, 0, 0, 0); dd.setDate(dd.getDate() + days)
-    setDateTime(dd.toISOString().slice(0, 10), timeStr)
+    setDateTime(ymdLocal(dd), timeStr)
   }
   function setRec(unit: string, n: number) {
     store.updateNode(nodeId, {

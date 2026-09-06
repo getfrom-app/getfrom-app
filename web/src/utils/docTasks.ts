@@ -12,7 +12,11 @@
 //
 // Convive con las casillas del cuerpo (`_taskEmbed`, ver DocEditor.tsx): esas son
 // tareas de documento ancladas a una casilla concreta del texto; estas otras son
-// del documento entero. Las dos se listan juntas en el bloque «Tareas» de la ficha.
+// del documento entero. También las de la columna «Tareas» de una tabla dentro
+// del documento (NodeTableView) llevan `_taskOf` (+ `_taskRow` con su fila).
+// Ya no hay bloque «Tareas» encima del texto (quitado 6 sep 2026: redundante con
+// las casillas del propio cuerpo) — el vínculo sirve para abrir el documento al
+// pulsar la tarea en cualquier otra vista y para el chip de TaskRow.
 import { store } from '../store/nodeStore'
 import { parseExtraData, isInPapelera } from './papeleraHelper'
 import { isDocNode } from './docNode'
@@ -21,6 +25,8 @@ import { extractDateFromEnd, recurrenceToString } from './naturalDate'
 import type { Node } from '../types'
 
 export const TASK_OF = '_taskOf'
+/** Fila de tabla (NodeTableView, columna «Tareas») en la que vive la tarea. */
+export const TASK_ROW = '_taskRow'
 
 /** Documento al que pertenece esta tarea, o null si es una tarea suelta. */
 export function docIdOfTask(n: Node | null | undefined): string | null {
