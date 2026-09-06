@@ -2195,10 +2195,10 @@
   "v2.elementsCount": "Element ({{count}})",
   "v2.removeFromThisConversation": "Ta bort från den här konversationen",
   "v2.review.title": "Granskningskorg",
-    "v2.review.emptyHint": "Inget att granska — allt som fångats har ett sammanhang.",
-    "v2.review.aiSuggests": "AI föreslår: {{name}}",
-    "v2.review.confirm": "Bekräfta",
-    "v2.review.count": "{{count}} att granska",
+  "v2.review.emptyHint": "Inget att granska — allt som fångats har ett sammanhang.",
+  "v2.review.aiSuggests": "AI föreslår: {{name}}",
+  "v2.review.confirm": "Bekräfta",
+  "v2.review.count": "{{count}} att granska",
   "v2.file": "Fil",
   "v2.noElementsYet": "Inga element än. Be Fromly om en anteckning, ett dokument, eller ladda upp filer.",
   "v2.linkedFromCount": "Länkad från ({{count}})",
@@ -2394,5 +2394,7 @@
   "settingsView.timezoneAutoHint": "Använder enhetens — ändras automatiskt när du öppnar Fromly någon annanstans.",
   "settingsView.timezoneManualHint": "Inställd manuellt — ändras inte även om du öppnar Fromly från en annan zon.",
   "settingsView.timezoneFix": "Lås denna",
-  "settingsView.timezoneUseDevice": "Använd enhetens"
+  "settingsView.timezoneUseDevice": "Använd enhetens",
+  "table.hideDone": "Dölj slutförda",
+  "table.showDone": "Visa slutförda"
 }

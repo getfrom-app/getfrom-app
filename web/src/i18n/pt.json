@@ -2195,10 +2195,10 @@
   "v2.elementsCount": "Elementos ({{count}})",
   "v2.removeFromThisConversation": "Remover desta conversa",
   "v2.review.title": "Caixa de revisão",
-    "v2.review.emptyHint": "Nada para rever — tudo o que foi capturado tem um contexto.",
-    "v2.review.aiSuggests": "A IA sugere: {{name}}",
-    "v2.review.confirm": "Confirmar",
-    "v2.review.count": "{{count}} para rever",
+  "v2.review.emptyHint": "Nada para rever — tudo o que foi capturado tem um contexto.",
+  "v2.review.aiSuggests": "A IA sugere: {{name}}",
+  "v2.review.confirm": "Confirmar",
+  "v2.review.count": "{{count}} para rever",
   "v2.file": "Ficheiro",
   "v2.noElementsYet": "Ainda sem elementos. Pede ao Fromly uma nota, um documento, ou carrega ficheiros.",
   "v2.linkedFromCount": "Ligado a partir de ({{count}})",
@@ -2394,5 +2394,7 @@
   "settingsView.timezoneAutoHint": "Usando a do dispositivo — muda sozinha ao abrir o Fromly noutro lugar.",
   "settingsView.timezoneManualHint": "Definido manualmente — não muda mesmo que abra o Fromly noutro fuso.",
   "settingsView.timezoneFix": "Fixar esta",
-  "settingsView.timezoneUseDevice": "Usar a do dispositivo"
+  "settingsView.timezoneUseDevice": "Usar a do dispositivo",
+  "table.hideDone": "Ocultar concluídas",
+  "table.showDone": "Mostrar concluídas"
 }

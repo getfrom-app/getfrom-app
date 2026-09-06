@@ -2632,5 +2632,7 @@
   "wftopbar.menuTrash": "Trash",
   "wftopbar.planner": "Planner",
   "wftopbar.quickActions": "Quick actions (⌘K)",
-  "wftopbar.searchButton": "Search (⌘F)"
+  "wftopbar.searchButton": "Search (⌘F)",
+  "table.hideDone": "Hide completed",
+  "table.showDone": "Show completed"
 }

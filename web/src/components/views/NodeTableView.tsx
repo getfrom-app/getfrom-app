@@ -6,7 +6,7 @@ import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import Icon from '../../v2/components/Icon'
 import NewTaskModal from '../modals/NewTaskModal'
-import { parseExtraData } from '../../utils/papeleraHelper'
+import { parseExtraData, isInPapelera } from '../../utils/papeleraHelper'
 import { isDocNode } from '../../utils/docNode'
 import { TASK_OF, TASK_ROW } from '../../utils/docTasks'
 import { assignContext, nodeCtxRefs } from '../../utils/cajones'
@@ -18,7 +18,7 @@ interface Props { parentId: string }
 
 type ColType = 'text' | 'number' | 'select' | 'multi_select' | 'date' | 'checkbox' | 'url' | 'tag' | 'task' | 'rating'
 type SelectOption = { id: string; label: string; color?: string }
-type PropDef = { id: string; name: string; type: string; options?: SelectOption[] }
+type PropDef = { id: string; name: string; type: string; options?: SelectOption[]; hideDone?: boolean }
 type SortDir = 'asc' | 'desc' | null
 
 const COL_TYPE_LABEL_KEYS: Record<ColType, string> = {
@@ -135,15 +135,46 @@ function isDocTaskNode(n: Node): boolean {
 /** Columna «Tareas» a la que pertenece la tarea (una fila puede tener varias). */
 const TASK_COL = '_taskCol'
 
-/** Tareas de una fila PARA una columna «Tareas» concreta: hijas de la fila con
- *  `status` y `_taskCol` = esa columna. Las anteriores a `_taskCol` (sin marca)
- *  se muestran en la PRIMERA columna de tareas de la tabla, no en todas. */
-function tasksOfRow(rowId: string, colId: string, isFirstTaskCol: boolean): Node[] {
-  return store.children(rowId).filter(c => {
-    if (c.deletedAt || c.status === null) return false
-    const col = parseExtraData(c.extraData)[TASK_COL]
-    return col ? col === colId : isFirstTaskCol
+/** Tareas de una fila PARA una columna «Tareas» concreta. Se buscan por la marca
+ *  `_taskRow` en TODO el vault, no solo entre los hijos de la fila: al completar
+ *  una recurrente, `spawnRecurrence` crea la siguiente instancia COLGADA DEL DÍA
+ *  que toca (modelo intocable, FROM.md) copiando el `extraData` — así que la
+ *  instancia nueva conserva `_taskRow`/`_taskCol` pero vive en otro sitio del
+ *  árbol. Sin esto, la tabla se quedaba solo con la completada (Alberto, 6 sep
+ *  2026: "debe aparecer la siguiente instancia en la tabla"). Las hijas legado
+ *  sin marca siguen contando, en la PRIMERA columna de tareas. Orden: pendientes
+ *  por fecha, luego completadas de más reciente a más antigua. */
+function tasksOfRow(rowId: string, colId: string, isFirstTaskCol: boolean, hideDone: boolean): Node[] {
+  const out: Node[] = []
+  const seen = new Set<string>()
+  const consider = (c: Node) => {
+    if (seen.has(c.id) || c.deletedAt || c.status === null || isInPapelera(c.id)) return
+    const e = parseExtraData(c.extraData)
+    const rowOk = e[TASK_ROW] ? e[TASK_ROW] === rowId : c.parentId === rowId
+    if (!rowOk) return
+    const col = e[TASK_COL]
+    if (!(col ? col === colId : isFirstTaskCol)) return
+    if (hideDone && c.status === 'done') return
+    seen.add(c.id); out.push(c)
+  }
+  for (const c of store.children(rowId)) consider(c)
+  for (const c of store.allActive()) consider(c)
+  out.sort((a, b) => {
+    const ad = a.status === 'done', bd = b.status === 'done'
+    if (ad !== bd) return ad ? 1 : -1
+    if (ad) return (b.updatedAt || '').localeCompare(a.updatedAt || '')
+    if (!a.due) return b.due ? 1 : 0
+    if (!b.due) return -1
+    return a.due.localeCompare(b.due)
   })
+  return out
+}
+
+/** ¿Nació hace un instante? Para la animación de entrada de la instancia
+ *  siguiente de una recurrente recién completada. */
+function isFreshNode(n: Node): boolean {
+  const t = n.createdAt ? new Date(n.createdAt).getTime() : 0
+  return t > 0 && Date.now() - t < 4000
 }
 
 /** Fila de tarea DENTRO de una celda: mismas clases `dc-*` que TaskRow.tsx (la
@@ -160,8 +191,9 @@ function TaskCellRow({ task }: { task: Node }) {
     e.stopPropagation()
     window.dispatchEvent(new CustomEvent('from:open-task-props', { detail: { nodeId: task.id } }))
   }
+  const fresh = isFreshNode(task)
   return (
-    <div className={`dc-row${done ? ' dc-row--done' : ''}`} onClick={e => e.stopPropagation()}
+    <div className={`dc-row${done ? ' dc-row--done' : ''}${fresh ? ' node-table-task--enter' : ''}`} onClick={e => e.stopPropagation()}
       onContextMenu={e => { e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: task.id, x: e.clientX, y: e.clientY } })) }}>
       <button className={`dc-check dc-check--${taskCheckState(task)}`}
         onClick={e => { e.stopPropagation(); toggleTaskDone(task) }}
@@ -288,7 +320,7 @@ function CellView({ node, def, onEdit, onAddTask, isFirstTaskCol }: { node: Node
   // Tareas de la fila: lista con el formato de tarea de Fromly + «＋ Tarea», que
   // abre el modal de nueva tarea (el mismo de la sidebar/Hoy) — no un editor propio.
   if (def.type === 'task') {
-    const tasks = tasksOfRow(node.id, def.id, !!isFirstTaskCol)
+    const tasks = tasksOfRow(node.id, def.id, !!isFirstTaskCol, !!def.hideDone)
     return (
       <div className="node-table-tasks-cell" onClick={e => e.stopPropagation()}>
         {tasks.map(tk => <TaskCellRow key={tk.id} task={tk} />)}
@@ -354,7 +386,7 @@ export default function NodeTableView({ parentId }: Props) {
   const [newTaskRow, setNewTaskRow] = useState<{ rowId: string; colId: string } | null>(null)   // fila + columna para las que se abre «Nueva tarea»
 
   const children = store.children(parentId).filter(n => !n.deletedAt && !isDocTaskNode(n))
-  const customCols = store.getPropSchema(parentId)
+  const customCols = store.getPropSchema(parentId) as PropDef[]
 
   // Minimalista: la fila inicial la crea quien crea la tabla (createViewElement), para
   // evitar carreras de carga. Aquí solo ENFOCAMOS la 1ª celda si la tabla está recién
@@ -507,6 +539,15 @@ export default function NodeTableView({ parentId }: Props) {
     const schema = store.getPropSchema(parentId)
     const col = schema.find(c => c.id === colId)
     if (col) { col.type = type; store.setPropSchema(parentId, schema) }
+    setColMenu(null)
+  }
+  // Columna «Tareas»: ocultar/mostrar las completadas (persistido en el schema
+  // de la columna, `hideDone`). La completada de una recurrente se queda como
+  // historial; esto es para quien no quiera verlo (Alberto, 6 sep 2026).
+  function toggleHideDone(colId: string) {
+    const schema = store.getPropSchema(parentId) as PropDef[]
+    const col = schema.find(c => c.id === colId)
+    if (col) { col.hideDone = !col.hideDone; store.setPropSchema(parentId, schema) }
     setColMenu(null)
   }
   function handleDeleteCol(colId: string) {
@@ -821,6 +862,11 @@ export default function NodeTableView({ parentId }: Props) {
             <div className="node-ctx-menu" style={{ position: 'fixed', top: colMenu.y, left: colMenu.x, zIndex: 3000 }}
               onClick={e => e.stopPropagation()}>
               <button className="node-ctx-item" onClick={() => { setEditingColId(col.id); setColMenu(null) }}>✏️ {t('table.rename')}</button>
+              {col.type === 'task' && (
+                <button className="node-ctx-item" onClick={() => toggleHideDone(col.id)}>
+                  <Icon name="eye" size={13} /> {(col as PropDef).hideDone ? t('table.showDone', 'Mostrar completadas') : t('table.hideDone', 'Ocultar completadas')}
+                </button>
+              )}
               <button className="node-ctx-item" onClick={() => { setSortBy(col.id); setSortDir('asc'); setColMenu(null) }}>▲ {t('table.sortAsc')}</button>
               <button className="node-ctx-item" onClick={() => { setSortBy(col.id); setSortDir('desc'); setColMenu(null) }}>▼ {t('table.sortDesc')}</button>
               <div className="node-ctx-sep" />

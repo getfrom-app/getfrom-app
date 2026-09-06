@@ -8062,6 +8062,9 @@ textarea:focus-visible,
 .node-table-tasks-cell .dc-row { padding: 2px 0; min-height: 0; cursor: default; }
 .node-table-tasks-cell .dc-row:hover { background: transparent; }
 .node-table-tasks-cell .dc-text { font-size: 12.5px; }
+/* Entrada de la instancia siguiente de una recurrente recién completada. */
+@keyframes node-table-task-in { from { opacity: 0; transform: translateY(-6px) scale(0.97); background: var(--accent-soft, rgba(108,92,231,0.14)); } 60% { background: var(--accent-soft, rgba(108,92,231,0.14)); } to { opacity: 1; transform: none; background: transparent; } }
+.node-table-tasks-cell .node-table-task--enter { animation: node-table-task-in 1.4s ease-out; border-radius: 6px; }
 .node-table-tasks-item {
   display: flex; align-items: center; gap: 4px;
 }

@@ -2195,10 +2195,10 @@
   "v2.elementsCount": "Elementy ({{count}})",
   "v2.removeFromThisConversation": "Usuń z tej rozmowy",
   "v2.review.title": "Skrzynka do przeglądu",
-    "v2.review.emptyHint": "Nic do przejrzenia — wszystko, co przechwycono, ma kontekst.",
-    "v2.review.aiSuggests": "AI sugeruje: {{name}}",
-    "v2.review.confirm": "Potwierdź",
-    "v2.review.count": "{{count}} do przejrzenia",
+  "v2.review.emptyHint": "Nic do przejrzenia — wszystko, co przechwycono, ma kontekst.",
+  "v2.review.aiSuggests": "AI sugeruje: {{name}}",
+  "v2.review.confirm": "Potwierdź",
+  "v2.review.count": "{{count}} do przejrzenia",
   "v2.file": "Plik",
   "v2.noElementsYet": "Brak elementów. Poproś Fromly o notatkę, dokument lub prześlij pliki.",
   "v2.linkedFromCount": "Powiązane z ({{count}})",
@@ -2394,5 +2394,7 @@
   "settingsView.timezoneAutoHint": "Używa strefy z Twojego urządzenia — zmienia się sama, gdy otworzysz Fromly gdzie indziej.",
   "settingsView.timezoneManualHint": "Ustawione ręcznie — nie zmienia się, nawet jeśli otworzysz Fromly z innej strefy.",
   "settingsView.timezoneFix": "Ustal tę",
-  "settingsView.timezoneUseDevice": "Użyj strefy urządzenia"
+  "settingsView.timezoneUseDevice": "Użyj strefy urządzenia",
+  "table.hideDone": "Ukryj ukończone",
+  "table.showDone": "Pokaż ukończone"
 }

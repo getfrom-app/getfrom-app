@@ -2195,10 +2195,10 @@
   "v2.elementsCount": "Elementen ({{count}})",
   "v2.removeFromThisConversation": "Verwijderen uit dit gesprek",
   "v2.review.title": "Beoordelingsmap",
-    "v2.review.emptyHint": "Niets te beoordelen — alles wat is vastgelegd heeft een context.",
-    "v2.review.aiSuggests": "AI stelt voor: {{name}}",
-    "v2.review.confirm": "Bevestigen",
-    "v2.review.count": "{{count}} te beoordelen",
+  "v2.review.emptyHint": "Niets te beoordelen — alles wat is vastgelegd heeft een context.",
+  "v2.review.aiSuggests": "AI stelt voor: {{name}}",
+  "v2.review.confirm": "Bevestigen",
+  "v2.review.count": "{{count}} te beoordelen",
   "v2.file": "Bestand",
   "v2.noElementsYet": "Nog geen elementen. Vraag Fromly om een notitie, een document, of upload bestanden.",
   "v2.linkedFromCount": "Gelinkt vanaf ({{count}})",
@@ -2394,5 +2394,7 @@
   "settingsView.timezoneAutoHint": "Gebruikt die van je apparaat — verandert automatisch als je Fromly ergens anders opent.",
   "settingsView.timezoneManualHint": "Handmatig ingesteld — verandert niet, ook niet als je Fromly vanuit een andere zone opent.",
   "settingsView.timezoneFix": "Deze vastzetten",
-  "settingsView.timezoneUseDevice": "Die van het apparaat gebruiken"
+  "settingsView.timezoneUseDevice": "Die van het apparaat gebruiken",
+  "table.hideDone": "Voltooide verbergen",
+  "table.showDone": "Voltooide tonen"
 }

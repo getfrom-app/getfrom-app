@@ -2637,5 +2637,7 @@
   "wftopbar.menuTrash": "Papelera",
   "wftopbar.planner": "Planificador",
   "wftopbar.quickActions": "Acciones rápidas (⌘K)",
-  "wftopbar.searchButton": "Buscar (⌘F)"
+  "wftopbar.searchButton": "Buscar (⌘F)",
+  "table.hideDone": "Ocultar completadas",
+  "table.showDone": "Mostrar completadas"
 }

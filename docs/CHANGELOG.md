@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.10.54 — 6 septiembre 2026 · Tablas con tareas de verdad, fecha "Hoy" correcta, zoom del Planificador con botones
+## Web v9.10.55 — 6 septiembre 2026 · Tablas con tareas de verdad, fecha "Hoy" correcta, zoom del Planificador con botones
 
 - **Fecha de tarea**: el botón "Hoy" (y "Mañana", "+7d", "+30d") del modal de propiedades guardaba
   el día anterior por la tarde-noche en España, y el campo de fecha mostraba un día menos. Corregido:
@@ -21,6 +21,10 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
   mismo modal que cualquier tarea) y chip de repetición. Una fila puede tener varias columnas de
   tareas sin que se mezclen. Fuera de la tabla (Agenda, contexto, Elementos) la tarea muestra su
   contexto y "fila · documento" para saber de dónde viene, y pulsarla abre el documento.
+- **Tablas, tareas recurrentes**: al completar una instancia, la siguiente aparece en la misma
+  celda con una animación de entrada; la completada se queda como historial. Con botón derecho en
+  la cabecera de la columna "Tareas": "Ocultar completadas" / "Mostrar completadas" (se recuerda
+  por columna).
 - **Tablas**: se retira el tipo de columna "Recordatorio" — una tarea con fecha y recurrencia en la
   columna "Tareas" hace lo mismo. Las columnas antiguas de ese tipo se ven vacías hasta cambiarles
   el tipo.
