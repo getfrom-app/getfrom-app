@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.10.53 — 6 septiembre 2026 · Tablas con tareas de verdad, fecha "Hoy" correcta, zoom del Planificador con botones
+## Web v9.10.54 — 6 septiembre 2026 · Tablas con tareas de verdad, fecha "Hoy" correcta, zoom del Planificador con botones
 
 - **Fecha de tarea**: el botón "Hoy" (y "Mañana", "+7d", "+30d") del modal de propiedades guardaba
   el día anterior por la tarde-noche en España, y el campo de fecha mostraba un día menos. Corregido:
@@ -13,6 +13,9 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
   insertada en el mismo documento. Desaparece el bloque "Tareas" que se repetía encima del texto
   (la tarea ya está en el propio cuerpo). Cada casilla lleva ahora debajo su fecha y el "+" para
   editarla, con el mismo formato que el resto de tareas de Fromly.
+- **Nueva tarea, en toda la app**: el modal de crear tarea incluye ahora "Repetir cada" (días,
+  semanas, meses, años, con intervalo), las mismas opciones que el modal de propiedades — la tarea
+  nace ya recurrente, sin tener que editarla después. Si eliges repetición sin fecha, se pone hoy.
 - **Tablas, columna "Tareas"**: el "+ Tarea" abre el mismo modal de nueva tarea que la sidebar; cada
   tarea se ve con checkbox, título y, debajo, fecha, "+" (fecha, hora, recurrencia y prioridad,
   mismo modal que cualquier tarea) y chip de repetición. Una fila puede tener varias columnas de

@@ -41,6 +41,12 @@ export default function NewTaskModal({ onClose, parentId, defaultDueToday, defau
   // due=hoy medianoche UTC (02:00 en Madrid en verano) en vez de sin fecha.
   const [due, setDue] = useState(defaultDateStr ? `${defaultDateStr}T00:00` : (defaultDueToday ? todayMidnightLocal() : ''))
   const [priority, setPriority] = useState<'high' | 'medium' | 'low' | ''>('')
+  // Recurrencia desde el momento de crear (Alberto, 6 sep 2026: "no hay
+  // recurrencias en las tareas de las tablas, añádela… mismo modal y mismas
+  // opciones que una tarea normal") — mismo formato `unit` / `unit:N` que
+  // TaskPropsModal. Sin fecha no tiene sentido: se activa al poner una.
+  const [recUnit, setRecUnit] = useState<'' | 'daily' | 'weekly' | 'monthly' | 'yearly'>('')
+  const [recN, setRecN] = useState(1)
   const inputRef = useRef<HTMLInputElement>(null)
   const { showToast } = useToast()
 
@@ -59,6 +65,7 @@ export default function NewTaskModal({ onClose, parentId, defaultDueToday, defau
       due: due ? new Date(due).toISOString() : null,
     })
     if (priority) store.updateNode(node.id, { priority: priority as 'high' | 'medium' | 'low' })
+    if (recUnit && due) store.updateNode(node.id, { recurrence: recN === 1 ? recUnit : `${recUnit}:${recN}` })
     onCreated?.(store.getNode(node.id) ?? node)
     showToast(t('ai.actionTaskCreated', 'Tarea creada'))
     onClose()
@@ -110,6 +117,20 @@ export default function NewTaskModal({ onClose, parentId, defaultDueToday, defau
                 <option value="medium">{t('kanban.filterMedium')}</option>
                 <option value="low">{t('kanban.filterLow')}</option>
               </select>
+            </div>
+          </div>
+          <div className="modal-field">
+            <label className="modal-label">{t('taskPropsModal.repeatEvery')}</label>
+            <div className="new-task-rec">
+              <button type="button" className={`new-task-rec-chip${!recUnit ? ' active' : ''}`} onClick={() => setRecUnit('')}>{t('taskPropsModal.repeatNo')}</button>
+              <input type="number" min={1} max={999} className="modal-input new-task-rec-n" value={recN} disabled={!recUnit}
+                onChange={e => setRecN(Math.max(1, parseInt(e.target.value) || 1))} />
+              {(['daily', 'weekly', 'monthly', 'yearly'] as const).map(u => (
+                <button type="button" key={u} className={`new-task-rec-chip${recUnit === u ? ' active' : ''}`}
+                  onClick={() => { setRecUnit(u); if (!due) setDue(todayMidnightLocal()) }}>
+                  {t(`taskPropsModal.rec${u === 'daily' ? 'Days' : u === 'weekly' ? 'Weeks' : u === 'monthly' ? 'Months' : 'Years'}`)}
+                </button>
+              ))}
             </div>
           </div>
           <div className="modal-actions">
