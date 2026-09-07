@@ -8,9 +8,11 @@
 // la información que quiera"). Se abre EN LUGAR DEL CHAT (centro), con la
 // sidebar y la columna derecha intactas — mismo patrón que cualquier documento
 // (DocEditor), no una pantalla nueva a reinventar.
-import { useMemo } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getOrCreateProfileDoc } from '../../api/userKnowledge'
+import { store } from '../../store/nodeStore'
+import type { Node } from '../../types'
 import DocEditor from '../../components/views/DocEditor'
 import DocEditorBoundary from '../../components/DocEditorBoundary'
 import DocInspector from '../../components/views/DocInspector'
@@ -22,7 +24,20 @@ interface Props {
 
 export default function V2ProfileView({ onClose }: Props) {
   const { t } = useTranslation()
-  const node = useMemo(() => getOrCreateProfileDoc(), [])
+  // `getOrCreateProfileDoc` puede crear el nodo perfil y fusionar hijos legacy
+  // (`store.createNode`/`deleteNode`/`updateNode`) — hacerlo en useMemo mutaba
+  // el store DURANTE el render de este componente, disparando el warning de
+  // React "Cannot update a component while rendering a different component"
+  // (V2App se entera del cambio de store a mitad del render de V2ProfileView).
+  // El resto del código ya sigue el patrón correcto (V2ContextView, V2Sidebar):
+  // la creación/migración va en un efecto, nunca en el cuerpo del render.
+  const [node, setNode] = useState<Node | null>(() => store.perfilIANode?.() ?? null)
+
+  useEffect(() => {
+    setNode(getOrCreateProfileDoc())
+  }, [])
+
+  if (!node) return <main className="v2-col v2-center" />
 
   return (
     <main className="v2-col v2-center">
