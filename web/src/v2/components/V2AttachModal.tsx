@@ -89,7 +89,7 @@ export default function V2AttachModal({ onClose, onFiles, onOpenDrive, parentId,
             className={`v2-attach-drop ${dragOver ? 'v2-attach-drop--over' : ''}`}
             onDragOver={e => { e.preventDefault(); setDragOver(true) }}
             onDragLeave={() => setDragOver(false)}
-            onDrop={e => { e.preventDefault(); setDragOver(false); takeFiles(Array.from(e.dataTransfer.files)) }}
+            onDrop={e => { e.preventDefault(); e.stopPropagation(); setDragOver(false); takeFiles(Array.from(e.dataTransfer.files)) }}
             onClick={() => fileRef.current?.click()}
           >
             <Icon name="import" size={22} strokeWidth={1.5} />

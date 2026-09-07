@@ -563,6 +563,11 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault()
+    // Sin stopPropagation, el drop burbujea hasta V2App.onRootDrop, que recibe
+    // el MISMO onFilesDropped y lo vuelve a llamar con los mismos archivos —
+    // cada archivo soltado sobre el chat se creaba duplicado (verificado en
+    // revisión diaria autónoma, 7 sept 2026).
+    e.stopPropagation()
     setDragOver(false)
     const files = Array.from(e.dataTransfer.files)
     if (files.length) onFilesDropped(files)
