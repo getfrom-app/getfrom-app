@@ -4,6 +4,26 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.58 · iPhone (próximo build) — 9 septiembre 2026 · Las tareas recurrentes se ven todas, Personalizado limpio, «solo esta» de verdad
+
+- **Planificador, mes y semana**: una tarea que se repite se ve ahora en TODAS sus fechas futuras
+  (los lunes que vienen, no solo el primero), atenuada y en cursiva hasta que llega su día. También
+  en la franja "todo el día". En iPhone/iPad igual: mes, año, día, semana, Agenda y resumen del día.
+- **Editar una ocurrencia futura**: el "+" de una ocurrencia atenuada pregunta "¿Solo esta instancia
+  o esta y las siguientes?" antes de abrir nada. "Solo esta" la convierte en una tarea suelta de ese
+  día (la serie la salta a partir de entonces); "esta y las siguientes" edita la serie.
+- **Repetir → Personalizado**: al pulsarlo, los siete días aparecen desmarcados y eliges los que
+  quieras (antes salía premarcado el día de hoy, que no tenía nada que ver con la tarea).
+- **"¿Solo esta o esta y las siguientes?" siempre**: una tarea que ya se separó de su serie con
+  "solo esta" vuelve a preguntarlo al editarla, y "esta y las siguientes" edita la serie de la que
+  salió — igual que Apple Calendar.
+- **iPhone**: las repeticiones personalizadas (por ejemplo lunes y jueves) creadas en la web se
+  calculaban mal en iPhone (avanzaban un día); corregido. Nuevo selector "Personalizado…" en la
+  ficha de tarea, el detalle y la tarea rápida.
+- **Completar una recurrente**: la siguiente instancia nace a partir de la fecha de la tarea (no del
+  día en que se creó) y nunca en el pasado. Desde el chat o Telegram también respeta las
+  repeticiones personalizadas y las fechas que sacaste de la serie.
+
 ## Web v9.10.55 — 6 septiembre 2026 · Tablas con tareas de verdad, fecha "Hoy" correcta, zoom del Planificador con botones
 
 - **Fecha de tarea**: el botón "Hoy" (y "Mañana", "+7d", "+30d") del modal de propiedades guardaba
