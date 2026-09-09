@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.10.59 · Mac v9.5.82 — 9 septiembre 2026 · Carpetas del Mac sincronizadas con el chat
+## Web v9.10.60 · Mac v9.5.82 — 9 septiembre 2026 · Carpetas del Mac sincronizadas con el chat
 
 - **Vincula una carpeta de tu Mac a un contexto**: desde la app de Mac (Ajustes → Carpetas del Mac, o
   «Carpetas sincronizadas…» en el icono de la barra de menús), eliges una carpeta con el selector
