@@ -36,7 +36,7 @@ import {
 } from '../../api/googleCalendar'
 import { getGcalEventId, gcalIdCore, linkedGcalIdCores } from '../../utils/gcalNodesSync'
 import { isTimeBlockNode, taskCheckState } from '../../utils/taskNode'
-import { recurrenceFromString, nextRecurrence } from '../../utils/naturalDate'
+import { virtualOccurrencesOn, materializeOccurrence, type VirtualOccurrence } from '../../utils/recurrenceProjection'
 import { GCalEventEditor } from './DiaryRightPanel'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import RecurrenceScopeConfirm from './RecurrenceScopeConfirm'
@@ -128,44 +128,9 @@ interface Block {
   virtual?: boolean
 }
 
-/** Cuántos días por delante se proyectan las recurrencias en el timeline —
- *  tope de seguridad para series raras (nunca hace falta ver más allá del
- *  horizonte que el propio Planificador puede mostrar). */
-const MAX_RECURRENCE_LOOKAHEAD_DAYS = 120
-
-/** ¿El patrón de recurrencia de `origin` cae en `day`? Devuelve la fecha exacta
- *  de esa ocurrencia (con hora heredada del nodo origen) o null si no aplica.
- *  `nextRecurrence` avanza monótonamente desde `from`, así que basta con
- *  recorrerlo hasta pasar `day` — sin necesidad de precalcular todo el rango. */
-function recurrenceOccursOn(origin: Node, day: Date): Date | null {
-  if (!origin.due || !origin.recurrence) return null
-  const rec = recurrenceFromString(origin.recurrence)
-  if (!rec) return null
-  const originDue = new Date(origin.due)
-  const dayStart = startOfDay(day)
-  if (dayStart.getTime() <= startOfDay(originDue).getTime()) return null // solo hacia el futuro — el propio origen ya es el bloque real de su día
-  const horizon = addDays(startOfDay(new Date()), MAX_RECURRENCE_LOOKAHEAD_DAYS)
-  if (dayStart.getTime() > horizon.getTime()) return null
-  let cursor = startOfDay(originDue)
-  // Nº de pasos, no de días: una recurrencia DIARIA nunca completada se queda
-  // con `due` clavado en el día que se creó — si eso fue hace más de
-  // MAX_RECURRENCE_LOOKAHEAD_DAYS, el bucle se agotaba antes de alcanzar
-  // siquiera "hoy" (un paso = un día) y la proyección desaparecía del
-  // Planificador para siempre, aunque `day` sí cayera dentro del horizonte
-  // visible (3 sep 2026). El tope real depende de la distancia real hasta el
-  // horizonte, no de una constante pensada solo como límite de seguridad.
-  const daysToHorizon = Math.ceil((horizon.getTime() - cursor.getTime()) / 86400000)
-  const maxIterations = Math.min(Math.max(MAX_RECURRENCE_LOOKAHEAD_DAYS, daysToHorizon + 1), 5000)
-  for (let i = 0; i < maxIterations; i++) {
-    cursor = nextRecurrence(cursor, rec)
-    if (cursor.getTime() > horizon.getTime()) return null
-    if (sameDay(cursor, day)) {
-      return new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate(), originDue.getHours(), originDue.getMinutes())
-    }
-    if (cursor.getTime() > dayStart.getTime()) return null // ya nos pasamos de `day` sin coincidir
-  }
-  return null
-}
+// La proyección de recurrencias (`recurrenceOccursOn`, `virtualOccurrencesOn`)
+// vive en `utils/recurrenceProjection.ts` desde el 9 sep 2026 — la comparten
+// el timeline, la franja «todo el día» y la rejilla del mes.
 
 // ── Leer bloques con hora (timeline) ─────────────────────────────────────
 function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
@@ -216,12 +181,10 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
   // si ya hay un bloque real con el mismo texto (alguien la materializó a
   // mano, p.ej. moviendo su fecha) para no pintarla dos veces.
   const realTexts = new Set(blocks.map(b => b.text.trim().toLowerCase()))
-  for (const n of store.allActive()) {
-    if (!n.due || n.deletedAt || isInPapelera(n.id) || !n.recurrence || n.status === 'done') continue
-    if (sameDay(new Date(n.due), day)) continue // ya es el bloque real de su propio día
-    const occursAt = recurrenceOccursOn(n, day)
-    if (!occursAt) continue
-    if (realTexts.has(n.text.trim().toLowerCase())) continue
+  for (const { origin: n, occursAt } of virtualOccurrencesOn(day, { isHidden: isInPapelera, realTextsThatDay: realTexts })) {
+    // Solo series CON hora: las que no la tienen las proyecta la franja «todo
+    // el día» (`getAllDayTasks`) — antes caían aquí como bloques a las 00:00.
+    if (!n.due || !hasTime(n.due)) continue
     const durationMs = n.dueEnd ? (new Date(n.dueEnd).getTime() - new Date(n.due).getTime()) : 3600000
     blocks.push({
       kind: isTimeBlockNode(n) ? 'timeblock' : 'task',
@@ -435,7 +398,35 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   // la ventana de edición, y si se le da a la ficha completa se abre la
   // página del evento, tarea o timeblock" — antes el bloque entero solo sabía
   // abrir la nota, sin atajo para tocar solo la fecha/repetición).
-  const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
+  // `scope` viene preelegido cuando el popover se abre desde una ocurrencia
+  // VIRTUAL (ver `pendingVirtual`): la pregunta "¿solo esta o todas?" ya se
+  // hizo aquí, el popover no debe repetirla.
+  const [propsTarget, setPropsTarget] = useState<{ id: string; scope?: 'this' | 'all' } | null>(null)
+  const propsNodeId = propsTarget?.id ?? null
+  function setPropsNodeId(v: string | null | ((prev: string | null) => string | null)) {
+    setPropsTarget(prev => {
+      const next = typeof v === 'function' ? v(prev?.id ?? null) : v
+      return next ? { id: next } : null
+    })
+  }
+  // Ocurrencia virtual sobre la que el usuario ha pedido editar (9 sep 2026):
+  // "solo esta" la materializa como nodo suelto (`materializeOccurrence`,
+  // añade la fecha a las exclusiones de la serie) y abre sus propiedades;
+  // "esta y las siguientes" abre las propiedades del nodo origen (la serie).
+  const [pendingVirtual, setPendingVirtual] = useState<{ originId: string; occursAt: Date } | null>(null)
+  function openVirtualProps(originId: string, occursAt: Date) { setPendingVirtual({ originId, occursAt }) }
+  function resolveVirtual(scope: 'this' | 'all') {
+    if (!pendingVirtual) return
+    const origin = store.getNode(pendingVirtual.originId)
+    setPendingVirtual(null)
+    if (!origin) return
+    if (scope === 'this') {
+      const real = materializeOccurrence(origin, pendingVirtual.occursAt)
+      setPropsTarget({ id: real.id, scope: 'this' })
+    } else {
+      setPropsTarget({ id: origin.id, scope: 'all' })
+    }
+  }
   // «¿Solo esta instancia o todas las siguientes?» al arrastrar/redimensionar
   // un bloque recurrente (27 ago 2026, Alberto: "cuando se... mueve... un
   // evento recurrente o timeblock o tarea recurrente, debe preguntar igual
@@ -1168,7 +1159,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             que editar aquí, ya la abre el clic normal (`setEditingGcal`). */}
         {b.nodeId && (
           <button className="pp-block-props" title={t('dailyCockpit.editDateRecurrence')}
-            onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === b.nodeId ? null : b.nodeId!) }}>
+            onClick={e => {
+              e.stopPropagation()
+              // Proyección virtual: preguntar "¿solo esta o todas?" ANTES de abrir
+              // nada — abrir el origen a pelo editaría la serie entera en silencio.
+              if (b.virtual) { openVirtualProps(b.nodeId!, b.start); return }
+              setPropsNodeId(id => id === b.nodeId ? null : b.nodeId!)
+            }}>
             <Icon name="plus" size={11} />
           </button>
         )}
@@ -1271,13 +1268,23 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   }
 
   // ── Vista MES (rejilla mensual) ────────────────────────────────────────────
-  function monthDayItems(date: Date): { id: string; text: string; color: string; done: boolean }[] {
-    const out: { id: string; text: string; color: string; done: boolean; t: number }[] = []
+  type MonthItem = { id: string; text: string; color: string; done: boolean; t: number; virtual?: VirtualOccurrence }
+  function monthDayItems(date: Date): MonthItem[] {
+    const out: MonthItem[] = []
+    const realTexts = new Set<string>()
     for (const n of store.allActive()) {
       if (!n.due || n.deletedAt || isInPapelera(n.id) || n.status == null) continue
       if (!sameDay(new Date(n.due), date)) continue
+      realTexts.add(n.text.trim().toLowerCase())
       const overdue = new Date(n.due) < startOfDay(today) && n.status !== 'done'
       out.push({ id: n.id, text: n.text || t('common.noTitle'), color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime() })
+    }
+    // Ocurrencias futuras de las series recurrentes (9 sep 2026, Alberto:
+    // "Desarrollo UDA se debe ver todos los lunes y solo se ve el primero") —
+    // mismo criterio que el timeline (`getTimedBlocks`) y la franja «todo el
+    // día»: proyecciones atenuadas, no nodos propios.
+    for (const v of virtualOccurrencesOn(date, { isHidden: isInPapelera, realTextsThatDay: realTexts })) {
+      out.push({ id: v.key, text: v.origin.text || t('common.noTitle'), color: 'var(--accent,#6c5ce7)', done: false, t: v.occursAt.getTime(), virtual: v })
     }
     // Mismo dedup que getTimedBlocks/getAllDayTasks más arriba: sin esto, un
     // evento creado en Fromly y sincronizado con Google salía DOS veces en la
@@ -1310,7 +1317,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   }
 
   // ── Franja «todo el día»: tareas con fecha ese día pero SIN hora ────────────
-  type AllDayItem = { kind: 'node'; node: Node } | { kind: 'gcal'; ev: CalendarEvent }
+  type AllDayItem = { kind: 'node'; node: Node } | { kind: 'gcal'; ev: CalendarEvent } | { kind: 'virtual'; v: VirtualOccurrence }
   function getAllDayTasks(day: Date): AllDayItem[] {
     // Eventos de todo el día Y tareas sin hora, unificados aquí — mismo
     // criterio que el bloque «Todo el día» de DayColumn (Alberto, 22 jul:
@@ -1346,7 +1353,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const nodeKeys = new Set(nodeItems.map(it => it.node.text.trim().toLowerCase()))
     const gcalItems = items.filter((it): it is AllDayItem & { kind: 'gcal' } =>
       it.kind === 'gcal' && !nodeKeys.has((it.ev.title || '').trim().toLowerCase()))
-    return [...nodeItems, ...gcalItems]
+    // Ocurrencias futuras SIN hora de las series recurrentes (9 sep 2026) —
+    // las que tienen hora ya las proyecta `getTimedBlocks` en la rejilla.
+    const virtualItems: AllDayItem[] = virtualOccurrencesOn(day, { isHidden: isInPapelera })
+      .filter(v => !!v.origin.due && !hasTime(v.origin.due))
+      .map(v => ({ kind: 'virtual' as const, v }))
+    return [...nodeItems, ...virtualItems, ...gcalItems]
   }
   function handleAllDayDrop(e: React.DragEvent, day: Date) {
     e.preventDefault(); e.stopPropagation()
@@ -1409,28 +1421,35 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                 </div>
                 <div className="pp-month-items" onClick={e => { if (e.target === e.currentTarget) { setCenterDate(date); setMonthAddMenu({ day: date, x: e.clientX, y: e.clientY }) } }}>
                   {items.map(it => (
-                    <div key={it.id} className="pp-month-chip" style={{ borderLeft: `2px solid ${it.color}`, opacity: it.done ? 0.45 : 1, textDecoration: it.done ? 'line-through' : 'none' }}
+                    <div key={it.id} className={`pp-month-chip${it.virtual ? ' pp-month-chip--virtual' : ''}`} style={{ borderLeft: `2px solid ${it.color}`, opacity: it.done ? 0.45 : 1, textDecoration: it.done ? 'line-through' : 'none' }}
                       onClick={e => {
                         e.stopPropagation() // no navegar al día: ir a la tarea
+                        // Proyección virtual: ver = abrir la serie (el origen). Editar
+                        // pasa por el «+», que pregunta "¿solo esta o todas?".
+                        if (it.virtual) { window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: it.virtual.origin.id } })); return }
                         const node = store.getNode(it.id)
                         if (node) { window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: it.id } })); return }
                         const ev = gcalEvents.find(x => x.id === it.id)
                         if (ev) setEditingGcal(ev)
                       }}
                       onContextMenu={e => {
-                        if (!store.getNode(it.id)) return // evento GCal crudo: sin menú de fila
+                        if (it.virtual || !store.getNode(it.id)) return // virtual / evento GCal crudo: sin menú de fila
                         e.preventDefault(); e.stopPropagation()
                         window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: it.id, x: e.clientX, y: e.clientY } }))
                       }}
-                      title={it.text}>
+                      title={it.virtual ? `${it.text} · ${t('recurrence.virtualHint', 'se repite')}` : it.text}>
                       {it.text}
                       {/* «+» en hover — abre edición (fecha/recurrencia/contexto) sin
                           navegar a la nota, mismo patrón que `.pp-block-props` en las
                           vistas semana/día. Solo para nodos reales (no eventos GCal
                           crudos, que no tienen props que editar aquí). */}
-                      {store.getNode(it.id) && (
+                      {(it.virtual || store.getNode(it.id)) && (
                         <button className="pp-month-chip-props" title={t('dailyCockpit.editDateRecurrence')}
-                          onClick={e => { e.stopPropagation(); setPropsNodeId(id => id === it.id ? null : it.id) }}>
+                          onClick={e => {
+                            e.stopPropagation()
+                            if (it.virtual) { openVirtualProps(it.virtual.origin.id, it.virtual.occursAt); return }
+                            setPropsNodeId(id => id === it.id ? null : it.id)
+                          }}>
                           <Icon name="plus" size={10} />
                         </button>
                       )}
@@ -1644,6 +1663,23 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                             onClick={e=>{ e.stopPropagation(); setEditingGcal(ev) }}
                             title={ev.title}>
                             {ev.title || t('search.chipEvent')}
+                          </div>
+                        )
+                      }
+                      if (it.kind === 'virtual') {
+                        const o = it.v.origin
+                        const vCtx = firstContextOf(o)
+                        const vAccent = vCtx ? contextColor(vCtx.id) : plannerBase
+                        return (
+                          <div key={it.v.key} className="pp-allday-chip pp-allday-chip--virtual"
+                            style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px dashed var(--border)', borderLeft: `3px solid ${vAccent}` }}
+                            onClick={e=>{ e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: o.id } })) }}
+                            title={`${o.text} · ${t('recurrence.virtualHint', 'se repite')}`}>
+                            {o.text || t('common.noTitle')}
+                            <button className="pp-allday-props" title={t('dailyCockpit.editDateRecurrence')}
+                              onClick={e => { e.stopPropagation(); openVirtualProps(o.id, it.v.occursAt) }}>
+                              <Icon name="plus" size={10} />
+                            </button>
                           </div>
                         )
                       }
@@ -1887,8 +1923,15 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       )}
       {propsNodeId && (() => {
         const pn = store.getNode(propsNodeId)
-        return pn ? <TaskPropsPopover node={pn} allowRename allowDelete onClose={() => setPropsNodeId(null)} /> : null
+        return pn ? <TaskPropsPopover node={pn} allowRename allowDelete initialScope={propsTarget?.scope} onClose={() => setPropsTarget(null)} /> : null
       })()}
+      {pendingVirtual && (
+        <RecurrenceScopeConfirm
+          verb={t('recurrence.scopeEditVerb', 'editar')}
+          onChoose={resolveVirtual}
+          onCancel={() => setPendingVirtual(null)}
+        />
+      )}
       {pendingRecAction && (
         <RecurrenceScopeConfirm
           verb={pendingRecAction.verb}

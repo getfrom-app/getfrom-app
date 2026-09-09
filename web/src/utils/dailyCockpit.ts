@@ -6,6 +6,7 @@ import { store } from '../store/nodeStore'
 import { isInPapelera } from './papeleraHelper'
 import { ensureDayPath } from './agendaHelper'
 import { nextRecurrence, recurrenceFromString, type RecurrenceConfig } from './naturalDate'
+import { localDayKey, recurrenceExdates } from './recurrenceProjection'
 
 export interface DailyCockpitData {
   /** Tareas pendientes con due anterior a hoy */
@@ -36,7 +37,7 @@ export function wasCompletedToday(n: Node): boolean {
  *  v1, así que una tarea recurrente marcada como hecha desde Agenda/Elementos/
  *  Contexto se "perdía": no volvía a aparecer nunca en Futuro). Reciclar el nodo
  *  cambiando `due` está descartado (FROM.md) — SIEMPRE crea un nodo nuevo. */
-export function spawnRecurrence(node: Node): void {
+export function spawnRecurrence(node: Node): Node | null {
   try {
     let ed: Record<string, unknown> = {}
     try { ed = JSON.parse(node.extraData || '{}') } catch { /* extraData corrupto, sigue sin legado */ }
@@ -44,7 +45,7 @@ export function spawnRecurrence(node: Node): void {
     const rec: RecurrenceConfig | undefined = node.recurrence
       ? (recurrenceFromString(node.recurrence) ?? undefined)
       : (ed._recurrence as RecurrenceConfig | undefined)
-    if (!rec) return
+    if (!rec) return null
 
     // Base del cálculo: el día del que cuelga la tarea. Si no cuelga de ninguno (una
     // tarea de un DOCUMENTO, p.ej. «seguimiento cada 15 días»), su propia fecha —
@@ -55,11 +56,26 @@ export function spawnRecurrence(node: Node): void {
     const parent = node.parentId ? store.getNode(node.parentId) : null
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const ownDue = node.due ? new Date(node.due) : null
-    const baseDate = parent?.diaryDate
-      ? new Date(parent.diaryDate)
-      : (ownDue && ownDue.getTime() > today.getTime() ? ownDue : today)
+    // La FECHA PROPIA manda (9 sep 2026, visto en vivo: una tarea "todos los
+    // lunes" creada desde la rejilla del mes cuelga de la nota diaria de HOY,
+    // no de la de su lunes — con el diario como base, completarla creaba la
+    // siguiente en el MIÉRCOLES siguiente a hoy en vez del lunes siguiente).
+    // El diario del que cuelga solo sirve si no tiene fecha.
+    const baseDate = ownDue ?? (parent?.diaryDate ? new Date(parent.diaryDate) : today)
     baseDate.setHours(0, 0, 0, 0)
-    const nextDate = nextRecurrence(baseDate, rec)
+    // Fechas excluidas de la serie (`_recExdates`, ver recurrenceProjection.ts):
+    // una ocurrencia materializada aparte ("solo esta" sobre una proyección) no
+    // debe volver a nacer aquí — se salta hasta la siguiente libre. Y nunca
+    // antes de hoy: completar con mucho retraso no debe generar una tarea que
+    // nace ya atrasada — se avanza por el propio patrón (así un "todos los
+    // lunes" atrasado renace el lunes que viene, no hoy).
+    const exdates = recurrenceExdates(node)
+    let nextDate = nextRecurrence(baseDate, rec)
+    for (let i = 0; i < 400 && (nextDate.getTime() < today.getTime() || exdates.has(localDayKey(nextDate))); i++) {
+      const n = nextRecurrence(nextDate, rec)
+      if (n.getTime() <= nextDate.getTime()) break
+      nextDate = n
+    }
     const dayNode = ensureDayPath(nextDate)
     const sibs = store.children(dayNode.id)
     const lastOrder = sibs.length > 0 ? Math.max(...sibs.map(x => x.siblingOrder)) : 0
@@ -93,8 +109,10 @@ export function spawnRecurrence(node: Node): void {
       recurrence: node.recurrence ?? undefined,
       extraData: JSON.stringify({ ...ed, _recurrence: rec }),
     })
+    return store.getNode(newNode.id) ?? newNode
   } catch (e) {
     console.error('[recurrence] Error creando siguiente instancia:', e)
+    return null
   }
 }
 
@@ -126,10 +144,16 @@ export function toggleTaskDone(n: Node): void {
  *  directamente, tal y como ya funcionaba. */
 export function detachFromRecurrence(n: Node): void {
   if (!n.recurrence) return
-  spawnRecurrence(n)
+  const successor = spawnRecurrence(n)
   let extra: Record<string, unknown> = {}
   try { extra = JSON.parse(n.extraData || '{}') } catch { /* corrupto */ }
   delete extra._recurrence
+  delete extra._recExdates
+  // Conserva el vínculo con la serie (`_seriesOf` → el sucesor, que es quien
+  // la lleva ahora) para que al volver a editar esta instancia se siga
+  // preguntando "¿solo esta o esta y las siguientes?" (9 sep 2026, Alberto:
+  // "al principio pone lo de esta instancia o todas pero luego ya no aparece").
+  if (successor) extra._seriesOf = successor.id
   store.updateNode(n.id, { recurrence: null, extraData: JSON.stringify(extra) })
 }
 

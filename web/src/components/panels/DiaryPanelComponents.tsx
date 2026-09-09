@@ -13,6 +13,7 @@ import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalD
 import { recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { detachFromRecurrence } from '../../utils/dailyCockpit'
+import { belongsToSeries, findSeriesHead } from '../../utils/recurrenceProjection'
 import RecurrenceScopeConfirm from './RecurrenceScopeConfirm'
 import { pushEventToGcal } from '../../utils/gcalNodesSync'
 import ContextChip from './ContextChip'
@@ -79,10 +80,22 @@ export interface TaskPropsPopoverProps {
   allowRename?: boolean
   allowDelete?: boolean
   onDeleted?: () => void
+  /** Alcance ya elegido fuera (p.ej. al abrir desde una ocurrencia virtual del
+   *  Planificador, que pregunta antes de materializar): no volver a preguntar. */
+  initialScope?: 'this' | 'all'
 }
 
-export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDeleted }: TaskPropsPopoverProps) {
+export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDelete, onDeleted, initialScope }: TaskPropsPopoverProps) {
   const popoverRef = useRef<HTMLDivElement>(null)
+  // "Esta y las siguientes" sobre una instancia SUELTA de una serie (sin
+  // `recurrence` pero con `_seriesOf`) edita la cabeza de la serie, no la
+  // instancia — así el popover sigue siendo útil tras un "solo esta" previo.
+  const [seriesTargetId, setSeriesTargetId] = useState<string | null>(null)
+  // Sin selector a propósito: `useStore(selector)` captura el selector UNA vez
+  // (deps `[]`), así que un `seriesTargetId` elegido después nunca llegaría a
+  // leerse. Con re-render por cada cambio del store, la cabeza se lee en vivo.
+  useStore()
+  const node = (seriesTargetId ? store.getNode(seriesTargetId) : null) ?? nodeProp
   const popNavigate = useNavigate()
   const { t } = useTranslation()
   const [movePickerOpen, setMovePickerOpen] = useState(false)
@@ -101,7 +114,7 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
   // desengancha la instancia de su serie (`detachFromRecurrence`, crea el
   // sucesor y la deja suelta) antes de mostrar el formulario; "todas las
   // siguientes" edita el nodo recurrente tal cual, como ya funcionaba.
-  const [scopeChoice, setScopeChoice] = useState<'this' | 'all' | null>(null)
+  const [scopeChoice, setScopeChoice] = useState<'this' | 'all' | null>(initialScope ?? null)
   // Capturado UNA vez, al abrir — si la tarea NO tenía recurrencia todavía,
   // añadírsela AQUÍ MISMO (`applyRec`/`toggleCustomDay`, más abajo) no debe
   // disparar la pregunta: no hay ninguna serie previa de la que "solo esta" o
@@ -111,7 +124,10 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
   // EN VIVO del store — en cuanto el usuario la fija en este mismo popover, el
   // siguiente render ya la ve puesta y pediría el alcance sobre su propio
   // cambio recién hecho.
-  const [hadRecurrenceOnOpen] = useState(() => !!node.recurrence)
+  // Cuenta también la instancia SUELTA de una serie (`_seriesOf`): antes, tras
+  // "solo esta", el nodo perdía toda relación con la serie y no volvía a
+  // preguntar nunca (9 sep 2026, Alberto).
+  const [hadRecurrenceOnOpen] = useState(() => belongsToSeries(node))
   const needsScopeChoice = hadRecurrenceOnOpen && scopeChoice === null
 
   // Bucles no son agendables: si por error se intenta abrir un bucle, cerrar
@@ -169,12 +185,25 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
   const customDays: number[] = isCustomRec
     ? (recurrenceFromString(node.recurrence!)?.days ?? [])
     : []
+  // «Personalizado» recién pulsado: la fila L-D se abre con TODOS los días
+  // desmarcados y no se escribe nada hasta que el usuario marca uno (9 sep
+  // 2026, Alberto: "edito un evento de jueves y al darle a recurrencia está
+  // marcado el miércoles... deberían estar todos los días desmarcados"). Antes
+  // se premarcaba el día de HOY (`new Date().getDay()`), que no tiene nada que
+  // ver con la tarea. Mismo patrón que Apple Calendar.
+  // Empieza en false a propósito: `showCustomRow` ya cubre el caso de una
+  // recurrencia personalizada existente. Arrancar con `isCustomRec` dejaba la
+  // fila abierta (y «Personalizado» encendido, sin días) tras un "solo esta"
+  // que acaba de quitar la recurrencia al nodo.
+  const [customOpen, setCustomOpen] = useState(false)
+  const showCustomRow = customOpen || isCustomRec
   function parseRec(r: string) {
     const [unit, nStr] = r.split(':')
     return { n: parseInt(nStr || '1') || 1, unit }
   }
   function applyRec(n: number, unit: string) {
     const safe = Math.max(1, n)
+    setCustomOpen(false)
     store.updateNode(node.id, { recurrence: safe === 1 ? unit : `${unit}:${safe}` })
   }
   function toggleCustomDay(day: number) {
@@ -205,6 +234,10 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
         verb={t('recurrence.scopeEditVerb', 'editar')}
         onChoose={scope => {
           if (scope === 'this') detachFromRecurrence(node)
+          else if (!node.recurrence) {
+            const head = findSeriesHead(node)
+            if (head && head.id !== node.id) setSeriesTargetId(head.id)
+          }
           setScopeChoice(scope)
         }}
         onCancel={onClose}
@@ -377,8 +410,8 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
       {/* Repetición */}
       <div className="tpp-section-label">{t('prop.recurrence')}</div>
       <div className="nqp-rec-row">
-        <button className={`nqp-chip${!node.recurrence ? ' active' : ''}`}
-          onClick={() => store.updateNode(node.id, { recurrence: null })}>–</button>
+        <button className={`nqp-chip${!node.recurrence && !customOpen ? ' active' : ''}`}
+          onClick={() => { setCustomOpen(false); store.updateNode(node.id, { recurrence: null }) }}>–</button>
         <input type="number" className="nqp-rec-n" min={1} max={999}
           value={node.recurrence && !isCustomRec ? parseRec(node.recurrence).n : 1}
           disabled={!node.recurrence || isCustomRec}
@@ -391,18 +424,18 @@ export function TaskPropsPopover({ node, onClose, allowRename, allowDelete, onDe
         />
         {recUnits.map(([unit, label]) => (
           <button key={unit}
-            className={`nqp-chip${!isCustomRec && !!node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
+            className={`nqp-chip${!isCustomRec && !customOpen && !!node.recurrence && parseRec(node.recurrence).unit === unit ? ' active' : ''}`}
             onClick={() => applyRec(node.recurrence && !isCustomRec ? parseRec(node.recurrence).n : 1, unit)}
           >{label}</button>
         ))}
         {/* «Personalizado» (27 ago 2026) — al activarlo aparecen L M X J V S D
             debajo; clicar un día lo añade/quita del conjunto. Sin días
             marcados no hay recurrencia (mismo criterio que «–»). */}
-        <button className={`nqp-chip${isCustomRec ? ' active' : ''}`}
-          onClick={() => { if (!isCustomRec) toggleCustomDay(new Date().getDay()) }}
+        <button className={`nqp-chip${showCustomRow ? ' active' : ''}`}
+          onClick={() => setCustomOpen(true)}
         >{t('prop.recurrenceCustom', 'Personalizado')}</button>
       </div>
-      {isCustomRec && (
+      {showCustomRow && (
         <div className="nqp-rec-days-row">
           {WEEK_ORDER.map(day => (
             <button key={day}

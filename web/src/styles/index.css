@@ -12841,6 +12841,10 @@ textarea:focus-visible,
 .pp-block--virtual { opacity: .55; cursor: pointer !important; }
 .pp-block--virtual:hover { opacity: .85; }
 .pp-block--virtual .pp-block-text { font-style: italic; }
+.pp-month-chip--virtual { opacity: .55; font-style: italic; }
+.pp-month-chip--virtual:hover { opacity: .85; }
+.pp-allday-chip--virtual { opacity: .55; font-style: italic; cursor: pointer; }
+.pp-allday-chip--virtual:hover { opacity: .85; }
 /* Feedback visual cuando se arrastra un nodo sobre una columna del planificador */
 .pp-col--drag-over { background: rgba(124,58,237,.06); outline: 2px dashed rgba(124,58,237,.25); outline-offset: -2px; }
 /* Línea de snap: muestra dónde va a caer el bloque durante el drag */
