@@ -4,6 +4,25 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.59 · Mac v9.5.82 — 9 septiembre 2026 · Carpetas del Mac sincronizadas con el chat
+
+- **Vincula una carpeta de tu Mac a un contexto**: desde la app de Mac (Ajustes → Carpetas del Mac, o
+  «Carpetas sincronizadas…» en el icono de la barra de menús), eliges una carpeta con el selector
+  nativo y la asignas a un contexto. La app la vigila y, cuando algo cambia, sube solo el texto de
+  los archivos nuevos o modificados. El chat de ese contexto responde con lo que hay en esos
+  archivos (por ejemplo, los logs de un proyecto) y cita la ruta.
+- **Nunca aparece como elementos**: los archivos no entran en Fromly, solo alimentan la memoria
+  semántica del chat. Se pueden pausar, sincronizar ahora o desvincular (lo indexado se borra; los
+  archivos del Mac no se tocan).
+- **Solo texto, nunca secretos**: notas, logs, código, JSON, CSV… Se saltan binarios, `.env`,
+  claves, certificados y carpetas como `node_modules` o `.git`. Un `.fromlyignore` en la carpeta
+  añade exclusiones propias.
+- **En la web**: la ficha del contexto y Ajustes → Carpetas del Mac muestran las carpetas y su
+  estado, con un botón para descargar la app de Mac, que es donde se gestionan.
+- **Mac**: la app se pone al día con toda la web (desde la 9.5.81 iba varias versiones por detrás).
+
+---
+
 ## Web v9.10.58 · iPhone (próximo build) — 9 septiembre 2026 · Las tareas recurrentes se ven todas, Personalizado limpio, «solo esta» de verdad
 
 - **Planificador, mes y semana**: una tarea que se repite se ve ahora en TODAS sus fechas futuras

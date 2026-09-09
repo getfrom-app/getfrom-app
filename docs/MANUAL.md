@@ -44,6 +44,14 @@ navegador si algún día quieres repasarlo.
 
 ## Novedades (septiembre 2026)
 
+- **Carpetas de tu Mac en el chat de un contexto**: en la app de Mac, Ajustes → Carpetas del Mac (o
+  «Carpetas sincronizadas…» en el icono de la barra de menús) → «Vincular carpeta…». Eliges una
+  carpeta, la asignas a un contexto y Fromly la mantiene sincronizada: cuando cambia un archivo, su
+  texto se vuelve a indexar y el chat de ese contexto lo tiene en cuenta (por ejemplo, los logs de
+  un proyecto en el que trabajas con otras herramientas). Los archivos no aparecen como elementos:
+  solo alimentan la memoria del chat. Solo se leen archivos de texto; nunca binarios, `.env`,
+  claves ni carpetas como `node_modules`. En la web ves la lista y su estado, y un botón para
+  descargar la app de Mac.
 - **Menciona un contexto con `#` en el chat**: escribe `#` en el chat y elige un contexto de la
   lista — así Fromly lo lee de verdad al responder, en vez de tener que teclear el nombre exacto de
   memoria.

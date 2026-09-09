@@ -150,11 +150,15 @@ export default function V2SyncedFolders({ contextId, compact = false }: Props) {
                 </div>
                 {!compact && (
                   <div ref={ctxPickerFor === f.id ? pickerWrap : undefined} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <span className="v2-el-meta">{t('folders.context', 'Contexto')}:</span>
-                    <button className="v2-ctx-edit-btn" disabled={!mine} title={t('folders.changeContext', 'Cambiar contexto')}
-                      onClick={() => setCtxPickerFor(p => (p === f.id ? null : f.id))}>
-                      {ctxLabel(f.contextId, t('folders.noContext', 'Sin contexto (general)'))}
-                    </button>
+                    <span className="v2-el-meta" style={{ whiteSpace: 'nowrap' }}>
+                      {t('folders.context', 'Contexto')}: {ctxLabel(f.contextId, t('folders.noContext', 'Sin contexto (general)'))}
+                    </span>
+                    {mine && (
+                      <button className="btn-secondary" style={{ fontSize: 11 }} title={t('folders.changeContext', 'Cambiar contexto')}
+                        onClick={() => setCtxPickerFor(p => (p === f.id ? null : f.id))}>
+                        {t('folders.changeContext', 'Cambiar contexto')}
+                      </button>
+                    )}
                     {ctxPickerFor === f.id && (
                       <div style={{ position: 'absolute', top: '100%', left: 0, zIndex: 20 }}>
                         <ContextPicker currentId={f.contextId} onPick={id => { setCtxPickerFor(null); void run(f.id, () => folderSync.setContext(f.id, id)) }} />

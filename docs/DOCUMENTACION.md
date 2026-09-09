@@ -5,6 +5,46 @@
 
 ---
 
+## Sesión 2026-09-09 (sesión 46) — Carpetas locales del Mac sincronizadas con el RAG
+
+**Qué**: una carpeta del Mac del usuario vinculada a un contexto; la app de Mac la vigila y sube el
+TEXTO de los archivos cambiados; el servidor lo trocea y embebe. Los archivos nunca son nodos.
+
+**Servidor** (`server/`):
+- `db/schema.ts` + `db/migrations.ts`: `synced_folders` (ficha: contexto, ruta, dispositivo,
+  contadores, `paused`) y `synced_folder_files` (hash sha256 por archivo). Sin cascade real → se
+  borran a mano en `DELETE /auth/account`.
+- `db/vectorClient.ts`: tabla `folder_vectors` en la pgvector dedicada (PK user/folder/path/chunk,
+  `chunk_hash`, HNSW coseno). Separada de `node_vectors` a propósito.
+- `services/ragFolders.ts`: fragmentos de tamaño fijo (1500) SIN solape + hash por fragmento → un log
+  que crece solo re-embebe su último fragmento. Cabecera `[archivo: carpeta/ruta]` en cada fragmento
+  para que el modelo cite. Topes: 80 fragmentos/archivo, 6.000/carpeta, 400K chars/archivo.
+- `routes/folders.ts`: `GET/POST /folders`, `PATCH/DELETE /folders/:id`, `POST /:id/manifest`
+  (diff por hash: devuelve qué subir, borra lo desaparecido) y `POST /:id/file` (texto → ingest).
+  Rutas relativas validadas (sin `..`), Pro/prueba obligatorio, máx. 20 carpetas por usuario.
+- `services/ragNodes.ts` `retrieveRelevant` une nodos + carpetas (umbral 0,4 para carpetas: medido
+  0,488 con voyage-3.5-lite en producción). `RagHit.source = 'folder'` → `ai.ts /rag-related` los
+  filtra (no hay nodo que mostrar). `assistantTurn.ts`: `loadCurrentContextIndex` devuelve también
+  `contextIds` y se consultan las carpetas de ese contexto/subcontextos con umbral 0,2.
+
+**Mac** (`from-mac/src-tauri/src/folders.rs`, crates `notify`, `walkdir`, `globset`, `sha2`,
+`tauri-plugin-dialog`): comandos `folder_scan` (solo texto por extensión, sin secretos por glob, sin
+carpetas de ruido, sin NUL, ≤2 MB, ≤5.000 archivos, `.fromlyignore`), `folder_read` (canonicaliza y
+rechaza salir de la raíz o leer secretos), `folder_watch`/`folder_unwatch` (emite
+`from:folder-changed`), `device_name` (scutil). Tray: «Carpetas sincronizadas…» → `from:open-folders`.
+Tests: `cargo test --lib folders` (3).
+
+**Web** (`landing/web/src`): `api/folders.ts`; `utils/folderSync.ts` (solo Tauri: deviceId en
+localStorage, watchers, debounce 45 s, repaso cada 10 min, manifiesto + subidas, estado por
+carpeta); `v2/components/V2SyncedFolders.tsx` (Ajustes → Carpetas del Mac y ficha del contexto; en
+web sin Tauri: aviso + «Descargar la app de Mac»). Pestaña `carpetas` en `settingsNav.ts`/`V2App`.
+
+**Verificado en producción con cuenta de prueba** (API + web en local): vincular, manifiesto,
+subida, no-resubir sin cambios, borrado por manifiesto, traversal rechazado (400), pausa (409), chat
+del contexto respondiendo con commit y pendientes sacados del archivo. La app de Mac NO se pudo
+probar en vivo (permiso de control denegado): queda para Alberto.
+
+
 ## Sesión 2026-09-02 (sesión 29) — headings "Tareas"/"Asistente" en Agenda + quita el aviso al completar tarea
 
 Web `62688caa` (v9.10.39). Detalle completo en
