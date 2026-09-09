@@ -18,6 +18,7 @@ import { clearTokens } from '../../api/client'
 import { userStore } from '../../store/userStore'
 import { useLearningsStore } from '../../store/learningsStore'
 import { ALL_ITEMS, SUBTITLES, type Tab } from './settingsNav'
+import V2SyncedFolders from '../../v2/components/V2SyncedFolders'
 import { readLearnedFacts, getOrCreateProfileDoc } from '../../api/userKnowledge'
 import { findContextRoot } from '../../utils/rootLookup'
 import { isContextKnowledge } from '../../utils/knowledgeNodes'
@@ -438,6 +439,7 @@ export function SettingsPaneContent({ activeTab }: { activeTab: Tab }) {
       case 'exportar':    return <ExportarPane />
       case 'importar':    return <ImportarPane />
       case 'captura':     return <CapturaRapidaPane />
+      case 'carpetas':    return <div className="st-pane"><V2SyncedFolders /></div>
     }
   }
 

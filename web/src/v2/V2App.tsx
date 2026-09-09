@@ -79,7 +79,7 @@ function resolveOwnAccentColor(nodeId: string | null): string | null {
  *  vieja no debe poder dejar `settingsTab` en un valor que rompa el nav). */
 const SETTINGS_TABS = new Set<SettingsTab>([
   'cuenta', 'google', 'apariencia', 'ia', 'magic', 'asistente', 'atajos',
-  'exportar', 'importar', 'backups', 'captura',
+  'exportar', 'importar', 'backups', 'captura', 'carpetas',
 ])
 
 export default function V2App() {
@@ -254,6 +254,15 @@ export default function V2App() {
    *  de ESTA sesión), ir "atrás" saldría de la app. La ruta base siempre
    *  existe y es segura. */
   const closeSettings = () => navigate(routeBase || '/')
+  // Barra de menús del Mac → «Carpetas sincronizadas…» abre Ajustes → Carpetas.
+  useEffect(() => {
+    if (import.meta.env.VITE_TAURI !== 'true') return
+    let unlisten: (() => void) | null = null
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      listen('from:open-folders', () => navigate(`${routeBase}/settings/carpetas`)).then(fn => { unlisten = fn })
+    }).catch(() => {})
+    return () => { unlisten?.() }
+  }, [navigate, routeBase])
   const [showProfile, setShowProfile] = useState(false)
 
   /** «Perfil»: la nota del perfil ocupa el centro y, a la derecha, Fromly abre una

@@ -20,6 +20,7 @@ import ContextPicker from '../../components/panels/ContextPicker'
 import V2TaskList from './V2TaskList'
 import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
+import V2SyncedFolders from './V2SyncedFolders'
 import { isAgentNode, getAgentData } from '../../utils/agentesHelper'
 import { isPromptNode } from '../../utils/promptsHelper'
 import { fmtDate, fmtRelative } from '../../utils/formatDate'
@@ -397,6 +398,15 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
           «vacía»: aparecía duplicada nada más entrar. */}
 
       {/* Tareas del contexto — estilo Hoy. */}
+      {!isGeneral && (
+        <>
+          <div className="v2-section-label" style={{ padding: '18px 0 6px' }}>
+            <span>{t('folders.title', 'Carpetas del Mac')}</span>
+          </div>
+          <V2SyncedFolders contextId={ctxId} compact />
+        </>
+      )}
+
       <div className="v2-section-label" style={{ padding: '18px 0 6px' }}>
         <span>{t('v2.context.tasks', 'Tareas')}</span>
       </div>

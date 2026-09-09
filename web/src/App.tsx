@@ -240,6 +240,8 @@ function useTauriSyncListener() {
         import('./utils/icloudBackup').then(({ maybeICloudBackup }) => {
           void maybeICloudBackup()
         }).catch(() => {})
+        // Carpetas locales → RAG: arranque idempotente (no hace nada sin sesión).
+        import('./utils/folderSync').then(({ folderSync }) => { void folderSync.start() }).catch(() => {})
       }).then((fn) => { unlisten = fn })
     }).catch(() => {})
     return () => { unlisten?.() }

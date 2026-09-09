@@ -8,7 +8,7 @@ export type Tab =
   | 'asistente'
   | 'atajos'
   | 'exportar' | 'importar' | 'backups'
-  | 'captura'
+  | 'captura' | 'carpetas'
 
 export interface NavItem { id: Tab; label: string }
 export interface NavSection { title: string; items: NavItem[] }
@@ -53,6 +53,7 @@ export const NAV: NavSection[] = [
     title: 'Integraciones',
     items: [
       { id: 'captura', label: 'Accesorios' },
+      { id: 'carpetas', label: 'Carpetas del Mac' },
     ],
   },
   {
@@ -79,4 +80,5 @@ export const SUBTITLES: Partial<Record<Tab, string>> = {
   exportar: 'Exporta una copia de tus datos en JSON o Markdown.',
   importar: 'Importa notas y tareas desde un archivo JSON.',
   captura: 'Token de API, barra de menús, Atajo de Apple, Raycast, Chrome y Claude.',
+  carpetas: 'Carpetas locales del Mac cuyo contenido alimenta al chat, sin aparecer como elementos.',
 }
