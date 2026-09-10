@@ -2665,5 +2665,10 @@
   "folders.errPlan": "You need an active plan to sync folders.",
   "folders.errDisabled": "Semantic search is unavailable right now.",
   "folders.errAlreadyLinked": "That folder is already linked.",
-  "folders.errTooMany": "You have reached the maximum number of linked folders."
+  "folders.errTooMany": "You have reached the maximum number of linked folders.",
+  "statusbar.updateChecking": "Checking…",
+  "statusbar.updateUpToDate": "✓ Up to date",
+  "statusbar.updateError": "Update error",
+  "statusbar.updateInstalling": "⬇ Installing…",
+  "statusbar.updateAvailable": "✦ New version {{version}} — Update"
 }

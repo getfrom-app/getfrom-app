@@ -7,9 +7,10 @@ import { listBackups, formatBackupAge } from '../../api/backups'
 import { clearTokens, apiRequest, getToken } from '../../api/client'
 import { scheduledAgentsSummary, relativeUntil } from '../../utils/scheduleHelper'
 import { estimateContextTokens, formatTokens } from '../../utils/contextBudget'
+import { useMacUpdater } from '../../utils/macUpdater'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.10.61'
+export const WEB_VERSION = 'v9.10.62'
 
 interface Props {
   isSyncing: boolean
@@ -29,11 +30,11 @@ export default function StatusBar({ isSyncing, showSaved, currentNodeId }: Props
   const [loadingBackup, setLoadingBackup] = useState(true)
   const [agentsSummary, setAgentsSummary] = useState<{ count: number; nextDate: Date | null } | null>(null)
   const [failingAgents, setFailingAgents] = useState(0)
-  const [updateAvailable, setUpdateAvailable] = useState<{ version: string; download: () => Promise<void> } | null>(null)
-  const [updating, setUpdating] = useState(false)
-  const [updateError, setUpdateError] = useState<string | null>(null)
-  const [updateChecking, setUpdateChecking] = useState(false)
-  const [updateUpToDate, setUpdateUpToDate] = useState(false)
+  // Updater de Mac — compartido con la barra de estado v2 (utils/macUpdater.ts).
+  const upd = useMacUpdater()
+  const updateAvailable = upd.available, updating = upd.updating, updateError = upd.error
+  const updateChecking = upd.checking, updateUpToDate = upd.upToDate
+  const setUpdateError = (_: null) => upd.dismissError()
   const [macVersion, setMacVersion] = useState<string | null>(null)
 
   // Leer versión nativa Tauri (solo Mac)
@@ -42,82 +43,6 @@ export default function StatusBar({ isSyncing, showSaved, currentNodeId }: Props
     import('@tauri-apps/api/app').then(({ getVersion }) => {
       getVersion().then(v => setMacVersion(v)).catch(() => {})
     }).catch(() => {})
-  }, [])
-
-  // Verificar actualizaciones disponibles (solo en Mac Tauri)
-  useEffect(() => {
-    if (!isTauriEnv) return
-
-    // `manual` = desde el menú Fromly → «Buscar actualizaciones…»: ahí se
-    // responde con un aviso nativo aunque no haya nada nuevo — el «✓ Al día»
-    // de 4 s en la barra inferior pasaba desapercibido (Alberto, 10 sep 2026:
-    // "le doy a buscar actualización pero no busca nada").
-    const checkForUpdates = async (manual = false) => {
-      setUpdateChecking(true)
-      setUpdateError(null)
-      setUpdateUpToDate(false)
-      const notify = async (text: string) => {
-        if (!manual) return
-        try {
-          const { message } = await import('@tauri-apps/plugin-dialog')
-          await message(text, { title: 'Fromly', kind: 'info' })
-        } catch { window.alert(text) }
-      }
-      try {
-        const { check } = await import('@tauri-apps/plugin-updater')
-        const update = await check()
-        if (update?.available) {
-          void notify(`Hay una versión nueva: ${update.version}. Pulsa «Actualizar» en la barra inferior para instalarla.`)
-          setUpdateAvailable({
-            version: update.version,
-            download: async () => {
-              setUpdating(true)
-              setUpdateError(null)
-              try {
-                await update.downloadAndInstall()
-                const { relaunch } = await import('@tauri-apps/plugin-process')
-                await relaunch()
-              } catch (e) {
-                const msg = e instanceof Error ? e.message : String(e)
-                setUpdateError(msg)
-                setUpdating(false)
-              }
-            }
-          })
-        } else {
-          setUpdateUpToDate(true)
-          setTimeout(() => setUpdateUpToDate(false), 4000)
-          let current = ''
-          try { const { getVersion } = await import('@tauri-apps/api/app'); current = await getVersion() } catch { /* */ }
-          void notify(`Ya tienes la última versión${current ? ` (${current})` : ''}.`)
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e)
-        setUpdateError(msg)
-        void notify(`No se ha podido comprobar: ${msg}`)
-      } finally {
-        setUpdateChecking(false)
-      }
-    }
-
-    // Check al inicio con delay
-    const t1 = setTimeout(checkForUpdates, 5000)
-    // Y cada hora
-    const t2 = setInterval(checkForUpdates, 3_600_000)
-
-    // Escuchar evento del menú nativo "Buscar actualizaciones..."
-    let unlisten: (() => void) | null = null
-    import('@tauri-apps/api/event').then(({ listen }) => {
-      listen('from:check-update', () => {
-        checkForUpdates(true)
-      }).then(fn => { unlisten = fn })
-    }).catch(() => {})
-
-    return () => {
-      clearTimeout(t1)
-      clearInterval(t2)
-      unlisten?.()
-    }
   }, [])
 
   // Online / offline listener

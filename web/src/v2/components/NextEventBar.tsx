@@ -22,6 +22,7 @@ import { listUpcomingTimed, isNextEventBarEnabled, NEXT_EVENT_BAR_CHANGED, type 
 import { apiRequest } from '../../api/client'
 import { listBackups, formatBackupAge, type BackupSnapshot } from '../../api/backups'
 import Icon from './Icon'
+import { useMacUpdater } from '../../utils/macUpdater'
 
 const FIFTEEN_MIN_MS = 900_000
 const FIVE_MIN_MS = 300_000
@@ -123,6 +124,8 @@ interface Props {
 }
 
 export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
+  // Updater de la app de Mac (no hace nada fuera de Tauri).
+  const upd = useMacUpdater()
   const { t } = useTranslation()
   const s = useStore()
   const [enabled, setEnabled] = useState(isNextEventBarEnabled())
@@ -190,6 +193,19 @@ export default function NextEventBar({ onOpenBackups, onOpenAgents }: Props) {
         <button className="v2-statusbar-pill" onClick={onOpenBackups} title={backupText}>
           <span>{backupText}</span>
         </button>
+        {upd.checking && <span className="v2-statusbar-pill" style={{ cursor: 'default' }}>{t('statusbar.updateChecking', 'Comprobando…')}</span>}
+        {upd.upToDate && !upd.checking && <span className="v2-statusbar-pill" style={{ cursor: 'default' }}>{t('statusbar.updateUpToDate', '✓ Al día')}</span>}
+        {upd.error && (
+          <button className="v2-statusbar-pill" style={{ color: 'var(--color-error, #e53e3e)', opacity: 1 }} title={upd.error} onClick={upd.dismissError}>
+            ⚠ {t('statusbar.updateError', 'Error al actualizar')}
+          </button>
+        )}
+        {upd.available && !upd.error && (
+          <button className="v2-statusbar-pill" style={{ color: 'var(--accent)', opacity: 1 }} disabled={upd.updating}
+            onClick={upd.updating ? undefined : upd.available.download} title={`Versión ${upd.available.version}`}>
+            {upd.updating ? t('statusbar.updateInstalling', '⬇ Instalando…') : t('statusbar.updateAvailable', '✦ Nueva versión {{version}} — Actualizar', { version: upd.available.version })}
+          </button>
+        )}
       </div>
       <div className="v2-statusbar-spacer" />
       {hasEvent && (

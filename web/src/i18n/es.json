@@ -2670,5 +2670,10 @@
   "folders.errPlan": "Necesitas un plan activo para sincronizar carpetas.",
   "folders.errDisabled": "La búsqueda semántica no está disponible ahora mismo.",
   "folders.errAlreadyLinked": "Esa carpeta ya está vinculada.",
-  "folders.errTooMany": "Has llegado al máximo de carpetas vinculadas."
+  "folders.errTooMany": "Has llegado al máximo de carpetas vinculadas.",
+  "statusbar.updateChecking": "Comprobando…",
+  "statusbar.updateUpToDate": "✓ Al día",
+  "statusbar.updateError": "Error al actualizar",
+  "statusbar.updateInstalling": "⬇ Instalando…",
+  "statusbar.updateAvailable": "✦ Nueva versión {{version}} — Actualizar"
 }
