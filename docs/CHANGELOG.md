@@ -4,6 +4,20 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## iPhone/iPad 2.20 — 10 septiembre 2026 · Repeticiones que se ven venir
+
+- **Tareas repetidas**: las próximas repeticiones aparecen ya en la agenda y en el planificador,
+  sin esperar a completar la actual.
+- **Repetición personalizada**: elige exactamente qué días se repite algo.
+- **Bloques de tiempo también en el chat**, en el resumen del día y en los avisos, igual que las
+  tareas y los eventos.
+- **Casillas estilo Logseq** en el chat y en la ficha de contexto.
+- **Sonido propio y discreto** en las notificaciones.
+- Arreglos: «Nueva conversación» se mantiene, el saludo del chat ya no tapa mensajes anteriores y
+  varios ajustes en Anotar. Enviada a revisión de Apple el 10 de septiembre.
+
+---
+
 ## Web v9.10.63 · Mac v9.5.85 — 10 septiembre 2026 · La app de Mac vuelve a actualizarse sola, y la ventana se mueve
 
 - **Mac, bug real**: desde la interfaz 2.0 la app no comprobaba actualizaciones, ni al arrancar ni
