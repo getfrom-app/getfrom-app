@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## iPhone/iPad 2.20 — 10 septiembre 2026 · Repeticiones que se ven venir
+## iPhone/iPad v2.20.25 — 10 septiembre 2026 · Repeticiones que se ven venir
 
 - **Tareas repetidas**: las próximas repeticiones aparecen ya en la agenda y en el planificador,
   sin esperar a completar la actual.
