@@ -17,6 +17,7 @@
 import { useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import { emptyTrash } from '../../utils/papeleraHelper'
+import { askConfirm } from '../../utils/confirmDialog'
 
 interface Props {
   node: Node
@@ -86,8 +87,8 @@ function PapeleraRootControls({ node }: Props) {
   const s = useStore()
   const children = s.children(node.id).filter(n => !n.deletedAt)
 
-  function handleEmpty() {
-    if (!confirm(`¿Vaciar la papelera? Se eliminarán permanentemente ${children.length} elemento(s).`)) return
+  async function handleEmpty() {
+    if (!(await askConfirm(`¿Vaciar la papelera? Se eliminarán permanentemente ${children.length} elemento(s).`))) return
     emptyTrash()
   }
 

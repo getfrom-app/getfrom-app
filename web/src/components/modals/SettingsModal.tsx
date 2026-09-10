@@ -18,6 +18,7 @@ import { apiRequest } from '../../api/client'
 import { downloadFullTextExport } from '../../utils/bulkTextExport'
 import { openExternalUrl } from '../../utils/openExternal'
 import { isNextEventBarEnabled, setNextEventBarEnabled } from '../../utils/nextEvent'
+import { askConfirm } from '../../utils/confirmDialog'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -148,7 +149,7 @@ export function CuentaPane() {
   }
 
   async function handleCancelSubscription() {
-    if (!confirm(t('account.cancelConfirm', '¿Seguro que quieres cancelar tu suscripción? Mantendrás el acceso hasta el final del periodo pagado.'))) return
+    if (!(await askConfirm(t('account.cancelConfirm', '¿Seguro que quieres cancelar tu suscripción? Mantendrás el acceso hasta el final del periodo pagado.')))) return
     setSubError(''); setSubLoading(true)
     try {
       const res = await cancelSubscription()
@@ -1306,7 +1307,7 @@ export function BackupsPane() {
   }
 
   async function handleRestore(id: string, createdAt: string) {
-    if (!confirm(t('settingsView.confirmRestore', { date: new Date(createdAt).toLocaleString('es-ES') }))) return
+    if (!(await askConfirm(t('settingsView.confirmRestore', { date: new Date(createdAt).toLocaleString('es-ES') })))) return
     setBusyId(id); setError(null); setInfo(null)
     try {
       const { restoreBackup } = await import('../../api/backups')
@@ -1321,7 +1322,7 @@ export function BackupsPane() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm(t('settingsView.confirmDeleteSnapshot'))) return
+    if (!(await askConfirm(t('settingsView.confirmDeleteSnapshot')))) return
     setBusyId(id); setError(null)
     try {
       const { deleteBackup } = await import('../../api/backups')

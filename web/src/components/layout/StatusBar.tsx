@@ -10,7 +10,7 @@ import { estimateContextTokens, formatTokens } from '../../utils/contextBudget'
 import { useMacUpdater } from '../../utils/macUpdater'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.10.62'
+export const WEB_VERSION = 'v9.10.63'
 
 interface Props {
   isSyncing: boolean

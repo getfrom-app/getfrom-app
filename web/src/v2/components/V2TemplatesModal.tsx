@@ -11,6 +11,7 @@ import { store, useStore } from '../../store/nodeStore'
 import { listTemplates, getPlantillasRoot, ensurePlantillasNode } from '../../utils/tagsHelper'
 import NodeConfigModal from '../../components/modals/NodeConfigModal'
 import Icon from './Icon'
+import { askConfirm } from '../../utils/confirmDialog'
 
 interface Props {
   onClose: () => void
@@ -31,8 +32,8 @@ export default function V2TemplatesModal({ onClose }: Props) {
     setEditingId(n.id)
   }
 
-  function removeTemplate(id: string, name: string) {
-    if (!confirm(t('v2.templates.confirmDelete', '¿Eliminar la plantilla «{{name}}»?', { name: name || t('common.noTitle', 'Sin título') }))) return
+  async function removeTemplate(id: string, name: string) {
+    if (!(await askConfirm(t('v2.templates.confirmDelete', '¿Eliminar la plantilla «{{name}}»?', { name: name || t('common.noTitle', 'Sin título') })))) return
     store.deleteNode(id)
   }
 

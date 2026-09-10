@@ -45,6 +45,7 @@ import { useToast } from '../Toast'
 import Icon from '../../v2/components/Icon'
 import { usePlannerHours } from '../../utils/plannerHours'
 import NewEventModal from '../modals/NewEventModal'
+import { askConfirm } from '../../utils/confirmDialog'
 
 // ── Geometría fija ────────────────────────────────────────────────────────
 // La franja del día YA NO es fija: se ajusta en Ajustes y se comparte con la
@@ -1883,7 +1884,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                 setCtxMenu(null)
                 // A5 de la auditoría: mismo confirm que GCalEventEditor.remove()
                 // — antes borraba sin preguntar mientras el editor sí lo hacía.
-                if (!window.confirm(t('gcal.deleteConfirm', { title: evTitle }))) return
+                if (!(await askConfirm(t('gcal.deleteConfirm', { title: evTitle })))) return
                 // Solo se quita de la UI si Google CONFIRMÓ el borrado — antes el
                 // error se tragaba y el evento desaparecía de Fromly pero seguía
                 // vivo en el calendario (auditoría 28 ago 2026).

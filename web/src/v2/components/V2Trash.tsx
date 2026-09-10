@@ -8,6 +8,7 @@ import { useStore } from '../../store/nodeStore'
 import { trashItems, restoreNode, emptyTrash } from '../../utils/papeleraHelper'
 import Icon from './Icon'
 import { displayTitle } from '../../utils/displayText'
+import { askConfirm } from '../../utils/confirmDialog'
 
 export default function V2Trash({ onClose, onOpenNode }: { onClose: () => void; onOpenNode?: (id: string) => void }) {
   const { t } = useTranslation()
@@ -33,12 +34,12 @@ export default function V2Trash({ onClose, onOpenNode }: { onClose: () => void; 
     force(x => x + 1)
     if (parentId) setJustRestored({ nodeText: title(node?.text || ''), parentId })
   }
-  const empty = () => {
+  const empty = async () => {
     if (!allItems.length) return
     // Vacía SIEMPRE toda la papelera, no solo lo que el buscador esté
     // filtrando en este momento — un buscador que solo borrara "lo visible"
     // sería una trampa fácil de pisar sin querer.
-    if (window.confirm(t('v2.trash.confirmEmpty', '¿Vaciar la papelera? Se eliminarán definitivamente {{count}} elemento(s). No se puede deshacer.', { count: allItems.length }))) {
+    if (await askConfirm(t('v2.trash.confirmEmpty', '¿Vaciar la papelera? Se eliminarán definitivamente {{count}} elemento(s). No se puede deshacer.', { count: allItems.length }))) {
       emptyTrash(); force(x => x + 1)
     }
   }

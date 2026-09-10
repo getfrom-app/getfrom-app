@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
 import type { Node } from '../../types'
 import Icon from '../../v2/components/Icon'
+import { askConfirm } from '../../utils/confirmDialog'
 
 interface Props { parentId: string }
 
@@ -184,9 +185,9 @@ export default function NodeKanbanView({ parentId }: Props) {
     store.setPropSchema(parentId, schema)
   }
 
-  function handleDeleteColumn(key: string) {
+  async function handleDeleteColumn(key: string) {
     if (groupBy === '__status' || groupBy === '__priority') return
-    if (!confirm(t('kanban.confirmDeleteColumn'))) return
+    if (!(await askConfirm(t('kanban.confirmDeleteColumn')))) return
     const schema = store.getPropSchema(parentId)
     const colDef = schema.find(c => c.id === groupBy)
     if (!colDef) return

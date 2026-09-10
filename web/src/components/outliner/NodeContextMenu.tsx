@@ -25,6 +25,7 @@ import { getNodeTagSlug } from '../../utils/tagsHelper'
 import { learningsStore, buildLearningText } from '../../store/learningsStore'
 import { copyNodeAsMarkdown, copyNodeAsRich, exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
 import Icon from '../../v2/components/Icon'
+import { askConfirm } from '../../utils/confirmDialog'
 
 const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -259,7 +260,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     }))
   }
 
-  function deleteNode() {
+  async function deleteNode() {
     // Raíces de sistema: no se pueden eliminar.
     if (!isMulti && isProtectedSystemRoot(node.id)) {
       window.dispatchEvent(new CustomEvent('from:toast', { detail: { message: t('context.toastSystemNodeNoDelete'), type: 'info' } }))
@@ -268,7 +269,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     }
     if (isMulti) {
       // Bulk: mover todos a papelera
-      if (!confirm(t('context.confirmMoveBulkTrash', { count: effectiveIds.length }))) return
+      if (!(await askConfirm(t('context.confirmMoveBulkTrash', { count: effectiveIds.length })))) return
       effectiveIds.forEach(id => trashNode(id))
       window.dispatchEvent(new CustomEvent('from:toast', {
         detail: { message: t('context.toastMovedBulkTrash', { count: effectiveIds.length }), type: 'info' }
@@ -280,7 +281,7 @@ export default function NodeContextMenu({ node, x, y, onClose, onNavigate, onSel
     const nodeLabel = (node.text || t('context.nodeFallback')).slice(0, 30)
     if (inPapelera) {
       // Ya está en Papelera → eliminar permanentemente
-      if (!confirm(t('context.confirmDeletePermanent', { name: nodeLabel }))) return
+      if (!(await askConfirm(t('context.confirmDeletePermanent', { name: nodeLabel })))) return
       store.updateNode(node.id, { deletedAt: new Date().toISOString() })
       window.dispatchEvent(new CustomEvent('from:toast', {
         detail: { message: t('context.toastDeletedPermanent', { name: nodeLabel }), type: 'info' }

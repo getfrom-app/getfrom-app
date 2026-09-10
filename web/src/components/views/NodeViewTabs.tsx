@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { store, useStore } from '../../store/nodeStore'
+import { askConfirm } from '../../utils/confirmDialog'
 
 interface Props {
   parentId: string
@@ -94,8 +95,8 @@ export default function NodeViewTabs({ parentId, activeViewId, onSelect }: Props
     setTabMenu(null)
   }
 
-  function handleDelete(viewId: string) {
-    if (!confirm('¿Eliminar esta vista? La configuración se perderá.')) return
+  async function handleDelete(viewId: string) {
+    if (!(await askConfirm('¿Eliminar esta vista? La configuración se perderá.'))) return
     const newViews = views.filter(x => x.id !== viewId)
     store.setViews(parentId, newViews)
     if (activeViewId === viewId && newViews.length > 0) {

@@ -29,6 +29,7 @@ import { displayTitle } from '../../utils/displayText'
 import { useGroupSelection } from '../../hooks/useGroupSelection'
 import { allGroups, groupMemberIds, groupMembers, isGroupNode } from '../../utils/groups'
 import type { Node } from '../../types'
+import { askConfirm } from '../../utils/confirmDialog'
 
 interface Props {
   ctxId: string | null
@@ -318,9 +319,9 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
 
   // Migración de notas antiguas → documento del contexto (no aplica a General).
   const legacyCount = ctxId === null ? 0 : legacyNotesOf(ctxId).length
-  const doMigrate = () => {
+  const doMigrate = async () => {
     if (ctxId === null) return
-    if (!window.confirm(t('v2.context.confirmMigrate', '¿Convertir {{count}} nota(s) antigua(s) de este contexto en un documento?\n\nEs reversible: los originales van a la papelera.', { count: legacyCount }))) return
+    if (!(await askConfirm(t('v2.context.confirmMigrate', '¿Convertir {{count}} nota(s) antigua(s) de este contexto en un documento?\n\nEs reversible: los originales van a la papelera.', { count: legacyCount })))) return
     const docId = migrateContextNotesToDoc(ctxId)
     if (docId) onOpenNode(docId)
   }

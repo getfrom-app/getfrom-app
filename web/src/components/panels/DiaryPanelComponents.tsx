@@ -20,6 +20,7 @@ import ContextChip from './ContextChip'
 import ContextPicker from './ContextPicker'
 import { firstContextOf, setNodeContext } from '../../utils/cajones'
 import Icon from '../../v2/components/Icon'
+import { askConfirm } from '../../utils/confirmDialog'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -630,7 +631,7 @@ export function GCalEventEditor({ event, onClose, onUpdated, onDeleted, modal, l
   }
 
   async function remove() {
-    if (!window.confirm(t('gcal.deleteConfirm', { title: event.title }))) return
+    if (!(await askConfirm(t('gcal.deleteConfirm', { title: event.title })))) return
     setSaving(true); setMsg(null)
     try {
       await deleteCalendarEvent(event.id)

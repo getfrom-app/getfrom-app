@@ -15,6 +15,7 @@ import { displayTitle } from '../../utils/displayText'
 import { contextPathLabel } from '../../utils/cajones'
 import ContextPicker from '../../components/panels/ContextPicker'
 import Icon from './Icon'
+import { askConfirm } from '../../utils/confirmDialog'
 
 interface Props {
   /** undefined = todas; string = solo las de ese contexto; null = solo las sin contexto. */
@@ -174,8 +175,8 @@ export default function V2SyncedFolders({ contextId, compact = false }: Props) {
                     <button className="btn-secondary" style={{ fontSize: 11 }} disabled={busy === f.id} onClick={() => run(f.id, () => folderSync.setPaused(f.id, !f.paused))}>
                       {f.paused ? t('folders.resume', 'Reanudar') : t('folders.pause', 'Pausar')}
                     </button>
-                    <button className="btn-secondary" style={{ fontSize: 11, color: 'var(--danger, #d33)' }} disabled={busy === f.id} onClick={() => {
-                      if (!window.confirm(t('folders.confirmUnlink', '¿Desvincular «{{name}}»? Se borra lo indexado; los archivos del Mac no se tocan.', { name: f.name }))) return
+                    <button className="btn-secondary" style={{ fontSize: 11, color: 'var(--danger, #d33)' }} disabled={busy === f.id} onClick={async () => {
+                      if (!(await askConfirm(t('folders.confirmUnlink', '¿Desvincular «{{name}}»? Se borra lo indexado; los archivos del Mac no se tocan.', { name: f.name })))) return
                       void run(f.id, () => folderSync.unlinkFolder(f.id))
                     }}>
                       {t('folders.unlink', 'Desvincular')}

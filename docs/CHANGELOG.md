@@ -4,12 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.10.61 · Mac v9.5.83 — 10 septiembre 2026 · La ventana del Mac vuelve a moverse
+## Web v9.10.63 · Mac v9.5.85 — 10 septiembre 2026 · La app de Mac vuelve a actualizarse sola, y la ventana se mueve
 
+- **Mac, bug real**: desde la interfaz 2.0 la app no comprobaba actualizaciones, ni al arrancar ni
+  desde el menú — el comprobador vivía en una barra de la interfaz antigua que ya no se mostraba.
+  Ahora vive en la barra de estado: «✦ Nueva versión X — Actualizar» cuando la haya, y «Fromly →
+  Buscar actualizaciones…» responde siempre con un aviso, también si ya estás al día.
 - **Mac**: la ventana se puede arrastrar por la barra superior (la interfaz 2.0 no tenía zona de
   arrastre, así que no había forma de moverla). Se reservan 28 px arriba para los semáforos.
-- **Mac**: «Fromly → Buscar actualizaciones…» muestra siempre el resultado, también cuando ya
-  tienes la última versión (antes solo un «✓ Al día» de 4 segundos abajo, fácil de no ver).
+- **Mac**: las preguntas de confirmación («¿Vaciar la papelera?», «¿Desvincular carpeta?»,
+  «¿Cancelar suscripción?»…) no se mostraban en la app de Mac y se daban por aceptadas. Ahora son
+  diálogos nativos.
 
 ---
 
