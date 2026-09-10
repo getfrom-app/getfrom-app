@@ -104,6 +104,18 @@
   overflow: hidden;
 }
 .v2-root.v2-right-collapsed { --v2-right: 0px; }
+/* Mac (Tauri, titleBarStyle Overlay): se reservan 28px arriba para la barra de
+   título transparente con los semáforos, que además es la ZONA DE ARRASTRE de
+   la ventana (`.tauri-titlebar`, App.tsx, `data-tauri-drag-region`). Las
+   regiones de la v1 (.sidebar-header/.wf-topbar) ya no existen en la v2, así
+   que la ventana no se podía mover (Alberto, 10 sep 2026). */
+.tauri-mac .v2-root { inset: 28px 0 26px 0; }
+.tauri-titlebar {
+  position: fixed; top: 0; left: 0; right: 0; height: 28px; z-index: 10000;
+  background: var(--v2-surface-sunken, var(--bg-secondary));
+  border-bottom: 1px solid var(--v2-line, var(--border));
+  -webkit-user-select: none; user-select: none;
+}
 .v2-root.v2-sidebar-collapsed { --v2-sidebar: 0px; }
 
 /* Barra de estado inferior (26 ago 2026, rediseñada 27 ago — Alberto: "que sea

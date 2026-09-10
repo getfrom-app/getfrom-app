@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.61 · Mac v9.5.83 — 10 septiembre 2026 · La ventana del Mac vuelve a moverse
+
+- **Mac**: la ventana se puede arrastrar por la barra superior (la interfaz 2.0 no tenía zona de
+  arrastre, así que no había forma de moverla). Se reservan 28 px arriba para los semáforos.
+- **Mac**: «Fromly → Buscar actualizaciones…» muestra siempre el resultado, también cuando ya
+  tienes la última versión (antes solo un «✓ Al día» de 4 segundos abajo, fácil de no ver).
+
+---
+
 ## Web v9.10.60 · Mac v9.5.82 — 9 septiembre 2026 · Carpetas del Mac sincronizadas con el chat
 
 - **Vincula una carpeta de tu Mac a un contexto**: desde la app de Mac (Ajustes → Carpetas del Mac, o

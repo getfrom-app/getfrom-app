@@ -9,7 +9,7 @@ import { scheduledAgentsSummary, relativeUntil } from '../../utils/scheduleHelpe
 import { estimateContextTokens, formatTokens } from '../../utils/contextBudget'
 
 // Versión del build web — incrementar en cada deploy significativo
-export const WEB_VERSION = 'v9.10.60'
+export const WEB_VERSION = 'v9.10.61'
 
 interface Props {
   isSyncing: boolean
@@ -48,14 +48,26 @@ export default function StatusBar({ isSyncing, showSaved, currentNodeId }: Props
   useEffect(() => {
     if (!isTauriEnv) return
 
-    const checkForUpdates = async () => {
+    // `manual` = desde el menú Fromly → «Buscar actualizaciones…»: ahí se
+    // responde con un aviso nativo aunque no haya nada nuevo — el «✓ Al día»
+    // de 4 s en la barra inferior pasaba desapercibido (Alberto, 10 sep 2026:
+    // "le doy a buscar actualización pero no busca nada").
+    const checkForUpdates = async (manual = false) => {
       setUpdateChecking(true)
       setUpdateError(null)
       setUpdateUpToDate(false)
+      const notify = async (text: string) => {
+        if (!manual) return
+        try {
+          const { message } = await import('@tauri-apps/plugin-dialog')
+          await message(text, { title: 'Fromly', kind: 'info' })
+        } catch { window.alert(text) }
+      }
       try {
         const { check } = await import('@tauri-apps/plugin-updater')
         const update = await check()
         if (update?.available) {
+          void notify(`Hay una versión nueva: ${update.version}. Pulsa «Actualizar» en la barra inferior para instalarla.`)
           setUpdateAvailable({
             version: update.version,
             download: async () => {
@@ -75,10 +87,14 @@ export default function StatusBar({ isSyncing, showSaved, currentNodeId }: Props
         } else {
           setUpdateUpToDate(true)
           setTimeout(() => setUpdateUpToDate(false), 4000)
+          let current = ''
+          try { const { getVersion } = await import('@tauri-apps/api/app'); current = await getVersion() } catch { /* */ }
+          void notify(`Ya tienes la última versión${current ? ` (${current})` : ''}.`)
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e)
         setUpdateError(msg)
+        void notify(`No se ha podido comprobar: ${msg}`)
       } finally {
         setUpdateChecking(false)
       }
@@ -93,7 +109,7 @@ export default function StatusBar({ isSyncing, showSaved, currentNodeId }: Props
     let unlisten: (() => void) | null = null
     import('@tauri-apps/api/event').then(({ listen }) => {
       listen('from:check-update', () => {
-        checkForUpdates()
+        checkForUpdates(true)
       }).then(fn => { unlisten = fn })
     }).catch(() => {})
 

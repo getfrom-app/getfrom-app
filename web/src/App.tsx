@@ -254,6 +254,9 @@ function AppInner() {
   useTimeZoneSync()
   usePostCheckoutRefresh()
   return (
+    <>
+    {/* Mac: barra de título transparente (28px) que mueve la ventana al arrastrar. */}
+    {isTauriEnv && <div className="tauri-titlebar" data-tauri-drag-region />}
     <Routes>
       {/* Rutas públicas */}
       <Route path="/login" element={<AuthPage />} />
@@ -287,6 +290,7 @@ function AppInner() {
         </PrivateRoute>
       } />
     </Routes>
+    </>
   )
 }
 
