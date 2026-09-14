@@ -369,8 +369,21 @@ class AssistantStore {
         if (!lastDate || date > lastDate) lastDate = date
       }
       if (added > 0) {
+        // Ancla: la fecha del mensaje más antiguo que YA se veía antes de
+        // este merge. Antes, `visibleCount += added` asumía que lo nuevo del
+        // inbox siempre caía al final tras el sort() — pero un aviso con
+        // fecha antigua (servidor) puede caer EN MEDIO del array si hay
+        // mensajes locales con `Date()` del dispositivo por delante, y
+        // entonces la ventana visible se ensanchaba lo justo para sacar a
+        // relucir mensajes viejos que ya estaban ocultos, en mitad de la
+        // conversación reciente (Alberto, 14 sep 2026: "vuelven a verse
+        // mensajes que ya se habían ocultado", mismo bug que en iOS).
+        // Recalcular la ventana por fecha en vez de por conteo evita eso.
+        const anchorDate = this.allMessages.slice(-this.visibleCount)[0]?.date
         this.allMessages.sort((a, b) => a.date.localeCompare(b.date))
-        this.visibleCount = Math.min(this.allMessages.length, this.visibleCount + added)
+        this.visibleCount = anchorDate
+          ? this.allMessages.filter(m => m.date >= anchorDate).length
+          : Math.min(this.allMessages.length, this.visibleCount + added)
         this.seenInboxIds = seen
         this.lastInboxDate = lastDate
         this.save(); this.notify()
