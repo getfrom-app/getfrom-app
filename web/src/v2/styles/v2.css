@@ -810,6 +810,29 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 .v2-assistant-msg--reminder { border-left: 2px solid color-mix(in srgb, #d97706 60%, transparent); padding-left: 10px; }
 .v2-assistant-msg--reminder .v2-assistant-reply { color: color-mix(in srgb, #d97706 65%, var(--text-primary)); }
 
+/* Animación de salida al plegar un mensaje viejo (V2Chat.tsx, `exitingIds` —
+   Alberto, 15 sep 2026: "que el mensaje que debe eliminarse se desplace
+   hacia arriba hasta desaparecer"). Truco CSS grid `1fr → 0fr`: anima la
+   altura intrínseca sin medir nada en JS — funciona con contenido de
+   cualquier alto (una burbuja corta o un brief entero con tareas). El
+   desplazamiento hacia arriba + desvanecido van en `.v2-msg-exit-inner`,
+   independiente del colapso de alto para que ambos se noten a la vez.
+   Duración (320ms) fijada en EXIT_MS, en V2Chat.tsx — deben coincidir. */
+.v2-msg-exit-wrap {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows .32s ease;
+}
+.v2-msg-exit-wrap.exiting { grid-template-rows: 0fr; }
+.v2-msg-exit-inner {
+  overflow: hidden;
+  min-height: 0;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity .28s ease, transform .32s ease;
+}
+.v2-msg-exit-wrap.exiting .v2-msg-exit-inner { opacity: 0; transform: translateY(-14px); }
+
 /* Separador de hora — "———— 8:01 ————", siempre visible entre mensajes
    (13 ago, paridad con SessionDivider en iOS). */
 .v2-assistant-divider { display: flex; align-items: center; gap: 10px; margin: 18px 0 14px; }

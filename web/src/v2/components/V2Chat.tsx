@@ -35,6 +35,10 @@ import Icon from './Icon'
  *  sentido que se mantenga"). Ver `messages` en `V2Chat`. */
 const REMINDER_STALE_MS = 20 * 60 * 1000
 
+/** Duración de la animación de salida al plegar un mensaje (`messages` en
+ *  V2Chat) — debe coincidir con la transición de `.v2-msg-exit-wrap` en v2.css. */
+const EXIT_MS = 320
+
 interface Props {
   currentNodeId: string | null
   /** null = sin contexto/elemento enfocado (chat general) — ver V2App.tsx. */
@@ -231,6 +235,18 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   const scoped = elementScoped ?? embedded
   const chat = useAssistantStore()
   useStore()
+  // ¿Es este el hilo GENERAL o el de Agenda (V2AgendaAssistant)? Los dos son
+  // buzones de fondo (brief del día, informes de agentes, recordatorios) — el
+  // chat de un elemento/contexto concreto es una conversación sobre ESO, no un
+  // buzón. Antes solo el general recibía `fetchInbox()`, así que el informe de
+  // un agente terminado nunca llegaba con su enlace al hilo de Agenda: solo el
+  // texto suelto de `brief.overnight` (sin `linkedNodeId`, ver
+  // `V2AgendaAssistant.injectDailyGreeting`) — Alberto, 31 ago 2026: "aparece
+  // a las 8:02 pero sin el enlace para verlo". También decide, más abajo, si
+  // el plegado "todo lo de antes de hoy" aplica: un buzón de fondo empieza
+  // limpio cada día, pero la conversación sobre UN documento concreto no
+  // debe perder ayer solo porque cambió el reloj (Alberto, 15 sep 2026).
+  const isBackgroundInboxThread = !currentNodeId || currentNodeId === AGENDA_THREAD_KEY
   // Reloj propio del hilo: solo sirve para que los recordatorios caducados
   // (ver `messages` más abajo) desaparezcan del chat en directo, sin recargar
   // la página — Alberto, 31 ago 2026: "no tiene sentido que se mantenga...
@@ -320,36 +336,84 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     })
   }
 
-  // Pliega el bloque de saludo de un día anterior (`tag`, ver AssistantMsg) en
-  // cuanto el de HOY ya está en el hilo — solo se enseña el más reciente,
-  // aunque el resto sigue en el historial real (visible al cargar más
-  // antiguos). No afecta a mensajes normales, que nunca llevan `tag`.
-  const messages = useMemo(() => {
+  // Pliega TODO lo de antes de HOY en cuanto ya hay algo de HOY en el hilo —
+  // no solo el saludo duplicado (Alberto, 15 sep 2026: "no acumular mensajes
+  // antiguos... el mensaje de buenos días con las tareas debe aparecer solo,
+  // sin mensajes del día anterior por encima" — y al escribir el propio
+  // mensaje del usuario ya cuenta como "de hoy", así que arrastra el mismo
+  // plegado). Lo oculto nunca se borra: sigue en el historial real, visible
+  // al hacer scroll hacia arriba (`loadMoreHistory`). El plegado por `tag` de
+  // saludos duplicados del MISMO día (mañana/tarde) se mantiene aparte.
+  // SOLO en el buzón de fondo (`isBackgroundInboxThread`): la conversación
+  // sobre un documento o contexto concreto no debe perder lo de ayer solo
+  // porque cambió el reloj — ahí "ayer" puede seguir siendo el tema de hoy.
+  const todayStartMs = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime() }, [now])
+  const targetIds = useMemo(() => {
     let latestGreetingTag: string | null = null
     for (const m of chat.messages) {
       if (m.tag?.startsWith('daily-greeting:') && (!latestGreetingTag || m.tag > latestGreetingTag)) latestGreetingTag = m.tag
     }
-    return chat.messages.filter(m => {
-      if (m.tag?.startsWith('daily-greeting:') && latestGreetingTag && m.tag !== latestGreetingTag) return false
+    const hasTodayMsg = isBackgroundInboxThread && chat.messages.some(m => new Date(m.date).getTime() >= todayStartMs)
+    const ids = new Set<string>()
+    for (const m of chat.messages) {
+      if (m.tag?.startsWith('daily-greeting:') && latestGreetingTag && m.tag !== latestGreetingTag) continue
       // Un recordatorio deja de tener sentido pasado su momento — a
       // diferencia de un mensaje real, "recuerda tu radio en 7 min" no vale
       // nada como historial una vez ha pasado, así que se oculta del hilo
       // (nunca se borra del almacenamiento local, solo del render).
-      if (m.kind === 'reminder' && m.dueAt && now - new Date(m.dueAt).getTime() > REMINDER_STALE_MS) return false
-      return true
-    })
-  }, [chat.messages, now])
-  const thinking = chat.isThinking
+      if (m.kind === 'reminder' && m.dueAt && now - new Date(m.dueAt).getTime() > REMINDER_STALE_MS) continue
+      if (hasTodayMsg && new Date(m.date).getTime() < todayStartMs) continue
+      ids.add(m.id)
+    }
+    return ids
+  }, [chat.messages, now, todayStartMs, isBackgroundInboxThread])
 
-  // ¿Es este el hilo GENERAL o el de Agenda (V2AgendaAssistant)? Los dos son
-  // buzones de fondo (brief del día, informes de agentes, recordatorios) — el
-  // chat de un elemento/contexto concreto es una conversación sobre ESO, no un
-  // buzón. Antes solo el general recibía `fetchInbox()`, así que el informe de
-  // un agente terminado nunca llegaba con su enlace al hilo de Agenda: solo el
-  // texto suelto de `brief.overnight` (sin `linkedNodeId`, ver
-  // `V2AgendaAssistant.injectDailyGreeting`) — Alberto, 31 ago 2026: "aparece
-  // a las 8:02 pero sin el enlace para verlo".
-  const isBackgroundInboxThread = !currentNodeId || currentNodeId === AGENDA_THREAD_KEY
+  // Animación de salida: un mensaje que deja de estar en `targetIds` (se
+  // plegó) sigue un instante más en el render, marcado `exiting`, para que
+  // `.v2-msg-exit-wrap` lo deslice hacia arriba y lo desvanezca en vez de
+  // desaparecer de golpe (Alberto, 15 sep 2026: "sería bonito una animación
+  // y que el mensaje que debe eliminarse se desplace hacia arriba hasta
+  // desaparecer"). `EXIT_MS` debe coincidir con la transición CSS.
+  const [exitingIds, setExitingIds] = useState<Set<string>>(new Set())
+  const prevTargetRef = useRef<Set<string>>(new Set())
+  const exitTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  useEffect(() => {
+    const prev = prevTargetRef.current
+    const nowExiting: string[] = []
+    prev.forEach(id => { if (!targetIds.has(id)) nowExiting.push(id) })
+    if (nowExiting.length) {
+      setExitingIds(cur => {
+        const next = new Set(cur)
+        nowExiting.forEach(id => next.add(id))
+        return next
+      })
+      nowExiting.forEach(id => {
+        const existing = exitTimersRef.current.get(id)
+        if (existing) clearTimeout(existing)
+        exitTimersRef.current.set(id, setTimeout(() => {
+          setExitingIds(cur => { if (!cur.has(id)) return cur; const next = new Set(cur); next.delete(id); return next })
+          exitTimersRef.current.delete(id)
+        }, EXIT_MS))
+      })
+    }
+    // Volvió a `targetIds` (p.ej. "cargar más" reveló historial) a media
+    // animación — cancela la salida en vez de dejarla desaparecer igual.
+    targetIds.forEach(id => {
+      const timer = exitTimersRef.current.get(id)
+      if (!timer) return
+      clearTimeout(timer)
+      exitTimersRef.current.delete(id)
+      setExitingIds(cur => { if (!cur.has(id)) return cur; const next = new Set(cur); next.delete(id); return next })
+    })
+    prevTargetRef.current = targetIds
+  }, [targetIds])
+  useEffect(() => () => { exitTimersRef.current.forEach(timer => clearTimeout(timer)) }, [])
+
+  const messages = useMemo(
+    () => chat.messages.filter(m => targetIds.has(m.id) || exitingIds.has(m.id)),
+    [chat.messages, targetIds, exitingIds],
+  )
+  const thinking = chat.isThinking
 
   // Trae el brief/avisos que hayan llegado mientras la pestaña no estaba
   // delante, igual que hace iOS al abrir — el hilo web es también el
@@ -618,11 +682,16 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               // falta un hueco real de 2 minutos — no separa nada mientras el
               // usuario está interactuando de verdad (Alberto, 13 ago).
               const showDivider = i === 0 || minuteOf(m.date) - minuteOf(messages[i - 1].date) >= 2
+              const isExiting = exitingIds.has(m.id)
               return [
                 m.id === unreadId
                   ? <UnreadDivider key={`${m.id}-u`} />
                   : (showDivider ? <SessionDivider key={`${m.id}-d`} date={m.date} /> : null),
-                <AssistantBubble key={m.id} m={m} isLast={i === messages.length - 1} onOption={doSend} />,
+                <div key={m.id} className={`v2-msg-exit-wrap${isExiting ? ' exiting' : ''}`}>
+                  <div className="v2-msg-exit-inner">
+                    <AssistantBubble m={m} isLast={i === messages.length - 1} onOption={doSend} />
+                  </div>
+                </div>,
               ]
             })}
             {thinking && (
