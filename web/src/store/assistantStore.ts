@@ -239,12 +239,14 @@ class AssistantStore {
     this.visibleCount++
   }
 
-  private recentHistory(): { role: 'user' | 'assistant'; content: string }[] {
+  private recentHistory(): { role: 'user' | 'assistant'; content: string; createdAt?: string }[] {
     return this.messages
       .slice(0, -1)
       .slice(-HISTORY_WINDOW)
       .filter(m => !m.text.startsWith('No he podido contestar'))
-      .map(m => ({ role: m.role, content: m.text }))
+      // `createdAt`: el servidor solo lo usa si no puede cargar su propio
+      // historial, para fechar los mensajes de otros días (15 sep 2026).
+      .map(m => ({ role: m.role, content: m.text, createdAt: m.date ? new Date(m.date).toISOString() : undefined }))
   }
 
   /** `quickNote`: "Solo anotar" (26 ago 2026) — el mensaje va tal cual a la

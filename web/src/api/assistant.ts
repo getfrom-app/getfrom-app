@@ -60,7 +60,7 @@ export interface AssistantChatReply {
 
 export async function assistantChat(
   message: string,
-  history: { role: 'user' | 'assistant'; content: string }[],
+  history: { role: 'user' | 'assistant'; content: string; createdAt?: string }[],
   currentNodeId?: string | null,
   /** "Solo anotar" (26 ago 2026) — atajo determinista server-side: ni
    *  interpreta ni conversa, va directo a la nota diaria y responde
