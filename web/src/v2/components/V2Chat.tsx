@@ -341,9 +341,14 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
   // antiguos... el mensaje de buenos días con las tareas debe aparecer solo,
   // sin mensajes del día anterior por encima" — y al escribir el propio
   // mensaje del usuario ya cuenta como "de hoy", así que arrastra el mismo
-  // plegado). Lo oculto nunca se borra: sigue en el historial real, visible
-  // al hacer scroll hacia arriba (`loadMoreHistory`). El plegado por `tag` de
-  // saludos duplicados del MISMO día (mañana/tarde) se mantiene aparte.
+  // plegado). Lo oculto nunca se borra del almacenamiento local ni del
+  // servidor — solo deja de renderizarse esta sesión, mismo criterio que un
+  // recordatorio caducado más abajo. NO es como "cargar más antiguos"
+  // (`loadMoreHistory`): ese trae página anterior del SERVIDOR para hilos
+  // largos, esto oculta lo que ya está en memoria por ser de otro día — un
+  // mensaje plegado por fecha no vuelve a aparecer haciendo scroll arriba en
+  // la misma sesión. El plegado por `tag` de saludos duplicados del MISMO
+  // día (mañana/tarde) se mantiene aparte.
   // SOLO en el buzón de fondo (`isBackgroundInboxThread`): la conversación
   // sobre un documento o contexto concreto no debe perder lo de ayer solo
   // porque cambió el reloj — ahí "ayer" puede seguir siendo el tema de hoy.
