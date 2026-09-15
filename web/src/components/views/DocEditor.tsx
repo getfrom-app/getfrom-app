@@ -1004,7 +1004,6 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // (evita el eco). Si SÍ tiene el foco, no se toca — nunca pisar lo que se está tecleando.
   useEffect(() => {
     if (!editor) return
-    if (editor.isFocused) return
     // ⚠️ CAUSA REAL de citas que "no aparecían" (Alberto, 22 jul): el picker de
     // contexto hace foco en un <input> real nada más abrirse (ContextPicker.tsx),
     // así que `editor.isFocused` pasa a false EN EL MOMENTO de pulsar el "?" —
@@ -1015,7 +1014,30 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     // de la vista el heading/párrafo recién escrito (y su `pid`) antes de que el
     // guardado pendiente llegara a persistirlo — la cita fallaba en silencio
     // porque el párrafo que se intentaba citar ya no existía en el doc.
-    if (pendingSaveRef.current) return
+    const remoteBody = node.body || ''
+    // Con foco o con guardado pendiente NO se pisa el doc… salvo un caso seguro:
+    // el servidor AÑADE líneas al FINAL del body (log de actividad de la nota
+    // diaria: `<p>15:42 · 📷 <a href="/node/ID">…</a></p>`). Si lo ignorásemos, el
+    // siguiente autoguardado mandaría el body viejo y BORRARÍA esa línea. Si el
+    // body remoto = último body crudo sincronizado (`lastSavedBodyRef`: el último
+    // que guardamos o recibimos, NUNCA `getHTML()`, que normaliza distinto) +
+    // sufijo, se inserta solo el sufijo al final, sin mover cursor/selección y
+    // fuera del historial de deshacer. `onUpdate` agenda el guardado, que ya lo
+    // incluye. Cualquier otro cambio remoto con foco/pendiente: como antes, se ignora.
+    if (editor.isFocused || pendingSaveRef.current) {
+      const base = lastSavedBodyRef.current
+      if (base && remoteBody !== base && remoteBody.startsWith(base)) {
+        const suffix = remoteBody.slice(base.length)
+        if (suffix.trim()) {
+          editor.chain()
+            .command(({ tr }) => { tr.setMeta('addToHistory', false); return true })
+            .insertContentAt(editor.state.doc.content.size, suffix, { updateSelection: false })
+            .run()
+        }
+        lastSavedBodyRef.current = remoteBody
+      }
+      return
+    }
     if (editor.getHTML() === (node.body || '')) return
     editor.commands.setContent(node.body || '', false)
     lastSavedBodyRef.current = node.body || ''

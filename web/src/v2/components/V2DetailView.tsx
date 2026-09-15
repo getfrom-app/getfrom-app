@@ -148,7 +148,12 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
   // botón «Convertir a documento» (convertNoteToBlock, reversible). Una nota sin hijos
   // se edita directamente como documento.
   const hasKids = store.children(node.id).some(n => !n.deletedAt && (n.text || '').trim())
-  const asDoc = doc || !hasKids
+  // La nota diaria SIEMPRE es documento ("ya no usamos NUNCA outliner", 22 jul;
+  // migrateDiaryEntryToDoc) aunque aún no tenga `_doc`: un día creado por el
+  // SERVIDOR (serverAgenda, sin `_doc`) después del arranque, con hijos (adjuntos,
+  // secciones de plantilla), se abría como outliner y ocultaba el body — y con él
+  // el log de actividad. Sus hijos siguen visibles en DayColumn.
+  const asDoc = doc || !hasKids || !!node.isDiaryEntry
   // Clic en el hueco vacío bajo el texto → foco al final del documento, como
   // cualquier editor normal (Notion, Docs…). Antes esa zona no pertenecía al
   // ProseMirror (que solo ocupa el alto de su propio contenido) y el clic
