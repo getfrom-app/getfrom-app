@@ -6,14 +6,9 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ## Web v9.10.67 — 15 septiembre 2026 · Agenda más limpia y un chat que empieza el día de cero
 
-- **Columna derecha de Agenda en tres pestañas**: Chat, Nota del día y Tareas (atrasadas y sin
-  fecha). Antes eran tres bloques apilados a un tercio de altura cada uno; ahora cada uno ocupa la
-  columna entera y Fromly recuerda la última pestaña que usaste.
-- **El chat ya no arrastra lo de ayer**: en cuanto llega el saludo del día o escribes algo, las
-  conversaciones de días anteriores se retiran deslizándose hacia arriba. No se borra nada. La
-  conversación de un documento o contexto concreto no se toca.
-- **Eventos que se repiten, con aspecto normal**: la reunión o el podcast de cada semana ya no se
-  quedan atenuados en el planificador cuando no los marcas como hechos (un evento no lleva casilla).
+- **Agenda en tres pestañas**: Chat, Nota del día y Tareas, cada una a toda la altura de la columna.
+- **El chat empieza cada día limpio**: lo de días anteriores se retira deslizándose hacia arriba, sin borrarse.
+- **Eventos que se repiten, con aspecto normal**: ya no se quedan atenuados en el planificador.
 - **El chat ve los eventos repetidos de hoy** aunque la instancia anterior no se completara.
 
 ---
