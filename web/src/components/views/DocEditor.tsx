@@ -14,6 +14,7 @@ import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import TextStyle from '@tiptap/extension-text-style'
 import Color from '@tiptap/extension-color'
+import Highlight from '@tiptap/extension-highlight'
 import Image from '@tiptap/extension-image'
 import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
@@ -63,6 +64,8 @@ function looksLikeMarkdown(s: string): boolean {
 
 // Paleta de la barra flotante (misma que FormatToolbar del outliner).
 const DOC_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899', '#a16207', '#6b7280']
+/** Tonos claros de resaltado — misma paleta que iOS (`NoteBodyEditor.highlightColors`). */
+const DOC_HIGHLIGHTS = ['#fef08a', '#fed7aa', '#bbf7d0', '#bfdbfe', '#e9d5ff', '#fbcfe8']
 
 // CONSTANTE de módulo (no objeto literal inline en el JSX): evita que `BubbleMenu` de TipTap
 // reciba un `tippyOptions` distinto en cada render.
@@ -868,6 +871,9 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
       Underline,
       TextStyle,
       Color,
+      // Resaltado multicolor (15 sep 2026): mismo `<mark data-color>` que genera iOS
+      // (`MarkdownRender.toHTML`); sin la extensión, TipTap tiraba el resaltado al cargar.
+      Highlight.configure({ multicolor: true }),
       // Magic «verbo → tarea» con ghost-text (misma que el outliner). Ver MagicTaskGhost.ts.
       MagicTaskGhost.configure({ taskWord: t('outliner.taskLower', 'tarea'), onAccept: (p) => magicAcceptRef.current(p) }),
       // Casillas de tarea DENTRO del texto: «[] » al inicio de línea las crea (input rule
@@ -1135,6 +1141,17 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
                   {DOC_COLORS.map(c => (
                     <button key={c} className="ft-color-swatch" title={c} onMouseDown={e => { e.preventDefault(); editor.chain().focus().setColor(c).run(); setShowColors(false) }}>
                       <span style={{ color: c, fontWeight: 700, fontSize: 13 }}>A</span>
+                    </button>
+                  ))}
+                </div>
+                <div className="ft-color-row">
+                  <span className="ft-color-label">Resaltado</span>
+                  <button className="ft-btn ft-erase-btn" title="Quitar resaltado" onMouseDown={e => { e.preventDefault(); editor.chain().focus().unsetHighlight().run(); setShowColors(false) }}>
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><line x1="2" y1="10" x2="10" y2="2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /><line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                  </button>
+                  {DOC_HIGHLIGHTS.map(c => (
+                    <button key={c} className="ft-color-swatch" title={c} onMouseDown={e => { e.preventDefault(); editor.chain().focus().toggleHighlight({ color: c }).run(); setShowColors(false) }}>
+                      <span style={{ background: c, color: '#111', fontWeight: 700, fontSize: 13, padding: '0 3px', borderRadius: 3 }}>A</span>
                     </button>
                   ))}
                 </div>
