@@ -15,6 +15,9 @@ export interface AssistantListedTask {
   contextName: string | null
   /** ¿Lleva hora de verdad? Lo manda el servidor (ListedTask en assistantTurn.ts). */
   timed?: boolean
+  /** Evento (ocurre a su hora). Solo eventos con hora y TimeBlocks quedan a la
+   *  vista en las listas plegadas; una tarea con hora va a "Hoy". */
+  isEvent?: boolean
   isTimeBlock?: boolean
 }
 
@@ -270,6 +273,8 @@ export interface AssistantBriefTask {
   text: string
   due: string
   timed: boolean
+  isEvent?: boolean
+  isTimeBlock?: boolean
 }
 
 export interface AssistantBrief {

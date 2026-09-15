@@ -77,7 +77,15 @@ function isSameLocalDay(iso: string, ref: Date): boolean {
   return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth() && d.getDate() === ref.getDate()
 }
 
-function AssistantTaskList({ items }: { items: AssistantListedTask[] }) {
+/** Lo que queda a la vista en una lista plegada: evento con hora o TimeBlock.
+ *  Una tarea con hora es tarea (Alberto, 15 sep 2026). Mensajes guardados
+ *  antes de que el servidor mandara `isEvent` caen al criterio viejo (hora). */
+function isAgendaItem(it: AssistantListedTask): boolean {
+  return !!it.isTimeBlock || (!!it.timed && it.isEvent !== false)
+}
+
+/** `grouped`: pliega siempre, aunque sean pocas (el saludo del día). */
+function AssistantTaskList({ items, grouped }: { items: AssistantListedTask[]; grouped?: boolean }) {
   const { t } = useTranslation()
   useStore()
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
@@ -97,7 +105,7 @@ function AssistantTaskList({ items }: { items: AssistantListedTask[] }) {
   }
   const popover = propsNode && <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />
 
-  if (items.length < GROUP_MIN) {
+  if (!grouped && items.length < GROUP_MIN) {
     return <div className="v2-assistant-list">{items.map(row)}{popover}</div>
   }
 
@@ -112,7 +120,7 @@ function AssistantTaskList({ items }: { items: AssistantListedTask[] }) {
   const overdue: AssistantListedTask[] = []
   const noDate: AssistantListedTask[] = []
   for (const it of items) {
-    if (it.timed || it.isTimeBlock) timed.push(it)
+    if (isAgendaItem(it)) timed.push(it)
     else if (!it.due) noDate.push(it)
     else if (isSameLocalDay(it.due, today)) todayTasks.push(it)
     else if (it.overdue) overdue.push(it)
@@ -359,7 +367,7 @@ function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boo
         </div>
       )}
 
-      {m.list && m.list.length > 0 && <AssistantTaskList items={m.list} />}
+      {m.list && m.list.length > 0 && <AssistantTaskList items={m.list} grouped={!!m.tag?.startsWith('daily-greeting:')} />}
       {m.agents && m.agents.length > 0 && <AssistantAgentList items={m.agents} />}
 
       {/* Contextos/favoritos nombrados: el prompt del servidor prohíbe

@@ -34,7 +34,7 @@
 import { useEffect } from 'react'
 import { assistantStore, AGENDA_THREAD_KEY } from '../../store/assistantStore'
 import { useStore } from '../../store/nodeStore'
-import { assistantGetBrief } from '../../api/assistant'
+import { assistantGetBrief, type AssistantListedTask } from '../../api/assistant'
 import V2Chat from './V2Chat'
 
 export { AGENDA_THREAD_KEY }
@@ -90,7 +90,16 @@ async function injectDailyGreeting() {
     // coincide con el orden cronológico real dentro del mismo día.
     const tag = `daily-greeting:${todayKey()}-${SLOT_ORDER[slot]}`
     if (brief.overnight) assistantStore.addNotice(brief.overnight, tag)
-    assistantStore.addNotice(brief.title + (brief.lead ? ' — ' + brief.lead : ''), tag)
+    // Con su lista: eventos y timeblocks a la vista, tareas plegadas por
+    // Hoy/Atrasadas/Sin fecha (Alberto, 15 sep 2026: "debería tener algún
+    // accionable, o las tareas plegadas"). Sin fecha llega con `due` de relleno
+    // del servidor — se vacía para que caiga en su grupo.
+    const list: AssistantListedTask[] = [
+      ...brief.today.map(i => ({ ...i, overdue: false, contextId: null, contextName: null })),
+      ...brief.overdue.map(i => ({ ...i, overdue: true, contextId: null, contextName: null })),
+      ...brief.seguimiento.map(i => ({ ...i, due: '', timed: false, overdue: false, contextId: null, contextName: null })),
+    ]
+    assistantStore.addNotice(brief.title + (brief.lead ? ' — ' + brief.lead : ''), tag, { list })
     if (brief.attention) assistantStore.addNotice(brief.attention, tag)
   } catch {
     localStorage.removeItem(key) // sin brief esta vez — reintentar en el próximo montaje

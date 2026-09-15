@@ -540,10 +540,11 @@ class AssistantStore {
    *  usuario responda y el turno de verdad se dispare. `tag` opcional agrupa
    *  mensajes relacionados para poder plegarlos juntos en el render (ver
    *  `AssistantMsg.tag`). */
-  addNotice(text: string, tag?: string, opts?: { kind?: string; dueAt?: string }) {
+  addNotice(text: string, tag?: string, opts?: { kind?: string; dueAt?: string; list?: AssistantListedTask[] }) {
     this.appendVisible({
       id: uid(), role: 'assistant', text, date: new Date().toISOString(),
-      created: [], linkedNodeId: null, options: null, list: null, agents: null, tag: tag ?? null,
+      created: [], linkedNodeId: null, options: null,
+      list: opts?.list && opts.list.length > 0 ? opts.list : null, agents: null, tag: tag ?? null,
       kind: opts?.kind ?? null, dueAt: opts?.dueAt ?? null,
     })
     this.save(); this.notify()
