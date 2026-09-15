@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.73 · iPhone — 15 septiembre 2026 · Notas con formato de verdad en el iPhone
+
+- **Resaltado en las notas**: nuevo en la web, en varios colores, junto al color de texto.
+- **iPhone — el editor pinta el formato mientras escribes**: títulos, negrita, cursiva, subrayado,
+  tachado, enlaces, colores y resaltados se ven al momento; los símbolos de formato solo aparecen en
+  la línea donde estás escribiendo.
+- **iPhone — nada se pierde al editar**: subrayado, listas con subniveles, colores y resaltados se
+  mantienen igual que en la web, con botones nuevos para aplicarlos y para sangrar listas.
+- **iPhone**: las fichas completas de nota y de contexto conservan el formato, y si algo falla
+  (cambiar nombre, contexto, completar…) te lo dice en vez de fallar en silencio.
+
+---
+
 ## Web v9.10.72 · iPhone — 15 septiembre 2026 · La nota del día como espejo de tu día
 
 - **La nota diaria recoge lo que haces**: cada foto, PDF, tarea, evento, documento o contexto que
