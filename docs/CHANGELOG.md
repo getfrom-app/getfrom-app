@@ -4,6 +4,22 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.69 — 15 septiembre 2026 · Un chat de mensajes breves
+
+- **Saludo del día breve**: tus eventos con su hora y cuántas tareas tienes, sin listas eternas
+  (las tareas ya están en el planificador).
+- **Avisos que se van cuando toca**: los recordatorios desaparecen solos cuando ya ha pasado su hora;
+  lo de días anteriores se pliega.
+- **Informes de agente con resumen**: dos frases de lo importante dentro del propio mensaje, y si
+  terminan varios a la vez llegan juntos.
+- **«Fromly quiere saber más de ti» llega al chat** con la pregunta dentro: contéstala, déjala para
+  otro día o ciérrala con la ×.
+- **Barra lateral sin avisos**: activar notificaciones, cosas por revisar y conversaciones pendientes
+  aparecen en el chat.
+- En listas largas del chat, los eventos se ven y las tareas van plegadas por Hoy, Atrasadas y Sin fecha.
+
+---
+
 ## Web v9.10.67 — 15 septiembre 2026 · Agenda más limpia y un chat que empieza el día de cero
 
 - **Agenda en tres pestañas**: Chat, Nota del día y Tareas, cada una a toda la altura de la columna.

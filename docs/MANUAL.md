@@ -389,16 +389,16 @@ sugerencias sacadas de los contextos en los que has estado trabajando. Escribe c
 Fromly lo redacta para que encaje en el perfil, **lo añade solo** y te dice exactamente qué ha
 guardado. Después repregunta una cosa concreta para afinarlo.
 
-**Y él te lo propondrá de vez en cuando.** Cada cierto tiempo, si has ido metiendo cosas nuevas en
-Fromly, verás un aviso en la columna izquierda («Fromly quiere saber más de ti») con una
-conversación ya empezada y varias opciones de las que hablar — o escribe cualquier otra cosa. No
-interrumpe nada: entras cuando quieras, o lo ignoras.
+**Y él te preguntará de vez en cuando.** Por la tarde, Fromly puede dejarte en el chat una pregunta
+para conocerte mejor («Fromly quiere saber más de ti»). Contéstala escribiendo debajo, pulsa «Te
+cuento otro día» o ciérrala con la ×. Se queda en el chat hasta que hagas una de las tres cosas, y
+se cierra también en tus otros dispositivos. Si ignoras varias seguidas, pregunta menos a menudo.
 
-**Notificaciones.** Si tienes algo pendiente con hora y todavía no has decidido si activar los
-avisos del navegador, verás el mismo tipo de aviso ofreciéndotelo — solo cuando de verdad hay un
-recordatorio real en juego, nunca al azar nada más entrar. Sin ellas activadas, el brief, el
-resumen de la tarde y los recordatorios siguen apareciendo en el chat al abrir Fromly; con ellas,
-también te llegan aunque tengas la pestaña cerrada.
+**Notificaciones.** Si tienes algo pendiente con hora y todavía no has activado los avisos del
+navegador, el chat te lo ofrece con un botón «Activar avisos» — solo cuando hay un recordatorio real
+en juego. Sin ellas activadas, el saludo del día, el repaso de la noche y los recordatorios siguen
+apareciendo en el chat al abrir Fromly; con ellas, también te llegan aunque tengas la pestaña cerrada.
+Los recordatorios desaparecen solos del chat cuando ya ha pasado su hora.
 
 ---
 
@@ -617,9 +617,9 @@ push en el momento, sin tener que dejar la app abierta ni comprobarlo manualment
 siguiéndolo a la columna derecha. Si le pides otra cosa desde el chat de un elemento — un
 documento, una nota, un recurso — no se abre solo: aparece como un enlace en el propio mensaje del
 chat para que decidas tú cuándo verlo, así nunca pierdes de vista lo que ya tenías abierto. Cuando
-un agente AUTÓNOMO termina de ejecutarse en el servidor, aparece un aviso "N informes de agente
-nuevos" en la sidebar (igual que ya pasaba con los agentes conversacionales, que avisan con "N
-conversaciones esperando" hasta que abres cada una).
+un agente AUTÓNOMO termina de ejecutarse en el servidor, te llega un mensaje al chat con un resumen
+de dos frases del informe y el enlace para abrirlo; si le contestas justo debajo, Fromly sabe de qué
+informe hablas. Si terminan varios a la vez, llegan juntos («2 agentes han terminado»).
 
 **Prueba terminada — solo 1 agente activo a la vez.** Si activas un segundo agente sin ser Pro, el más
 reciente se queda "Activo" en apariencia pero el servidor no lo ejecuta — el panel de Propiedades del

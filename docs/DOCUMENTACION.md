@@ -1447,6 +1447,10 @@ sigue viéndose "Activo" sin correr de verdad. `GET /agents/schedules` ahora dev
 Verificado en vivo: cazó un caso real y preexistente en la cuenta de prueba (un agente semanal
 "Activo" que el cron llevaba saltándose).
 
+> ⚠️ Superado el 15 sep 2026 ("chat vivo"): la sidebar ya no tiene avisos. Los informes llegan al chat
+> vía `notifyAgentReport` (resumen de dos frases, efímeros, agrupados si llegan juntos) y push/por
+> revisar/conversaciones viven en `LocalNotices` (V2Chat.tsx). Ver FROM.md "💬 Chat vivo".
+
 **Aviso en sidebar para agentes AUTÓNOMOS terminados.** Antes solo los agentes CONVERSACIONALES
 avisaban en la sidebar (`listPendingAgentConversations`/`_pendingReply`). Un agente autónomo que
 termina y guarda un documento no tenía ningún aviso en la web (solo push en iOS). Mismo patrón:
