@@ -116,33 +116,10 @@ export default function V2AgendaAssistant({ onFilesDropped }: { onFilesDropped: 
     return () => clearInterval(id)
   }, [])
 
-  // Pregunta de perfil, una vez al día, dentro del propio hilo de Agenda —
-  // reutiliza `assistantStore.askProfileQuestion()` (ya existía, solo se
-  // ofrecía manualmente al abrir "Perfil" desde Ajustes) para que el
-  // asistente tome la iniciativa aquí también: pregunte algo real, grounded
-  // en contexto (nunca genérico — lo decide el servidor), no solo informe.
-  // A media tarde, para no competir con el saludo de la mañana ni sonar a
-  // interrogatorio nada más entrar. El saludo del día (`injectDailyGreeting`)
-  // sale UNA vez al día — si la pestaña ya estaba abierta desde la mañana,
-  // nunca llega un "Buenas tardes" en toda la sesión (Alberto, 31 ago 2026:
-  // "aun no ha dicho buenas tardes... sigue siendo un chat sin vida"). Este
-  // es el único otro momento programado del día, así que abre con el saludo
-  // que toque antes de la pregunta — no un mensaje suelto más, es lo que
-  // hace que se note que ha cambiado de franja horaria.
-  useEffect(() => {
-    const checkIn = () => {
-      const key = `from_agenda_checkin_asked_${todayKey()}`
-      if (localStorage.getItem(key) === '1') return
-      const hour = new Date().getHours()
-      if (hour < 15 || hour >= 20) return
-      localStorage.setItem(key, '1')
-      assistantStore.addNotice('Buenas tardes.')
-      assistantStore.askProfileQuestion()
-    }
-    checkIn()
-    const id = setInterval(checkIn, 60_000)
-    return () => clearInterval(id)
-  }, [])
+  // (Retirada el 15 sep 2026 la pregunta de perfil local de media tarde: la
+  // manda ahora el servidor al inbox, ya con la pregunta dentro, pegajosa y
+  // con freno si se ignora — ver server/src/services/assistantProfileAsk.ts.
+  // El "Buenas tardes" ya lo da `injectDailyGreeting` por franja.)
 
   return (
     <div className="v2-agenda-assistant">

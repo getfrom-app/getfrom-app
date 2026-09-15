@@ -810,6 +810,32 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 .v2-assistant-msg--reminder { border-left: 2px solid color-mix(in srgb, #d97706 60%, transparent); padding-left: 10px; }
 .v2-assistant-msg--reminder .v2-assistant-reply { color: color-mix(in srgb, #d97706 65%, var(--text-primary)); }
 
+/* Pegajoso (15 sep 2026, "chat vivo"): informe de agente, pregunta de perfil,
+   avisos que venían de la sidebar. Barra de acento como el recordatorio, pero
+   en el color de la app, y una x discreta que se enciende al pasar por encima. */
+.v2-assistant-msg--sticky { position: relative; border-left: 2px solid color-mix(in srgb, var(--accent) 55%, transparent); padding-left: 10px; padding-right: 24px; }
+.v2-assistant-dismiss {
+  position: absolute; top: -2px; right: 0; width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 4px; background: none; cursor: pointer;
+  color: var(--text-tertiary); font-size: 16px; line-height: 1; opacity: .55;
+  transition: opacity .15s ease, background .15s ease;
+}
+.v2-assistant-msg--sticky:hover .v2-assistant-dismiss { opacity: 1; }
+.v2-assistant-dismiss:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 7%, transparent); }
+
+/* Grupos plegados de una lista larga del chat (V2Chat.tsx `AssistantTaskList`):
+   eventos a la vista, "Hoy / Atrasadas / Sin fecha" plegados. */
+.v2-assistant-group { margin-top: 4px; }
+.v2-assistant-group-head {
+  display: flex; align-items: center; gap: 6px; padding: 5px 0;
+  border: none; background: none; cursor: pointer;
+  font-size: 12px; font-weight: 500; color: var(--text-tertiary);
+}
+.v2-assistant-group-head:hover { color: var(--text-primary); }
+.v2-assistant-group-chevron { display: inline-block; width: 8px; transition: transform .15s ease; }
+.v2-assistant-group-chevron.open { transform: rotate(90deg); }
+
 /* Animación de salida al plegar un mensaje viejo (V2Chat.tsx, `exitingIds` —
    Alberto, 15 sep 2026: "que el mensaje que debe eliminarse se desplace
    hacia arriba hasta desaparecer"). Truco CSS grid `1fr → 0fr`: anima la

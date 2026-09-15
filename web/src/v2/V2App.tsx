@@ -37,7 +37,6 @@ import type { Tab as SettingsTab } from '../components/views/settingsNav'
 import ElementsPanel, { type ElemKind } from '../components/panels/ElementsPanel'
 import V2Onboarding from './components/V2Onboarding'
 import V2AttachModal from './components/V2AttachModal'
-import { maybeOfferProfileChat } from './profileChat'
 import { assistantStore } from '../store/assistantStore'
 import { useWebPush } from '../hooks/useWebPush'
 import RightColMenu from '../components/panels/RightColMenu'
@@ -523,19 +522,9 @@ export default function V2App() {
       })
   }, [loadRetry])
 
-  // Arranque en frío: Agenda es el destino por defecto (`rightMode` ya nace
-  // así) — su centro es el planner, sin elemento que fijar (la nota diaria
-  // vive al pie de la columna derecha, ver V2RightColumn.tsx). Se difiere a que
-  // `ready` sea `true` solo para lo que sigue: ofrecer ampliar el perfil.
-  useEffect(() => {
-    if (!ready) return
-    // Fromly ofrece ampliar el perfil por su cuenta cada cierto tiempo. NO abre
-    // nada: crea la conversación con `_pendingReply`, que la sidebar ya pinta como
-    // aviso («1 conversación esperando») — el usuario entra cuando quiere. Todas
-    // las condiciones (cada cuánto, si hay material nuevo, si ya hay una sin
-    // responder) viven en `maybeOfferProfileChat`, no aquí.
-    try { maybeOfferProfileChat() } catch { /* nunca debe romper el arranque */ }
-  }, [ready]) // eslint-disable-line react-hooks/exhaustive-deps
+  // (Retirado el 15 sep 2026 `maybeOfferProfileChat`: "Fromly quiere saber más
+  // de ti" ya no es un aviso de la sidebar — llega al chat desde el servidor,
+  // ver server/src/services/assistantProfileAsk.ts.)
 
   // Al elegir un contexto, la columna derecha muestra SIEMPRE su ficha completa
   // (vista de contexto: tareas + elementos + acceso a «Lo que Fromly sabe») — es

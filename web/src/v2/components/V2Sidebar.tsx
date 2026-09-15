@@ -14,7 +14,6 @@ import { store, useStore } from '../../store/nodeStore'
 import { useUserStore } from '../../store/userStore'
 import { WEB_VERSION } from '../../components/layout/StatusBar'
 import { isRootContext, isMarkedContext, isContextClosed, contextColor, contextParent, reparentContext, listContextsForParent, getOrCreateContextKnowledgeDoc, archiveContext, unarchiveContext } from '../../utils/cajones'
-import { listPendingAgentConversations, listUnseenAgentResults } from '../../store/aiChatStore'
 import { useAssistantStore, assistantStore } from '../../store/assistantStore'
 import { useTheme } from '../../hooks/useTheme'
 import { useWebPush } from '../../hooks/useWebPush'
@@ -22,9 +21,6 @@ import { clearTokens } from '../../api/client'
 import V2Trash from './V2Trash'
 import V2ArchivedContexts from './V2ArchivedContexts'
 import V2ReviewInbox from './V2ReviewInbox'
-import { getUnclassifiedIds } from '../../utils/unclassified'
-import { hasTimeOfDay } from '../../utils/taskNode'
-import { isInPapelera } from '../../utils/papeleraHelper'
 import NewContextModal from '../../components/modals/NewContextModal'
 import NewTaskModal from '../../components/modals/NewTaskModal'
 import ContextShareModal from '../../components/modals/ContextShareModal'
@@ -94,20 +90,6 @@ function subContextsOf(id: string): Node[] {
   return store.children(id).filter(n => !n.deletedAt && isMarkedContext(n) && !isContextClosed(n)).sort(byName)
 }
 
-/** ¿Tiene el usuario ALGO pendiente con hora, en el futuro? Condición del
- *  aviso de notificaciones (ver render más abajo) — sin esto, un recordatorio
- *  real está en juego ahora mismo, así que activar push tiene un motivo
- *  concreto en vez de ser un permiso pedido en abstracto. */
-function hasUpcomingTimedTask(): boolean {
-  const now = Date.now()
-  for (const n of store.allActive()) {
-    if (n.status !== 'pending' || !n.due || isInPapelera(n.id)) continue
-    if (!hasTimeOfDay(n)) continue
-    if (new Date(n.due).getTime() > now) return true
-  }
-  return false
-}
-
 export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral, activeGeneralDest, onNewChatInCtx, onNewNoteInCtx, onNewCanvasInCtx, onOpenAttach, onRecordInCtx, onOpenSettings, onOpenConversation, onOpenNode, onOpenProfile }: Props) {
   useStore()
   useAssistantStore()
@@ -126,6 +108,21 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
   const [showTrash, setShowTrash] = useState(false)
   const [showArchivedContexts, setShowArchivedContexts] = useState(false)
   const [showReviewInbox, setShowReviewInbox] = useState(false)
+  // Los avisos del chat (V2Chat.tsx `LocalNotices`) abren la bandeja de
+  // revisión y las conversaciones de agente que siguen viviendo aquí.
+  useEffect(() => {
+    const onReview = () => setShowReviewInbox(true)
+    const onConversation = (e: Event) => {
+      const id = (e as CustomEvent<{ id?: string }>).detail?.id
+      if (id) onOpenConversation?.(id)
+    }
+    window.addEventListener('from:open-review-inbox', onReview)
+    window.addEventListener('from:open-agent-conversation', onConversation)
+    return () => {
+      window.removeEventListener('from:open-review-inbox', onReview)
+      window.removeEventListener('from:open-agent-conversation', onConversation)
+    }
+  }, [onOpenConversation])
   // La v1 (donde antes había que crear contextos para que "aparecieran aquí") ya no
   // existe — el sidebar de v2 necesita su propio botón para crear contextos, con
   // nombre + padre en un modal (Alberto, 21 jul).
@@ -469,78 +466,12 @@ export default function V2Sidebar({ selectedCtxId, onSelectCtx, onSelectGeneral,
         )
       })()}
 
-      {/* Avisos (conversación de agente pendiente / informe de agente nuevo) — texto
-          destacado, NO un botón como "Nueva conversación" (Alberto, 5 ago 2026: "en
-          lugar de como botones, ponlos como de texto... pero destacado que se vea
-          que es una notificación"). Franja de acento a la izquierda + fondo sutil
-          solo al hover, mismo patrón que una notificación de lista, no una acción
-          primaria — y bastante más compactos, así dejan de comerse el hueco entre
-          Elementos y Contextos con o sin avisos activos. */}
-      {/* Aviso de perfil (flag en assistantStore, ver v2/profileChat.ts) — SEPARADO
-          de las conversaciones de agente de abajo: al abrirlo no navega a una
-          sesión guardada, dispara una pregunta real del servidor (onOpenProfile →
-          assistantStore.askProfileQuestion). */}
-      {assistantStore.hasProfileNudge && (
-        <button className="v2-sidebar-notice" onClick={onOpenProfile}>
-          <Icon name="profile" size={14} /> {t('v2.profileChatPending', 'Fromly quiere saber más de ti')}
-        </button>
-      )}
-      {/* Aviso de notificaciones (31 ago 2026) — sin push activado, el brief/
-          check-in/recordatorios se generan igual (siguen en el chat, ver
-          `fetchInbox`) pero solo se ven al abrir la app; con la pestaña
-          cerrada no llega nada. Se ofrece SOLO cuando de verdad haría algo
-          por el usuario ahora mismo (ya tiene algo con hora, así que un
-          recordatorio real está en juego) — pedirlo nada más entrar, sin
-          ningún motivo concreto, es la forma número uno de que lo rechacen
-          para siempre. Mismo patrón que el aviso de perfil de arriba: un
-          `Notification.permission !== 'default'` (concedido o denegado) lo
-          hace desaparecer solo, sin necesitar guardar nada aparte. */}
-      {webPush.status === 'default' && hasUpcomingTimedTask() && (
-        <button className="v2-sidebar-notice" onClick={() => webPush.enable()}>
-          <Icon name="clock" size={14} /> {t('v2.pushNudge', 'Activa los avisos — te lo recuerdo aunque no tengas la web abierta')}
-        </button>
-      )}
-      {(() => {
-        const pending = listPendingAgentConversations()
-        if (pending.length === 0 || !onOpenConversation) return null
-        return (
-          <button className="v2-sidebar-notice"
-            onClick={() => onOpenConversation(pending[0].id)}
-            title={pending.length > 1 ? t('v2.pendingConversationsHint', 'Hay más de una esperando respuesta') : undefined}>
-            <Icon name="conversation" size={14} /> {pending.length === 1
-              ? t('v2.pendingConversationOne', '1 conversación esperando')
-              : t('v2.pendingConversationsMany', '{{count}} conversaciones esperando', { count: pending.length })}
-          </button>
-        )
-      })()}
-
-      {/* Bandeja de revisión (P4 · Ordenar) — todo lo capturado sin contexto o
-          clasificado por la IA con baja confianza, visible con contador en vez
-          de perderse en un "General" ambiguo (auditoría 28 ago 2026). */}
-      {(() => {
-        const count = getUnclassifiedIds().size
-        if (count === 0) return null
-        return (
-          <button className="v2-sidebar-notice" onClick={() => setShowReviewInbox(true)}>
-            <Icon name="sparkle" size={14} /> {t('v2.review.count', '{{count}} por revisar', { count })}
-          </button>
-        )
-      })()}
-
-      {(() => {
-        const unseen = listUnseenAgentResults()
-        if (unseen.length === 0 || !onOpenNode) return null
-        const mostRecent = [...unseen].sort((a, b) => (b.updatedAt || '').localeCompare(a.updatedAt || ''))[0]
-        return (
-          <button className="v2-sidebar-notice"
-            onClick={() => onOpenNode(mostRecent.id)}
-            title={unseen.length > 1 ? t('v2.unseenAgentResultsHint', 'Hay más informes nuevos en sus contextos') : undefined}>
-            <Icon name="report" size={14} /> {unseen.length === 1
-              ? t('v2.unseenAgentResultOne', '1 informe de agente nuevo')
-              : t('v2.unseenAgentResultsMany', '{{count}} informes de agente nuevos', { count: unseen.length })}
-          </button>
-        )
-      })()}
+      {/* Los cinco avisos que vivían aquí (perfil, activar push, conversaciones
+          de agente, por revisar, informes de agente nuevos) se mudaron al chat
+          el 15 sep 2026 (Alberto: "deben salir en el chat como mensajes nuevos
+          que aparecen cuando corresponda") — ver `LocalNotices` en V2Chat.tsx y
+          los avisos pegajosos del inbox. Los dos que abren algo de aquí (la
+          bandeja de revisión y una conversación) llegan por evento, abajo. */}
 
       {/* Cabecera única — el árbol entero está SIEMPRE visible (26 ago 2026: ya
           no hay "dentro de X" que abandone la raíz, ver `expanded` arriba), así

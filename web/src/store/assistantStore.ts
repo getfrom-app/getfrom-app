@@ -17,7 +17,7 @@
 // la misma conversación que el destino Chat general (Alberto, 25 ago 2026:
 // "no tiene sentido que esté el chat general ahí" al abrir un contexto nuevo).
 import {
-  assistantChat, assistantInbox, assistantComplete, assistantPostpone, assistantTrash,
+  assistantChat, assistantInbox, assistantDismissInbox, assistantComplete, assistantPostpone, assistantTrash,
   assistantSetContext, assistantContexts, assistantRunAgent, assistantUpdateAgent,
   type AssistantListedTask, type AssistantListedAgent, type AssistantContext,
   type AssistantListedContext, assistantGetPrefs,
@@ -68,6 +68,21 @@ export interface AssistantMsg {
    *  31 ago 2026: "no tiene sentido que se mantenga... ha acabado hace
    *  horas"). */
   dueAt?: string | null
+  /** Id del mensaje en `assistant_messages` (servidor) — solo los que llegan
+   *  del inbox. Hace falta para cerrarlo en todos los dispositivos. */
+  inboxId?: string | null
+  /** Cuánto vive en el hilo (15 sep 2026, "chat vivo"): null/"ephemeral" se
+   *  pliega con el día; "expiring" desaparece solo pasado `expiresAt`;
+   *  "sticky" (informe de agente, pregunta de perfil) sobrevive al plegado
+   *  hasta que el usuario lo cierra con la x o lo contesta. */
+  lifespan?: 'ephemeral' | 'expiring' | 'sticky' | null
+  expiresAt?: string | null
+  /** Cerrado (x, "otro día", contestado, o desde otro dispositivo). */
+  dismissedAt?: string | null
+  /** Contestado desde este dispositivo: deja de ser pegajoso pero sigue a la
+   *  vista como un mensaje normal, para no desaparecer justo encima de la
+   *  respuesta que lo cita. */
+  answeredAt?: string | null
 }
 
 type Listener = () => void
@@ -241,6 +256,13 @@ class AssistantStore {
     const clean = text.trim()
     if (!clean || this.isThinking) return
 
+    // ¿Contesta a un aviso pegajoso (informe de agente, pregunta de perfil)?
+    // Solo si es lo ÚLTIMO del hilo al escribir — "contestar cualquier cosa"
+    // justo debajo cuenta como respuesta a ese aviso (15 sep 2026).
+    const last = this.messages[this.messages.length - 1]
+    const replyTo = !quickNote && last && last.role === 'assistant' && last.lifespan === 'sticky' && !last.dismissedAt && last.inboxId
+      ? last : null
+
     this.appendVisible({
       id: uid(), role: 'user', text: clean, date: new Date().toISOString(),
       created: [], linkedNodeId: null, options: null, list: null, agents: null,
@@ -252,7 +274,12 @@ class AssistantStore {
 
     try {
       const history = quickNote ? [] : this.recentHistory()
-      const reply = await assistantChat(clean, history, this.threadKey === 'general' ? null : this.threadKey, quickNote)
+      const reply = await assistantChat(clean, history, this.threadKey === 'general' ? null : this.threadKey, quickNote, false, replyTo?.inboxId ?? null)
+      if (replyTo) {
+        const at = new Date().toISOString()
+        replyTo.dismissedAt = at
+        replyTo.answeredAt = at
+      }
       this.appendVisible({
         id: uid(), role: 'assistant', text: reply.reply, date: new Date().toISOString(),
         created: reply.created.map(c => ({ id: c.id, text: c.text, due: c.due, isTask: c.isTask })),
@@ -349,10 +376,21 @@ class AssistantStore {
       }
     }).catch(() => {})
     try {
-      const msgs = await assistantInbox(this.lastInboxDate)
+      const { messages: msgs, dismissedIds } = await assistantInbox(this.lastInboxDate)
       const seen = this.seenInboxIds
       let added = 0
       let lastDate = this.lastInboxDate
+      // Cerrados desde otro dispositivo (o contestados): se retiran aquí también.
+      let closedElsewhere = false
+      if (dismissedIds.length > 0) {
+        const closed = new Set(dismissedIds)
+        for (const m of this.allMessages) {
+          if (m.inboxId && closed.has(m.inboxId) && !m.dismissedAt) {
+            m.dismissedAt = new Date().toISOString()
+            closedElsewhere = true
+          }
+        }
+      }
       for (const m of msgs) {
         if (seen.has(m.id)) continue
         seen.add(m.id)
@@ -362,8 +400,11 @@ class AssistantStore {
           text: m.body ? `${m.title}\n${m.body}` : m.title,
           date: m.createdAt,
           created: [], linkedNodeId: m.nodeId,
-          options: null, list: m.list && m.list.length > 0 ? m.list : null, agents: null,
+          options: m.options && m.options.length > 0 ? m.options : null,
+          list: m.list && m.list.length > 0 ? m.list : null, agents: null,
           kind: m.kind, dueAt: m.list && m.list.length > 0 ? m.list[0].due : null,
+          inboxId: m.id, lifespan: m.lifespan ?? null, expiresAt: m.expiresAt ?? null,
+          dismissedAt: m.dismissedAt ?? null,
         })
         added++
         if (!lastDate || date > lastDate) lastDate = date
@@ -386,6 +427,8 @@ class AssistantStore {
           : Math.min(this.allMessages.length, this.visibleCount + added)
         this.seenInboxIds = seen
         this.lastInboxDate = lastDate
+        this.save(); this.notify()
+      } else if (closedElsewhere) {
         this.save(); this.notify()
       }
     } catch { /* sin conexión, el hilo local sigue leyéndose */ }
@@ -504,6 +547,17 @@ class AssistantStore {
       kind: opts?.kind ?? null, dueAt: opts?.dueAt ?? null,
     })
     this.save(); this.notify()
+  }
+
+  /** Cierra un aviso pegajoso — la "x" o "Te cuento otro día". Se retira
+   *  del hilo al momento (con su animación de salida) y, si vino del
+   *  servidor, queda cerrado en todos los dispositivos. */
+  dismiss(id: string, reason: 'close' | 'later' = 'close') {
+    const m = this.allMessages.find(x => x.id === id)
+    if (!m || m.dismissedAt) return
+    m.dismissedAt = new Date().toISOString()
+    this.save(); this.notify()
+    if (m.inboxId) assistantDismissInbox(m.inboxId, reason).catch(() => {})
   }
 
   /** Le pide a Fromly que tome la iniciativa y pregunte algo real para ampliar

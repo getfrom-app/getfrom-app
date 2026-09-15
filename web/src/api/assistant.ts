@@ -13,6 +13,9 @@ export interface AssistantListedTask {
   overdue: boolean
   contextId: string | null
   contextName: string | null
+  /** ¿Lleva hora de verdad? Lo manda el servidor (ListedTask en assistantTurn.ts). */
+  timed?: boolean
+  isTimeBlock?: boolean
 }
 
 export interface AssistantListedAgent {
@@ -66,10 +69,14 @@ export async function assistantChat(
    *  `chatSchema`, server/src/routes/assistant.ts (30 ago 2026, bug real: el
    *  texto de la instrucción se veía tal cual en otro dispositivo). */
   internalTrigger?: boolean,
+  /** Id del aviso pegajoso del inbox al que contesta este mensaje (informe de
+   *  agente, pregunta de perfil) — el turno lo recibe como contexto y el
+   *  aviso queda cerrado en todos los dispositivos (15 sep 2026). */
+  replyToInboxId?: string | null,
 ): Promise<AssistantChatReply> {
   return apiRequest<AssistantChatReply>('/assistant/chat', {
     method: 'POST',
-    body: JSON.stringify({ message, history, currentNodeId: currentNodeId ?? null, ...(quickNote ? { quickNote: true } : {}), ...(internalTrigger ? { internalTrigger: true } : {}) }),
+    body: JSON.stringify({ message, history, currentNodeId: currentNodeId ?? null, ...(quickNote ? { quickNote: true } : {}), ...(internalTrigger ? { internalTrigger: true } : {}), ...(replyToInboxId ? { replyToInboxId } : {}) }),
   })
 }
 
@@ -131,12 +138,24 @@ export interface AssistantInboxMessage {
   nodeId: string | null
   createdAt: string
   list: AssistantListedTask[] | null
+  /** Chat vivo (15 sep 2026): "ephemeral" se pliega con el día, "expiring"
+   *  desaparece pasado `expiresAt`, "sticky" se queda hasta cerrarlo o contestarlo. */
+  lifespan?: 'ephemeral' | 'expiring' | 'sticky' | null
+  expiresAt?: string | null
+  dismissedAt?: string | null
+  options?: string[] | null
 }
 
-export async function assistantInbox(since: Date | null): Promise<AssistantInboxMessage[]> {
+export async function assistantInbox(since: Date | null): Promise<{ messages: AssistantInboxMessage[]; dismissedIds: string[] }> {
   const q = since ? `?since=${encodeURIComponent(since.toISOString())}` : ''
-  const res = await apiRequest<{ messages: AssistantInboxMessage[] }>(`/assistant/inbox${q}`)
-  return res.messages
+  const res = await apiRequest<{ messages: AssistantInboxMessage[]; dismissedIds?: string[] }>(`/assistant/inbox${q}`)
+  return { messages: res.messages, dismissedIds: res.dismissedIds ?? [] }
+}
+
+/** Cierra un aviso pegajoso para todos los dispositivos. `later` = "Te cuento
+ *  otro día" (cuenta como ignorada en la pregunta de perfil, igual que la x). */
+export async function assistantDismissInbox(id: string, reason: 'close' | 'later' = 'close'): Promise<void> {
+  await apiRequest(`/assistant/inbox/${encodeURIComponent(id)}/dismiss`, { method: 'POST', body: JSON.stringify({ reason }) })
 }
 
 export async function assistantComplete(nodeId: string, done: boolean): Promise<void> {

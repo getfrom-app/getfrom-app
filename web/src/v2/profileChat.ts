@@ -14,8 +14,6 @@
 // La ESCRITURA en el perfil tampoco necesita nada especial: el servidor ya
 // extrae y guarda hechos nuevos de CUALQUIER conversación (`remember` en
 // assistantTurn.ts) — no hace falta un "modo perfil" aparte para eso.
-import { store } from '../store/nodeStore'
-import { assistantStore } from '../store/assistantStore'
 import { parseExtraData } from '../utils/papeleraHelper'
 import { listMarkedContexts } from '../utils/cajones'
 import { readProfileLines } from '../api/userKnowledge'
@@ -37,15 +35,6 @@ Esta conversación sirve para ampliar el PERFIL del usuario: quién es, a qué s
 - Máximo DOS frases en total. La última es SIEMPRE una única repregunta concreta sobre lo que acaba de contar, para tener información más útil. Nunca varias preguntas seguidas ni listas.
 - Si lo que dice ya está en el perfil, dilo en una frase y pregunta por otra cosa distinta.
 - Tono directo y natural, sin florituras ni entusiasmo impostado.`
-
-/** Última vez que Fromly ofreció ampliar el perfil por su cuenta (epoch ms). */
-const LAST_PROACTIVE_KEY = 'from_profile_proactive_at'
-/** Cada cuánto puede ofrecerlo, como mucho. Una semana: el perfil es información
- *  de fondo que cambia despacio; preguntar más a menudo cansa y se ignora. */
-const PROACTIVE_EVERY_MS = 7 * 24 * 60 * 60 * 1000
-/** Nada de proponer nada en una cuenta recién estrenada: sin material del que tirar,
- *  las sugerencias salen genéricas y la pregunta parece un formulario. */
-const MIN_NEW_ITEMS = 5
 
 // ── Sugerencias ─────────────────────────────────────────────────────────────
 // Ya no se muestran como chips (assistantStore no tiene ese concepto) — quedan
@@ -74,46 +63,6 @@ export function profileSuggestions(max = 4): string[] {
   return out.slice(0, max)
 }
 
-/** Cuánto material NUEVO ha metido el usuario desde la última vez que se le
- *  ofreció — la señal de que hay algo de lo que hablar. */
-function itemsCreatedSince(sinceMs: number): number {
-  let n = 0
-  for (const node of store.allActive()) {
-    if (node.deletedAt || !(node.text || '').trim()) continue
-    let ed: Record<string, unknown> = {}
-    try { ed = JSON.parse(node.extraData || '{}') } catch { /* vacío */ }
-    if (ed._aiSession === '1' || ed._aiTranscript === '1' || ed._aiMsgRole) continue
-    if (node.isDiaryEntry) continue
-    const t = Date.parse(node.createdAt || '')
-    if (!isNaN(t) && t > sinceMs) n++
-  }
-  return n
-}
-
-/**
- * Ofrece ampliar el perfil, si toca — solo marca el aviso de la sidebar
- * (`assistantStore.offerProfileNudge`), no llama al servidor todavía (eso
- * pasa al abrirlo, `assistantStore.askProfileQuestion`). Se llama al arrancar
- * la app (V2App). Condiciones, todas necesarias:
- *   · ha pasado al menos una semana desde la última vez,
- *   · no hay ya un aviso sin abrir,
- *   · y el usuario ha metido suficiente material nuevo desde entonces.
- */
-export function maybeOfferProfileChat(): void {
-  let last = 0
-  try { last = parseInt(localStorage.getItem(LAST_PROACTIVE_KEY) || '0', 10) || 0 } catch { /* sin storage */ }
-  const now = Date.now()
-
-  // Primera vez: no preguntar de golpe nada más entrar — se guarda la marca y se
-  // empieza a contar desde hoy.
-  if (!last) {
-    try { localStorage.setItem(LAST_PROACTIVE_KEY, String(now)) } catch { /* noop */ }
-    return
-  }
-  if (now - last < PROACTIVE_EVERY_MS) return
-  if (assistantStore.hasProfileNudge) return
-  if (itemsCreatedSince(last) < MIN_NEW_ITEMS) return
-
-  assistantStore.offerProfileNudge()
-  try { localStorage.setItem(LAST_PROACTIVE_KEY, String(now)) } catch { /* noop */ }
-}
+// `maybeOfferProfileChat` (el aviso de la sidebar cada semana) se retiró el 15
+// sep 2026: "Fromly quiere saber más de ti" llega ahora al chat desde el
+// servidor, ya con la pregunta dentro — server/src/services/assistantProfileAsk.ts.

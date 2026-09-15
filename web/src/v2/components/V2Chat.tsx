@@ -24,6 +24,11 @@ import { listAllPrompts, resolvePrompt, createPromptUnder, getOrCreatePromptsRoo
 import { listAllAgents } from '../../utils/agentesHelper'
 import { displayTitle } from '../../utils/displayText'
 import { isMentionable } from '../elementKind'
+import { listPendingAgentConversations, markAgentResultSeen } from '../../store/aiChatStore'
+import { useWebPush } from '../../hooks/useWebPush'
+import { getUnclassifiedIds } from '../../utils/unclassified'
+import { hasTimeOfDay } from '../../utils/taskNode'
+import { isInPapelera } from '../../utils/papeleraHelper'
 import TaskRow from '../../components/panels/TaskRow'
 import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
 import Icon from './Icon'
@@ -63,25 +68,159 @@ function openNode(id: string) {
  *  texto muerto. Reusa TaskRow cuando el nodo ya está sincronizado
  *  localmente (normal: los cambios server-side llegan en ~15-20s por el
  *  poll de ops); si aún no ha llegado, una fila simple hace de puente. */
+/** Por debajo de esto la lista se enseña tal cual — plegar dos o tres filas
+ *  no ahorra nada y obliga a un clic de más. */
+const GROUP_MIN = 5
+
+function isSameLocalDay(iso: string, ref: Date): boolean {
+  const d = new Date(iso)
+  return d.getFullYear() === ref.getFullYear() && d.getMonth() === ref.getMonth() && d.getDate() === ref.getDate()
+}
+
 function AssistantTaskList({ items }: { items: AssistantListedTask[] }) {
+  const { t } = useTranslation()
   useStore()
   const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
+  const [open, setOpen] = useState<Record<string, boolean>>({})
   const propsNode = propsNodeId ? store.getNode(propsNodeId) : null
+  const row = (it: AssistantListedTask) => {
+    const node = store.getNode(it.id)
+    if (node) {
+      return <TaskRow key={it.id} node={node} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
+    }
+    return (
+      <button key={it.id} className="v2-assistant-row" onClick={() => openNode(it.id)}>
+        <span className={`v2-assistant-row-dot ${it.overdue ? 'overdue' : ''}`} />
+        <span className="v2-assistant-row-text">{it.text}</span>
+      </button>
+    )
+  }
+  const popover = propsNode && <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />
+
+  if (items.length < GROUP_MIN) {
+    return <div className="v2-assistant-list">{items.map(row)}{popover}</div>
+  }
+
+  // Lista larga ("¿qué tengo hoy?"): solo los eventos y timeblocks — lo que
+  // tiene hora — van a la vista; las tareas de hoy, las atrasadas y las sin
+  // fecha van plegadas, que el detalle ya vive en el planner (Alberto, 15 sep
+  // 2026). Mismo criterio que AssistantChatView.swift.
+  const today = new Date()
+  const timed: AssistantListedTask[] = []
+  const todayTasks: AssistantListedTask[] = []
+  const later: AssistantListedTask[] = []
+  const overdue: AssistantListedTask[] = []
+  const noDate: AssistantListedTask[] = []
+  for (const it of items) {
+    if (it.timed || it.isTimeBlock) timed.push(it)
+    else if (!it.due) noDate.push(it)
+    else if (isSameLocalDay(it.due, today)) todayTasks.push(it)
+    else if (it.overdue) overdue.push(it)
+    else later.push(it)
+  }
+  const groups: { key: string; label: string; list: AssistantListedTask[] }[] = [
+    { key: 'today', label: t('v2.chat.groupToday', 'Hoy ({{count}})', { count: todayTasks.length }), list: todayTasks },
+    { key: 'later', label: t('v2.chat.groupLater', 'Próximas ({{count}})', { count: later.length }), list: later },
+    { key: 'overdue', label: t('v2.chat.groupOverdue', 'Atrasadas ({{count}})', { count: overdue.length }), list: overdue },
+    { key: 'nodate', label: t('v2.chat.groupNoDate', 'Sin fecha ({{count}})', { count: noDate.length }), list: noDate },
+  ]
   return (
-    <div className="v2-assistant-list">
-      {items.map(it => {
-        const node = store.getNode(it.id)
-        if (node) {
-          return <TaskRow key={it.id} node={node} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
-        }
-        return (
-          <button key={it.id} className="v2-assistant-row" onClick={() => openNode(it.id)}>
-            <span className={`v2-assistant-row-dot ${it.overdue ? 'overdue' : ''}`} />
-            <span className="v2-assistant-row-text">{it.text}</span>
+    <>
+      {timed.length > 0 && <div className="v2-assistant-list">{timed.map(row)}</div>}
+      {groups.filter(g => g.list.length > 0).map(g => (
+        <div key={g.key} className="v2-assistant-group">
+          <button className="v2-assistant-group-head" aria-expanded={!!open[g.key]} onClick={() => setOpen(o => ({ ...o, [g.key]: !o[g.key] }))}>
+            <span className={`v2-assistant-group-chevron${open[g.key] ? ' open' : ''}`}>›</span>{g.label}
           </button>
-        )
-      })}
-      {propsNode && <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />}
+          {open[g.key] && <div className="v2-assistant-list">{g.list.map(row)}</div>}
+        </div>
+      ))}
+      {popover}
+    </>
+  )
+}
+
+/** ¿Tiene el usuario ALGO pendiente con hora, en el futuro? Condición del
+ *  aviso de notificaciones — con un recordatorio real en juego, activar push
+ *  tiene un motivo concreto en vez de ser un permiso pedido en abstracto.
+ *  (Movido de V2Sidebar.tsx el 15 sep 2026 junto con el propio aviso.) */
+function hasUpcomingTimedTask(): boolean {
+  const now = Date.now()
+  for (const n of store.allActive()) {
+    if (n.status !== 'pending' || !n.due || isInPapelera(n.id)) continue
+    if (!hasTimeOfDay(n)) continue
+    if (new Date(n.due).getTime() > now) return true
+  }
+  return false
+}
+
+const LOCAL_NOTICES_KEY = 'assistant.web.localNotices'
+
+function readDismissedNotices(): Record<string, string> {
+  try { return JSON.parse(localStorage.getItem(LOCAL_NOTICES_KEY) || '{}') } catch { return {} }
+}
+
+/** Los avisos que vivían en la sidebar y dependen de ESTE navegador (15 sep
+ *  2026, Alberto: "se mudan al chat"): activar avisos push, cosas por revisar
+ *  y conversaciones de agente esperando. Pegajosos, al pie del hilo de fondo,
+ *  con su x. No se guardan en el hilo: se calculan en vivo, así que se
+ *  actualizan ("5 por revisar" → "3") en vez de apilarse, y se van solos
+ *  cuando dejan de aplicar. Cerrar uno lo recuerda en este navegador — el de
+ *  "por revisar" vuelve si la cifra crece; el de conversaciones, si llega
+ *  otra distinta. */
+function LocalNotices() {
+  const { t } = useTranslation()
+  useStore()
+  const webPush = useWebPush()
+  const [dismissed, setDismissed] = useState(readDismissedNotices)
+  const close = (key: string, value: string) => {
+    const next = { ...dismissed, [key]: value }
+    setDismissed(next)
+    try { localStorage.setItem(LOCAL_NOTICES_KEY, JSON.stringify(next)) } catch { /* sin storage: se cierra solo esta sesión */ }
+  }
+
+  const notices: { key: string; value: string; icon: React.ComponentProps<typeof Icon>['name']; text: string; action: string; run: () => void }[] = []
+  if (webPush.status === 'default' && !dismissed.push && hasUpcomingTimedTask()) {
+    notices.push({
+      key: 'push', value: '1', icon: 'clock',
+      text: t('v2.pushNudge', 'Activa los avisos — te lo recuerdo aunque no tengas la web abierta'),
+      action: t('v2.chat.noticePushAction', 'Activar avisos'),
+      run: () => { webPush.enable() },
+    })
+  }
+  const reviewCount = getUnclassifiedIds().size
+  if (reviewCount > Number(dismissed.review || 0)) {
+    notices.push({
+      key: 'review', value: String(reviewCount), icon: 'sparkle',
+      text: t('v2.review.count', '{{count}} por revisar', { count: reviewCount }),
+      action: t('v2.chat.noticeReviewAction', 'Revisar'),
+      run: () => window.dispatchEvent(new CustomEvent('from:open-review-inbox')),
+    })
+  }
+  const pending = listPendingAgentConversations()
+  const pendingKey = pending.map(n => n.id).sort().join(',')
+  if (pending.length > 0 && dismissed.conversations !== pendingKey) {
+    notices.push({
+      key: 'conversations', value: pendingKey, icon: 'conversation',
+      text: pending.length === 1
+        ? t('v2.pendingConversationOne', '1 conversación esperando')
+        : t('v2.pendingConversationsMany', '{{count}} conversaciones esperando', { count: pending.length }),
+      action: t('v2.chat.open', 'Abrir'),
+      run: () => window.dispatchEvent(new CustomEvent('from:open-agent-conversation', { detail: { id: pending[0].id } })),
+    })
+  }
+  if (notices.length === 0) return null
+  return (
+    <div className="v2-chat-inner v2-assistant-inner v2-local-notices">
+      {notices.map(n => (
+        <div key={n.key} className="v2-assistant-msg assistant v2-assistant-msg--sticky">
+          <button className="v2-assistant-dismiss" title={t('v2.chat.dismiss', 'Cerrar')} aria-label={t('v2.chat.dismiss', 'Cerrar')} onClick={() => close(n.key, n.value)}>×</button>
+          <div className="v2-assistant-reply v2-msg-body"><Icon name={n.icon} size={13} /> {n.text}</div>
+          <div className="v2-el-filter" style={{ marginTop: 8 }}>
+            <button className="v2-chip" onClick={n.run}>{n.action}</button>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -153,8 +292,20 @@ function UnreadDivider() {
 function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boolean; onOption: (t: string) => void }) {
   const { t } = useTranslation()
   const visibleCreated = m.created.filter(c => !assistantStore.isTrashed(c.id))
+  // Pegajoso y todavía abierto: lleva su x, y sus respuestas rápidas siguen a
+  // mano aunque ya no sea el último mensaje (15 sep 2026, "chat vivo").
+  const isSticky = m.lifespan === 'sticky' && !m.dismissedAt
+  const close = (reason: 'close' | 'later' = 'close') => {
+    assistantStore.dismiss(m.id, reason)
+    if (m.kind === 'agent' && m.linkedNodeId) markAgentResultSeen(m.linkedNodeId)
+  }
+  const showOptions = (isLast || isSticky) && !!m.options && m.options.length > 0
+  const showLater = isSticky && m.kind === 'profile'
   return (
-    <div className={`v2-assistant-msg ${m.role}${m.kind === 'reminder' ? ' v2-assistant-msg--reminder' : ''}`}>
+    <div className={`v2-assistant-msg ${m.role}${m.kind === 'reminder' ? ' v2-assistant-msg--reminder' : ''}${isSticky ? ' v2-assistant-msg--sticky' : ''}`}>
+      {isSticky && (
+        <button className="v2-assistant-dismiss" title={t('v2.chat.dismiss', 'Cerrar')} aria-label={t('v2.chat.dismiss', 'Cerrar')} onClick={() => close()}>×</button>
+      )}
       {m.role === 'user' ? (
         <div className="v2-assistant-user-line">
           <span className="v2-assistant-prompt">›</span> {m.text}
@@ -214,16 +365,22 @@ function AssistantBubble({ m, isLast, onOption }: { m: AssistantMsg; isLast: boo
         // "→", no "›" — el "›" ya lo usa el prefijo de los mensajes del
         // usuario (línea ~112) y se confundían al leer rápido (Alberto, 13
         // ago: paridad con el mismo fix en AssistantChatView.swift).
-        <button className="v2-chip" style={{ marginTop: 6 }} onClick={() => openNode(m.linkedNodeId!)}>
+        <button className="v2-chip" style={{ marginTop: 6 }} onClick={() => {
+          openNode(m.linkedNodeId!)
+          if (m.kind === 'agent') markAgentResultSeen(m.linkedNodeId!)
+        }}>
           → {t('v2.chat.open', 'Abrir')}
         </button>
       )}
 
-      {isLast && m.options && m.options.length > 0 && (
+      {(showOptions || showLater) && (
         <div className="v2-el-filter" style={{ marginTop: 8 }}>
-          {m.options.map((o, i) => (
+          {showOptions && m.options!.map((o, i) => (
             <button key={i} className="v2-chip" onClick={() => onOption(o)}>{o}</button>
           ))}
+          {showLater && (
+            <button className="v2-chip" onClick={() => close('later')}>{t('v2.chat.tellYouLater', 'Te cuento otro día')}</button>
+          )}
         </div>
       )}
     </div>
@@ -362,12 +519,19 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     const ids = new Set<string>()
     for (const m of chat.messages) {
       if (m.tag?.startsWith('daily-greeting:') && latestGreetingTag && m.tag !== latestGreetingTag) continue
+      // Chat vivo (15 sep 2026): cerrado con la x (aquí o en otro dispositivo)
+      // → fuera; contestado desde aquí sigue a la vista como mensaje normal.
+      if (m.dismissedAt && !m.answeredAt) continue
+      // Caduco: "tu radio en 7 min" se retira solo cuando deja de tener sentido.
+      if (m.expiresAt && now > new Date(m.expiresAt).getTime()) continue
       // Un recordatorio deja de tener sentido pasado su momento — a
       // diferencia de un mensaje real, "recuerda tu radio en 7 min" no vale
       // nada como historial una vez ha pasado, así que se oculta del hilo
       // (nunca se borra del almacenamiento local, solo del render).
       if (m.kind === 'reminder' && m.dueAt && now - new Date(m.dueAt).getTime() > REMINDER_STALE_MS) continue
-      if (hasTodayMsg && new Date(m.date).getTime() < todayStartMs) continue
+      // Pegajoso abierto: sobrevive al plegado por fecha hasta que se cierra.
+      const keepsAcrossDays = m.lifespan === 'sticky' && !m.dismissedAt
+      if (hasTodayMsg && !keepsAcrossDays && new Date(m.date).getTime() < todayStartMs) continue
       ids.add(m.id)
     }
     return ids
@@ -706,6 +870,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
             )}
           </div>
         )}
+        {isBackgroundInboxThread && <LocalNotices />}
       </div>
 
       {/* Banner "Repasa el día conmigo" — mientras la sesión nocturna está
