@@ -274,6 +274,15 @@ function AssistantAgentList({ items }: { items: AssistantListedAgent[] }) {
 const GROUPABLE_KINDS = new Set(['agent', 'reminder'])
 const GROUP_WINDOW_MS = 10 * 60 * 1000
 
+/** Aviso que pide respuesta (pregunta de perfil, repaso de la noche) sin nada
+ *  que abrir: se oculta en cuanto aparece algo después. Los que tienen "Abrir"
+ *  o tarjeta se quedan. Convive con caducidad/plegado/x, no las sustituye. */
+function awaitsReply(m: AssistantMsg): boolean {
+  return m.role === 'assistant' && !!m.inboxId && !m.answeredAt && !m.linkedNodeId
+    && !(m.list && m.list.length > 0)
+    && (m.kind === 'profile' || m.kind === 'evening' || !!(m.options && m.options.length > 0))
+}
+
 function groupNotices(msgs: AssistantMsg[]): Map<string, { first: boolean; size: number; kind: string }> {
   const out = new Map<string, { first: boolean; size: number; kind: string }>()
   let i = 0
@@ -571,6 +580,13 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
       const keepsAcrossDays = m.lifespan === 'sticky' && !m.dismissedAt
       if (hasTodayMsg && !keepsAcrossDays && new Date(m.date).getTime() < todayStartMs) continue
       ids.add(m.id)
+    }
+    // Encima de todo lo anterior: un aviso que pide respuesta se oculta en
+    // cuanto aparece algo después (Alberto, 15 sep 2026). Paridad con
+    // `hidingSuperseded` en AssistantChatView.swift.
+    const latestMs = Math.max(0, ...chat.messages.filter(m => ids.has(m.id)).map(m => new Date(m.date).getTime()))
+    for (const m of chat.messages) {
+      if (ids.has(m.id) && awaitsReply(m) && latestMs > new Date(m.date).getTime()) ids.delete(m.id)
     }
     return ids
   }, [chat.messages, now, todayStartMs, isBackgroundInboxThread])
