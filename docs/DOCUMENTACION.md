@@ -1,7 +1,21 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-02, sesión 29 (web)
+> Última actualización: 2026-09-15, sesión 51 (servidor + iOS)
+
+---
+
+## Sesión 2026-09-15 (sesión 51) — timeblock repetido en el brief y eventos de Google en el planner iOS
+
+- **Brief (`server/src/services/assistantBrief.ts`)**: `loadBriefItems` ya no deja entrar un
+  TimeBlock con `status = 'done'` (antes pasaba el filtro por ser TimeBlock y sus instancias viejas se
+  proyectaban a hoy por la recurrencia). `loadTomorrowItems` igual. Nuevo `dedupeSameSlot`: en `today`,
+  mismo texto (normalizado) al mismo minuto = un solo elemento — una serie con varios nodos reales
+  proyectaba cada uno al mismo hueco.
+- **Planificador iOS**: `IOSGCalEventBlock` (Día) tiene ya el aspecto y la columna de `FromNodeBlock`
+  (`timeW + 44`, bloque azul sólido, icono + título en blanco, sin franja horaria ni tirador visible;
+  mover y cambiar duración se conservan). `gcalPlannerChip` (Semana) igual que `plannerChip`. Lo único
+  que distingue un evento crudo de Google es el icono `g.circle.fill`.
 
 ---
 
