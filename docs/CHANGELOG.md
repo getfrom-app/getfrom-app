@@ -4,6 +4,22 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.72 · iPhone — 15 septiembre 2026 · La nota del día como espejo de tu día
+
+- **La nota diaria recoge lo que haces**: cada foto, PDF, tarea, evento, documento o contexto que
+  creas, y lo que hablas con el chat, deja una línea con enlace en la nota del día. Sigue siendo tuya
+  para editarla.
+- **Saludo del día más preciso**: solo nombra eventos y bloques de tiempo; las tareas con hora
+  se cuentan con las demás, y en la web van plegadas debajo.
+- **Preguntas que no se quedan colgadas**: si llega otro mensaje, la pregunta anterior se retira;
+  lo que se puede abrir (como un informe) se queda.
+- **iPhone — fotos del chat arregladas**: se suben de verdad, se ven en miniatura, se pueden abrir,
+  renombrar y mover de contexto, y Fromly las encuentra al buscar.
+- **iPhone**: títulos de notas completos, botón «Abrir» en los informes y la nota diaria conserva
+  enlaces y formato al editarla.
+
+---
+
 ## Web v9.10.69 — 15 septiembre 2026 · Un chat de mensajes breves
 
 - **Saludo del día breve**: tus eventos con su hora y cuántas tareas tienes, sin listas eternas
