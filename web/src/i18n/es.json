@@ -2414,6 +2414,8 @@
   "v2.chat.dismiss": "Cerrar",
   "v2.chat.tellYouLater": "Te cuento otro día",
   "v2.chat.groupToday": "Hoy ({{count}})",
+  "v2.chat.groupAgents": "{{count}} agentes han terminado",
+  "v2.chat.groupReminders": "{{count}} recordatorios",
   "v2.chat.groupLater": "Próximas ({{count}})",
   "v2.chat.groupOverdue": "Atrasadas ({{count}})",
   "v2.chat.groupNoDate": "Sin fecha ({{count}})",

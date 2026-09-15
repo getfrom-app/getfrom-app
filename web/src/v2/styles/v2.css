@@ -824,6 +824,11 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 .v2-assistant-msg--sticky:hover .v2-assistant-dismiss { opacity: 1; }
 .v2-assistant-dismiss:hover { color: var(--text-primary); background: color-mix(in srgb, var(--text-primary) 7%, transparent); }
 
+/* Avisos que llegan juntos (V2Chat.tsx `groupNotices`): una cabecera
+   ("2 agentes han terminado") y los mensajes pegados con una línea fina. */
+.v2-notice-group-head { font-size: 12px; font-weight: 600; color: var(--text-tertiary); margin: 0 0 8px; letter-spacing: 0.01em; }
+.v2-notice-group-item .v2-assistant-msg { margin-bottom: 10px; padding-left: 10px; border-left: 2px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+
 /* Grupos plegados de una lista larga del chat (V2Chat.tsx `AssistantTaskList`):
    eventos a la vista, "Hoy / Atrasadas / Sin fecha" plegados. */
 .v2-assistant-group { margin-top: 4px; }

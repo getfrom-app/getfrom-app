@@ -2409,6 +2409,8 @@
   "v2.chat.dismiss": "Dismiss",
   "v2.chat.tellYouLater": "Tell you another day",
   "v2.chat.groupToday": "Today ({{count}})",
+  "v2.chat.groupAgents": "{{count}} agents have finished",
+  "v2.chat.groupReminders": "{{count}} reminders",
   "v2.chat.groupLater": "Upcoming ({{count}})",
   "v2.chat.groupOverdue": "Overdue ({{count}})",
   "v2.chat.groupNoDate": "No date ({{count}})",

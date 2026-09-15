@@ -258,6 +258,36 @@ function AssistantAgentList({ items }: { items: AssistantListedAgent[] }) {
   )
 }
 
+/** Avisos del servidor que llegan juntos (15 sep 2026, Alberto: "agrupa los
+ *  avisos que lleguen juntos"): varios informes de agente o recordatorios
+ *  seguidos, a menos de 10 min uno de otro, se pintan como UN bloque con
+ *  cabecera ("2 agentes han terminado") en vez de apilar burbujas sueltas.
+ *  Paridad con `noticeGroups` en AssistantChatView.swift. */
+const GROUPABLE_KINDS = new Set(['agent', 'reminder'])
+const GROUP_WINDOW_MS = 10 * 60 * 1000
+
+function groupNotices(msgs: AssistantMsg[]): Map<string, { first: boolean; size: number; kind: string }> {
+  const out = new Map<string, { first: boolean; size: number; kind: string }>()
+  let i = 0
+  while (i < msgs.length) {
+    const m = msgs[i]
+    let j = i + 1
+    if (m.role === 'assistant' && m.inboxId && m.kind && GROUPABLE_KINDS.has(m.kind)) {
+      while (j < msgs.length) {
+        const n = msgs[j]
+        if (n.role !== 'assistant' || !n.inboxId || n.kind !== m.kind) break
+        if (new Date(n.date).getTime() - new Date(msgs[j - 1].date).getTime() > GROUP_WINDOW_MS) break
+        j++
+      }
+    }
+    if (j - i > 1) {
+      for (let k = i; k < j; k++) out.set(msgs[k].id, { first: k === i, size: j - i, kind: m.kind! })
+    }
+    i = j
+  }
+  return out
+}
+
 function minuteOf(iso: string): number {
   return Math.floor(new Date(iso).getTime() / 60000)
 }
@@ -583,6 +613,7 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
     [chat.messages, targetIds, exitingIds],
   )
   const thinking = chat.isThinking
+  const noticeGroups = useMemo(() => groupNotices(messages), [messages])
 
   // Trae el brief/avisos que hayan llegado mientras la pestaña no estaba
   // delante, igual que hace iOS al abrir — el hilo web es también el
@@ -850,13 +881,21 @@ export default function V2Chat({ currentNodeId, contextLabel, onFilesDropped, em
               // para partir una interacción activa a la mitad. Ahora hace
               // falta un hueco real de 2 minutos — no separa nada mientras el
               // usuario está interactuando de verdad (Alberto, 13 ago).
-              const showDivider = i === 0 || minuteOf(m.date) - minuteOf(messages[i - 1].date) >= 2
+              const group = noticeGroups.get(m.id)
+              const showDivider = (!group || group.first) && (i === 0 || minuteOf(m.date) - minuteOf(messages[i - 1].date) >= 2)
               const isExiting = exitingIds.has(m.id)
               return [
                 m.id === unreadId
                   ? <UnreadDivider key={`${m.id}-u`} />
                   : (showDivider ? <SessionDivider key={`${m.id}-d`} date={m.date} /> : null),
-                <div key={m.id} className={`v2-msg-exit-wrap${isExiting ? ' exiting' : ''}`}>
+                group?.first ? (
+                  <div key={`${m.id}-g`} className="v2-notice-group-head">
+                    {group.kind === 'agent'
+                      ? t('v2.chat.groupAgents', '{{count}} agentes han terminado', { count: group.size })
+                      : t('v2.chat.groupReminders', '{{count}} recordatorios', { count: group.size })}
+                  </div>
+                ) : null,
+                <div key={m.id} className={`v2-msg-exit-wrap${isExiting ? ' exiting' : ''}${group ? ' v2-notice-group-item' : ''}`}>
                   <div className="v2-msg-exit-inner">
                     <AssistantBubble m={m} isLast={i === messages.length - 1} onOption={doSend} />
                   </div>
