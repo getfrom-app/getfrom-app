@@ -234,18 +234,23 @@ export default function V2RightColumn({ mode, showProfile, selectedCtxId, import
     if (mode === 'agenda' && dayNoteId) markAgentResultSeen(dayNoteId)
   }, [mode, dayNoteId])
 
-  // Nota del día — botón plegar/desplegar arriba de la columna (31 ago 2026,
-  // Alberto: vuelve el botón que se había quitado el 30 ago — "que se abra con
-  // un botón en la parte superior... y se cierre con el mismo botón, con la
-  // animación suave de Fromly"). Persistida: recuerda la preferencia entre
-  // sesiones, igual que `COLLAPSE_KEY` en DailyCockpit.tsx. Abierta por
-  // defecto — mismo estado final al que había llegado sin botón.
-  const [noteOpen, setNoteOpen] = useState(() => localStorage.getItem('from_agenda_note_open') !== '0')
-  const toggleNoteOpen = () => setNoteOpen(v => {
-    const next = !v
-    localStorage.setItem('from_agenda_note_open', next ? '1' : '0')
-    return next
+  // Destino Agenda sin nada centrado: 3 tabs en vez de los 3 bloques
+  // apilados de antes (Chat/Nota/Tareas a tercios de altura — Alberto, 15 sep
+  // 2026: "la columna derecha en tres bloques no me gusta. vamos a dejarla
+  // solo chat. y vamos a añadir en otros dos tabs la nota diaria y las
+  // tareas sin fecha y atrasadas"). Chat por defecto — es lo que se usa a
+  // diario; Nota y Tareas quedan a un clic, cada una a toda la altura en vez
+  // de un tercio apretado. Persistida como el resto de preferencias de esta
+  // columna (`from_agenda_note_open` antes, mismo criterio).
+  type AgendaTab = 'chat' | 'note' | 'tasks'
+  const [agendaTab, setAgendaTabState] = useState<AgendaTab>(() => {
+    const saved = localStorage.getItem('from_agenda_tab')
+    return saved === 'note' || saved === 'tasks' ? saved : 'chat'
   })
+  const setAgendaTab = (t: AgendaTab) => {
+    setAgendaTabState(t)
+    localStorage.setItem('from_agenda_tab', t)
+  }
 
   const TAB1_LABEL: Record<RightMode, string> = {
     contexto: t('v2.rightColumn.tabContext', 'Contexto'),
@@ -282,7 +287,24 @@ export default function V2RightColumn({ mode, showProfile, selectedCtxId, import
           en V2App.tsx, y el propio `V2Chat` enseña su historial + "Nueva
           conversación" en ese estado vacío, el mismo componente que los
           contextos — una única columna, sin doble tab que la parta). */}
-      {mode === 'chat' ? null : (
+      {mode === 'chat' ? null : mode === 'agenda' && (!elementId || centerIsDiary) ? (
+        /* Destino Agenda sin nada centrado: Chat/Nota/Tareas, siempre las 3 —
+           reemplaza los 3 bloques apilados de antes (ver `agendaTab` arriba). */
+        <div className="v2-right-tabs">
+          <button
+            className={`v2-right-tab ${agendaTab === 'chat' ? 'active' : ''}`}
+            onClick={() => setAgendaTab('chat')}
+          >{t('v2.rightColumn.tabChat', 'Chat')}</button>
+          <button
+            className={`v2-right-tab ${agendaTab === 'note' ? 'active' : ''}`}
+            onClick={() => setAgendaTab('note')}
+          >{t('v2.rightColumn.dailyNote', 'Nota del día')}</button>
+          <button
+            className={`v2-right-tab ${agendaTab === 'tasks' ? 'active' : ''}`}
+            onClick={() => setAgendaTab('tasks')}
+          >{t('v2.tasks', 'Tareas')}</button>
+        </div>
+      ) : (
         /* Sin cabecera de tabs cuando solo hay una — no aporta nada seleccionar
            entre 1 opción (Alberto, 5 ago 2026). Reaparece en cuanto hay algo
            abierto en el centro y la Tab 2 "Chat" es una alternativa real. La nota
@@ -422,50 +444,24 @@ export default function V2RightColumn({ mode, showProfile, selectedCtxId, import
       {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && elementId && !centerIsDiary && (
         <V2AgendaElementSide nodeId={elementId} onSelectCtx={onSelectCtx} onOpenNode={onOpenNode} />
       )}
-      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (!elementId || centerIsDiary) && (
-        <div
-          className="v2-right-fill v2-agenda-col"
-          style={{
-            gridTemplateRows: dayNoteId
-              ? `auto ${noteOpen ? '1fr' : '0px'} auto 1fr auto 1fr`
-              : 'auto 1fr auto 1fr',
-          }}
-        >
-          {/* Nota del día — se abre/cierra con un botón arriba de la columna,
-              animación suave (grid-template-rows en el propio `.v2-agenda-col`:
-              nota/tareas/chat son 3 filas a partes iguales cuando la nota está
-              abierta — Alberto, 31 ago 2026: "que el chat solo sea el tercio
-              inferior... primer tercio nota, segundo tareas, tercero chat").
-              Vuelve 31 ago 2026 (Alberto: el botón se había quitado el 30 ago —
-              "ponla arriba siempre abierta... quita el botón" — y ahora pide
-              recuperarlo). El editor NO se desmonta al plegar (solo se
-              recorta visualmente): desmontarlo perdería la posición del
-              cursor y podría solaparse con el siguiente montaje. */}
-          {dayNoteId && (
-            <>
-              <button
-                type="button"
-                className={`v2-agenda-note-toggle ${noteOpen ? 'open' : ''}`}
-                onClick={toggleNoteOpen}
-                aria-expanded={noteOpen}
-              >
-                <span className="v2-agenda-note-toggle-chevron"><Icon name="chevron-right" size={12} /></span>
-                {t('v2.rightColumn.dailyNote', 'Nota del día')}
-              </button>
-              <div className="v2-agenda-note-panel">
-                <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
-              </div>
-            </>
-          )}
-
-          <div className="v2-agenda-section-heading">{t('v2.tasks', 'Tareas')}</div>
-          <div className="v2-agenda-cockpit-strip">
-            <DailyCockpit bare disablePlanner hideToday hideFuture />
-          </div>
-
-          <div className="v2-agenda-section-heading">{t('v2.rightColumn.assistant', 'Asistente')}</div>
-          {/* El chat real de Agenda — sustituye al brief estático (V2AgendaAssistant.tsx). */}
-          <V2AgendaAssistant onFilesDropped={onFilesDropped} />
+      {/* 15 sep 2026 — ya no son 3 bloques apilados a tercios de altura ("la
+          columna derecha en tres bloques no me gusta"): son 3 tabs, cada una a
+          toda la altura, seleccionadas arriba en `.v2-right-tabs` (`agendaTab`).
+          Chat por defecto: es lo que se usa a diario, ya no compite por
+          espacio con nota+tareas. `key={dayNoteId}` en la nota: mismo motivo
+          que el visor central — sin desmontar al cambiar de día no hay
+          ventana de solape entre notas. */}
+      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (!elementId || centerIsDiary) && agendaTab === 'chat' && (
+        <V2AgendaAssistant onFilesDropped={onFilesDropped} />
+      )}
+      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (!elementId || centerIsDiary) && agendaTab === 'note' && dayNoteId && (
+        <div className="v2-right-fill v2-agenda-note-fill">
+          <V2ElementView key={dayNoteId} nodeId={dayNoteId} onClose={() => {}} onSelectCtx={onSelectCtx} compact />
+        </div>
+      )}
+      {!isRecordingActive && effectiveSubTab === 'primary' && mode === 'agenda' && (!elementId || centerIsDiary) && agendaTab === 'tasks' && (
+        <div className="v2-right-fill v2-agenda-tasks-fill">
+          <DailyCockpit bare disablePlanner hideToday hideFuture />
         </div>
       )}
 

@@ -1088,6 +1088,17 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const checkable = !isGcal && !b.virtual && !!blockNode && blockNode.status != null && !blockNode.isEvent && !isTimeBlockNode(blockNode)
     const done = checkable && blockNode!.status === 'done'
     const hasNotes = !!blockNode && hasNoteContent(blockNode.id)
+    // Un EVENTO recurrente no necesita completarse para que "exista" su
+    // siguiente ocurrencia — a diferencia de una tarea, no hay checkbox que
+    // dispare `spawnRecurrence` (línea 1074: los eventos no llevan checkbox).
+    // Sin este caso especial, un evento recurrente que nadie marca a mano se
+    // queda con el origen clavado en su primera fecha para siempre y TODAS
+    // las siguientes ocurrencias se ven atenuadas sin fin, aunque haya
+    // llegado su día (Alberto, 15 sep 2026: "la primera instancia se ve
+    // normal pero se supera y los siguientes siguen sombreados"). Las
+    // proyecciones de EVENTOS se pintan siempre como si fueran reales; las de
+    // TAREAS mantienen la atenuación (si preview de algo que aún no existe).
+    const dimVirtual = b.virtual && !isEvent
     // Solapes → columnas lado a lado (ver `layoutBlocks`). Sin solape, ocupa
     // el ancho completo de la columna como siempre.
     const cols = b.cols ?? 1
@@ -1098,7 +1109,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const widthPos = cols > 1 ? `calc(${slotW} - ${gap}px)` : undefined
     return (
       <div key={b.id} data-pp-block={b.id}
-        className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}${b.virtual ? ' pp-block--virtual' : ''}`}
+        className={`pp-block pp-block--${b.kind}${done ? ' pp-block--done' : ''}${dimVirtual ? ' pp-block--virtual' : ''}`}
         style={{ top: blockTop, height: blockH,
           background: bg, left: leftPos, ...(widthPos ? { width: widthPos } : { right: 2 }),
           border: '1px solid var(--border)', borderLeft: `3px solid ${accentColor}` }}
@@ -1422,7 +1433,10 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                 </div>
                 <div className="pp-month-items" onClick={e => { if (e.target === e.currentTarget) { setCenterDate(date); setMonthAddMenu({ day: date, x: e.clientX, y: e.clientY }) } }}>
                   {items.map(it => (
-                    <div key={it.id} className={`pp-month-chip${it.virtual ? ' pp-month-chip--virtual' : ''}`} style={{ borderLeft: `2px solid ${it.color}`, opacity: it.done ? 0.45 : 1, textDecoration: it.done ? 'line-through' : 'none' }}
+                    // Igual que en el timeline (ver `dimVirtual` en getTimedBlocks):
+                    // un EVENTO recurrente se pinta como real aunque su ocurrencia sea
+                    // proyectada, porque no necesita completarse para "existir".
+                    <div key={it.id} className={`pp-month-chip${it.virtual && !it.virtual.origin.isEvent ? ' pp-month-chip--virtual' : ''}`} style={{ borderLeft: `2px solid ${it.color}`, opacity: it.done ? 0.45 : 1, textDecoration: it.done ? 'line-through' : 'none' }}
                       onClick={e => {
                         e.stopPropagation() // no navegar al día: ir a la tarea
                         // Proyección virtual: ver = abrir la serie (el origen). Editar
@@ -1671,9 +1685,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                         const o = it.v.origin
                         const vCtx = firstContextOf(o)
                         const vAccent = vCtx ? contextColor(vCtx.id) : plannerBase
+                        // Mismo criterio que `dimVirtual` en getTimedBlocks: un evento
+                        // recurrente no necesita completarse para "existir", se pinta
+                        // como real aunque sea una proyección.
                         return (
-                          <div key={it.v.key} className="pp-allday-chip pp-allday-chip--virtual"
-                            style={{ background: 'transparent', color: 'var(--text-primary)', border: '1px dashed var(--border)', borderLeft: `3px solid ${vAccent}` }}
+                          <div key={it.v.key} className={`pp-allday-chip${o.isEvent ? '' : ' pp-allday-chip--virtual'}`}
+                            style={{ background: 'transparent', color: 'var(--text-primary)', border: o.isEvent ? '1px solid var(--border)' : '1px dashed var(--border)', borderLeft: `3px solid ${vAccent}` }}
                             onClick={e=>{ e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: o.id } })) }}
                             title={`${o.text} · ${t('recurrence.virtualHint', 'se repite')}`}>
                             {o.text || t('common.noTitle')}
