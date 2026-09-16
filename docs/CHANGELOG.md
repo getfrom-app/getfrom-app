@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.83 · iPhone — 16 septiembre 2026 · Notas comunes en lo que se repite y un perfil que puedes corregir
+
+- **Notas comunes en eventos, time blocks y tareas que se repiten**: un espacio compartido por todas
+  las repeticiones (un enlace, material fijo) y otro solo para cada día. En la web y en el iPhone.
+- **Corrige lo que Fromly sabe de ti**: en Perfil, despliega una ficha para editarla o ampliarla, o
+  bórrala con la papelera que aparece al pasar el ratón. Lo que borras no se vuelve a aprender igual.
+- **Preguntas que no se repiten**: «Fromly quiere saber más de ti» solo vuelve sobre algo cuando ha
+  pasado un tiempo razonable, y si no, te pregunta por algo que aún no sabe.
+
+---
+
 ## Web v9.10.73 · iPhone — 15 septiembre 2026 · Notas con formato de verdad en el iPhone
 
 - **Resaltado en las notas**: nuevo en la web, en varios colores, junto al color de texto.

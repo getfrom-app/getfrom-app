@@ -1,7 +1,27 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-16, sesión 56 (web)
+> Última actualización: 2026-09-16, sesión 57 (web, servidor, iOS)
+
+---
+
+## Sesión 2026-09-16 (sesión 57) — perfil editable, preguntas de perfil con plazo, notas comunes de series
+
+- **Pregunta de perfil (`server/src/services/assistantProfileAsk.ts`)**: `buildProfileTrigger(es,
+  previous)` (pura, con tests) lleva las preguntas `kind='profile'` de los últimos 90 días (máx. 30)
+  y un criterio de seguimiento por naturaleza del tema: urgente/delicado al día siguiente, algo en
+  marcha una semana, tendencias lentas un par de meses; si no toca, un aspecto de su vida sin
+  píldoras.
+- **Fichas del Perfil (`V2KnowledgePills.tsx`)**: `PillEditor` (textarea autoajustable, guarda al
+  blur con `store.updateNode`, Cmd+Enter/Esc) y papelera en hover de dos clics (`rejectPill` marca
+  `extraData.rejected='1'` y borra). Servidor: `rememberFacts` descarta hechos cuyo texto normalizado
+  coincide con una píldora rechazada (`loadRejectedPillTexts`).
+- **Notas comunes de series recurrentes**: web `utils/seriesNotes.ts` + `V2TaskDetailView` (bloques
+  «Notas comunes» y «Notas de este día»); servidor `services/seriesNotes.ts` → campo `seriesNotes`
+  en `GET /assistant/node/:id`; iOS `AssistantSeriesNotesSection` (`AssistantBrowser.swift`).
+  `extraData._seriesKey` identifica la serie (se copia al crear cada instancia); el nodo común tiene
+  id determinista `seriesNotesId(key)` (sha256 → uuid v5, idéntico web/servidor, comprobado), sin
+  padre, `_containerNotes` + `_seriesNotes`.
 
 ---
 

@@ -44,6 +44,15 @@ navegador si algún día quieres repasarlo.
 
 ## Novedades (septiembre 2026)
 
+- **Notas comunes en lo que se repite**: la ficha de un evento, time block o tarea recurrente tiene
+  «Notas comunes» (las mismas en todas las repeticiones: un enlace, el material del curso) y
+  «Notas de este día» (solo de esa repetición). En la web y en el iPhone.
+- **Corrige lo que Fromly sabe de ti**: en Perfil, despliega cualquier ficha de la columna derecha
+  para editar o ampliar su texto; al pasar el ratón aparece una papelera para borrarla (dos clics).
+  Una ficha borrada no se vuelve a aprender tal cual.
+- **Preguntas con sentido**: «Fromly quiere saber más de ti» ya no repite lo que acabas de contar.
+  Vuelve sobre algo solo cuando ha pasado un tiempo razonable (algo delicado, al día siguiente; unas
+  obras, en una semana; tus ingresos, en un par de meses) o te pregunta por algo que aún no sabe.
 - **Carpetas de tu Mac en el chat de un contexto**: en la app de Mac, Ajustes → Carpetas del Mac (o
   «Carpetas sincronizadas…» en el icono de la barra de menús) → «Vincular carpeta…». Eliges una
   carpeta, la asignas a un contexto y Fromly la mantiene sincronizada: cuando cambia un archivo, su
@@ -392,7 +401,12 @@ guardado. Después repregunta una cosa concreta para afinarlo.
 **Y él te preguntará de vez en cuando.** Por la tarde, Fromly puede dejarte en el chat una pregunta
 para conocerte mejor («Fromly quiere saber más de ti»). Contéstala escribiendo debajo, pulsa «Te
 cuento otro día» o ciérrala con la ×. Se queda en el chat hasta que hagas una de las tres cosas, y
-se cierra también en tus otros dispositivos. Si ignoras varias seguidas, pregunta menos a menudo.
+se cierra también en tus otros dispositivos. Si ignoras varias seguidas, pregunta menos a menudo. No repite
+preguntas: solo vuelve sobre algo que ya le contaste cuando ha pasado tiempo para que haya cambiado.
+
+**Corregir lo aprendido.** En la columna derecha del Perfil, despliega una ficha para editar o ampliar
+su texto (se guarda al salir del campo). La papelera que aparece al pasar el ratón la elimina: pulsa
+una vez para armarla y otra para confirmar.
 
 **Notificaciones.** Si tienes algo pendiente con hora y todavía no has activado los avisos del
 navegador, el chat te lo ofrece con un botón «Activar avisos» — solo cuando hay un recordatorio real
@@ -558,6 +572,10 @@ y repetición.
 **Editar un evento (cualquier dispositivo).** Desde el detalle del evento puedes ajustar hora de
 inicio y fin y el lugar. Si tienes Google Calendar conectado, al guardar se crea o actualiza allí,
 y "Eliminar evento" lo borra también de Google Calendar.
+
+**Notas de algo que se repite.** Un evento, time block o tarea con repetición tiene dos espacios de
+notas en su ficha: **Notas comunes**, compartidas por todas las repeticiones (ideal para un enlace o
+material fijo), y **Notas de este día**, propias de cada repetición. Funciona igual en web e iPhone.
 
 ### Archivos: PDF, imágenes y otros
 
