@@ -106,9 +106,28 @@ function dayLabel(d: Date, locale: string) {
   return `${weekday} ${d.getDate()} ${month}`
 }
 function monthLabel(d: Date, locale: string) { return new Intl.DateTimeFormat(locale, { month: 'long' }).format(d) }
+/** «14 – 18 sept 2026» (o «28 sept – 2 oct 2026» si cruza de mes). */
+function workweekTitle(monday: Date, locale: string) {
+  const friday = addDays(monday, WORKWEEK_DAYS - 1)
+  const short = (d: Date) => new Intl.DateTimeFormat(locale, { month: 'short' }).format(d)
+  const from = monday.getMonth() === friday.getMonth() ? `${monday.getDate()}` : `${monday.getDate()} ${short(monday)}`
+  return `${from} – ${friday.getDate()} ${short(friday)} ${friday.getFullYear()}`
+}
 
-// 'day' = solo hoy (1 col) · 'week' = multi-día · 'month' = rejilla mensual · 'year' = anual
-type ViewMode = 'day' | 'week' | 'month' | 'year'
+// 'day' = solo hoy (1 col) · 'week' = timeline multi-día con scroll (pestaña «Timeline»)
+// · 'workweek' = semana fija lunes-viernes, se pasa de semana en semana (pestaña «Semana»)
+// · 'month' = rejilla mensual · 'year' = anual.
+// 'week' conserva su nombre interno aunque la pestaña se llame «Timeline» desde el
+// 16 sep 2026: así la vista guardada en localStorage (`from_agenda_view_mode`) sigue valiendo.
+type ViewMode = 'day' | 'week' | 'workweek' | 'month' | 'year'
+
+/** Lunes de la semana de `d` (a medianoche local). */
+function mondayOf(d: Date): Date {
+  const r = startOfDay(d)
+  const dow = r.getDay() === 0 ? 6 : r.getDay() - 1 // lunes = 0
+  return addDays(r, -dow)
+}
+const WORKWEEK_DAYS = 5
 
 // Bloque con hora en el timeline
 interface Block {
@@ -469,10 +488,9 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   // texto no lo necesita.
   const [allDayPickedCtxSpan, setAllDayPickedCtxSpan] = useState<{ start: number; text: string } | null>(null)
   const [snapLine, setSnapLine]       = useState<{dayKey:string;top:number}|null>(null)
-  // Clic en el hueco vacío de una celda del mes → elegir tarea o evento
-  // (Alberto, 27 ago 2026: el número del día abre el día; el resto de la
-  // celda debe permitir crear directamente).
-  const [monthAddMenu, setMonthAddMenu] = useState<{day: Date; x: number; y: number} | null>(null)
+  // Clic en el hueco vacío de una celda del mes → nuevo evento ese día. Antes
+  // ofrecía elegir tarea o evento (27 ago 2026), pero desde el 16 sep el mes
+  // solo pinta eventos y time blocks: una tarea creada aquí desaparecía al instante.
   const [monthNewEventDay, setMonthNewEventDay] = useState<Date | null>(null)
 
   // ── GCal ──────────────────────────────────────────────────────────────────
@@ -596,12 +614,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       const el = timelineRef.current
       if (!el) return
       const avail = el.clientWidth - AXIS_W - 2
-      const cnt = viewMode === 'day' ? 1 : visibleDayCnt
+      const cnt = viewMode === 'day' ? 1 : viewMode === 'workweek' ? WORKWEEK_DAYS : visibleDayCnt
       setColW(Math.max(60, Math.floor(avail / cnt)))
       // Auto-fit del alto: que el día entero quepa sin scroll. Resta lo que ocupan
       // la cabecera de días + la franja «todo el día» (viven dentro del scroll, así
       // que el grid solo dispone de clientHeight − offset de la rejilla).
-      if (autoFitRef.current && (viewMode === 'day' || viewMode === 'week') && el.clientHeight > 0) {
+      if (autoFitRef.current && (viewMode === 'day' || viewMode === 'week' || viewMode === 'workweek') && el.clientHeight > 0) {
         const gridEl = el.querySelector('.pp-grid') as HTMLElement | null
         const offset = gridEl ? gridEl.offsetTop : 64
         setSlotH(Math.max(6, Math.floor((el.clientHeight - offset - 2) / (TOTAL_HOURS * 2))))
@@ -634,7 +652,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
 
   // ── Zoom X (cabecera días) ────────────────────────────────────────────────
   function handleHeadersDrag(e: React.MouseEvent) {
-    if (viewMode === 'day') return // vista día: una sola columna, sin zoom X
+    if (viewMode === 'day' || viewMode === 'workweek') return // día y semana fija: columnas fijas, sin zoom X
     if ((e.target as HTMLElement).closest('.pp-col-head')) return
     e.preventDefault()
     const startX   = e.clientX
@@ -663,11 +681,16 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const visibleDays = useMemo(() =>
     viewMode === 'day'
       ? [centerDate]
-      : Array.from({ length: PRE_DAYS*2+1 }, (_, i) => addDays(centerDate, i - PRE_DAYS))
+      // Semana fija (Alberto, 16 sep 2026: "que aparezca la semana de lunes a
+      // viernes y que se pueda pasar a semanas atrás y delante"): sin pre-carga
+      // ni scroll horizontal, las 5 columnas llenan el ancho.
+      : viewMode === 'workweek'
+        ? Array.from({ length: WORKWEEK_DAYS }, (_, i) => addDays(mondayOf(centerDate), i))
+        : Array.from({ length: PRE_DAYS*2+1 }, (_, i) => addDays(centerDate, i - PRE_DAYS))
   , [centerDate.toDateString(), viewMode]) // eslint-disable-line
 
-  // Días de pre-carga a la izquierda del centro (0 en vista día: única columna)
-  const preDays = viewMode === 'day' ? 0 : PRE_DAYS
+  // Días de pre-carga a la izquierda del centro (0 en vista día y semana fija)
+  const preDays = viewMode === 'day' || viewMode === 'workweek' ? 0 : PRE_DAYS
 
   // ── Scroll ────────────────────────────────────────────────────────────────
   const scrollHRef = useRef<HTMLDivElement>(null)
@@ -683,7 +706,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   // bifurcación del que cuelgan sus 3 consumidores (montaje, `centerNow`,
   // `isAlreadyCentered`), sin tocarlos uno a uno.
   function todayScrollPos(): number {
-    if (!scrollHRef.current) return 0
+    if (!scrollHRef.current || viewMode === 'workweek') return 0
     const viewportW = scrollHRef.current.clientWidth - AXIS_W
     if (centerToday) return Math.max(0, (preDays + 0.5) * colW - viewportW / 2)
     return Math.max(0, (preDays + 1) * colW - viewportW)
@@ -1280,6 +1303,16 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   }
 
   // ── Vista MES (rejilla mensual) ────────────────────────────────────────────
+  // Solo eventos y time blocks, nunca tareas (Alberto, 16 sep 2026: "en el
+  // planner mensual deberían aparecer solamente los eventos y time blocks").
+  // "Evento" con el mismo criterio que el brief (ESTADO, 15 sep): `isEvent` CON
+  // hora, o time block (nuevo `_timeblock` o legacy `_timeBlock`). Una tarea con
+  // hora sigue siendo tarea. Los eventos crudos de Google entran siempre.
+  function isMonthCalendarItem(n: Node): boolean {
+    if (isTimeBlockNode(n)) return true
+    try { if (JSON.parse(n.extraData || '{}')._timeBlock === '1') return true } catch { /* extraData corrupto */ }
+    return !!n.isEvent && !!n.due && hasTime(n.due)
+  }
   type MonthItem = { id: string; text: string; color: string; done: boolean; t: number; virtual?: VirtualOccurrence }
   function monthDayItems(date: Date): MonthItem[] {
     const out: MonthItem[] = []
@@ -1288,6 +1321,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       if (!n.due || n.deletedAt || isInPapelera(n.id) || n.status == null) continue
       if (!sameDay(new Date(n.due), date)) continue
       realTexts.add(n.text.trim().toLowerCase())
+      if (!isMonthCalendarItem(n)) continue
       const overdue = new Date(n.due) < startOfDay(today) && n.status !== 'done'
       out.push({ id: n.id, text: n.text || t('common.noTitle'), color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime() })
     }
@@ -1296,6 +1330,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     // mismo criterio que el timeline (`getTimedBlocks`) y la franja «todo el
     // día»: proyecciones atenuadas, no nodos propios.
     for (const v of virtualOccurrencesOn(date, { isHidden: isInPapelera, realTextsThatDay: realTexts })) {
+      if (!isMonthCalendarItem(v.origin)) continue
       out.push({ id: v.key, text: v.origin.text || t('common.noTitle'), color: 'var(--accent,#6c5ce7)', done: false, t: v.occursAt.getTime(), virtual: v })
     }
     // Mismo dedup que getTimedBlocks/getAllDayTasks más arriba: sin esto, un
@@ -1422,16 +1457,15 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                 onDrop={e => handleMonthDrop(e, date)}
                 // Hueco en blanco de la celda (fuera del número y de los chips) → cambia
                 // la nota diaria de la columna derecha a ESE día (mismo criterio que la
-                // cabecera de vista semana) y además ofrece elegir tarea o evento para
-                // ese día. El número del día tiene su propio onClick para abrir el día
+                // cabecera de vista semana) y abre «nuevo evento» para ese día. El número del día tiene su propio onClick para abrir el día
                 // (más abajo).
-                onClick={e => { if (e.target === e.currentTarget) { setCenterDate(date); setMonthAddMenu({ day: date, x: e.clientX, y: e.clientY }) } }}
+                onClick={e => { if (e.target === e.currentTarget) { setCenterDate(date); setMonthNewEventDay(date) } }}
                 title={date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}>
                 <div className={`pp-month-daynum ${isTod ? 'pp-month-daynum--today' : ''}`}
                   onClick={e => { e.stopPropagation(); const dn = ensureDayPath(date); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: dn.id } })) }}>
                   {date.getDate()}
                 </div>
-                <div className="pp-month-items" onClick={e => { if (e.target === e.currentTarget) { setCenterDate(date); setMonthAddMenu({ day: date, x: e.clientX, y: e.clientY }) } }}>
+                <div className="pp-month-items" onClick={e => { if (e.target === e.currentTarget) { setCenterDate(date); setMonthNewEventDay(date) } }}>
                   {items.map(it => (
                     // Igual que en el timeline (ver `dimVirtual` en getTimedBlocks):
                     // un EVENTO recurrente se pinta como real aunque su ocurrencia sea
@@ -1475,33 +1509,6 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
             )
           })}
         </div>
-        {monthAddMenu && (
-          <>
-            <div style={{position:'fixed',inset:0,zIndex:998}} onClick={()=>setMonthAddMenu(null)} />
-            <div className="pp-ctx" style={{left:monthAddMenu.x,top:monthAddMenu.y}}>
-              <button onClick={()=>{
-                // Tarea nueva desde el mes → misma edición completa (recurrencia +
-                // contexto) que el resto de la app, no el modal simple: se crea el
-                // nodo ya con la fecha del día clicado y se abre TaskPropsPopover
-                // (allowRename edita el título ahí mismo).
-                const diaryNode = store.todayDiary()
-                const node = store.createNode({
-                  text: '',
-                  parentId: diaryNode?.id || null,
-                  isTask: true,
-                  due: toMidnight(monthAddMenu.day),
-                })
-                setPropsNodeId(node.id)
-                setMonthAddMenu(null)
-              }}>
-                {t('modal.newTask')}
-              </button>
-              <button onClick={()=>{ setMonthNewEventDay(monthAddMenu.day); setMonthAddMenu(null) }}>
-                {t('modal.newEvent')}
-              </button>
-            </div>
-          </>
-        )}
         {monthNewEventDay && (
           <NewEventModal
             defaultDateStr={localDateStr(monthNewEventDay)}
@@ -1517,12 +1524,15 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     ? `${centerDate.getFullYear()}`
     : viewMode === 'month'
       ? `${monthLabel(centerDate, i18n.language)} ${centerDate.getFullYear()}`
-      : centerDate.toLocaleDateString(i18n.language, { weekday:'short', day:'numeric', month:'short' })
+      : viewMode === 'workweek'
+        ? workweekTitle(mondayOf(centerDate), i18n.language)
+        : centerDate.toLocaleDateString(i18n.language, { weekday:'short', day:'numeric', month:'short' })
 
   function navDelta(d: number) {
     setCenterDate(prev =>
       viewMode === 'year'  ? new Date(prev.getFullYear() + d, prev.getMonth(), 1)
       : viewMode === 'month' ? new Date(prev.getFullYear(), prev.getMonth() + d, 1)
+      : viewMode === 'workweek' ? addDays(prev, d * 7)
       : addDays(prev, d))
   }
 
@@ -1567,7 +1577,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
               <div className="pp-view-tabs">
                 {viewTabs.map(m => (
                   <button key={m} className={`pp-tab ${viewMode===m?'pp-tab--active':''}`} onClick={()=>setViewMode(m)}>
-                    {m==='day'?t('timeline.dayMode'):m==='week'?t('timeline.weekMode'):m==='month'?t('timeline.monthMode'):t('tip.year')}
+                    {m==='day'?t('timeline.dayMode'):m==='week'?t('timeline.timelineMode', 'Timeline'):m==='workweek'?t('timeline.weekMode'):m==='month'?t('timeline.monthMode'):t('tip.year')}
                   </button>
                 ))}
               </div>

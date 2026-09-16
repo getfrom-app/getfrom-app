@@ -1368,7 +1368,7 @@ export default function V2App() {
         // derecha, encima de la nota diaria, para poder seguir arrastrando
         // esas tareas al planner). Ver V2RightColumn.
         <main className="v2-col v2-center v2-center--agenda">
-          <PlannerPanel initialView="week" initialDays={3} viewTabs={['week', 'month', 'year']} onClose={() => {}} centerToday onCenterDateChange={setAgendaCenterDate} />
+          <PlannerPanel initialView="week" initialDays={3} viewTabs={['week', 'workweek', 'month', 'year']} onClose={() => {}} centerToday onCenterDateChange={setAgendaCenterDate} />
         </main>
       ) : (
         <V2Chat

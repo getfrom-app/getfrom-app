@@ -2009,6 +2009,7 @@
   "timeline.endHourHint": "Last visible hour in the daily timeline.",
   "timeline.endHourLabel": "End time",
   "timeline.monthMode": "Month",
+  "timeline.timelineMode": "Timeline",
   "timeline.sectionTitle": "View — Daily timeline",
   "timeline.startHourHint": "First visible hour in the daily timeline.",
   "timeline.startHourLabel": "Start time",

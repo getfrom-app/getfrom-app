@@ -2013,6 +2013,7 @@
   "timeline.endHourHint": "Última hora visible en el timeline diario.",
   "timeline.endHourLabel": "Hora fin",
   "timeline.monthMode": "Mes",
+  "timeline.timelineMode": "Timeline",
   "timeline.sectionTitle": "Vista — Timeline del día",
   "timeline.startHourHint": "Primera hora visible en el timeline diario.",
   "timeline.startHourLabel": "Hora inicio",
