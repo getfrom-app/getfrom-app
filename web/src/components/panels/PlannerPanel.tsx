@@ -130,6 +130,35 @@ function mondayOf(d: Date): Date {
 }
 const WEEK_DAYS = 7
 
+// ── Filtro Tareas / Eventos / Time blocks (Alberto, 16 sep 2026) ────────────
+// Cada vista con elementos (Timeline, Semana, Mes) guarda su propia elección en
+// localStorage. Por defecto el Mes solo enseña eventos ("lo interesante de esta
+// vista es ver los eventos y poder agendar nuevos"); Timeline y Semana, todo.
+// Año no filtra: solo pinta puntos, no elementos.
+type PlannerKind = 'tasks' | 'events' | 'timeblocks'
+type PlannerFilter = Record<PlannerKind, boolean>
+type FilterView = 'week' | 'workweek' | 'month'
+const FILTERS_KEY = 'from_planner_filters'
+const FILTER_DEFAULTS: Record<FilterView, PlannerFilter> = {
+  week:     { tasks: true,  events: true, timeblocks: true },
+  workweek: { tasks: true,  events: true, timeblocks: true },
+  month:    { tasks: false, events: true, timeblocks: false },
+}
+function loadFilters(): Record<FilterView, PlannerFilter> {
+  let saved: Partial<Record<FilterView, Partial<PlannerFilter>>> = {}
+  try { saved = JSON.parse(localStorage.getItem(FILTERS_KEY) || '{}') } catch { /* sin localStorage o JSON roto */ }
+  const out = {} as Record<FilterView, PlannerFilter>
+  for (const v of Object.keys(FILTER_DEFAULTS) as FilterView[]) out[v] = { ...FILTER_DEFAULTS[v], ...(saved[v] ?? {}) }
+  return out
+}
+/** Qué es un nodo a efectos del filtro. "Evento" = `isEvent` (con o sin hora):
+ *  una tarea con hora, aunque esté enlazada a Google, sigue siendo tarea. */
+function kindOfNode(n: Node): PlannerKind {
+  if (isTimeBlockNode(n)) return 'timeblocks'
+  try { if (JSON.parse(n.extraData || '{}')._timeBlock === '1') return 'timeblocks' } catch { /* extraData corrupto */ }
+  return n.isEvent ? 'events' : 'tasks'
+}
+
 // Bloque con hora en el timeline
 interface Block {
   kind: 'task' | 'standalone' | 'gcal' | 'timeblock'
@@ -360,6 +389,18 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   useEffect(() => {
     try { localStorage.setItem('from_agenda_view_mode', viewMode) } catch { /* localStorage no disponible */ }
   }, [viewMode])
+
+  const [filters, setFilters] = useState(loadFilters)
+  useEffect(() => {
+    try { localStorage.setItem(FILTERS_KEY, JSON.stringify(filters)) } catch { /* localStorage no disponible */ }
+  }, [filters])
+  const filterView: FilterView | null = viewMode === 'month' ? 'month' : viewMode === 'workweek' ? 'workweek' : viewMode === 'week' ? 'week' : null
+  const activeFilter: PlannerFilter = filterView ? filters[filterView] : { tasks: true, events: true, timeblocks: true }
+  const showsNode = (n: Node) => activeFilter[kindOfNode(n)]
+  function toggleFilter(k: PlannerKind) {
+    if (!filterView) return
+    setFilters(prev => ({ ...prev, [filterView]: { ...prev[filterView], [k]: !prev[filterView][k] } }))
+  }
 
   // Vista Mes: al abrirla, la fila de HOY a la vista — sin esto el mes abría
   // anclado al día 1 y la semana actual (con sus tareas) quedaba bajo el fold,
@@ -1235,7 +1276,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           {snapLine?.dayKey === day.toISOString() && (
             <div className="pp-snap-line" style={{ top: snapLine.top }} />
           )}
-          {layoutBlocks(getTimedBlocks(day, gcalEvents)).map(renderBlock)}
+          {layoutBlocks(getTimedBlocks(day, gcalEvents).filter(b => {
+            if (b.kind === 'gcal') return activeFilter.events
+            const n = store.getNode(b.virtual ? b.nodeId! : b.id)
+            return n ? showsNode(n) : true
+          })).map(renderBlock)}
 
           {newBlock && sameDay(newBlock.day, day) && (
             <div className={`pp-new-block${newBlock.isTimeBlock ? ' pp-new-block--timeblock' : ''}`} style={{ top: newBlock.top, left: 2, right: 2 }}>
@@ -1304,46 +1349,42 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   }
 
   // ── Vista MES (rejilla mensual) ────────────────────────────────────────────
-  // Solo EVENTOS, con su hora delante (Alberto, 16 sep 2026: primero "solo
-  // eventos y time blocks", el mismo día quitó también los time blocks: "lo
-  // interesante de esta vista es ver los eventos y poder agendar nuevos").
-  // "Evento" = `isEvent` CON hora; una tarea con hora sigue siendo tarea. Los
-  // eventos crudos de Google (no de todo el día) entran siempre.
-  function isMonthCalendarItem(n: Node): boolean {
-    if (isTimeBlockNode(n)) return false
-    try { if (JSON.parse(n.extraData || '{}')._timeBlock === '1') return false } catch { /* extraData corrupto */ }
-    return !!n.isEvent && !!n.due && hasTime(n.due)
-  }
-  type MonthItem = { id: string; text: string; color: string; done: boolean; t: number; virtual?: VirtualOccurrence }
+  // Qué se pinta lo decide el filtro (por defecto solo eventos). Los elementos
+  // SIN hora (eventos de todo el día, tareas sin hora) van arriba de la celda;
+  // los que tienen hora, debajo con la hora delante (Alberto, 16 sep 2026).
+  type MonthItem = { id: string; text: string; color: string; done: boolean; t: number; allDay: boolean; virtual?: VirtualOccurrence }
   function monthDayItems(date: Date): MonthItem[] {
     const out: MonthItem[] = []
     const realTexts = new Set<string>()
     for (const n of store.allActive()) {
-      if (!n.due || n.deletedAt || isInPapelera(n.id) || (n.status == null && !n.isEvent)) continue
+      if (!n.due || n.deletedAt || isInPapelera(n.id)) continue
+      const kind = kindOfNode(n)
+      if (n.status == null && kind === 'tasks') continue
       if (!sameDay(new Date(n.due), date)) continue
       realTexts.add(n.text.trim().toLowerCase())
-      if (!isMonthCalendarItem(n)) continue
+      if (!activeFilter[kind]) continue
       const overdue = new Date(n.due) < startOfDay(today) && n.status !== 'done'
-      out.push({ id: n.id, text: n.text || t('common.noTitle'), color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime() })
+      out.push({ id: n.id, text: n.text || t('common.noTitle'), color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime(), allDay: !hasTime(n.due) })
     }
     // Ocurrencias futuras de las series recurrentes (9 sep 2026, Alberto:
     // "Desarrollo UDA se debe ver todos los lunes y solo se ve el primero") —
     // mismo criterio que el timeline (`getTimedBlocks`) y la franja «todo el
     // día»: proyecciones atenuadas, no nodos propios.
     for (const v of virtualOccurrencesOn(date, { isHidden: isInPapelera, realTextsThatDay: realTexts })) {
-      if (!isMonthCalendarItem(v.origin)) continue
-      out.push({ id: v.key, text: v.origin.text || t('common.noTitle'), color: 'var(--accent,#6c5ce7)', done: false, t: v.occursAt.getTime(), virtual: v })
+      if (!showsNode(v.origin)) continue
+      out.push({ id: v.key, text: v.origin.text || t('common.noTitle'), color: 'var(--accent,#6c5ce7)', done: false, t: v.occursAt.getTime(), allDay: !v.origin.due || !hasTime(v.origin.due), virtual: v })
     }
     // Mismo dedup que getTimedBlocks/getAllDayTasks más arriba: sin esto, un
     // evento creado en Fromly y sincronizado con Google salía DOS veces en la
     // celda del mes (nodo local + evento crudo del pull de Google).
     const fromGcalIds = linkedGcalIdCores()
-    for (const ev of gcalEvents) {
-      if (ev.allDay || !sameDay(new Date(ev.start), date)) continue
+    if (activeFilter.events) for (const ev of gcalEvents) {
+      if (!sameDay(new Date(ev.start), date)) continue
       if (fromGcalIds.has(gcalIdCore(ev.id))) continue // ya hay un nodo local enlazado a este evento
-      out.push({ id: ev.id, text: ev.title || t('search.chipEvent'), color: '#16a34a', done: false, t: new Date(ev.start).getTime() })
+      if (ev.allDay && realTexts.has((ev.title || '').trim().toLowerCase())) continue // mismo dedup que la franja «todo el día»
+      out.push({ id: ev.id, text: ev.title || t('search.chipEvent'), color: '#16a34a', done: false, t: new Date(ev.start).getTime(), allDay: !!ev.allDay })
     }
-    return out.sort((a, b) => a.t - b.t)
+    return out.sort((a, b) => (a.allDay === b.allDay ? a.t - b.t : a.allDay ? -1 : 1))
   }
 
   function handleMonthDrop(e: React.DragEvent, date: Date) {
@@ -1488,7 +1529,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                         window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: it.id, x: e.clientX, y: e.clientY } }))
                       }}
                       title={it.virtual ? `${it.text} · ${t('recurrence.virtualHint', 'se repite')}` : it.text}>
-                      <span className="pp-month-chip-time">{fmtHH(new Date(it.t))}</span>{it.text}
+                      {!it.allDay && <span className="pp-month-chip-time">{fmtHH(new Date(it.t))}</span>}{it.text}
                       {/* «+» en hover — abre edición (fecha/recurrencia/contexto) sin
                           navegar a la nota, mismo patrón que `.pp-block-props` en las
                           vistas semana/día. Solo para nodos reales (no eventos GCal
@@ -1603,6 +1644,14 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                   onClick={() => setVisibleDayCnt(c => Math.max(MIN_DAY_CNT, c - 1))}>+</button>
               </>
             )}
+            {filterView && (
+              <div className="pp-kind-toggles">
+                {([['tasks', t('planner.filterTasks', 'Tareas')], ['events', t('planner.filterEvents', 'Eventos')], ['timeblocks', t('planner.filterTimeblocks', 'Time blocks')]] as [PlannerKind, string][]).map(([k, label]) => (
+                  <button key={k} className={`pp-kind-btn${activeFilter[k] ? ' pp-kind-btn--on' : ''}`}
+                    aria-pressed={activeFilter[k]} onClick={() => toggleFilter(k)}>{label}</button>
+                ))}
+              </div>
+            )}
             <button className="pp-today-btn pp-reset-btn" onClick={resetZoom}
               title={t('tip.resetZoom', { count: visibleDayCnt })}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -1670,7 +1719,8 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                   vista semana/mes (varias columnas) sí ayuda como leyenda. */}
               <div className="pp-allday-axis" style={{width:AXIS_W, flexShrink:0, position:'sticky', left:0, zIndex:10}}>{!dayOnlyHeader && t('tip.allDayLower')}</div>
               {visibleDays.map(d => {
-                const items = getAllDayTasks(d)
+                const items = getAllDayTasks(d).filter(it =>
+                  it.kind === 'gcal' ? activeFilter.events : showsNode(it.kind === 'node' ? it.node : it.v.origin))
                 const editing = !!newAllDay && sameDay(newAllDay.day, d)
                 return (
                   <div key={d.toISOString()} className="pp-allday-col" style={{width:colW, flexShrink:0}}
