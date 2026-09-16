@@ -5,6 +5,7 @@ import App from './App'
 import './styles/index.css'
 import { getStoredTheme, applyTheme, getStoredDensity, applyDensity, getStoredAccent, applyAccent } from './hooks/useTheme'
 import './i18n/config'
+import { startAutoUpdate } from './utils/autoUpdate'
 
 // Apply all preferences immediately to avoid FOUC
 applyTheme(getStoredTheme())
@@ -30,7 +31,15 @@ if (!isTauri) {
       const path = decodeURIComponent(search.slice(3))
       window.history.replaceState(null, '', '/app/' + path)
     }
+    // `?v=<ts>` solo sirve para saltar la caché del HTML al recargar (auto-update,
+    // error de chunk): quitarlo para no dejarlo en la barra ni en los enlaces.
+    const u = new URL(window.location.href)
+    if (u.searchParams.has('v')) {
+      u.searchParams.delete('v')
+      window.history.replaceState(null, '', u.pathname + u.search + u.hash)
+    }
   })()
+  startAutoUpdate()
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
