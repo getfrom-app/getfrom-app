@@ -5,9 +5,9 @@
 // (columna derecha del Historial de chats) — se comparte el mismo lenguaje
 // visual a propósito, son la misma idea (una lista de "cosas que pasaron",
 // con detalle al expandir) aplicada a otro contenido.
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useStore } from '../../store/nodeStore'
+import { store, useStore } from '../../store/nodeStore'
 import { listActiveKnowledgePills } from '../../api/userKnowledge'
 import { fmtRelative } from '../../utils/formatDate'
 import Icon from './Icon'
@@ -19,11 +19,62 @@ const SOURCE_LABELS: Record<string, string> = {
   migracion: 'v2.knowledge.sourceMigration',
 }
 
+/** Texto de la ficha editable al desplegarla (Alberto, 16 sep 2026: "poder
+ *  editar y anotar más cosas o corregir"). Guarda al salir del campo — la
+ *  píldora es un nodo normal, así que el cambio sincroniza como cualquier
+ *  edición y el chat lo ve en su siguiente turno. */
+function PillEditor({ id, text }: { id: string; text: string }) {
+  const { t } = useTranslation()
+  const [value, setValue] = useState(text)
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => { setValue(text) }, [text])
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [value])
+  const save = () => {
+    const next = value.trim()
+    if (!next) { setValue(text); return }
+    if (next !== text) store.updateNode(id, { text: next })
+  }
+  return (
+    <textarea
+      ref={ref}
+      className="v2-pill-edit"
+      value={value}
+      rows={2}
+      onChange={e => setValue(e.target.value)}
+      onBlur={save}
+      onKeyDown={e => {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); (e.target as HTMLTextAreaElement).blur() }
+        if (e.key === 'Escape') { setValue(text); (e.target as HTMLTextAreaElement).blur() }
+      }}
+      aria-label={t('v2.knowledge.edit', 'Editar lo que sabe de ti')}
+    />
+  )
+}
+
+/** Borra una ficha que el usuario ve incorrecta o inútil. Se marca `rejected`
+ *  antes de borrarla para que el servidor no la vuelva a aprender tal cual
+ *  (`rememberFacts` descarta hechos idénticos a uno rechazado). */
+function rejectPill(id: string) {
+  const node = store.getNode(id)
+  if (!node) return
+  let extra: Record<string, unknown> = {}
+  try { extra = JSON.parse(node.extraData || '{}') } catch { /* */ }
+  store.updateNode(id, { extraData: JSON.stringify({ ...extra, rejected: '1' }) })
+  store.deleteNode(id)
+}
+
 export default function V2KnowledgePills() {
   const { t, i18n } = useTranslation()
   useStore()
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [q, setQ] = useState('')
+  // Primer clic en la papelera arma el borrado, el segundo lo confirma.
+  const [armed, setArmed] = useState<string | null>(null)
 
   // Sin useMemo: `useStore()` ya provoca un re-render en cada cambio del
   // store, y recalcular esta lista (filtrar hijos de un nodo) es barato —
@@ -77,6 +128,19 @@ export default function V2KnowledgePills() {
                   </span>
                   <button
                     type="button"
+                    className={`v2-pill-delete${armed === p.id ? ' armed' : ''}`}
+                    onClick={e => {
+                      e.stopPropagation()
+                      if (armed === p.id) { rejectPill(p.id); setArmed(null) } else setArmed(p.id)
+                    }}
+                    onMouseLeave={() => { if (armed === p.id) setArmed(null) }}
+                    title={armed === p.id ? t('v2.knowledge.confirmDelete', 'Pulsa otra vez para eliminar') : t('v2.knowledge.delete', 'Eliminar')}
+                    aria-label={t('v2.knowledge.delete', 'Eliminar')}
+                  >
+                    <Icon name="trash" size={13} />
+                  </button>
+                  <button
+                    type="button"
                     className="v2-hist-row-expand"
                     onClick={e => { e.stopPropagation(); setExpanded(prev => ({ ...prev, [p.id]: !prev[p.id] })) }}
                     aria-label={isExpanded ? t('v2.history.collapse', 'Colapsar') : t('v2.history.expand', 'Leer completo')}
@@ -87,6 +151,7 @@ export default function V2KnowledgePills() {
                 </div>
                 {isExpanded && (
                   <div className="v2-hist-expand">
+                    <PillEditor id={p.id} text={p.text} />
                     <span className="v2-hist-expand-error">
                       {t('v2.knowledge.source', 'Origen')}: {sourceLabel(p.source)}
                       {p.createdAt ? ` · ${new Date(p.createdAt).toLocaleDateString(i18n.language)}` : ''}

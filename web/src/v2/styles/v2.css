@@ -1379,6 +1379,26 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
 }
 .v2-hist-expand-error { color: var(--text-tertiary); font-size: 12.5px; }
 
+/* ── Fichas del Perfil (V2KnowledgePills): editar y borrar ──────────────── */
+.v2-pill-edit {
+  width: 100%; box-sizing: border-box; resize: none; overflow: hidden;
+  padding: 8px 10px; border: 1px solid var(--v2-line-strong); border-radius: var(--v2-r);
+  background: var(--v2-surface); color: var(--text-primary);
+  font: inherit; font-size: 13.5px; line-height: 1.45;
+  transition: border-color var(--v2-fast), box-shadow var(--v2-fast);
+}
+.v2-pill-edit:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.v2-pill-delete {
+  flex: 0 0 auto; align-self: center; margin: 0; padding: 4px;
+  border: none; background: transparent; color: var(--text-tertiary);
+  cursor: pointer; display: flex; align-items: center; border-radius: var(--v2-r-sm);
+  opacity: 0; transition: opacity var(--v2-fast), color var(--v2-fast), background var(--v2-fast);
+}
+.v2-hist-row:hover .v2-pill-delete, .v2-pill-delete:focus-visible, .v2-pill-delete.armed { opacity: 1; }
+.v2-pill-delete:hover { color: var(--text-primary); background: var(--v2-hover); }
+.v2-pill-delete.armed { color: #d64545; background: rgba(214, 69, 69, 0.1); }
+@media (hover: none) { .v2-pill-delete { opacity: 1; } }
+
 /* ── Buscador del Historial ───────────────────────────────────────────── */
 .v2-hist-search {
   display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
