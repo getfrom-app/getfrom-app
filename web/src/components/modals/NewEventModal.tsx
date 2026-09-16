@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { store } from '../../store/nodeStore'
 import { useToast } from '../Toast'
 import Icon from '../../v2/components/Icon'
+import { recurrenceToString } from '../../utils/naturalDate'
 
 interface Props {
   onClose: () => void
@@ -37,6 +38,12 @@ const DURATION_OPTIONS = [
   { value: 'custom', label: 'Personalizada' },
 ]
 
+// Repetición: mismo formato y misma UI que «Repetición» en TaskPropsPopover
+// (DiaryPanelComponents.tsx): `unit` / `unit:N`, o el RecurrenceConfig en JSON
+// para «Personalizado» (días sueltos de la semana).
+const DAY_LETTERS_ES = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
+const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0] // L M X J V S D
+
 function todayDateStr() {
   const now = new Date()
   const pad = (n: number) => n.toString().padStart(2, '0')
@@ -57,11 +64,17 @@ export default function NewEventModal({ onClose, parentId, defaultDateStr, onCre
   const [title, setTitle] = useState('')
   const [startDate, setStartDate] = useState(defaultDateStr || todayDateStr())  // siempre YYYY-MM-DD
   const [startTime, setStartTime] = useState(nowTimeStr())    // HH:MM, solo si hasTime
-  const [hasTime, setHasTime] = useState(false)
+  // Con hora por defecto (16 sep 2026): el Mes solo pinta eventos CON hora, así
+  // que uno creado desde ahí sin hora desaparecía nada más crearlo.
+  const [hasTime, setHasTime] = useState(true)
   const [duration, setDuration] = useState('60')
   const [endDate, setEndDate] = useState('')
   const [description, setDescription] = useState('')
   const [eventType, setEventType] = useState('')
+  const [recUnit, setRecUnit] = useState<string | null>(null) // null = no se repite
+  const [recN, setRecN] = useState(1)
+  const [customOpen, setCustomOpen] = useState(false)
+  const [customDays, setCustomDays] = useState<number[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
   const navigate = useNavigate()
 
@@ -116,6 +129,10 @@ export default function NewEventModal({ onClose, parentId, defaultDateStr, onCre
     // `status: 'pending'` además de `isEvent`: un evento ES una tarea con día y hora
     // (ver utils/taskNode.ts) — sin status no contaba como tarea en ningún sitio.
     store.updateNode(node.id, { isEvent: true, status: 'pending' })
+    const recurrence = customOpen
+      ? (customDays.length ? recurrenceToString({ type: 'custom', days: customDays, display: customDays.map(d => DAY_LETTERS_ES[d]).join('') }) : null)
+      : recUnit ? (recN === 1 ? recUnit : `${recUnit}:${recN}`) : null
+    if (recurrence) store.updateNode(node.id, { recurrence })
     if (hasTime && endDate) store.updateNode(node.id, { dueEnd: new Date(endDate).toISOString() })
     if (body) store.updateNode(node.id, { body })
     if (onCreated) onCreated(node.id)
@@ -236,6 +253,35 @@ export default function NewEventModal({ onClose, parentId, defaultDateStr, onCre
               </div>
             </>
           )}
+
+          {/* Repetición */}
+          <div className="modal-field">
+            <label className="modal-label">{t('prop.recurrence')}</label>
+            <div className="nqp-rec-row">
+              <button type="button" className={`nqp-chip${!recUnit && !customOpen ? ' active' : ''}`}
+                onClick={() => { setRecUnit(null); setCustomOpen(false); setCustomDays([]) }}>–</button>
+              <input type="number" className="nqp-rec-n" min={1} max={999}
+                value={recN} disabled={!recUnit || customOpen}
+                onChange={e => setRecN(Math.max(1, parseInt(e.target.value) || 1))} />
+              {([['daily', t('recUnit.days')], ['weekly', t('recUnit.weeks')], ['monthly', t('recUnit.months')], ['yearly', t('recUnit.years')]] as [string, string][]).map(([unit, label]) => (
+                <button type="button" key={unit}
+                  className={`nqp-chip${!customOpen && recUnit === unit ? ' active' : ''}`}
+                  onClick={() => { setRecUnit(unit); setCustomOpen(false) }}>{label}</button>
+              ))}
+              <button type="button" className={`nqp-chip${customOpen ? ' active' : ''}`}
+                onClick={() => { setCustomOpen(true); setRecUnit(null) }}>{t('prop.recurrenceCustom', 'Personalizado')}</button>
+            </div>
+            {customOpen && (
+              <div className="nqp-rec-days-row">
+                {WEEK_ORDER.map(day => (
+                  <button type="button" key={day}
+                    className={`nqp-rec-day${customDays.includes(day) ? ' active' : ''}`}
+                    onClick={() => setCustomDays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day].sort((a, b) => a - b))}
+                  >{DAY_LETTERS_ES[day]}</button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Description */}
           <div className="modal-field">
