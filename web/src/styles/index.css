@@ -8488,6 +8488,9 @@ textarea:focus-visible,
 .task-props-popup--modal .nqp-qbtn,
 .task-props-popup--modal .nqp-chip { font-size: 13px; padding: 6px 12px; }
 .task-props-popup--modal .nqp-rec-n { width: 56px; font-size: 14px; }
+/* Repetición dentro de «Nuevo evento»: mismo tamaño que los chips de tipo del modal. */
+.new-event-modal .nqp-chip { font-size: 13px; padding: 6px 12px; }
+.new-event-modal .nqp-rec-n { width: 56px; font-size: 14px; }
 .task-props-popup--modal .nqp-date-input,
 .task-props-popup--modal .nqp-time-input { font-size: 14px; padding: 6px 8px; }
 
