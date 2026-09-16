@@ -129,6 +129,14 @@ export default function PricingView() {
             <button className="pcard-cta pcard-cta--solid" onClick={() => navigate('/register')}>
               {t('pricing.ctaStartFree2', 'Empezar la prueba')}
             </button>
+          ) : !us.user ? (
+            // Mientras se resuelve el fetchMe de arriba, `us.user` es null y no
+            // sabemos si el trial sigue activo — mostrar neutro, no "terminado"
+            // (bug real: quien acababa de registrarse veía un flash de "Tu
+            // prueba ha terminado" antes de que la respuesta llegara).
+            <button className="pcard-cta" disabled style={{ opacity: 0.55, cursor: 'default' }}>
+              {t('common.loading', 'Cargando…')}
+            </button>
           ) : isPaid ? (
             <button className="pcard-cta" disabled style={{ opacity: 0.55, cursor: 'default' }}>
               {t('pricing.trialNotApplicable', 'Ya tienes Pro')}
