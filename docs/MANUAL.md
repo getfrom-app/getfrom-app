@@ -284,7 +284,7 @@ directamente dentro de ese contexto sin entrar en él, y abre un menú con las m
 **Subcontexto** (un proyecto nuevo colgando de ese contexto). El **"+"** de la cabecera
 «CONTEXTOS», también al pasar el ratón, crea un contexto en la raíz.
 
-El **Planificador** (vista de calendario semana/mes/año) se abre desde **Agenda**, en la columna
+El **Planificador** (vista de calendario timeline/semana/mes/año) se abre desde **Agenda**, en la columna
 izquierda — no desde el chat.
 
 Junto al campo de escritura, en el propio composer, tienes además:
@@ -411,8 +411,8 @@ ves en el centro y en la columna derecha.
 
 ### Agenda — el Planificador completo, con un asistente vivo al lado
 
-Es el destino por defecto al abrir Fromly. El centro muestra el Planificador (semana de 3 columnas
-con el día elegido siempre en el centro, mes o año — navegable, ver sección 7), sin nada más encima
+Es el destino por defecto al abrir Fromly. El centro muestra el Planificador (timeline de 3 columnas
+con el día elegido siempre en el centro, semana de lunes a domingo, mes o año — navegable, ver sección 7), sin nada más encima
 — limpio. Mientras no tengas nada abierto, la columna derecha tiene tres pestañas, cada una a toda
 la altura (Fromly recuerda la última que usaste):
 
@@ -679,17 +679,25 @@ El Planificador es la vista de calendario completa de Fromly. Es lo que ves en e
 en **Agenda** (destino por defecto) — la columna derecha, mientras tanto, muestra tus tareas
 atrasadas y sin fecha (lo que el propio calendario no cubre) y, debajo, la nota diaria de hoy.
 
-### Tres vistas: Semana · Mes · Año
+### Cuatro vistas: Timeline · Semana · Mes · Año
 
-- **Semana**: 3 días en columnas, con el día elegido siempre CENTRADO en pantalla y timeline
-  horario. Arriba, una franja "todo el día" para las tareas con fecha pero sin hora. La columna de
-  hoy se distingue con un fondo propio.
-- **Mes**: la cuadrícula del mes, con las tareas y eventos de cada día.
+- **Timeline**: días en columnas con desplazamiento lateral, el día elegido siempre CENTRADO y
+  timeline horario. Arriba, una franja "todo el día" para lo que tiene fecha pero no hora. La
+  columna de hoy se distingue con un fondo propio. Los botones − / + cambian cuántos días caben.
+- **Semana**: la semana completa de lunes a domingo, fija en pantalla, con el mismo timeline
+  horario. Las flechas ‹ › pasan a la semana anterior o siguiente; **Hoy** vuelve a la actual.
+- **Mes**: la cuadrícula del mes. Arriba de cada día, lo que no tiene hora (eventos de todo el día);
+  debajo, lo que tiene hora, con la hora delante. Clic en un hueco de un día → **Nuevo evento** ese
+  día, con hora y repetición.
 - **Año**: los 12 meses en una grid. Los días con contenido llevan un punto; clic en cualquier día
   te lleva a él.
 
-El timeline de UN día concreto, hora a hora, vive aquí mismo, en la vista Semana — ya no hay una
-pestaña "Día" aparte.
+### Qué se ve: Tareas · Eventos · Time blocks
+
+En Timeline, Semana y Mes, la barra superior tiene tres botones para mostrar u ocultar tareas,
+eventos y time blocks. Cada vista recuerda tu elección (en ese navegador). Por defecto, el **Mes**
+solo muestra eventos — es la vista para ver tus citas y agendar nuevas — y **Timeline** y **Semana**
+muestran las tres cosas. Año no tiene filtro.
 
 **Tareas vs eventos de un vistazo:** las tareas se muestran sin fondo (borde fino con un toque de
 color); los eventos (de Google o marcados como evento) llevan un sombreado tenue del color de su

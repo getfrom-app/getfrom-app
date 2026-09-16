@@ -1,7 +1,7 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-15, sesión 51 (servidor + iOS)
+> Última actualización: 2026-09-16, sesión 56 (web)
 
 ---
 
@@ -2851,3 +2851,32 @@ Web **v9.10.75**. Sin clientes desde junio (`AIChatModal` no se montaba; en iOS 
 `store/aiChatExecutor.ts`, `aiChatStream` y el envío de `aiChatStore` (web); `AIChatService.swift`,
 `AIChatExecutor.swift`, `chatStream` y `persistActions` (iOS). Las menciones anteriores a esos archivos
 en este documento son históricas. El chat único es `/assistant/chat` (`runAssistantTurn`).
+
+---
+
+## 16 sep 2026 (sesión 56) — Planificador web: Timeline/Semana/Mes, filtro por tipo, auto-actualización
+
+Web **v9.10.76 → v9.10.81**. Todo en `landing/web`.
+
+- **`components/panels/PlannerPanel.tsx`**
+  - `ViewMode` gana `'workweek'` (pestaña «Semana»: lunes-domingo fijos, `WEEK_DAYS = 7`,
+    `mondayOf()`, ‹ › de 7 en 7, sin pre-carga ni scroll horizontal). `'week'` sigue siendo el id
+    interno de la pestaña rebautizada «Timeline» (i18n `timeline.timelineMode`), para no romper
+    `from_agenda_view_mode` guardado. `V2App.tsx` pasa `viewTabs={['week','workweek','month','year']}`.
+  - Filtro Tareas/Eventos/Time blocks: `kindOfNode()` (time block = `_timeblock` o legacy
+    `_timeBlock`; evento = `isEvent`, con o sin hora; resto = tarea — una tarea con hora enlazada a
+    Google sigue siendo tarea). Estado por vista (`week`/`workweek`/`month`) en localStorage
+    `from_planner_filters`; defaults: Mes solo eventos, Timeline y Semana todo. Se aplica al
+    timeline (`getTimedBlocks` filtrado en `renderCol`), a la franja «todo el día» y a
+    `monthDayItems`. Año sin filtro. Botones `.pp-kind-btn` en la cabecera.
+  - Mes: `MonthItem.allDay`; sin hora arriba (incluye eventos de Google `allDay`, dedup por título
+    contra nodos), con hora debajo con `HH:MM` (`.pp-month-chip-time`). Clic en hueco de celda abre
+    `NewEventModal` directamente (ya no menú tarea/evento).
+- **`components/modals/NewEventModal.tsx`**: sección Repetición (mismo formato que
+  `TaskPropsPopover`: `unit`/`unit:N` o `RecurrenceConfig` JSON para Personalizado) y hora activada
+  por defecto.
+- **`utils/autoUpdate.ts`** (arrancado en `main.tsx`, solo web producción): cada 5 min y al volver a
+  la pestaña pide `/app/?_v=<ts>` con `cache:'no-store'` y compara el `assets/index-<hash>.js`. Si
+  cambió, recarga con `?v=<ts>` cuando la pestaña está oculta o tras 2 min sin interacción y sin
+  campo editable con foco; guardia de 10 min en sessionStorage. `main.tsx` quita `?v=` al arrancar.
+  Motivo: GitHub Pages sirve el HTML con `cache-control: max-age=600`.
