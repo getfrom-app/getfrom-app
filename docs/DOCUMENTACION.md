@@ -2840,3 +2840,14 @@ CloudKit tiene límites de escritura, latencia variable y no funciona bien en pl
 ### Por qué R2 para archivos
 
 Los archivos binarios no deben pasar por Railway (coste de transferencia). R2 con presigned URLs permite subir/descargar directamente desde el cliente, con el servidor solo gestionando autorización.
+
+---
+
+## 16 sep 2026 — borrado el motor de chat viejo (`/ai/chat`)
+
+Web **v9.10.75**. Sin clientes desde junio (`AIChatModal` no se montaba; en iOS ninguna vista usaba
+`AIChatService`). Borrados: `POST /ai/chat`, `lib/promptCache.ts` y `billableCachedTokens`/
+`usesAnthropicFormat`/`supportsExplicitPromptCache` (servidor); `components/aichat/`,
+`store/aiChatExecutor.ts`, `aiChatStream` y el envío de `aiChatStore` (web); `AIChatService.swift`,
+`AIChatExecutor.swift`, `chatStream` y `persistActions` (iOS). Las menciones anteriores a esos archivos
+en este documento son históricas. El chat único es `/assistant/chat` (`runAssistantTurn`).
