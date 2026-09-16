@@ -106,16 +106,17 @@ function dayLabel(d: Date, locale: string) {
   return `${weekday} ${d.getDate()} ${month}`
 }
 function monthLabel(d: Date, locale: string) { return new Intl.DateTimeFormat(locale, { month: 'long' }).format(d) }
-/** «14 – 18 sept 2026» (o «28 sept – 2 oct 2026» si cruza de mes). */
+/** «14 – 20 sept 2026» (o «28 sept – 4 oct 2026» si cruza de mes). */
 function workweekTitle(monday: Date, locale: string) {
-  const friday = addDays(monday, WORKWEEK_DAYS - 1)
+  const friday = addDays(monday, WEEK_DAYS - 1) // último día de la semana (domingo)
   const short = (d: Date) => new Intl.DateTimeFormat(locale, { month: 'short' }).format(d)
   const from = monday.getMonth() === friday.getMonth() ? `${monday.getDate()}` : `${monday.getDate()} ${short(monday)}`
   return `${from} – ${friday.getDate()} ${short(friday)} ${friday.getFullYear()}`
 }
 
 // 'day' = solo hoy (1 col) · 'week' = timeline multi-día con scroll (pestaña «Timeline»)
-// · 'workweek' = semana fija lunes-viernes, se pasa de semana en semana (pestaña «Semana»)
+// · 'workweek' = semana fija de lunes a domingo, se pasa de semana en semana (pestaña «Semana»).
+//   El id dice "workweek" porque nació lunes-viernes; Alberto pidió el finde el mismo 16 sep.
 // · 'month' = rejilla mensual · 'year' = anual.
 // 'week' conserva su nombre interno aunque la pestaña se llame «Timeline» desde el
 // 16 sep 2026: así la vista guardada en localStorage (`from_agenda_view_mode`) sigue valiendo.
@@ -127,7 +128,7 @@ function mondayOf(d: Date): Date {
   const dow = r.getDay() === 0 ? 6 : r.getDay() - 1 // lunes = 0
   return addDays(r, -dow)
 }
-const WORKWEEK_DAYS = 5
+const WEEK_DAYS = 7
 
 // Bloque con hora en el timeline
 interface Block {
@@ -614,7 +615,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       const el = timelineRef.current
       if (!el) return
       const avail = el.clientWidth - AXIS_W - 2
-      const cnt = viewMode === 'day' ? 1 : viewMode === 'workweek' ? WORKWEEK_DAYS : visibleDayCnt
+      const cnt = viewMode === 'day' ? 1 : viewMode === 'workweek' ? WEEK_DAYS : visibleDayCnt
       setColW(Math.max(60, Math.floor(avail / cnt)))
       // Auto-fit del alto: que el día entero quepa sin scroll. Resta lo que ocupan
       // la cabecera de días + la franja «todo el día» (viven dentro del scroll, así
@@ -681,11 +682,11 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   const visibleDays = useMemo(() =>
     viewMode === 'day'
       ? [centerDate]
-      // Semana fija (Alberto, 16 sep 2026: "que aparezca la semana de lunes a
-      // viernes y que se pueda pasar a semanas atrás y delante"): sin pre-carga
-      // ni scroll horizontal, las 5 columnas llenan el ancho.
+      // Semana fija (Alberto, 16 sep 2026: "que se pueda pasar a semanas atrás y
+      // delante"), de lunes a domingo: sin pre-carga ni scroll horizontal, las 7
+      // columnas llenan el ancho.
       : viewMode === 'workweek'
-        ? Array.from({ length: WORKWEEK_DAYS }, (_, i) => addDays(mondayOf(centerDate), i))
+        ? Array.from({ length: WEEK_DAYS }, (_, i) => addDays(mondayOf(centerDate), i))
         : Array.from({ length: PRE_DAYS*2+1 }, (_, i) => addDays(centerDate, i - PRE_DAYS))
   , [centerDate.toDateString(), viewMode]) // eslint-disable-line
 
@@ -1303,14 +1304,14 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
   }
 
   // ── Vista MES (rejilla mensual) ────────────────────────────────────────────
-  // Solo eventos y time blocks, nunca tareas (Alberto, 16 sep 2026: "en el
-  // planner mensual deberían aparecer solamente los eventos y time blocks").
-  // "Evento" con el mismo criterio que el brief (ESTADO, 15 sep): `isEvent` CON
-  // hora, o time block (nuevo `_timeblock` o legacy `_timeBlock`). Una tarea con
-  // hora sigue siendo tarea. Los eventos crudos de Google entran siempre.
+  // Solo EVENTOS, con su hora delante (Alberto, 16 sep 2026: primero "solo
+  // eventos y time blocks", el mismo día quitó también los time blocks: "lo
+  // interesante de esta vista es ver los eventos y poder agendar nuevos").
+  // "Evento" = `isEvent` CON hora; una tarea con hora sigue siendo tarea. Los
+  // eventos crudos de Google (no de todo el día) entran siempre.
   function isMonthCalendarItem(n: Node): boolean {
-    if (isTimeBlockNode(n)) return true
-    try { if (JSON.parse(n.extraData || '{}')._timeBlock === '1') return true } catch { /* extraData corrupto */ }
+    if (isTimeBlockNode(n)) return false
+    try { if (JSON.parse(n.extraData || '{}')._timeBlock === '1') return false } catch { /* extraData corrupto */ }
     return !!n.isEvent && !!n.due && hasTime(n.due)
   }
   type MonthItem = { id: string; text: string; color: string; done: boolean; t: number; virtual?: VirtualOccurrence }
@@ -1318,7 +1319,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     const out: MonthItem[] = []
     const realTexts = new Set<string>()
     for (const n of store.allActive()) {
-      if (!n.due || n.deletedAt || isInPapelera(n.id) || n.status == null) continue
+      if (!n.due || n.deletedAt || isInPapelera(n.id) || (n.status == null && !n.isEvent)) continue
       if (!sameDay(new Date(n.due), date)) continue
       realTexts.add(n.text.trim().toLowerCase())
       if (!isMonthCalendarItem(n)) continue
@@ -1487,7 +1488,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                         window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: it.id, x: e.clientX, y: e.clientY } }))
                       }}
                       title={it.virtual ? `${it.text} · ${t('recurrence.virtualHint', 'se repite')}` : it.text}>
-                      {it.text}
+                      <span className="pp-month-chip-time">{fmtHH(new Date(it.t))}</span>{it.text}
                       {/* «+» en hover — abre edición (fecha/recurrencia/contexto) sin
                           navegar a la nota, mismo patrón que `.pp-block-props` en las
                           vistas semana/día. Solo para nodos reales (no eventos GCal

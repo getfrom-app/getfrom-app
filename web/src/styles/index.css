@@ -12930,6 +12930,7 @@ textarea:focus-visible,
    (--text-primary) sobre fondo blanco, prácticamente invisible (Alberto, 17 jul). */
 .pp-month-chip { position: relative; font-size: 10.5px; color: var(--text-primary); background: var(--bg-secondary); border-radius: 3px; padding: 1px 15px 1px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.4; cursor: pointer; }
 .pp-month-chip:hover { background: var(--bg-hover, rgba(108,92,231,0.08)); }
+.pp-month-chip-time { color: var(--text-tertiary); font-variant-numeric: tabular-nums; margin-right: 4px; }
 /* «+» en hover — abre edición completa (fecha/recurrencia/contexto) sin
    navegar a la tarea, mismo patrón que `.pp-block-props` en semana/día. */
 .pp-month-chip-props {
