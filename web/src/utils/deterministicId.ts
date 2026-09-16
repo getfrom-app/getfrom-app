@@ -93,6 +93,14 @@ function uuidFromString(s: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`
 }
 
+/** ID determinista de las notas COMUNES de una serie recurrente (ver
+ *  utils/seriesNotes.ts). `seriesKey` ya es un uuid propio del usuario, así que
+ *  no hace falta el userId: dos dispositivos que abran la misma serie a la vez
+ *  crean el MISMO nodo y el upsert lo fusiona. */
+export function seriesNotesId(seriesKey: string): string {
+  return uuidFromString(`from.seriesNotes.${seriesKey}`)
+}
+
 /** userId del servidor = claim `sub` del JWT. Mismo valor en todos los clientes. */
 export function serverUserId(): string | null {
   const tok = getToken()

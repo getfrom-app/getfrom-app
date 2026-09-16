@@ -12,6 +12,7 @@ import type { Node } from '../../types'
 import { toggleTaskDone } from '../../utils/dailyCockpit'
 import { trashNode } from '../../utils/papeleraHelper'
 import { containerNotesNode, getOrCreateContainerNotes } from '../../utils/cajones'
+import { getOrCreateSeriesNotes, isSeriesMember, seriesNotesNode } from '../../utils/seriesNotes'
 import { timeLabel, dueLabel, dueColor, recLabel } from '../../components/panels/TaskRow'
 import { taskCheckState } from '../../utils/taskNode'
 import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
@@ -40,6 +41,15 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
   useEffect(() => {
     setNotesNode(containerNotesNode(node.id) ?? getOrCreateContainerNotes(node.id))
   }, [node.id])
+
+  // Serie recurrente: notas comunes a todas las repeticiones ENCIMA de las de
+  // esta instancia (utils/seriesNotes.ts). Mismo patrón get-or-create en efecto.
+  const inSeries = isSeriesMember(node)
+  const [seriesNotes, setSeriesNotes] = useState<Node | null>(() => inSeries ? seriesNotesNode(node) : null)
+  useEffect(() => {
+    setSeriesNotes(inSeries ? (seriesNotesNode(node) ?? getOrCreateSeriesNotes(node)) : null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id, inSeries])
 
   const time = timeLabel(node, i18n.language)
   const due = dueLabel(node, i18n.language)
@@ -77,9 +87,25 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
         <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />
       </div>
 
+      {inSeries && seriesNotes && (
+        <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+          <div className="v2-section-label" style={{ padding: '0 0 4px' }}>
+            {t('v2.task.seriesNotes', 'Notas comunes')}
+            <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400, marginLeft: 8, color: 'var(--text-tertiary)' }}>
+              {t('v2.task.seriesNotesHint', 'se ven en todas las repeticiones')}
+            </span>
+          </div>
+          <V2NoteBody node={seriesNotes} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
+        </div>
+      )}
+
       {/* Notas — EL MISMO editor completo que cualquier nota, NO es el título de la tarea. */}
       <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>{t('v2.context.notes', 'Notas')}</div>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>
+          {inSeries && due
+            ? <>{t('v2.task.instanceNotes', 'Notas de este día')}<span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400, marginLeft: 8, color: 'var(--text-tertiary)' }}>{due}</span></>
+            : t('v2.context.notes', 'Notas')}
+        </div>
         {notesNode && <V2NoteBody node={notesNode} onSelectCtx={onSelectCtx} inlinePage hideContext />}
       </div>
 
