@@ -515,7 +515,7 @@ The updater is `tauri-plugin-updater`. Each release requires a `latest.json` sig
 ```bash
 # 1. Bump version in from-mac/src-tauri/tauri.conf.json
 # 2. Notarized build
-export APPLE_ID="albertolezaun@me.com" APPLE_PASSWORD="ulbw-glkh-jztf-hsin"
+export APPLE_ID="albertolezaun@me.com" APPLE_PASSWORD="$(security find-generic-password -s altool-from -w)"
 export APPLE_TEAM_ID="5YNQRA7NUE"
 export TAURI_SIGNING_PRIVATE_KEY_PATH=~/.tauri/from-mac.key
 export TAURI_SIGNING_PRIVATE_KEY_PASSWORD=""
