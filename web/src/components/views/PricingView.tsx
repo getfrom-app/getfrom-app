@@ -22,6 +22,15 @@ export default function PricingView() {
   const isPaid = !!us.isPremium
   const isLifetime = us.user?.licenseStatus === 'active'
 
+  // Navegación client-side (React Router) no resetea el scroll. En viewports
+  // bajos (móvil, tras rellenar el formulario de registro) se llega aquí con
+  // el scroll heredado de /register → título y botón cerrar quedan fuera de
+  // la pantalla, sin forma obvia de volver arriba. Bug real probado en vivo
+  // con cuenta nueva el 17 sep 2026.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   // /pricing es una ruta pública, fuera de PrivateRoute/V2App — nadie más carga
   // el usuario aquí. Sin esto, quien acaba de registrarse llega con `user: null`
   // y ve "Tu prueba ha terminado" en vez de "Te quedan 15 días" (bug real,
