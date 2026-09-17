@@ -1,7 +1,18 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-16, sesión 57 (web, servidor, iOS)
+> Última actualización: 2026-09-17, sesión 58 (web, servidor)
+
+---
+
+## Sesión 2026-09-17 (sesión 58) — notas comunes también en eventos y time blocks
+
+- **Web**: `V2SeriesNotesSection` (exportada de `V2TaskDetailView.tsx`) se reutiliza en
+  `V2TimeBlockSeriesView` (`V2DetailView.tsx`) para `isTimeBlockNode && isSeriesMember`. Las «Notas de
+  este día» de un time block son su propio body (no un hijo `_containerNotes`).
+- **Servidor** (`routes/assistant.ts`, `GET /assistant/node/:id`): `seriesNotes` para tarea, evento
+  (`isEvent`) o time block (`isTimeBlockExtraData`) miembro de serie, sin depender de `notes`; `notes`
+  también para eventos sin status. iOS sin cambios.
 
 ---
 
