@@ -45,11 +45,6 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
   // Serie recurrente: notas comunes a todas las repeticiones ENCIMA de las de
   // esta instancia (utils/seriesNotes.ts). Mismo patrón get-or-create en efecto.
   const inSeries = isSeriesMember(node)
-  const [seriesNotes, setSeriesNotes] = useState<Node | null>(() => inSeries ? seriesNotesNode(node) : null)
-  useEffect(() => {
-    setSeriesNotes(inSeries ? (seriesNotesNode(node) ?? getOrCreateSeriesNotes(node)) : null)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [node.id, inSeries])
 
   const time = timeLabel(node, i18n.language)
   const due = dueLabel(node, i18n.language)
@@ -87,17 +82,7 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
         <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />
       </div>
 
-      {inSeries && seriesNotes && (
-        <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-          <div className="v2-section-label" style={{ padding: '0 0 4px' }}>
-            {t('v2.task.seriesNotes', 'Notas comunes')}
-            <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400, marginLeft: 8, color: 'var(--text-tertiary)' }}>
-              {t('v2.task.seriesNotesHint', 'se ven en todas las repeticiones')}
-            </span>
-          </div>
-          <V2NoteBody node={seriesNotes} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
-        </div>
-      )}
+      {inSeries && <V2SeriesNotesSection node={node} onSelectCtx={onSelectCtx} />}
 
       {/* Notas — EL MISMO editor completo que cualquier nota, NO es el título de la tarea. */}
       <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
@@ -110,6 +95,30 @@ export default function V2TaskDetailView({ node, onSelectCtx }: Props) {
       </div>
 
       {showProps && <TaskPropsPopover node={node} allowDelete onDeleted={() => window.dispatchEvent(new Event('from:close-detail'))} onClose={() => setShowProps(false)} />}
+    </div>
+  )
+}
+
+/** «Notas comunes» de una serie recurrente — tarea, evento o time block
+ *  (utils/seriesNotes.ts). Solo pintar si `isSeriesMember(node)`. La usa también
+ *  V2DetailView para los time blocks, que siguen con su body como notas del día. */
+export function V2SeriesNotesSection({ node, onSelectCtx }: Props) {
+  const { t } = useTranslation()
+  const [seriesNotes, setSeriesNotes] = useState<Node | null>(() => seriesNotesNode(node))
+  useEffect(() => {
+    setSeriesNotes(seriesNotesNode(node) ?? getOrCreateSeriesNotes(node))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [node.id])
+  if (!seriesNotes) return null
+  return (
+    <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+      <div className="v2-section-label" style={{ padding: '0 0 4px' }}>
+        {t('v2.task.seriesNotes', 'Notas comunes')}
+        <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400, marginLeft: 8, color: 'var(--text-tertiary)' }}>
+          {t('v2.task.seriesNotesHint', 'se ven en todas las repeticiones')}
+        </span>
+      </div>
+      <V2NoteBody node={seriesNotes} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
     </div>
   )
 }

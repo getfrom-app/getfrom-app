@@ -27,7 +27,11 @@ import { promoteCitationWithFeedback } from '../../utils/citations'
 import { firstContextOf, setNodeContext, contextColor, isContextNode } from '../../utils/cajones'
 import { saveExample } from '../../api/autoClassify'
 import ContextPicker from '../../components/panels/ContextPicker'
-import V2TaskDetailView from './V2TaskDetailView'
+import V2TaskDetailView, { V2SeriesNotesSection } from './V2TaskDetailView'
+import { isTimeBlockNode } from '../../utils/taskNode'
+import { isSeriesMember } from '../../utils/seriesNotes'
+import { dueLabel } from '../../components/panels/TaskRow'
+import { trashNode } from '../../utils/papeleraHelper'
 import V2AgentDetailView from './V2AgentDetailView'
 import V2PromptDetailView from './V2PromptDetailView'
 import { isAgentNode } from '../../utils/agentesHelper'
@@ -411,7 +415,38 @@ export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFilter
   // TAREA/EVENTO: NUNCA como documento genérico — antes caía aquí abajo (V2NoteBody)
   // con body vacío y el DocEditor le pisaba el título con «Documento» al guardar.
   if (node.status != null || node.isEvent) return <V2TaskDetailView node={node} onSelectCtx={onSelectCtx} />
+  // TIME BLOCK recurrente: «Notas comunes» de la serie encima, igual que tarea y
+  // evento (Alberto, 17 sep 2026). Sus notas de ESTE día siguen siendo su propio
+  // body — lo que ya tenían escrito no se mueve a ningún sitio.
+  if (isTimeBlockNode(node) && isSeriesMember(node)) return <V2TimeBlockSeriesView node={node} onSelectCtx={onSelectCtx} hideContext={hideContext} />
   // CITA de un párrafo de otra nota — vista propia con «Ir a la nota» (ver arriba).
   if (ed._docSelection != null) return <V2CitationView node={node} onSelectCtx={onSelectCtx} />
   return <V2NoteBody node={node} onSelectCtx={onSelectCtx} hideContext={hideContext} hideToolbar={hideToolbar} />
+}
+
+function V2TimeBlockSeriesView({ node, onSelectCtx, hideContext }: { node: Node; onSelectCtx: (id: string) => void; hideContext?: boolean }) {
+  const { t, i18n } = useTranslation()
+  const due = dueLabel(node, i18n.language)
+  return (
+    <div style={{ height: '100%', overflow: 'auto', padding: '4px 18px 18px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0' }}>
+        {!hideContext && <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />}
+        <button
+          title={t('tip.delete', 'Eliminar')}
+          onClick={() => { trashNode(node.id); window.dispatchEvent(new Event('from:close-detail')) }}
+          style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: 4 }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+        </button>
+      </div>
+      <V2SeriesNotesSection node={node} onSelectCtx={onSelectCtx} />
+      <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+        <div className="v2-section-label" style={{ padding: '0 0 4px' }}>
+          {t('v2.task.instanceNotes', 'Notas de este día')}
+          {due && <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400, marginLeft: 8, color: 'var(--text-tertiary)' }}>{due}</span>}
+        </div>
+        <V2NoteBody node={node} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
+      </div>
+    </div>
+  )
 }
