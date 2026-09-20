@@ -31,7 +31,7 @@ import V2TaskDetailView, { V2SeriesNotesSection } from './V2TaskDetailView'
 import { isTimeBlockNode } from '../../utils/taskNode'
 import { isSeriesMember } from '../../utils/seriesNotes'
 import { dueLabel } from '../../components/panels/TaskRow'
-import { trashNode } from '../../utils/papeleraHelper'
+import { trashNode, restoreNode } from '../../utils/papeleraHelper'
 import V2AgentDetailView from './V2AgentDetailView'
 import V2PromptDetailView from './V2PromptDetailView'
 import { isAgentNode } from '../../utils/agentesHelper'
@@ -192,10 +192,14 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
 
   const toggleFavorite = () => { const next = !node.isFavorite; store.updateNode(node.id, { isFavorite: next }); toast(next ? t('tip.addFavorite') : t('tip.removeFavorite')) }
   const deleteCard = () => {
-    const deletedIds = store.deleteNode(node.id)
-    if (deletedIds.length > 0) {
-      toast(t('context.toastMovedToTrash', 'Movido a la papelera'), 'success', { label: t('tip.undo', 'Deshacer'), onClick: () => store.restoreDeleted(deletedIds) })
-    }
+    // Antes usaba store.deleteNode() (borrado "lápida" sin mover el nodo bajo
+    // 🗑 Papelera): el toast decía "Movido a la papelera" pero el nodo nunca
+    // aparecía ahí — indistinguible de un borrado permanente si se perdía el
+    // toast de deshacer. trashNode() es el mismo mecanismo que usan
+    // V2TaskDetailView/V2PromptDetailView/V2AgentDetailView y sí lo mueve.
+    const nodeId = node.id
+    trashNode(nodeId)
+    toast(t('context.toastMovedToTrash', 'Movido a la papelera'), 'success', { label: t('tip.undo', 'Deshacer'), onClick: () => restoreNode(nodeId) })
     window.dispatchEvent(new Event('from:close-detail'))
   }
 
