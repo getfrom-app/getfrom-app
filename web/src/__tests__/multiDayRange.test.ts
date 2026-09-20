@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isMultiDayRange, rangeCoversDay, resolveDueEnd } from '../utils/dates'
+import { isMultiDayRange, rangeCoversDay, resolveDueEnd, dailySlotOn } from '../utils/dates'
 
 /** Fin opcional (`dueEnd`) de varios días — 20 sep 2026.
  *  «Un evento que dura desde mañana hasta el 14 de octubre»: el planificador
@@ -57,5 +57,47 @@ describe('resolveDueEnd — escribir el fin a mano', () => {
 
   it('sin inicio no hay fin posible', () => {
     expect(resolveDueEnd(null, '2026-10-14', '', false)).toBe('clear')
+  })
+})
+
+/** Un rango con hora de inicio Y de fin es la MISMA franja cada día del rango
+ *  (un curso del 21/09 al 14/10 de 16:30 a 20:30), no una banda continua que
+ *  corre de noche (20 sep 2026, Alberto: "ahora no respeta la hora, lo pone
+ *  como todo el día"). */
+describe('dailySlotOn — rango con hora', () => {
+  const due = new Date(2026, 8, 21, 16, 30).toISOString()
+  const end = new Date(2026, 9, 14, 20, 30).toISOString()
+
+  it('da la misma franja en un día intermedio', () => {
+    const slot = dailySlotOn(due, end, new Date(2026, 8, 30))
+    expect(slot).not.toBeNull()
+    expect(slot!.start.getHours()).toBe(16)
+    expect(slot!.start.getMinutes()).toBe(30)
+    expect(slot!.start.getDate()).toBe(30)
+    expect(slot!.end.getHours()).toBe(20)
+    expect(slot!.end.getDate()).toBe(30)
+  })
+
+  it('también el primer y el último día', () => {
+    expect(dailySlotOn(due, end, new Date(2026, 8, 21))).not.toBeNull()
+    expect(dailySlotOn(due, end, new Date(2026, 9, 14))).not.toBeNull()
+  })
+
+  it('fuera del rango, nada', () => {
+    expect(dailySlotOn(due, end, new Date(2026, 9, 15))).toBeNull()
+  })
+
+  it('sin horas es un rango de todo el día (lo pinta la franja «todo el día»)', () => {
+    const d0 = new Date(2026, 8, 21).toISOString(), e0 = new Date(2026, 9, 14).toISOString()
+    expect(dailySlotOn(d0, e0, new Date(2026, 8, 30))).toBeNull()
+  })
+
+  it('una franja nocturna (22:00 → 02:00) acaba al día siguiente', () => {
+    const d = new Date(2026, 8, 21, 22, 0).toISOString()
+    const e = new Date(2026, 9, 14, 2, 0).toISOString()
+    const slot = dailySlotOn(d, e, new Date(2026, 8, 30))   // 30 sept: último día de septiembre
+    expect(slot!.end.getMonth()).toBe(9)                     // acaba ya en octubre
+    expect(slot!.end.getDate()).toBe(1)
+    expect(slot!.end.getHours()).toBe(2)
   })
 })

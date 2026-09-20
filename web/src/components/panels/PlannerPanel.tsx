@@ -46,7 +46,7 @@ import Icon from '../../v2/components/Icon'
 import { usePlannerHours } from '../../utils/plannerHours'
 import NewEventModal from '../modals/NewEventModal'
 import { askConfirm } from '../../utils/confirmDialog'
-import { isMultiDayRange, rangeCoversDay } from '../../utils/dates'
+import { isMultiDayRange, rangeCoversDay, dailySlotOn } from '../../utils/dates'
 
 // ── Geometría fija ────────────────────────────────────────────────────────
 // La franja del día YA NO es fija: se ajusta en Ajustes y se comparte con la
@@ -190,11 +190,28 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
   for (const n of store.allActive()) {
     if (!n.due || n.deletedAt || isInPapelera(n.id)) continue
     const start = new Date(n.due)
-    if (!sameDay(start, day)) continue
-    // Evento de varios días («de mañana al 14 de octubre»): no es un bloque de
-    // la rejilla horaria de un día, sino una banda en la franja «todo el día»
-    // de cada jornada que ocupa — lo pinta `getAllDayTasks` (20 sep 2026).
+    // Rango de varios días CON hora de inicio y de fin: la misma franja en cada
+    // día del rango — un curso del 21/09 al 14/10 de 16:30 a 20:30 (Alberto, 20
+    // sep 2026), no una banda continua que corre también de noche. Ojo: el
+    // bloque lleva el id del nodo, así que arrastrarlo mueve TODO el rango
+    // (`setDue` arrastra el fin con la misma duración) y redimensionarlo
+    // reescribe `dueEnd` — es decir, lo convierte en un elemento de un solo día.
+    const slot = dailySlotOn(n.due, n.dueEnd, day)
+    if (slot) {
+      blocks.push({
+        kind: isTimeBlockNode(n) ? 'timeblock' : 'task',
+        id: n.id,
+        text: n.text,
+        start: slot.start, end: slot.end,
+        color: n.color || 'var(--accent)',
+        nodeId: n.id,
+      })
+      continue
+    }
+    // Rango de varios días SIN horas: banda en la franja «todo el día» de cada
+    // jornada — lo pinta `getAllDayTasks`.
     if (isMultiDayRange(n.due, n.dueEnd)) continue
+    if (!sameDay(start, day)) continue
 
     try {
       const ed = JSON.parse(n.extraData || '{}')
@@ -1377,7 +1394,10 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       // El id sigue siendo el del nodo (la key de React es única DENTRO de la
       // celda, y un mismo nodo solo aparece una vez por día): así el clic y el
       // menú contextual del chip siguen encontrándolo.
-      out.push({ id: n.id, text: n.text || t('common.noTitle'), color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime(), allDay: spans || !hasTime(n.due) })
+      // Con hora, la hora se muestra también en los días siguientes del rango
+      // (es la misma franja cada día — ver `dailySlotOn`).
+      const slot = spans ? dailySlotOn(n.due, n.dueEnd, date) : null
+      out.push({ id: n.id, text: n.text || t('common.noTitle'), color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: (slot?.start ?? new Date(n.due)).getTime(), allDay: spans ? !slot : !hasTime(n.due) })
     }
     // Ocurrencias futuras de las series recurrentes (9 sep 2026, Alberto:
     // "Desarrollo UDA se debe ver todos los lunes y solo se ve el primero") —
@@ -1429,12 +1449,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     // del Planificador en vez de convertirlo — Alberto, 21 jul: "arrastrar
     // eventos a todo el día debería convertirlos".
     // Un elemento con `dueEnd` en un día POSTERIOR ocupa todos los días del
-    // rango, con hora o sin ella: se pinta aquí en cada uno de ellos (misma
-    // idea que Apple Calendar con los eventos de varios días), no en la
-    // rejilla horaria (20 sep 2026, Alberto).
+    // rango: se pinta aquí en cada uno de ellos (20 sep 2026, Alberto). Solo
+    // los rangos SIN horas — los que llevan hora de inicio y de fin son una
+    // franja horaria repetida cada día y van a la rejilla (`dailySlotOn`).
     const nodes = store.allActive().filter(n =>
       n.due && !n.deletedAt && !isInPapelera(n.id) && (n.isEvent || !!n.gcalEventId || n.status != null) &&
-      (rangeCoversDay(n.due, n.dueEnd, day) || (sameDay(new Date(n.due), day) && !hasTime(n.due))))
+      ((rangeCoversDay(n.due, n.dueEnd, day) && !dailySlotOn(n.due, n.dueEnd, day)) ||
+        (sameDay(new Date(n.due), day) && !hasTime(n.due))))
 
     // Eventos de todo el día que solo viven en Google (sin nodo local aún) —
     // antes esta franja solo escaneaba `store.allActive()`, así que un

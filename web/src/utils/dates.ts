@@ -141,3 +141,27 @@ export function resolveDueEnd(
   if (new Date(iso).getTime() < new Date(due).getTime()) return final ? due : 'skip'
   return iso
 }
+
+/** Franja horaria que ocupa un rango de varios días en un día concreto.
+ *
+ *  Un elemento con hora de inicio Y hora de fin que abarca varios días es «lo
+ *  mismo, a la misma hora, cada día del rango» — un curso del 21/09 al 14/10 de
+ *  16:30 a 20:30 (Alberto, 20 sep 2026), no una banda continua que corre
+ *  también de noche. Devuelve el tramo de ESE día, o null si el rango no lleva
+ *  horas (entonces es de todo el día) o el día queda fuera. */
+export function dailySlotOn(
+  due: string | null | undefined,
+  dueEnd: string | null | undefined,
+  day: Date,
+): { start: Date; end: Date } | null {
+  if (!rangeCoversDay(due, dueEnd, day)) return null
+  if (!hasLocalTime(due) || !hasLocalTime(dueEnd)) return null
+  const s = new Date(due!), e = new Date(dueEnd!)
+  const base = startOfLocalDay(day)
+  const start = new Date(base.getFullYear(), base.getMonth(), base.getDate(), s.getHours(), s.getMinutes())
+  let end = new Date(base.getFullYear(), base.getMonth(), base.getDate(), e.getHours(), e.getMinutes())
+  // Fin antes que inicio (p.ej. 22:00 → 02:00): el tramo dura hasta esa hora
+  // del día siguiente.
+  if (end.getTime() <= start.getTime()) end = new Date(end.getTime() + 86400000)
+  return { start, end }
+}
