@@ -1490,6 +1490,8 @@
   "prop.linked": "Enlazadas",
   "prop.noColor": "Sin color",
   "prop.dueEnd": "Fin (opcional)",
+  "prop.rangeDays": "Días del rango",
+  "prop.rangeWeekdaysOnly": "Solo laborables",
   "prop.rangeSkipped": "Días quitados",
   "prop.rangeRestoreAll": "Restaurar todos",
   "prop.recurrence": "Repetición",

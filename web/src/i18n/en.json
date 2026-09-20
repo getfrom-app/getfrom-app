@@ -1486,6 +1486,8 @@
   "prop.linked": "Linked",
   "prop.noColor": "No color",
   "prop.dueEnd": "End (optional)",
+  "prop.rangeDays": "Days of the range",
+  "prop.rangeWeekdaysOnly": "Weekdays only",
   "prop.rangeSkipped": "Skipped days",
   "prop.rangeRestoreAll": "Restore all",
   "prop.recurrence": "Recurrence",

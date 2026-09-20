@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import { occurrencesInRange, recurrenceOccursOn, recurrenceExdates, localDayKey, belongsToSeries, seriesOf, rangeOccursOn } from '../utils/recurrenceProjection'
+import { occurrencesInRange, recurrenceOccursOn, recurrenceExdates, localDayKey, belongsToSeries, seriesOf, rangeOccursOn, rangeWeekdays } from '../utils/recurrenceProjection'
 import type { Node } from '../types'
 
 function node(partial: Partial<Node>): Node {
@@ -45,6 +45,36 @@ describe('recurrenceProjection', () => {
     expect(rangeOccursOn(n, new Date(2026, 9, 5))).toBe(true)    // el resto de lunes sigue
     expect(rangeOccursOn(n, new Date(2026, 8, 29))).toBe(true)
     expect(rangeOccursOn(n, new Date(2026, 9, 15))).toBe(false)  // fuera del rango
+  })
+
+  /** La fila L-D del rango (`_rangeDays`) y los días quitados a mano
+   *  (`_recExdates`) son capas independientes y se aplican a la vez. */
+  it('la fila de días de la semana convive con los días quitados a mano', () => {
+    const base = {
+      due: new Date(2026, 8, 21, 16, 30).toISOString(),   // lunes 21 sept
+      dueEnd: new Date(2026, 9, 14, 20, 30).toISOString(), // miércoles 14 oct
+    }
+    const soloLaborables = node({ ...base, extraData: JSON.stringify({ _rangeDays: '1,2,3,4,5' }) })
+    expect(rangeWeekdays(soloLaborables)).toEqual(new Set([1, 2, 3, 4, 5]))
+    expect(rangeOccursOn(soloLaborables, new Date(2026, 8, 26))).toBe(false) // sábado
+    expect(rangeOccursOn(soloLaborables, new Date(2026, 8, 27))).toBe(false) // domingo
+    expect(rangeOccursOn(soloLaborables, new Date(2026, 8, 25))).toBe(true)  // viernes
+
+    const yAdemasSinEseLunes = node({
+      ...base,
+      extraData: JSON.stringify({ _rangeDays: '1,2,3,4,5', _recExdates: '2026-09-28' }),
+    })
+    expect(rangeOccursOn(yAdemasSinEseLunes, new Date(2026, 8, 28))).toBe(false) // ese lunes, no
+    expect(rangeOccursOn(yAdemasSinEseLunes, new Date(2026, 9, 5))).toBe(true)   // los demás, sí
+  })
+
+  it('los siete días guardados equivalen a no haber tocado la fila', () => {
+    const n = node({
+      due: new Date(2026, 8, 21).toISOString(), dueEnd: new Date(2026, 9, 14).toISOString(),
+      extraData: JSON.stringify({ _rangeDays: '0,1,2,3,4,5,6' }),
+    })
+    expect(rangeWeekdays(n)).toBeNull()
+    expect(rangeOccursOn(n, new Date(2026, 8, 27))).toBe(true)
   })
 
   it('respeta las fechas excluidas (_recExdates)', () => {

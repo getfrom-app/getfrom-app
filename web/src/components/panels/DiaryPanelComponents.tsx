@@ -13,7 +13,7 @@ import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalD
 import { recurrenceFromString, recurrenceToString, parseNaturalDate as parseNaturalDateFull } from '../../utils/naturalDate'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { detachFromRecurrence } from '../../utils/dailyCockpit'
-import { belongsToSeries, findSeriesHead, recurrenceExdates, removeRecurrenceExdate, clearRecurrenceExdates } from '../../utils/recurrenceProjection'
+import { belongsToSeries, findSeriesHead, recurrenceExdates, removeRecurrenceExdate, clearRecurrenceExdates, rangeWeekdays, setRangeWeekdays } from '../../utils/recurrenceProjection'
 import RecurrenceScopeConfirm from './RecurrenceScopeConfirm'
 import { pushEventToGcal } from '../../utils/gcalNodesSync'
 import ContextChip from './ContextChip'
@@ -163,6 +163,7 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
   // en el nodo.
   const [endDraft, setEndDraft] = useState<{ date: string; time: string } | null>(null)
   const skippedDays = Array.from(recurrenceExdates(node)).sort()
+  const rangeDays = rangeWeekdays(node)
   const endDateVal = endDraft ? endDraft.date : endDate
   const endTimeVal = endDraft ? endDraft.time : (hasLocalTime(node.dueEnd) ? endTime : '')
 
@@ -445,6 +446,34 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
             title={t('tip.removeEnd', 'Quitar fin')}>✕</button>
         )}
       </div>
+
+      {/* Días de la semana del rango: quitar los fines de semana de un curso de
+          golpe, sin ir día a día. Convive con los días quitados a mano (abajo):
+          esto filtra por día de la semana, aquello quita fechas sueltas. */}
+      {isMultiDayRange(node.due, node.dueEnd) && (
+        <>
+          <div className="tpp-section-label">{t('prop.rangeDays', 'Días del rango')}</div>
+          <div className="nqp-rec-days-row">
+            {WEEK_ORDER.map(day => {
+              const on = !rangeDays || rangeDays.has(day)
+              return (
+                <button key={day} className={`nqp-rec-day${on ? ' active' : ''}`}
+                  onClick={() => {
+                    const current = rangeDays ? Array.from(rangeDays) : [0, 1, 2, 3, 4, 5, 6]
+                    const next = on ? current.filter(d => d !== day) : [...current, day]
+                    // Quedarse sin ningún día dejaría el rango invisible: se
+                    // entiende como "todos" (igual que no haber tocado nada).
+                    setRangeWeekdays(node.id, next.length === 0 ? null : next)
+                  }}>{DAY_LETTERS_ES[day]}</button>
+              )
+            })}
+            <button className="nqp-chip" style={{ marginLeft: 6 }}
+              onClick={() => setRangeWeekdays(node.id, rangeDays && rangeDays.size === 5 && !rangeDays.has(0) && !rangeDays.has(6) ? null : [1, 2, 3, 4, 5])}>
+              {t('prop.rangeWeekdaysOnly', 'Solo laborables')}
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Días quitados del rango («este lunes no», desde el clic derecho sobre
           el día en el planificador). Aquí solo se ven y se restauran — quitar

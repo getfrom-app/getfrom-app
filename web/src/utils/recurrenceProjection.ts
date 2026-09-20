@@ -92,7 +92,36 @@ export function clearRecurrenceExdates(originId: string): void {
  *  lunes"). */
 export function rangeOccursOn(n: Node, day: Date): boolean {
   if (!rangeCoversDay(n.due, n.dueEnd, day)) return false
+  const days = rangeWeekdays(n)
+  if (days && !days.has(day.getDay())) return false
   return !recurrenceExdates(n).has(localDayKey(day))
+}
+
+/** Días de la semana (0=Dom … 6=Sáb) en los que ocurre el rango, o null si son
+ *  TODOS (el caso normal, sin clave guardada).
+ *
+ *  Es una capa aparte de `_recExdates` y las dos se aplican a la vez: la fila
+ *  L-D quita días "de golpe" (los fines de semana de un curso) y los días
+ *  quitados a mano siguen quitando fechas sueltas dentro de los que quedan
+ *  (20 sep 2026, Alberto: "añade la fila al rango también pero que no sea
+ *  incompatible con lo que has montado"). */
+export function rangeWeekdays(n: Pick<Node, 'extraData'>): Set<number> | null {
+  const raw = parseExtra(n)._rangeDays
+  if (typeof raw !== 'string' || !raw.trim()) return null
+  const days = raw.split(',').map(x => parseInt(x.trim(), 10)).filter(d => d >= 0 && d <= 6)
+  if (days.length === 0 || days.length === 7) return null
+  return new Set(days)
+}
+
+/** Fija los días de la semana del rango. `null` (o los siete) = todos, y la
+ *  clave se borra en vez de guardarse completa. */
+export function setRangeWeekdays(nodeId: string, days: number[] | null): void {
+  const n = store.getNode(nodeId)
+  if (!n) return
+  const extra = parseExtra(n)
+  if (!days || days.length === 0 || days.length === 7) delete extra._rangeDays
+  else extra._rangeDays = Array.from(new Set(days)).sort().join(',')
+  store.updateNode(nodeId, { extraData: JSON.stringify(extra) })
 }
 
 /** Id de la serie de la que salió esta instancia suelta, si lo hay. */
