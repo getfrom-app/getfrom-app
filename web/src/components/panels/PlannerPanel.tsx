@@ -46,6 +46,7 @@ import Icon from '../../v2/components/Icon'
 import { usePlannerHours } from '../../utils/plannerHours'
 import NewEventModal from '../modals/NewEventModal'
 import { askConfirm } from '../../utils/confirmDialog'
+import { isMultiDayRange, rangeCoversDay } from '../../utils/dates'
 
 // ── Geometría fija ────────────────────────────────────────────────────────
 // La franja del día YA NO es fija: se ajusta en Ajustes y se comparte con la
@@ -190,6 +191,10 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
     if (!n.due || n.deletedAt || isInPapelera(n.id)) continue
     const start = new Date(n.due)
     if (!sameDay(start, day)) continue
+    // Evento de varios días («de mañana al 14 de octubre»): no es un bloque de
+    // la rejilla horaria de un día, sino una banda en la franja «todo el día»
+    // de cada jornada que ocupa — lo pinta `getAllDayTasks` (20 sep 2026).
+    if (isMultiDayRange(n.due, n.dueEnd)) continue
 
     try {
       const ed = JSON.parse(n.extraData || '{}')
@@ -1360,11 +1365,19 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       if (!n.due || n.deletedAt || isInPapelera(n.id)) continue
       const kind = kindOfNode(n)
       if (n.status == null && kind === 'tasks') continue
-      if (!sameDay(new Date(n.due), date)) continue
+      const isStartDay = sameDay(new Date(n.due), date)
+      // Rango de varios días: chip en cada día del rango, no solo en el primero.
+      const spans = !isStartDay && rangeCoversDay(n.due, n.dueEnd, date)
+      if (!isStartDay && !spans) continue
       realTexts.add(n.text.trim().toLowerCase())
       if (!activeFilter[kind]) continue
-      const overdue = new Date(n.due) < startOfDay(today) && n.status !== 'done'
-      out.push({ id: n.id, text: n.text || t('common.noTitle'), color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime(), allDay: !hasTime(n.due) })
+      // Atrasado se mide contra el FIN si lo hay: un evento que va de ayer al
+      // 14 de octubre no está atrasado, sigue en curso.
+      const overdue = new Date(n.dueEnd || n.due) < startOfDay(today) && n.status !== 'done'
+      // El id sigue siendo el del nodo (la key de React es única DENTRO de la
+      // celda, y un mismo nodo solo aparece una vez por día): así el clic y el
+      // menú contextual del chip siguen encontrándolo.
+      out.push({ id: n.id, text: n.text || t('common.noTitle'), color: overdue ? '#e03131' : 'var(--accent,#6c5ce7)', done: n.status === 'done', t: new Date(n.due).getTime(), allDay: spans || !hasTime(n.due) })
     }
     // Ocurrencias futuras de las series recurrentes (9 sep 2026, Alberto:
     // "Desarrollo UDA se debe ver todos los lunes y solo se ve el primero") —
@@ -1415,9 +1428,13 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     // eventos de esta fila, así que arrastrar uno aquí lo hacía desaparecer
     // del Planificador en vez de convertirlo — Alberto, 21 jul: "arrastrar
     // eventos a todo el día debería convertirlos".
+    // Un elemento con `dueEnd` en un día POSTERIOR ocupa todos los días del
+    // rango, con hora o sin ella: se pinta aquí en cada uno de ellos (misma
+    // idea que Apple Calendar con los eventos de varios días), no en la
+    // rejilla horaria (20 sep 2026, Alberto).
     const nodes = store.allActive().filter(n =>
       n.due && !n.deletedAt && !isInPapelera(n.id) && (n.isEvent || !!n.gcalEventId || n.status != null) &&
-      sameDay(new Date(n.due), day) && !hasTime(n.due))
+      (rangeCoversDay(n.due, n.dueEnd, day) || (sameDay(new Date(n.due), day) && !hasTime(n.due))))
 
     // Eventos de todo el día que solo viven en Google (sin nodo local aún) —
     // antes esta franja solo escaneaba `store.allActive()`, así que un

@@ -10,7 +10,7 @@ import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
 import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate } from '../../utils/dates'
-import { recurrenceFromString, recurrenceToString } from '../../utils/naturalDate'
+import { recurrenceFromString, recurrenceToString, parseNaturalDate as parseNaturalDateFull } from '../../utils/naturalDate'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { detachFromRecurrence } from '../../utils/dailyCockpit'
 import { belongsToSeries, findSeriesHead } from '../../utils/recurrenceProjection'
@@ -157,10 +157,14 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
 
   const dueDate = isoToLocalDate(node.due)
   const dueTime = isoToLocalTime(node.due)
+  const endDate = isoToLocalDate(node.dueEnd)
+  const endTime = isoToLocalTime(node.dueEnd)
 
   function setDue(date: string, time: string) {
-    if (!date) { store.updateNode(node.id, { due: null }); return }
+    if (!date) { store.updateNode(node.id, { due: null, dueEnd: null }); return }
     const updates: Partial<Node> = { due: makeDueISO(date, time) }
+    // Quitar/adelantar el inicio no puede dejar un fin anterior a él.
+    if (node.dueEnd && new Date(node.dueEnd).getTime() < new Date(updates.due!).getTime()) updates.dueEnd = null
     // Tarea + hora concreta = evento: aterriza en el calendario y se sincroniza con
     // Google (antes se quedaba como tarea con hora, sin aparecer en Google Calendar
     // ni en la vista de calendario — solo los nodos isEvent aterrizan ahí).
@@ -168,6 +172,20 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
     if (becomesEvent) updates.isEvent = true
     store.updateNode(node.id, updates)
     if (time && (node.isEvent || becomesEvent)) {
+      const fresh = store.getNode(node.id)
+      if (fresh) pushEventToGcal(fresh).catch(() => {})
+    }
+  }
+
+  /** Fin opcional del elemento (`dueEnd`). Sin fecha = sin fin. Nunca se
+   *  guarda un fin ANTERIOR al inicio: se sube al inicio (el `min` del input
+   *  no cubre el teclado ni la hora). */
+  function setDueEnd(date: string, time: string) {
+    if (!date || !node.due) { store.updateNode(node.id, { dueEnd: null }); return }
+    let iso = makeDueISO(date, time)
+    if (new Date(iso).getTime() < new Date(node.due).getTime()) iso = node.due
+    store.updateNode(node.id, { dueEnd: iso })
+    if (node.isEvent) {
       const fresh = store.getNode(node.id)
       if (fresh) pushEventToGcal(fresh).catch(() => {})
     }
@@ -336,13 +354,19 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
         className="tpp-natural-date-input"
         placeholder={t('ph.naturalDate')}
         onKeyDown={e => {
-          if (e.key === 'Enter') {
-            const iso = parseNaturalDate((e.target as HTMLInputElement).value)
-            if (iso) {
-              store.updateNode(node.id, { due: iso });
-              (e.target as HTMLInputElement).value = ''
-            }
-          }
+          if (e.key !== 'Enter') return
+          const input = e.target as HTMLInputElement
+          // Dos parsers, a propósito: el de `utils/naturalDate` entiende las
+          // fechas escritas en español de verdad («14 de octubre», «en 2
+          // semanas», «próximo día 3»), el de `utils/dates` solo «hoy/mañana/
+          // dd/mm/+N». Antes aquí solo estaba el segundo, así que escribir
+          // «14 de octubre» y pulsar Enter no hacía NADA — ni fecha ni aviso
+          // (20 sep 2026, Alberto).
+          const rich = parseNaturalDateFull(input.value)
+          const iso = rich ? rich.date.toISOString() : parseNaturalDate(input.value)
+          if (!iso) return
+          store.updateNode(node.id, { due: iso })
+          input.value = ''
         }}
       />
       <div className="nqp-quick-row">
@@ -372,6 +396,26 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
         {hasLocalTime(node.due) && (
           <button className="nqp-qbtn nqp-clear" style={{ fontSize: 10, padding: '2px 5px' }}
             onClick={() => setDue(dueDate, '')} title={t('tip.removeTime')}>✕h</button>
+        )}
+      </div>
+
+      {/* Fin OPCIONAL (20 sep 2026, Alberto: «un evento que dura desde mañana
+          hasta el 14 de octubre»). El modelo ya tenía `dueEnd` —lo escribían
+          el timeline al redimensionar y Google Calendar— pero no había forma
+          de ponerlo a mano. Un fin en un día posterior = evento de varios
+          días: el planificador lo pinta en todos ellos (`rangeCoversDay`). */}
+      <div className="tpp-section-label">{t('prop.dueEnd', 'Fin (opcional)')}</div>
+      <div className="nqp-inputs-row">
+        <input type="date" className="nqp-date-input" value={endDate}
+          min={dueDate || undefined} disabled={!dueDate}
+          onChange={e => setDueEnd(e.target.value, hasLocalTime(node.dueEnd) ? endTime : '')} />
+        <input type="time" className="nqp-time-input"
+          value={hasLocalTime(node.dueEnd) ? endTime : ''}
+          onChange={e => setDueEnd(endDate || dueDate, e.target.value)}
+          disabled={!dueDate} placeholder="HH:MM" />
+        {node.dueEnd && (
+          <button className="nqp-qbtn nqp-clear" onClick={() => store.updateNode(node.id, { dueEnd: null })}
+            title={t('tip.removeEnd', 'Quitar fin')}>✕</button>
         )}
       </div>
 

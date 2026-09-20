@@ -90,3 +90,31 @@ export function parseNaturalDate(input: string): string | null {
   }
   return null
 }
+
+// ── Rango de varios días (20 sep 2026) ───────────────────────────────────────
+// Un elemento puede tener `dueEnd` (fin opcional, editable desde el popover de
+// propiedades). Mientras el fin cae el MISMO día que el inicio, `dueEnd` es solo
+// la duración del bloque en el timeline — lo de siempre. Si cae en un día
+// POSTERIOR, el elemento ocupa todos esos días («de mañana al 14 de octubre») y
+// el planificador debe pintarlo en cada uno de ellos, no solo en el primero.
+
+/** Inicio del día local (00:00) de una fecha. */
+export function startOfLocalDay(d: Date): Date {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+/** True si el elemento termina en un día local POSTERIOR al de inicio. */
+export function isMultiDayRange(due: string | null | undefined, dueEnd: string | null | undefined): boolean {
+  if (!due || !dueEnd) return false
+  const start = new Date(due), end = new Date(dueEnd)
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return false
+  return startOfLocalDay(end).getTime() > startOfLocalDay(start).getTime()
+}
+
+/** True si `day` cae dentro del rango [due, dueEnd] contando días locales
+ *  completos (ambos extremos incluidos). Solo para rangos de varios días. */
+export function rangeCoversDay(due: string | null | undefined, dueEnd: string | null | undefined, day: Date): boolean {
+  if (!isMultiDayRange(due, dueEnd)) return false
+  const d = startOfLocalDay(day).getTime()
+  return d >= startOfLocalDay(new Date(due!)).getTime() && d <= startOfLocalDay(new Date(dueEnd!)).getTime()
+}
