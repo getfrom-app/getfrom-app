@@ -118,3 +118,26 @@ export function rangeCoversDay(due: string | null | undefined, dueEnd: string | 
   const d = startOfLocalDay(day).getTime()
   return d >= startOfLocalDay(new Date(due!)).getTime() && d <= startOfLocalDay(new Date(dueEnd!)).getTime()
 }
+
+/** Decide qué guardar en `dueEnd` a partir de lo que hay escrito en los
+ *  campos de fin, teniendo en cuenta que un `<input type="date">` emite
+ *  fechas completas INTERMEDIAS mientras se teclea (ver `setDueEnd` en
+ *  `DiaryPanelComponents.tsx`).
+ *
+ *  - `'clear'`  → sin fin.
+ *  - `'skip'`   → anterior al inicio y el usuario sigue escribiendo: no tocar
+ *                 el nodo todavía (si se guardara subido al inicio, el campo
+ *                 se resetearía en cada tecla y parecería bloqueado).
+ *  - ISO        → el fin a guardar (subido al inicio si ya terminó de escribir
+ *                 y quedaba antes). */
+export function resolveDueEnd(
+  due: string | null | undefined,
+  date: string,
+  time: string,
+  final: boolean,
+): string | 'clear' | 'skip' {
+  if (!date || !due) return 'clear'
+  const iso = makeDueISO(date, time)
+  if (new Date(iso).getTime() < new Date(due).getTime()) return final ? due : 'skip'
+  return iso
+}

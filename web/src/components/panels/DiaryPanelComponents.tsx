@@ -9,7 +9,7 @@ import type { Node } from '../../types'
 import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
-import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate } from '../../utils/dates'
+import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate, resolveDueEnd } from '../../utils/dates'
 import { recurrenceFromString, recurrenceToString, parseNaturalDate as parseNaturalDateFull } from '../../utils/naturalDate'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { detachFromRecurrence } from '../../utils/dailyCockpit'
@@ -159,12 +159,23 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
   const dueTime = isoToLocalTime(node.due)
   const endDate = isoToLocalDate(node.dueEnd)
   const endTime = isoToLocalTime(node.dueEnd)
+  // Borrador del fin mientras se teclea (ver `setDueEnd`). null = lo que hay
+  // en el nodo.
+  const [endDraft, setEndDraft] = useState<{ date: string; time: string } | null>(null)
+  const endDateVal = endDraft ? endDraft.date : endDate
+  const endTimeVal = endDraft ? endDraft.time : (hasLocalTime(node.dueEnd) ? endTime : '')
 
   function setDue(date: string, time: string) {
     if (!date) { store.updateNode(node.id, { due: null, dueEnd: null }); return }
     const updates: Partial<Node> = { due: makeDueISO(date, time) }
-    // Quitar/adelantar el inicio no puede dejar un fin anterior a él.
-    if (node.dueEnd && new Date(node.dueEnd).getTime() < new Date(updates.due!).getTime()) updates.dueEnd = null
+    // Mover el inicio arrastra el fin con la MISMA duración (como cualquier
+    // calendario), en vez de borrarlo: el `<input type="date">` del inicio
+    // también emite fechas intermedias mientras se teclea, y borrar el fin en
+    // cada tecla haría perder el rango sin querer (20 sep 2026).
+    if (node.due && node.dueEnd) {
+      const delta = new Date(updates.due!).getTime() - new Date(node.due).getTime()
+      updates.dueEnd = new Date(new Date(node.dueEnd).getTime() + delta).toISOString()
+    }
     // Tarea + hora concreta = evento: aterriza en el calendario y se sincroniza con
     // Google (antes se quedaba como tarea con hora, sin aparecer en Google Calendar
     // ni en la vista de calendario — solo los nodos isEvent aterrizan ahí).
@@ -177,14 +188,25 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
     }
   }
 
-  /** Fin opcional del elemento (`dueEnd`). Sin fecha = sin fin. Nunca se
-   *  guarda un fin ANTERIOR al inicio: se sube al inicio (el `min` del input
-   *  no cubre el teclado ni la hora). */
-  function setDueEnd(date: string, time: string) {
-    if (!date || !node.due) { store.updateNode(node.id, { dueEnd: null }); return }
-    let iso = makeDueISO(date, time)
-    if (new Date(iso).getTime() < new Date(node.due).getTime()) iso = node.due
-    store.updateNode(node.id, { dueEnd: iso })
+  /** Fin opcional del elemento (`dueEnd`). Sin fecha = sin fin.
+   *
+   *  `final` = el usuario ha TERMINADO de escribir (blur / Enter). Mientras
+   *  teclea, un `<input type="date">` va emitiendo fechas COMPLETAS por cada
+   *  segmento: escribir el 14 de octubre sobre un 21/09 pasa primero por
+   *  "14/09", que es anterior al inicio. Subirlo al inicio en ese momento
+   *  (como hacía la primera versión) devolvía el campo a 21/09 en cada tecla y
+   *  parecía que el campo no dejaba escribir (20 sep 2026, Alberto). Ahora una
+   *  fecha anterior al inicio solo se queda en el borrador local; al salir del
+   *  campo sí se sube al inicio. */
+  function setDueEnd(date: string, time: string, final: boolean) {
+    setEndDraft(final ? null : { date, time })
+    const resolved = resolveDueEnd(node.due, date, time, final)
+    if (resolved === 'skip') return
+    if (resolved === 'clear') {
+      if (node.dueEnd) store.updateNode(node.id, { dueEnd: null })
+      return
+    }
+    store.updateNode(node.id, { dueEnd: resolved })
     if (node.isEvent) {
       const fresh = store.getNode(node.id)
       if (fresh) pushEventToGcal(fresh).catch(() => {})
@@ -406,15 +428,19 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
           días: el planificador lo pinta en todos ellos (`rangeCoversDay`). */}
       <div className="tpp-section-label">{t('prop.dueEnd', 'Fin (opcional)')}</div>
       <div className="nqp-inputs-row">
-        <input type="date" className="nqp-date-input" value={endDate}
+        <input type="date" className="nqp-date-input" value={endDateVal}
           min={dueDate || undefined} disabled={!dueDate}
-          onChange={e => setDueEnd(e.target.value, hasLocalTime(node.dueEnd) ? endTime : '')} />
+          onChange={e => setDueEnd(e.target.value, endTimeVal, false)}
+          onBlur={e => setDueEnd(e.target.value, endTimeVal, true)}
+          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }} />
         <input type="time" className="nqp-time-input"
-          value={hasLocalTime(node.dueEnd) ? endTime : ''}
-          onChange={e => setDueEnd(endDate || dueDate, e.target.value)}
+          value={endTimeVal}
+          onChange={e => setDueEnd(endDateVal || dueDate, e.target.value, false)}
+          onBlur={e => setDueEnd(endDateVal || dueDate, e.target.value, true)}
           disabled={!dueDate} placeholder="HH:MM" />
-        {node.dueEnd && (
-          <button className="nqp-qbtn nqp-clear" onClick={() => store.updateNode(node.id, { dueEnd: null })}
+        {(node.dueEnd || endDraft) && (
+          <button className="nqp-qbtn nqp-clear"
+            onClick={() => { setEndDraft(null); store.updateNode(node.id, { dueEnd: null }) }}
             title={t('tip.removeEnd', 'Quitar fin')}>✕</button>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isMultiDayRange, rangeCoversDay } from '../utils/dates'
+import { isMultiDayRange, rangeCoversDay, resolveDueEnd } from '../utils/dates'
 
 /** Fin opcional (`dueEnd`) de varios días — 20 sep 2026.
  *  «Un evento que dura desde mañana hasta el 14 de octubre»: el planificador
@@ -27,5 +27,35 @@ describe('rango de varios días', () => {
     expect(rangeCoversDay(due, end, new Date(2026, 9, 14, 23, 0))).toBe(true) // último día entero
     expect(rangeCoversDay(due, end, new Date(2026, 8, 20))).toBe(false)  // antes
     expect(rangeCoversDay(due, end, new Date(2026, 9, 15))).toBe(false)  // después
+  })
+})
+
+/** El campo «Fin (opcional)» dejó de poder escribirse a mano en la primera
+ *  versión: `<input type="date">` emite fechas COMPLETAS por cada segmento que
+ *  se teclea, así que escribir «14/10» sobre un 21/09 pasa antes por «14/09»
+ *  —anterior al inicio—, que se subía al inicio y reseteaba el campo en cada
+ *  tecla (20 sep 2026, Alberto: "selecciono y escribo numero pero no funciona"). */
+describe('resolveDueEnd — escribir el fin a mano', () => {
+  const due = new Date(2026, 8, 21, 16, 30).toISOString()  // 21/09/2026 16:30
+
+  it('ignora los pasos intermedios anteriores al inicio mientras se escribe', () => {
+    expect(resolveDueEnd(due, '2026-09-14', '16:30', false)).toBe('skip')
+  })
+
+  it('guarda en cuanto la fecha escrita es posterior al inicio', () => {
+    const out = resolveDueEnd(due, '2026-10-14', '16:30', false)
+    expect(out).toBe(new Date(2026, 9, 14, 16, 30).toISOString())
+  })
+
+  it('al salir del campo, un fin anterior al inicio se sube al inicio', () => {
+    expect(resolveDueEnd(due, '2026-09-14', '16:30', true)).toBe(due)
+  })
+
+  it('sin fecha, sin fin', () => {
+    expect(resolveDueEnd(due, '', '', true)).toBe('clear')
+  })
+
+  it('sin inicio no hay fin posible', () => {
+    expect(resolveDueEnd(null, '2026-10-14', '', false)).toBe('clear')
   })
 })
