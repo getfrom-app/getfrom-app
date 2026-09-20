@@ -9,11 +9,11 @@ import type { Node } from '../../types'
 import { renderInline } from '../outliner/InlineRenderer'
 import { getCalendarEvents, updateCalendarEvent, deleteCalendarEvent, createCalendarEvent, type CalendarEvent } from '../../api/googleCalendar'
 import { useUserStore } from '../../store/userStore'
-import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate, resolveDueEnd } from '../../utils/dates'
+import { isoToLocalDate, isoToLocalTime, hasLocalTime, makeDueISO, parseNaturalDate, resolveDueEnd, isMultiDayRange } from '../../utils/dates'
 import { recurrenceFromString, recurrenceToString, parseNaturalDate as parseNaturalDateFull } from '../../utils/naturalDate'
 import { isInPapelera } from '../../utils/papeleraHelper'
 import { detachFromRecurrence } from '../../utils/dailyCockpit'
-import { belongsToSeries, findSeriesHead } from '../../utils/recurrenceProjection'
+import { belongsToSeries, findSeriesHead, recurrenceExdates, removeRecurrenceExdate, clearRecurrenceExdates } from '../../utils/recurrenceProjection'
 import RecurrenceScopeConfirm from './RecurrenceScopeConfirm'
 import { pushEventToGcal } from '../../utils/gcalNodesSync'
 import ContextChip from './ContextChip'
@@ -162,6 +162,7 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
   // Borrador del fin mientras se teclea (ver `setDueEnd`). null = lo que hay
   // en el nodo.
   const [endDraft, setEndDraft] = useState<{ date: string; time: string } | null>(null)
+  const skippedDays = Array.from(recurrenceExdates(node)).sort()
   const endDateVal = endDraft ? endDraft.date : endDate
   const endTimeVal = endDraft ? endDraft.time : (hasLocalTime(node.dueEnd) ? endTime : '')
 
@@ -444,6 +445,28 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
             title={t('tip.removeEnd', 'Quitar fin')}>✕</button>
         )}
       </div>
+
+      {/* Días quitados del rango («este lunes no», desde el clic derecho sobre
+          el día en el planificador). Aquí solo se ven y se restauran — quitar
+          uno se hace en el día concreto, que es donde tiene sentido. */}
+      {isMultiDayRange(node.due, node.dueEnd) && skippedDays.length > 0 && (
+        <>
+          <div className="tpp-section-label">{t('prop.rangeSkipped', 'Días quitados')}</div>
+          <div className="nqp-chips-row">
+            {skippedDays.map(key => (
+              <button key={key} className="nqp-chip" title={t('tip.restoreDay', 'Volver a incluir este día')}
+                onClick={() => { const [y, m, d] = key.split('-').map(Number); removeRecurrenceExdate(node.id, new Date(y, m - 1, d)) }}>
+                {key.slice(8)}/{key.slice(5, 7)} ✕
+              </button>
+            ))}
+            {skippedDays.length > 1 && (
+              <button className="nqp-chip" onClick={() => clearRecurrenceExdates(node.id)}>
+                {t('prop.rangeRestoreAll', 'Restaurar todos')}
+              </button>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Prioridad */}
       <div className="tpp-section-label">{t('kanban.byPriority')}</div>

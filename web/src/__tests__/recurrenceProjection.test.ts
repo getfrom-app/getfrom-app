@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import { occurrencesInRange, recurrenceOccursOn, recurrenceExdates, localDayKey, belongsToSeries, seriesOf } from '../utils/recurrenceProjection'
+import { occurrencesInRange, recurrenceOccursOn, recurrenceExdates, localDayKey, belongsToSeries, seriesOf, rangeOccursOn } from '../utils/recurrenceProjection'
 import type { Node } from '../types'
 
 function node(partial: Partial<Node>): Node {
@@ -30,6 +30,21 @@ describe('recurrenceProjection', () => {
     expect(occurrencesInRange(n, new Date(2026, 7, 1), new Date(2026, 8, 14))).toEqual([])
     const far = occurrencesInRange(n, new Date(2027, 2, 1), new Date(2027, 2, 31))
     expect(far).toEqual([])
+  })
+
+  /** Un rango de varios días (due → dueEnd) también puede tener días sueltos
+   *  quitados a mano, con la MISMA clave que las series (20 sep 2026, Alberto:
+   *  "y si quiero quitar por ejemplo un lunes, pero no todos los lunes"). */
+  it('un rango de varios días salta los días quitados a mano', () => {
+    const n = node({
+      due: new Date(2026, 8, 21, 16, 30).toISOString(),
+      dueEnd: new Date(2026, 9, 14, 20, 30).toISOString(),
+      extraData: JSON.stringify({ _recExdates: '2026-09-28' }),
+    })
+    expect(rangeOccursOn(n, new Date(2026, 8, 28))).toBe(false)  // el lunes quitado
+    expect(rangeOccursOn(n, new Date(2026, 9, 5))).toBe(true)    // el resto de lunes sigue
+    expect(rangeOccursOn(n, new Date(2026, 8, 29))).toBe(true)
+    expect(rangeOccursOn(n, new Date(2026, 9, 15))).toBe(false)  // fuera del rango
   })
 
   it('respeta las fechas excluidas (_recExdates)', () => {

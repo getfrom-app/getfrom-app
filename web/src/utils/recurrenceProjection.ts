@@ -24,6 +24,7 @@ import type { Node } from '../types'
 import { store } from '../store/nodeStore'
 import { ensureDayPath } from './agendaHelper'
 import { nextRecurrence, recurrenceFromString } from './naturalDate'
+import { rangeCoversDay } from './dates'
 
 /** Cuántos días por delante de HOY se proyectan las recurrencias — tope de
  *  seguridad para series raras (nunca hace falta ver más allá del horizonte
@@ -60,6 +61,38 @@ export function addRecurrenceExdate(originId: string, date: Date): void {
   const extra = parseExtra(origin)
   extra._recExdates = Array.from(set).sort().join(',')
   store.updateNode(originId, { extraData: JSON.stringify(extra) })
+}
+
+/** Vuelve a incluir `date` (deshace `addRecurrenceExdate`). */
+export function removeRecurrenceExdate(originId: string, date: Date): void {
+  const origin = store.getNode(originId)
+  if (!origin) return
+  const set = recurrenceExdates(origin)
+  if (!set.delete(localDayKey(date))) return
+  const extra = parseExtra(origin)
+  extra._recExdates = Array.from(set).sort().join(',')
+  store.updateNode(originId, { extraData: JSON.stringify(extra) })
+}
+
+/** Quita TODOS los días excluidos de `origin`. */
+export function clearRecurrenceExdates(originId: string): void {
+  const origin = store.getNode(originId)
+  if (!origin) return
+  const extra = parseExtra(origin)
+  delete extra._recExdates
+  store.updateNode(originId, { extraData: JSON.stringify(extra) })
+}
+
+/** ¿El rango de varios días de `n` (due → dueEnd) ocupa `day`?
+ *
+ *  Los días quitados a mano viven en la MISMA clave que las series
+ *  (`_recExdates`): para el usuario es lo mismo —«este día no»— y así iOS y el
+ *  servidor, que ya la entienden, no necesitan una clave nueva (20 sep 2026,
+ *  Alberto: "y si quiero quitar por ejemplo un lunes, pero no todos los
+ *  lunes"). */
+export function rangeOccursOn(n: Node, day: Date): boolean {
+  if (!rangeCoversDay(n.due, n.dueEnd, day)) return false
+  return !recurrenceExdates(n).has(localDayKey(day))
 }
 
 /** Id de la serie de la que salió esta instancia suelta, si lo hay. */

@@ -12,6 +12,8 @@ import { trashNode } from '../../utils/papeleraHelper'
 import { firstContextOf, setNodeContext, convertToTask, isContextNode } from '../../utils/cajones'
 import { isCitationNode, promoteCitationWithFeedback } from '../../utils/citations'
 import { saveExample } from '../../api/autoClassify'
+import { isMultiDayRange } from '../../utils/dates'
+import { addRecurrenceExdate, rangeOccursOn } from '../../utils/recurrenceProjection'
 import ContextPicker from './ContextPicker'
 import GroupPicker from './GroupPicker'
 import MoveNodeModal from '../modals/MoveNodeModal'
@@ -23,7 +25,7 @@ function assignAndLearn(nodeId: string, ctxId: string | null) {
   if (ctxId) { const n = store.getNode(nodeId); if (n?.text?.trim()) saveExample(n.text, ctxId) }
 }
 
-export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string; x: number; y: number; onClose: () => void }) {
+export default function RightColMenu({ nodeId, x, y, day, onClose }: { nodeId: string; x: number; y: number; day?: Date; onClose: () => void }) {
   const { t } = useTranslation()
   const boxRef = useRef<HTMLDivElement>(null)
   const ctxBtnRef = useRef<HTMLButtonElement>(null)
@@ -180,6 +182,17 @@ export default function RightColMenu({ nodeId, x, y, onClose }: { nodeId: string
         <button ref={groupBtnRef} className="node-ctx-item" onClick={toggleGroupFlyout}>
           {t('tip.addToGroup', 'Añadir a grupo')} <span style={{ float: 'right', opacity: 0.6 }}>›</span>
         </button>
+        {/* Rango de varios días: quitar SOLO este día («este lunes no»), sin
+            tocar el resto (20 sep 2026, Alberto). Se guarda como fecha
+            excluida, la misma clave que usan las series recurrentes. */}
+        {day && isMultiDayRange(node.due, node.dueEnd) && rangeOccursOn(node, day) && (
+          <>
+            <div className="node-ctx-sep" />
+            <button className="node-ctx-item" onClick={() => { addRecurrenceExdate(nodeId, day); onClose() }}>
+              {t('rightColMenu.skipThisDay', 'Quitar este día')}
+            </button>
+          </>
+        )}
         <div className="node-ctx-sep" />
         <button className="node-ctx-item" onClick={() => { duplicate() }}>{t('context.duplicate')}</button>
         <button className="node-ctx-item" onClick={() => setShowMove(true)}>{t('context.moveTo')}</button>

@@ -1118,12 +1118,14 @@ export default function V2App() {
   }, [])
 
   // Menú contextual (clic derecho) de cualquier fila/elemento → RightColMenu de la v1.
-  // Las filas disparan `from:open-rowmenu` con { nodeId, x, y }.
-  const [rowMenu, setRowMenu] = useState<{ nodeId: string; x: number; y: number } | null>(null)
+  // Las filas disparan `from:open-rowmenu` con { nodeId, x, y } y, si la fila
+  // representa UN DÍA concreto (bloque del planificador, chip del mes), también
+  // `day` — lo usa la opción «Quitar este día» de un rango de varios días.
+  const [rowMenu, setRowMenu] = useState<{ nodeId: string; x: number; y: number; day?: Date } | null>(null)
   useEffect(() => {
     const h = (e: Event) => {
       const d = (e as CustomEvent).detail
-      if (d?.nodeId) setRowMenu({ nodeId: d.nodeId, x: d.x, y: d.y })
+      if (d?.nodeId) setRowMenu({ nodeId: d.nodeId, x: d.x, y: d.y, day: d.day instanceof Date ? d.day : undefined })
     }
     window.addEventListener('from:open-rowmenu', h as EventListener)
     return () => window.removeEventListener('from:open-rowmenu', h as EventListener)
@@ -1396,7 +1398,7 @@ export default function V2App() {
         onFilesDropped={onFilesDropped}
         agendaDayNoteDate={agendaCenterDate}
       />
-      {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} onClose={() => setRowMenu(null)} />}
+      {rowMenu && <RightColMenu nodeId={rowMenu.nodeId} x={rowMenu.x} y={rowMenu.y} day={rowMenu.day} onClose={() => setRowMenu(null)} />}
       {taskPropsId && <TaskPropsModal nodeId={taskPropsId} onClose={() => setTaskPropsId(null)} />}
       {showCapture && (
         <UnifiedCapture

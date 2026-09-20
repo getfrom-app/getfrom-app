@@ -36,7 +36,7 @@ import {
 } from '../../api/googleCalendar'
 import { getGcalEventId, gcalIdCore, linkedGcalIdCores } from '../../utils/gcalNodesSync'
 import { isTimeBlockNode, taskCheckState } from '../../utils/taskNode'
-import { virtualOccurrencesOn, materializeOccurrence, type VirtualOccurrence } from '../../utils/recurrenceProjection'
+import { virtualOccurrencesOn, materializeOccurrence, rangeOccursOn, type VirtualOccurrence } from '../../utils/recurrenceProjection'
 import { GCalEventEditor } from './DiaryRightPanel'
 import { TaskPropsPopover } from './DiaryPanelComponents'
 import RecurrenceScopeConfirm from './RecurrenceScopeConfirm'
@@ -46,7 +46,7 @@ import Icon from '../../v2/components/Icon'
 import { usePlannerHours } from '../../utils/plannerHours'
 import NewEventModal from '../modals/NewEventModal'
 import { askConfirm } from '../../utils/confirmDialog'
-import { isMultiDayRange, rangeCoversDay, dailySlotOn } from '../../utils/dates'
+import { isMultiDayRange, dailySlotOn } from '../../utils/dates'
 
 // ── Geometría fija ────────────────────────────────────────────────────────
 // La franja del día YA NO es fija: se ajusta en Ajustes y se comparte con la
@@ -196,7 +196,11 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
     // bloque lleva el id del nodo, así que arrastrarlo mueve TODO el rango
     // (`setDue` arrastra el fin con la misma duración) y redimensionarlo
     // reescribe `dueEnd` — es decir, lo convierte en un elemento de un solo día.
-    const slot = dailySlotOn(n.due, n.dueEnd, day)
+    // Día quitado a mano del rango («este lunes no»): no se pinta ningún día
+    // del rango que esté en `_recExdates` — ni el primero (20 sep 2026).
+    const inRange = isMultiDayRange(n.due, n.dueEnd)
+    if (inRange && !rangeOccursOn(n, day)) continue
+    const slot = inRange ? dailySlotOn(n.due, n.dueEnd, day) : null
     if (slot) {
       blocks.push({
         kind: isTimeBlockNode(n) ? 'timeblock' : 'task',
@@ -210,7 +214,7 @@ function getTimedBlocks(day: Date, gcalEvents: CalendarEvent[]): Block[] {
     }
     // Rango de varios días SIN horas: banda en la franja «todo el día» de cada
     // jornada — lo pinta `getAllDayTasks`.
-    if (isMultiDayRange(n.due, n.dueEnd)) continue
+    if (inRange) continue
     if (!sameDay(start, day)) continue
 
     try {
@@ -1232,7 +1236,10 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
           e.preventDefault(); e.stopPropagation()
           // Mismo menú que la columna del día para bloques con nodo (tarea/materializado);
           // el evento crudo de GCal (sin nodo) mantiene su menú propio.
-          if (b.nodeId) window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: b.nodeId, x: e.clientX, y: e.clientY } }))
+          // `day`: el día que representa ESTE bloque — un rango de varios días
+          // se pinta en muchos, y el menú ofrece «Quitar este día» para el que
+          // se ha pulsado (20 sep 2026).
+          if (b.nodeId) window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: b.nodeId, x: e.clientX, y: e.clientY, day: new Date(b.start) } }))
           else setCtxMenu({x:e.clientX,y:e.clientY,b})
         }}
         title={`${b.text}\n${fmtHH(b.start)} – ${fmtHH(b.end)}`}
@@ -1382,10 +1389,12 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
       if (!n.due || n.deletedAt || isInPapelera(n.id)) continue
       const kind = kindOfNode(n)
       if (n.status == null && kind === 'tasks') continue
+      // Rango de varios días: chip en cada día del rango, no solo en el
+      // primero, saltando los días quitados a mano (`rangeOccursOn`).
+      const inRange = isMultiDayRange(n.due, n.dueEnd)
       const isStartDay = sameDay(new Date(n.due), date)
-      // Rango de varios días: chip en cada día del rango, no solo en el primero.
-      const spans = !isStartDay && rangeCoversDay(n.due, n.dueEnd, date)
-      if (!isStartDay && !spans) continue
+      const spans = inRange && !isStartDay
+      if (inRange ? !rangeOccursOn(n, date) : !isStartDay) continue
       realTexts.add(n.text.trim().toLowerCase())
       if (!activeFilter[kind]) continue
       // Atrasado se mide contra el FIN si lo hay: un evento que va de ayer al
@@ -1454,8 +1463,8 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
     // franja horaria repetida cada día y van a la rejilla (`dailySlotOn`).
     const nodes = store.allActive().filter(n =>
       n.due && !n.deletedAt && !isInPapelera(n.id) && (n.isEvent || !!n.gcalEventId || n.status != null) &&
-      ((rangeCoversDay(n.due, n.dueEnd, day) && !dailySlotOn(n.due, n.dueEnd, day)) ||
-        (sameDay(new Date(n.due), day) && !hasTime(n.due))))
+      ((rangeOccursOn(n, day) && !dailySlotOn(n.due, n.dueEnd, day)) ||
+        (!isMultiDayRange(n.due, n.dueEnd) && sameDay(new Date(n.due), day) && !hasTime(n.due))))
 
     // Eventos de todo el día que solo viven en Google (sin nodo local aún) —
     // antes esta franja solo escaneaba `store.allActive()`, así que un
@@ -1564,7 +1573,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                       onContextMenu={e => {
                         if (it.virtual || !store.getNode(it.id)) return // virtual / evento GCal crudo: sin menú de fila
                         e.preventDefault(); e.stopPropagation()
-                        window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: it.id, x: e.clientX, y: e.clientY } }))
+                        window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: it.id, x: e.clientX, y: e.clientY, day: date } }))
                       }}
                       title={it.virtual ? `${it.text} · ${t('recurrence.virtualHint', 'se repite')}` : it.text}>
                       {!it.allDay && <span className="pp-month-chip-time">{fmtHH(new Date(it.t))}</span>}{it.text}
@@ -1814,7 +1823,7 @@ export default function PlannerPanel({ onClose, initialView, initialDays, viewTa
                         draggable
                         onDragStart={e=>{ e.dataTransfer.setData('nodeId', n.id); e.dataTransfer.effectAllowed='move' }}
                         onClick={e=>{ e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-detail', { detail: { nodeId: n.id } })) }}
-                        onContextMenu={e=>{ e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY } })) }}
+                        onContextMenu={e=>{ e.preventDefault(); e.stopPropagation(); window.dispatchEvent(new CustomEvent('from:open-rowmenu', { detail: { nodeId: n.id, x: e.clientX, y: e.clientY, day: d } })) }}
                         title={n.text}>
                         {chipCheckable && (
                           <button className={`pp-allday-check pp-allday-check--${taskCheckState(n)}`}
