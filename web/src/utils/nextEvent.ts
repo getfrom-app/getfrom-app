@@ -9,6 +9,9 @@ import { store } from '../store/nodeStore'
 import { isInPapelera } from './papeleraHelper'
 import { hasTimeOfDay } from './taskNode'
 import { nextRecurrenceOccurrenceOnOrAfter } from './naturalDate'
+import { isMultiDayRange, dailySlotOn } from './dates'
+import { rangeOccursOn } from './recurrenceProjection'
+import type { Node } from '../types'
 
 export interface UpcomingItem {
   id: string
@@ -21,6 +24,28 @@ function sameLocalDay(a: Date, b: Date): boolean {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate()
 }
 
+
+/** Próxima franja de un rango de varios días CON hora que no haya terminado:
+ *  la de hoy si aún da tiempo, si no la del siguiente día que ocurra. null si
+ *  no es un rango de ese tipo o ya no le quedan días. */
+function nextRangeSlot(n: Node, now: Date): { start: Date; end: Date } | null {
+  if (!isMultiDayRange(n.due, n.dueEnd)) return null
+  const last = new Date(n.dueEnd!)
+  const day = new Date(Math.max(new Date(n.due!).getTime(), now.getTime()))
+  day.setHours(0, 0, 0, 0)
+  for (let i = 0; i < MAX_RANGE_LOOKAHEAD_DAYS && day.getTime() <= last.getTime(); i++) {
+    if (rangeOccursOn(n, day)) {
+      const slot = dailySlotOn(n.due, n.dueEnd, day)
+      if (slot && slot.end >= now) return slot
+    }
+    day.setDate(day.getDate() + 1)
+  }
+  return null
+}
+
+/** Tope de seguridad al recorrer los días de un rango buscando el siguiente. */
+const MAX_RANGE_LOOKAHEAD_DAYS = 400
+
 /** Elementos con hora, no terminados todavía (en curso o futuros), por orden. */
 export function listUpcomingTimed(limit = 6, now: Date = new Date()): UpcomingItem[] {
   const out: UpcomingItem[] = []
@@ -31,6 +56,13 @@ export function listUpcomingTimed(limit = 6, now: Date = new Date()): UpcomingIt
     if (!hasTimeOfDay(n)) continue
     const due = new Date(n.due)
     if (isNaN(due.getTime())) continue
+    // Rango de varios días con hora (un curso del 21/09 al 14/10 de 16:30 a
+    // 20:30): «lo próximo» es la franja de HOY —o la del siguiente día del
+    // rango—, no el rango entero, que si no se quedaría "en curso" tres
+    // semanas seguidas y tapando todo lo demás (20 sep 2026).
+    const slot = nextRangeSlot(n, now)
+    if (slot) { out.push({ id: n.id, text: n.text || '', due: slot.start, dueEnd: slot.end }); continue }
+    if (isMultiDayRange(n.due, n.dueEnd)) continue // rango ya terminado o sin días por delante
     const dueEnd = n.dueEnd ? new Date(n.dueEnd) : new Date(due.getTime() + 3600000)
     if (dueEnd < now) continue // ya terminó — deja de ser "lo próximo"
     out.push({ id: n.id, text: n.text || '', due, dueEnd })

@@ -46,3 +46,43 @@ describe('listUpcomingTimed — barra "Lo próximo"', () => {
     expect(items.some(i => i.text === 'Tarea recurrente hecha')).toBe(false)
   })
 })
+
+describe('listUpcomingTimed — rangos de varios días', () => {
+  beforeEach(() => { store.nodes.clear() })
+
+  /** Un curso del 21/09 al 14/10 de 16:30 a 20:30 no puede quedarse "en curso"
+   *  tres semanas seguidas tapando el resto: «lo próximo» es su franja de HOY
+   *  (o la del siguiente día del rango), no el rango entero (20 sep 2026). */
+  it('muestra la franja del día, no el rango entero', () => {
+    const now = new Date()
+    const start = new Date(now); start.setHours(now.getHours() + 1, 0, 0, 0)
+    const rangeStart = new Date(start); rangeStart.setDate(rangeStart.getDate() - 3)
+    const rangeEnd = new Date(start); rangeEnd.setDate(rangeEnd.getDate() + 10); rangeEnd.setHours(start.getHours() + 2, 0, 0, 0)
+    const n = store.createNode({ text: 'Curso IA Mutxamiel', parentId: null })
+    store.updateNode(n.id, { due: rangeStart.toISOString(), dueEnd: rangeEnd.toISOString(), status: 'pending', isEvent: true })
+
+    const item = listUpcomingTimed(6, now).find(i => i.text === 'Curso IA Mutxamiel')
+    expect(item).toBeDefined()
+    // Empieza HOY a la hora del rango, no hace tres días.
+    expect(item!.due.getDate()).toBe(now.getDate())
+    expect(item!.due.getHours()).toBe(start.getHours())
+    // Y termina hoy también, no dentro de diez días.
+    expect(item!.dueEnd.getDate()).toBe(now.getDate())
+  })
+
+  it('un día quitado a mano no cuenta: salta al siguiente del rango', () => {
+    const now = new Date()
+    const start = new Date(now); start.setHours(now.getHours() + 1, 0, 0, 0)
+    const rangeEnd = new Date(start); rangeEnd.setDate(rangeEnd.getDate() + 10); rangeEnd.setHours(start.getHours() + 2, 0, 0, 0)
+    const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    const n = store.createNode({ text: 'Curso IA Mutxamiel', parentId: null })
+    store.updateNode(n.id, {
+      due: start.toISOString(), dueEnd: rangeEnd.toISOString(), status: 'pending', isEvent: true,
+      extraData: JSON.stringify({ _recExdates: key }),
+    })
+
+    const item = listUpcomingTimed(6, now).find(i => i.text === 'Curso IA Mutxamiel')
+    expect(item).toBeDefined()
+    expect(item!.due.getDate()).not.toBe(now.getDate())  // hoy está quitado
+  })
+})
