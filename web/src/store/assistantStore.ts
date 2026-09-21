@@ -399,7 +399,9 @@ class AssistantStore {
         const date = new Date(m.createdAt)
         this.allMessages.push({
           id: uid(), role: 'assistant',
-          text: m.body ? `${m.title}\n${m.body}` : m.title,
+          // "Fromly" como título solo sirve en el banner del sistema; dentro
+          // del propio chat es ruido encima del aviso (Alberto, 21 sep 2026).
+          text: m.body ? (m.title === 'Fromly' ? m.body : `${m.title}\n${m.body}`) : m.title,
           date: m.createdAt,
           created: [], linkedNodeId: m.nodeId,
           options: m.options && m.options.length > 0 ? m.options : null,
