@@ -4,6 +4,14 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.96 · iPhone — 22 septiembre 2026 · Eventos en el chat, con su día de verdad
+
+- **Los eventos se ven como eventos en el chat**: sin checkbox, igual que en el planificador.
+- **Lo que dura varios días o se repite muestra la fecha de hoy**: un curso de varias semanas o una
+  sesión semanal ya no aparece como atrasada con la fecha de su primer día.
+
+---
+
 ## Web v9.10.83 · iPhone — 16 septiembre 2026 · Notas comunes en lo que se repite y un perfil que puedes corregir
 
 - **Notas comunes en eventos, time blocks y tareas que se repiten**: un espacio compartido por todas
