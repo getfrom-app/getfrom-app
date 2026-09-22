@@ -84,6 +84,18 @@ function isAgendaItem(it: AssistantListedTask): boolean {
   return !!it.isTimeBlock || (!!it.timed && it.isEvent !== false)
 }
 
+/** La ocurrencia listada, si es de una serie o un rango de varios días cuyo
+ *  `due` guardado se quedó atrás (el servidor manda en `it.due` el instante de
+ *  HOY — `rangeDueOnDay`/`occurrencesInRange` en assistantBrief.ts). Si el nodo
+ *  se movió después a una fecha posterior, manda el nodo. */
+function occurrenceDue(node: { due?: string | null; dueEnd?: string | null; recurrence?: string | null }, it: AssistantListedTask): string | undefined {
+  if (!it.due || !node.due) return undefined
+  const listed = new Date(it.due).getTime()
+  if (!(listed > new Date(node.due).getTime())) return undefined
+  const isRange = !!node.dueEnd && new Date(node.dueEnd).getTime() >= listed
+  return node.recurrence || isRange ? it.due : undefined
+}
+
 /** `grouped`: pliega siempre, aunque sean pocas (el saludo del día). */
 function AssistantTaskList({ items, grouped }: { items: AssistantListedTask[]; grouped?: boolean }) {
   const { t } = useTranslation()
@@ -94,7 +106,11 @@ function AssistantTaskList({ items, grouped }: { items: AssistantListedTask[]; g
   const row = (it: AssistantListedTask) => {
     const node = store.getNode(it.id)
     if (node) {
-      return <TaskRow key={it.id} node={node} onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
+      // Un evento no lleva checkbox — mismo criterio que el planificador
+      // (`checkable` en PlannerPanel.tsx). Sin esto el saludo pintaba «Curso IA
+      // Mutxamiel» como tarea atrasada (Alberto, 22 sep 2026).
+      return <TaskRow key={it.id} node={node} hideCheckbox={!!node.isEvent} displayDue={occurrenceDue(node, it)}
+        onOpenDate={n => setPropsNodeId(id => id === n.id ? null : n.id)} />
     }
     return (
       <button key={it.id} className="v2-assistant-row" onClick={() => openNode(it.id)}>

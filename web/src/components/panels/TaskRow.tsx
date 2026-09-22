@@ -101,9 +101,16 @@ interface Props {
    *  general de arriba (tareas con hora SÍ llevan checkbox) — solo lo anula
    *  cuando el propio caller ya sabe que está listando eventos. */
   hideCheckbox?: boolean
+  /** Instante de la OCURRENCIA que se está listando, si no es el `due`
+   *  guardado: un curso del 21/09 al 14/10 o una serie cuyo nodo se quedó en
+   *  su primera fecha salen en el saludo de hoy — el chip debe decir hoy, no
+   *  «lun, 21 sept» en rojo (Alberto, 22 sep 2026). Solo cambia lo que se
+   *  PINTA (chips y color del checkbox); completar/editar sigue sobre el nodo. */
+  displayDue?: string
 }
 
-export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, rowRef, extra, style, hideCheckbox }: Props) {
+export default function TaskRow({ node: realNode, onOpenDate, showDue = true, dragProps, rowRef, extra, style, hideCheckbox, displayDue }: Props) {
+  const node = displayDue ? { ...realNode, due: displayDue } : realNode
   const { t, i18n } = useTranslation()
   // El propio taskNode.ts lo deja dicho: "`status` dice que es una tarea;
   // `isEvent` dice que va al timeline del día y a Google Calendar. No son dos
@@ -149,7 +156,7 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
       ) : (
         <button
           className={`dc-check dc-check--${taskCheckState(node)}`}
-          onClick={e => { e.stopPropagation(); toggleTaskDone(node) }}
+          onClick={e => { e.stopPropagation(); toggleTaskDone(realNode) }}
           title={t('daily.markDone')} aria-label={t('daily.markDone')}
         >{done ? <Icon name="check" size={11} strokeWidth={2.6} /> : null}</button>
       )}
@@ -169,7 +176,7 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
           {due && (
             <span className="dc-due" style={{ cursor: 'pointer', color: dueColor(node) }}
               title={t('dailyCockpit.editDateRecurrence')}
-              onClick={e => { e.stopPropagation(); onOpenDate(node) }}>{due}</span>
+              onClick={e => { e.stopPropagation(); onOpenDate(realNode) }}>{due}</span>
           )}
           {/* Mismo badge «+» que las tareas sin fecha, ahora también con fecha —
               antes vivía dentro de TaskHoverActions (solo visible al hover de
@@ -178,13 +185,13 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
               fila, igual que las sin fecha"). */}
           {due && !done && (
             <span className="dc-due dc-due--empty" title={t('dailyCockpit.editDateRecurrence')}
-              onClick={e => { e.stopPropagation(); onOpenDate(node) }}>+</span>
+              onClick={e => { e.stopPropagation(); onOpenDate(realNode) }}>+</span>
           )}
           {/* Hashtag junto a la fecha, sin píldora (24 ago 2026, paridad iOS:
               "quita los bordes... inclúyelos junto a la fecha"). Sigue siendo
               clicable para reasignar — a diferencia de iOS, la web no tiene
               swipe, así que aquí el clic es la ÚNICA forma de cambiarlo. */}
-          <RowContextChip node={node} flat />
+          <RowContextChip node={realNode} flat />
           {/* Sin fecha: badge para ponerla, mismo patrón que el «?» de contexto — un
               solo glifo, sin texto (así no necesita traducción en los 12 idiomas)
               (Alberto, 5 ago 2026: "que no tienen fecha, podrían tener debajo del
@@ -195,7 +202,7 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
               necesita invitar a ponérsela. */}
           {!node.due && !done && (
             <span className="dc-due dc-due--empty" title={t('dailyCockpit.editDateRecurrence')}
-              onClick={e => { e.stopPropagation(); onOpenDate(node) }}>+</span>
+              onClick={e => { e.stopPropagation(); onOpenDate(realNode) }}>+</span>
           )}
           {time && <span className="dc-time">{time}</span>}
           {rec && <span className="dc-rec" title={rec}><Icon name="repeat" size={12} /> {rec}</span>}
@@ -208,7 +215,7 @@ export default function TaskRow({ node, onOpenDate, showDue = true, dragProps, r
             </span>
           )}
           <span style={{ flex: 1 }} />
-          <TaskHoverActions node={node} onOpenDate={onOpenDate} />
+          <TaskHoverActions node={realNode} onOpenDate={onOpenDate} />
         </div>
       </div>
     </div>
