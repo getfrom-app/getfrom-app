@@ -210,6 +210,8 @@ export interface AssistantPrefs {
   remindersEnabled: boolean
   reminderLeadMin: number
   checkinEnabled: boolean
+  /** Cumpleaños de Google Calendar → tareas "Felicitar a X" (Ajustes → Google). */
+  birthdayTasksEnabled: boolean
   telegramLinked: boolean
   lastBriefOn: string | null
   /** true mientras "Repasa el día conmigo" está activo en servidor. */
@@ -222,7 +224,7 @@ export async function assistantGetPrefs(): Promise<AssistantPrefs> {
 }
 
 export type AssistantPrefsPatch = Partial<Pick<AssistantPrefs,
-  'timezone' | 'timezoneAuto' | 'briefEnabled' | 'briefHour' | 'eveningEnabled' | 'eveningHour' | 'remindersEnabled' | 'reminderLeadMin' | 'checkinEnabled'>>
+  'timezone' | 'timezoneAuto' | 'briefEnabled' | 'briefHour' | 'eveningEnabled' | 'eveningHour' | 'remindersEnabled' | 'reminderLeadMin' | 'checkinEnabled' | 'birthdayTasksEnabled'>>
 
 export async function assistantUpdatePrefs(patch: AssistantPrefsPatch): Promise<AssistantPrefs> {
   return apiRequest<AssistantPrefs>('/assistant/prefs', { method: 'PUT', body: JSON.stringify(patch) })

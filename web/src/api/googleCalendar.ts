@@ -50,6 +50,17 @@ export async function disconnectGoogle(): Promise<void> {
   await apiRequest('/google/disconnect', { method: 'DELETE' })
 }
 
+/**
+ * Importa YA los cumpleaños de Google como tareas "Felicitar a X" (30 días por
+ * delante). El servidor lo hace solo una vez al día; esto es el "importar
+ * ahora" de Ajustes, para no tener que esperar a mañana tras encenderlo.
+ * Devuelve cuántas tareas se han creado (0 = ya estaban todas).
+ */
+export async function syncGoogleBirthdays(): Promise<number> {
+  const res = await apiRequest<{ ok: boolean; created: number }>('/google/birthdays/sync', { method: 'POST' })
+  return res.created
+}
+
 function toDateStr(d: Date) {
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`

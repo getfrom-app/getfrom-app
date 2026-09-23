@@ -13,7 +13,8 @@ import { useTheme, type AccentColor } from '../../hooks/useTheme'
 import { store } from '../../store/nodeStore'
 import { type Shortcut, getShortcuts, saveShortcuts } from '../../hooks/useTextExpansion'
 import HotkeysPane from '../settings/HotkeysPane'
-import { getGoogleOAuthUrl, disconnectGoogle } from '../../api/googleCalendar'
+import { getGoogleOAuthUrl, disconnectGoogle, syncGoogleBirthdays } from '../../api/googleCalendar'
+import { assistantGetPrefs, assistantUpdatePrefs } from '../../api/assistant'
 import { apiRequest } from '../../api/client'
 import { downloadFullTextExport } from '../../utils/bulkTextExport'
 import { openExternalUrl } from '../../utils/openExternal'
@@ -967,11 +968,43 @@ export function GooglePane() {
   const us = useUserStore()
   const [disconnecting, setDisconnecting] = useState(false)
   const [error, setError] = useState('')
+  // Cumpleaños → tareas "Felicitar a X". La preferencia vive en el servidor
+  // (misma fila `assistant_prefs` que el resto), no en local: quien la enciende
+  // en la web la tiene encendida también en el iPhone y en el Mac, y quien
+  // importa de verdad es el servidor una vez al día.
+  const [birthdays, setBirthdays] = useState<boolean | null>(null)
+  const [birthdayBusy, setBirthdayBusy] = useState(false)
+  const [birthdayMsg, setBirthdayMsg] = useState('')
 
   useEffect(() => {
     // Refresh status when pane opens
     userStore.refreshGoogleStatus()
+    assistantGetPrefs()
+      .then(p => setBirthdays(p.birthdayTasksEnabled))
+      .catch(() => setBirthdays(false))
   }, [])
+
+  async function toggleBirthdays(enabled: boolean) {
+    setBirthdays(enabled)
+    setBirthdayMsg('')
+    setBirthdayBusy(true)
+    try {
+      await assistantUpdatePrefs({ birthdayTasksEnabled: enabled })
+      // Al encenderlo, importar ya — esperar al cron de mañana para ver algo
+      // parece que no ha funcionado.
+      if (enabled) {
+        const created = await syncGoogleBirthdays()
+        setBirthdayMsg(created > 0
+          ? t('google.birthdaysImported', '{{count}} tarea(s) creada(s).', { count: created })
+          : t('google.birthdaysNothingNew', 'No hay cumpleaños nuevos en los próximos 30 días.'))
+      }
+    } catch (err: unknown) {
+      setBirthdays(!enabled)
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBirthdayBusy(false)
+    }
+  }
 
   async function handleDisconnect() {
     setError('')
@@ -1034,6 +1067,41 @@ export function GooglePane() {
         label={t('google.calendarSyncLabel')}
         hint={t('google.calendarSyncHint')}
       />
+
+      {us.googleConnected && (
+        <>
+          <Row
+            label={t('google.birthdaysLabel', 'Importar cumpleaños como tareas')}
+            hint={t('google.birthdaysHint', 'Cada cumpleaños de tu calendario de Google se convierte en una tarea «Felicitar a…» ese mismo día (30 días por delante). Si borras una, no vuelve.')}
+          >
+            <input type="checkbox"
+              checked={!!birthdays}
+              disabled={birthdays === null || birthdayBusy}
+              onChange={e => toggleBirthdays(e.target.checked)}
+              style={{ width: 16, height: 16, cursor: 'pointer' }} />
+          </Row>
+          {birthdays && (
+            <div className="st-actions">
+              <button className="btn-secondary" disabled={birthdayBusy} onClick={async () => {
+                setBirthdayMsg(''); setBirthdayBusy(true)
+                try {
+                  const created = await syncGoogleBirthdays()
+                  setBirthdayMsg(created > 0
+                    ? t('google.birthdaysImported', '{{count}} tarea(s) creada(s).', { count: created })
+                    : t('google.birthdaysNothingNew', 'No hay cumpleaños nuevos en los próximos 30 días.'))
+                } catch (err: unknown) {
+                  setError(err instanceof Error ? err.message : String(err))
+                } finally { setBirthdayBusy(false) }
+              }}>
+                {birthdayBusy
+                  ? t('google.birthdaysImporting', 'Importando…')
+                  : t('google.birthdaysImportNow', 'Importar ahora')}
+              </button>
+            </div>
+          )}
+          {birthdayMsg && <div className="st-row-hint" style={{ marginTop: 6 }}>{birthdayMsg}</div>}
+        </>
+      )}
       {/* La sección de Google Drive se mostrará cuando el adjuntar-archivos esté
           implementado (requiere re-añadir el scope drive.file tras verificar Calendar). */}
     </div>
