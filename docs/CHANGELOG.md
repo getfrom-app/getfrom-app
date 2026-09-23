@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.10.97 · iPhone — 23 septiembre 2026 · Los cumpleaños, ya convertidos en tarea
+## Web v9.10.97 · iPhone 2.25 — 23 septiembre 2026 · Los cumpleaños, ya convertidos en tarea
 
 - **Importa los cumpleaños de Google Calendar como tareas**: actívalo en Ajustes → Google y cada
   cumpleaños se convierte en una tarea «Felicitar a…» ese mismo día, de los próximos 30 días y en

@@ -25,8 +25,10 @@
   en `api/googleCalendar.ts`, claves `google.birthdays*` en es/en.
 - **iOS**: `GoogleCalendarService.syncBirthdays()`, `AssistantPrefs.birthdayTasksEnabled: Bool?`
   (opcional, para no romper contra servidores anteriores) e interruptor en `gcalSection` de
-  `IOSSettingsView` con Binding propio (hay que esperar al PUT antes de importar). Sin bump de
-  `MARKETING_VERSION`: la 2.24 estaba en revisión.
+  `IOSSettingsView` con Binding propio (hay que esperar al PUT antes de importar). **2.25** (build 52,
+  commit `e224a20`) enviada a revisión — el primer push, sin bump, produjo la build 51 FAILED porque
+  Apple aprobó la 2.24 durante la sesión y su tren quedó cerrado (ver FROM.md «el bump de versión va
+  ANTES del push»).
 - **Apple Calendar**: no implementado — requiere EventKit en el cliente.
 
 ---
