@@ -774,6 +774,20 @@ necesitas hacerlo una vez.
 - Editar o eliminar un evento funciona en ambas direcciones.
 - La sincronización tiene en cuenta tu zona horaria local.
 
+### Cumpleaños como tareas
+
+En **Ajustes → Google** puedes activar **«Importar cumpleaños como tareas»**. Con la opción
+encendida, cada cumpleaños de tu calendario de Google se convierte en una tarea **«Felicitar a…»**
+ese mismo día, sin hora, dentro de tu nota del día. Fromly mira los **30 días siguientes** y lo
+repasa una vez al día, así que los cumpleaños nuevos van apareciendo solos.
+
+- El interruptor es el mismo en la web, en el Mac y en el iPhone: lo activas una vez y vale para los
+  tres.
+- **«Importar ahora»** trae los cumpleaños al momento, sin esperar al repaso del día siguiente.
+- **Si borras una de esas tareas, no vuelve.** Repetir la importación no crea duplicados.
+- El cumpleaños sigue viéndose además como evento en el Planificador, como cualquier otro evento de
+  Google.
+
 Fromly sincroniza con **Google Calendar**, no con Apple Calendar/EventKit.
 
 ---

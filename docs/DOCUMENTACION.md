@@ -1,7 +1,33 @@
 # Fromly — Documentación completa
 
 > Documento vivo. Actualizado en cada sesión de desarrollo.
-> Última actualización: 2026-09-17, sesión 58 (web, servidor)
+> Última actualización: 2026-09-23, sesión 62 (servidor, web, iOS)
+
+---
+
+## Sesión 2026-09-23 (sesión 62) — cumpleaños de Google Calendar como tareas
+
+- **Servidor (`services/birthdayTasks.ts`, nuevo)**: `syncBirthdayTasks(userId, tz)` lee los
+  cumpleaños de los próximos 30 días de TODOS los calendarios (sin filtrar por `selected`) y crea una
+  tarea «Felicitar a X» / «Wish X a happy birthday» (según `users.locale`) en la nota diaria de ese
+  día, sin hora (`startOfLocalDay`). Filtro: `eventType === "birthday"` descartando aniversarios por
+  `birthdayProperties.type`, y del calendario de contactos solo títulos con forma de cumpleaños
+  (`looksLikeBirthdayTitle`). Id determinista `from.birthday.<userId>.<gcalId>|<día>`; la
+  comprobación previa NO filtra `deletedAt`, así una tarea borrada no renace. El nodo no lleva
+  `_gcalEventId` a propósito (evitaría el push de título a Google), sino `_birthday*`.
+- **`lib/googleAuth.ts` (nuevo)**: `getGoogleAccessToken` sale de `routes/google.ts` (era privada)
+  para que el servicio no tenga que importar de una ruta que a su vez lo llama.
+- **Preferencia**: `assistant_prefs.birthday_tasks_enabled` (default false) + `last_birthday_sync_on`,
+  en `GET/PUT /assistant/prefs`. Encenderla pone `lastBirthdaySyncOn = null` (re-importa). Cron:
+  `isBirthdaySyncDue` dentro de `runAssistantCron`, una vez por día local, sin depender del plan.
+- **`POST /google/birthdays/sync`**: «Importar ahora», devuelve `created`.
+- **Web (v9.10.97)**: interruptor + botón en `GooglePane` (`SettingsModal.tsx`), `syncGoogleBirthdays`
+  en `api/googleCalendar.ts`, claves `google.birthdays*` en es/en.
+- **iOS**: `GoogleCalendarService.syncBirthdays()`, `AssistantPrefs.birthdayTasksEnabled: Bool?`
+  (opcional, para no romper contra servidores anteriores) e interruptor en `gcalSection` de
+  `IOSSettingsView` con Binding propio (hay que esperar al PUT antes de importar). Sin bump de
+  `MARKETING_VERSION`: la 2.24 estaba en revisión.
+- **Apple Calendar**: no implementado — requiere EventKit en el cliente.
 
 ---
 

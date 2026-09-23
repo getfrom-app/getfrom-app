@@ -4,6 +4,15 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.97 · iPhone — 23 septiembre 2026 · Los cumpleaños, ya convertidos en tarea
+
+- **Importa los cumpleaños de Google Calendar como tareas**: actívalo en Ajustes → Google y cada
+  cumpleaños se convierte en una tarea «Felicitar a…» ese mismo día, de los próximos 30 días y en
+  adelante. Está en la web, en el Mac y en el iPhone, y se activa una sola vez para los tres.
+- **Si borras una, no vuelve**: Fromly no te repone la tarea que decidiste quitar.
+
+---
+
 ## Web v9.10.96 · iPhone — 22 septiembre 2026 · Eventos en el chat, con su día de verdad
 
 - **Los eventos se ven como eventos en el chat**: sin checkbox, igual que en el planificador.
