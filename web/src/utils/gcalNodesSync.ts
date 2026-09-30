@@ -12,6 +12,7 @@
 
 import { store, nodeGcalEventId } from '../store/nodeStore'
 import type { Node } from '../types'
+import { isTimeBlockNode } from './taskNode'
 import { updateCalendarEvent, createCalendarEvent, deleteCalendarEvent, fromRecToRRule } from '../api/googleCalendar'
 
 // Último título sincronizado por evento (anti-bucle: evita re-empujar lo que vino
@@ -112,7 +113,9 @@ export async function pushEventTitleChanges(diaryNode: Node): Promise<void> {
 const pushInFlight = new Set<string>()
 
 export async function pushEventToGcal(node: Node): Promise<void> {
-  if (!node.isEvent || !node.due) return
+  // Un time block también va a Google aunque no sea `isEvent` (misma regla que
+  // `syncNodeToGcal` del planificador): editarlo desde su ficha debe moverlo allí.
+  if ((!node.isEvent && !isTimeBlockNode(node)) || !node.due) return
   if (pushInFlight.has(node.id)) return
   pushInFlight.add(node.id)
   try {

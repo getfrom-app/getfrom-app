@@ -21,6 +21,7 @@ import ContextPicker from './ContextPicker'
 import { firstContextOf, setNodeContext } from '../../utils/cajones'
 import Icon from '../../v2/components/Icon'
 import { askConfirm } from '../../utils/confirmDialog'
+import { isTimeBlockNode } from '../../utils/taskNode'
 
 type DiaryPanelTab = 'agenda' | 'timeline'
 
@@ -107,6 +108,10 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
   const ctxBtnRef = useRef<HTMLButtonElement>(null)
   const ctxPickerRef = useRef<HTMLDivElement>(null)
   const currentCtx = firstContextOf(node)
+  // Time block: se edita aquí igual que una tarea o un evento, pero sigue siendo
+  // un time block — ni pasa a `isEvent` al tocarle la hora ni se le ofrece
+  // «Estado» (darle `status` lo convertiría en tarea). Ver `isTimeBlockNode`.
+  const isTimeBlock = isTimeBlockNode(node)
   // «¿Solo esta instancia o todas las siguientes?» (27 ago 2026, Alberto: "cuando
   // se edita... un evento recurrente... debe preguntar igual que Apple
   // Calendar"). Se pregunta UNA vez al abrir este popover sobre una tarea
@@ -181,10 +186,10 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
     // Tarea + hora concreta = evento: aterriza en el calendario y se sincroniza con
     // Google (antes se quedaba como tarea con hora, sin aparecer en Google Calendar
     // ni en la vista de calendario — solo los nodos isEvent aterrizan ahí).
-    const becomesEvent = !!time && !node.isEvent
+    const becomesEvent = !!time && !node.isEvent && !isTimeBlock
     if (becomesEvent) updates.isEvent = true
     store.updateNode(node.id, updates)
-    if (time && (node.isEvent || becomesEvent)) {
+    if (time && (node.isEvent || becomesEvent || isTimeBlock)) {
       const fresh = store.getNode(node.id)
       if (fresh) pushEventToGcal(fresh).catch(() => {})
     }
@@ -209,7 +214,7 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
       return
     }
     store.updateNode(node.id, { dueEnd: resolved })
-    if (node.isEvent) {
+    if (node.isEvent || isTimeBlock) {
       const fresh = store.getNode(node.id)
       if (fresh) pushEventToGcal(fresh).catch(() => {})
     }
@@ -570,7 +575,8 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
         </div>
       )}
 
-      {/* Estado */}
+      {/* Estado — no para un time block: no se completa ni es una tarea. */}
+      {!isTimeBlock && (<>
       <div className="tpp-section-label">{t('search.filterStatus')}</div>
       <div className="nqp-chips-row">
         {([
@@ -584,6 +590,7 @@ export function TaskPropsPopover({ node: nodeProp, onClose, allowRename, allowDe
           >{opt.l}</button>
         ))}
       </div>
+      </>)}
 
       {/* Color de acento de la nota — se usa de fondo en calendario y border en outliner */}
       <div className="tpp-section-label">{t('panel.color')}</div>

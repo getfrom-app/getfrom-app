@@ -56,6 +56,7 @@ import DailyCockpit from '../../components/views/DailyCockpit'
 import V2AgendaAssistant from './V2AgendaAssistant'
 import { TaskPropsBody } from '../../components/modals/TaskPropsModal'
 import { V2NoteContext, V2Backlinks } from './V2DetailView'
+import { isTimeBlockNode } from '../../utils/taskNode'
 import { elementDisplayTitle } from '../../utils/docNode'
 
 export type RightMode = 'contexto' | 'chat' | 'elementos' | 'agenda'
@@ -157,7 +158,7 @@ function V2AgendaElementSide({ nodeId, onSelectCtx, onOpenNode }: { nodeId: stri
   const node = store.getNode(nodeId)
   const links = useElementLinks(nodeId)
   if (!node) return null
-  const isTaskLike = node.status != null || node.isEvent
+  const isTaskLike = node.status != null || node.isEvent || isTimeBlockNode(node)
   return (
     <div className="v2-right-body v2-agenda-elside">
       <div className="v2-detail-dates" style={{ padding: '14px 20px 0' }}>{elementDisplayTitle(node)}</div>

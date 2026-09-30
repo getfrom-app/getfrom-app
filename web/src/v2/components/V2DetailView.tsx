@@ -32,7 +32,8 @@ import ContextPicker from '../../components/panels/ContextPicker'
 import V2TaskDetailView, { V2SeriesNotesSection } from './V2TaskDetailView'
 import { isTimeBlockNode } from '../../utils/taskNode'
 import { isSeriesMember } from '../../utils/seriesNotes'
-import { dueLabel } from '../../components/panels/TaskRow'
+import { dueLabel, timeLabel, recLabel } from '../../components/panels/TaskRow'
+import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
 import { trashNode, restoreNode } from '../../utils/papeleraHelper'
 import V2AgentDetailView from './V2AgentDetailView'
 import V2PromptDetailView from './V2PromptDetailView'
@@ -429,38 +430,63 @@ export default function V2DetailView({ nodeId, onSelectCtx, onOpenElementsFilter
   // TAREA/EVENTO: NUNCA como documento genérico — antes caía aquí abajo (V2NoteBody)
   // con body vacío y el DocEditor le pisaba el título con «Documento» al guardar.
   if (node.status != null || node.isEvent) return <V2TaskDetailView node={node} onSelectCtx={onSelectCtx} />
-  // TIME BLOCK recurrente: «Notas comunes» de la serie encima, igual que tarea y
-  // evento (Alberto, 17 sep 2026). Sus notas de ESTE día siguen siendo su propio
-  // body — lo que ya tenían escrito no se mueve a ningún sitio.
-  if (isTimeBlockNode(node) && isSeriesMember(node)) return <V2TimeBlockSeriesView node={node} onSelectCtx={onSelectCtx} hideContext={hideContext} />
+  // TIME BLOCK: cabecera con su día, hora y repetición, editables con la misma
+  // ventana que tareas y eventos (Alberto, 30 sep 2026). Sus notas siguen siendo
+  // su propio body — lo que ya tenían escrito no se mueve a ningún sitio. Si es
+  // recurrente, «Notas comunes» de la serie encima (17 sep 2026).
+  if (isTimeBlockNode(node)) return <V2TimeBlockView node={node} onSelectCtx={onSelectCtx} hideContext={hideContext} />
   // CITA de un párrafo de otra nota — vista propia con «Ir a la nota» (ver arriba).
   if (ed._docSelection != null) return <V2CitationView node={node} onSelectCtx={onSelectCtx} />
   return <V2NoteBody node={node} onSelectCtx={onSelectCtx} hideContext={hideContext} hideToolbar={hideToolbar} />
 }
 
-function V2TimeBlockSeriesView({ node, onSelectCtx, hideContext }: { node: Node; onSelectCtx: (id: string) => void; hideContext?: boolean }) {
+function V2TimeBlockView({ node, onSelectCtx, hideContext }: { node: Node; onSelectCtx: (id: string) => void; hideContext?: boolean }) {
   const { t, i18n } = useTranslation()
+  const [showProps, setShowProps] = useState(false)
+  const inSeries = isSeriesMember(node)
   const due = dueLabel(node, i18n.language)
+  const start = timeLabel(node, i18n.language)
+  // Un time block es un tramo: se enseña inicio – fin, no solo la hora de inicio.
+  const end = node.dueEnd ? timeLabel({ ...node, due: node.dueEnd }, i18n.language) : null
+  const rec = recLabel(node, t)
+  const openProps = () => setShowProps(true)
   return (
     <div style={{ height: '100%', overflow: 'auto', padding: '4px 18px 18px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0' }}>
-        {!hideContext && <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />}
-        <button
-          title={t('tip.delete', 'Eliminar')}
-          onClick={() => { trashNode(node.id); window.dispatchEvent(new Event('from:close-detail')) }}
-          style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: 4 }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+      {/* Misma fila que la ficha de tarea/evento (V2TaskDetailView), sin casilla:
+          un time block no se completa. Toda la fila abre la ventana de edición. */}
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10, padding: '10px 0' }}>
+        <button className="v2-el-ctxchip" style={{ cursor: 'pointer', border: 'none', background: 'var(--bg-hover)' }}
+          onClick={openProps} title={t('dailyCockpit.editDateRecurrence')}>
+          <Icon name="calendar" size={13} /> {due || t('modal.dueDate')}
         </button>
+        {start && <span className="dc-time" style={{ cursor: 'pointer' }} onClick={openProps}>{end ? `${start} – ${end}` : start}</span>}
+        {rec && <span className="dc-rec" style={{ cursor: 'pointer' }} onClick={openProps}><Icon name="repeat" size={13} /> {rec}</span>}
+        {/* Sin serie, eliminar ya está en la barra de la nota de abajo. */}
+        {inSeries && (
+          <button
+            title={t('tip.delete', 'Eliminar')}
+            onClick={() => { trashNode(node.id); window.dispatchEvent(new Event('from:close-detail')) }}
+            style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary,#999)', padding: 4 }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          </button>
+        )}
       </div>
-      <V2SeriesNotesSection node={node} onSelectCtx={onSelectCtx} />
+      {!hideContext && (
+        <div style={{ marginBottom: 8 }}>
+          <V2NoteContext node={node} onSelectCtx={onSelectCtx} inline />
+        </div>
+      )}
+      {inSeries && <V2SeriesNotesSection node={node} onSelectCtx={onSelectCtx} />}
       <div style={{ marginTop: 18, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
         <div className="v2-section-label" style={{ padding: '0 0 4px' }}>
-          {t('v2.task.instanceNotes', 'Notas de este día')}
-          {due && <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400, marginLeft: 8, color: 'var(--text-tertiary)' }}>{due}</span>}
+          {inSeries && due
+            ? <>{t('v2.task.instanceNotes', 'Notas de este día')}<span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 400, marginLeft: 8, color: 'var(--text-tertiary)' }}>{due}</span></>
+            : t('v2.context.notes', 'Notas')}
         </div>
-        <V2NoteBody node={node} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar />
+        <V2NoteBody node={node} onSelectCtx={onSelectCtx} inlinePage hideContext hideToolbar={inSeries} />
       </div>
+      {showProps && <TaskPropsPopover node={node} allowDelete onDeleted={() => window.dispatchEvent(new Event('from:close-detail'))} onClose={() => setShowProps(false)} />}
     </div>
   )
 }

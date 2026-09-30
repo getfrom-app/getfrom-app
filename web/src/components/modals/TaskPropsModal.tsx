@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom'
 import { store, useStore } from '../../store/nodeStore'
 import { useTranslation } from 'react-i18next'
 import Icon from '../../v2/components/Icon'
+import { isTimeBlockNode } from '../../utils/taskNode'
 
 const REC_UNITS: [string, string][] = [['daily', 'taskPropsModal.recDays'], ['weekly', 'taskPropsModal.recWeeks'], ['monthly', 'taskPropsModal.recMonths'], ['yearly', 'taskPropsModal.recYears']]
 const PRIORITIES: [string, string][] = [['high', 'priority.high'], ['medium', 'priority.medium'], ['low', 'priority.low']]
@@ -39,10 +40,19 @@ export function TaskPropsBody({ nodeId }: { nodeId: string }) {
   const recUnit = rec ? rec.split(':')[0] : ''
   const recN = rec ? (parseInt(rec.split(':')[1] || '1') || 1) : 1
 
+  // Ponerle fecha o repetición a algo lo hace tarea — salvo a un time block, que
+  // se edita aquí igual pero sigue sin `status` (ver `isTimeBlockNode`).
+  const keepKind = isTimeBlockNode(node) ? {} : { status: node.status ?? 'pending' as const }
+
   function setDateTime(d: string, t: string) {
     if (!d) { store.updateNode(nodeId, { due: null }); return }
     const iso = t ? new Date(`${d}T${t}:00`).toISOString() : new Date(`${d}T00:00:00`).toISOString()
-    store.updateNode(nodeId, { due: iso, status: node!.status ?? 'pending' })
+    // Mover el inicio arrastra el fin con la misma duración (igual que
+    // `TaskPropsPopover.setDue`): si no, el fin se queda antes del inicio.
+    const dueEnd = node!.due && node!.dueEnd
+      ? { dueEnd: new Date(new Date(node!.dueEnd).getTime() + new Date(iso).getTime() - new Date(node!.due).getTime()).toISOString() }
+      : {}
+    store.updateNode(nodeId, { due: iso, ...dueEnd, ...keepKind })
   }
   function quick(days: number) {
     const dd = new Date(); dd.setHours(0, 0, 0, 0); dd.setDate(dd.getDate() + days)
@@ -51,7 +61,7 @@ export function TaskPropsBody({ nodeId }: { nodeId: string }) {
   function setRec(unit: string, n: number) {
     store.updateNode(nodeId, {
       recurrence: !unit ? null : (n === 1 ? unit : `${unit}:${n}`),
-      status: node!.status ?? 'pending',
+      ...keepKind,
     })
   }
   function setPriority(p: 'low' | 'medium' | 'high' | null) {
