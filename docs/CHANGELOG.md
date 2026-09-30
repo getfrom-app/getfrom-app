@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.10.99 — 30 septiembre 2026 · Todo lo de un contexto, en una sola lista
+## Web v9.10.100 — 30 septiembre 2026 · Todo lo de un contexto, en una sola lista
 
 - **Tareas, eventos y elementos juntos**: en la columna derecha de un contexto ya no hay tres bloques
   separados. Las tareas y los eventos aparecen en la lista de elementos, con su casilla y su fecha de

@@ -431,10 +431,14 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
             onClick={() => setFoldersOpen(!foldersOpen)}
             style={{ padding: '18px 0 6px', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', userSelect: 'none' }}
           >
-            <span style={{ display: 'flex', alignItems: 'center', transform: foldersOpen ? 'rotate(90deg)' : undefined, transition: 'transform .1s' }}>
-              <Icon name="chevron-right" size={12} />
+            {/* Un solo hijo: `.v2-section-label` reparte sus hijos a los extremos,
+                y la flecha quedaba a la izquierda con el título pegado a la derecha. */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ display: 'flex', alignItems: 'center', transform: foldersOpen ? 'rotate(90deg)' : undefined, transition: 'transform .1s' }}>
+                <Icon name="chevron-right" size={12} />
+              </span>
+              {t('folders.title', 'Carpetas del Mac')}
             </span>
-            <span>{t('folders.title', 'Carpetas del Mac')}</span>
           </div>
           {foldersOpen && <V2SyncedFolders contextId={ctxId} compact />}
         </>
