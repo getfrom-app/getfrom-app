@@ -4,6 +4,17 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.101 · iPhone 2.27 — 30 septiembre 2026 · Los time blocks se editan como tareas y eventos
+
+- **Cabecera con cuándo es**: al abrir un time block, arriba ves el día, el tramo horario (9:00 – 11:30)
+  y la repetición. Pulsa cualquiera de ellos para cambiarlo, igual que en una tarea o un evento.
+- **Sigue siendo un time block**: cambiarle la hora o la repetición no lo convierte en evento ni en
+  tarea, y no lleva casilla.
+- **El fin se mueve con el inicio**: si cambias el día o la hora de inicio, el bloque conserva su duración.
+- **También en el iPhone**: la ficha del time block tiene la misma fila de día, hora y repetición.
+
+---
+
 ## Web v9.10.100 — 30 septiembre 2026 · Todo lo de un contexto, en una sola lista
 
 - **Tareas, eventos y elementos juntos**: en la columna derecha de un contexto ya no hay tres bloques
