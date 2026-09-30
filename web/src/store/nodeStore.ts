@@ -4,6 +4,7 @@ import { generateId } from '../utils/id'
 import { opsClient, DATA_FIELDS } from './opsClient'
 import { structuralId, diaryId } from '../utils/deterministicId'
 import { userStore } from './userStore'
+import { isLockEnvelope, isNotesUnlocked, encryptBody, extraDataLocked } from '../utils/noteLock'
 
 const GUEST_NODES_KEY = 'from_guest_nodes'
 
@@ -154,6 +155,8 @@ export class NodeStore {
   isGuest: boolean = !getToken()
   private listeners: Set<Listener> = new Set()
   private dirtyIds: Set<string> = new Set()
+  /** Cifrados pendientes por nodo (notas con candado) — ver updateNode. */
+  private lockedSaveChain: Map<string, Promise<void>> = new Map()
   private syncTimer: ReturnType<typeof setTimeout> | null = null
   private remotePollTimer: ReturnType<typeof setInterval> | null = null
   private history: Array<{ nodes: Map<string, Node> }> = []
@@ -1190,6 +1193,29 @@ export class NodeStore {
   updateNode(id: string, changes: Partial<Node>): void {
     const node = this.nodes.get(id)
     if (!node) return
+
+    // Nota con candado (utils/noteLock.ts): el editor trabaja con el texto descifrado,
+    // pero a la store (y al servidor) solo llega el sobre cifrado. Un body en claro
+    // encima de un sobre se cifra aquí (en serie por nodo, para que no se desordenen
+    // dos guardados seguidos) y no se aplica tal cual — salvo que la misma escritura
+    // quite `_locked` (quitar el candado a propósito). El título derivado del cuerpo
+    // (`bodySave` en DocEditor) tampoco se aplica: filtraría la primera línea.
+    if (typeof changes.body === 'string' && isLockEnvelope(node.body) && !isLockEnvelope(changes.body)
+        && !('extraData' in changes && !extraDataLocked(changes.extraData))) {
+      const { body, text: _derivedTitle, ...rest } = changes
+      if (isNotesUnlocked()) {
+        const prev = this.lockedSaveChain.get(id) ?? Promise.resolve()
+        const next = prev.then(() => encryptBody(body)).then(env => {
+          const cur = this.nodes.get(id)
+          if (cur && isLockEnvelope(cur.body)) this.updateNode(id, { body: env })
+        }).catch(e => console.warn('[noteLock] no se pudo cifrar el guardado:', e))
+        this.lockedSaveChain.set(id, next)
+      } else {
+        console.warn('[noteLock] guardado en claro sobre una nota bloqueada descartado (sesión bloqueada)')
+      }
+      if (Object.keys(rest).length === 0) return
+      changes = rest
+    }
 
     const updated = { ...node, ...changes, updatedAt: new Date().toISOString(), _isDirty: true }
     this.nodes.set(id, updated)

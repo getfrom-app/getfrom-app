@@ -21,6 +21,8 @@ import DocEditor from '../../components/views/DocEditor'
 import DocEditorBoundary from '../../components/DocEditorBoundary'
 import DocInspector from '../../components/views/DocInspector'
 import PublishButton from '../../components/PublishButton'
+import { NoteLockButton, LockedNoteGate } from '../../components/LockedNote'
+import { isLockedNode } from '../../utils/noteLock'
 import { exportNodeMarkdown, exportNodeHtml, exportNodePdf } from '../../utils/nodeExport'
 import { convertNoteToBlock } from '../../utils/noteBlocks'
 import { promoteCitationWithFeedback } from '../../utils/citations'
@@ -190,6 +192,11 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
     else toast(t('v2.convertFailed', 'No se pudo convertir: contiene algo que no se puede migrar (revisa su contenido).'), 'warning')
   }
 
+  // Notas con candado: solo documentos normales. La nota diaria no (el servidor le
+  // añade líneas de actividad en claro) ni la nota de un contexto (la lee la IA).
+  const locked = isLockedNode(node)
+  const lockable = asDoc && !canvas && !isDayNote && !isContextNode(node.id)
+
   const toggleFavorite = () => { const next = !node.isFavorite; store.updateNode(node.id, { isFavorite: next }); toast(next ? t('tip.addFavorite') : t('tip.removeFavorite')) }
   const deleteCard = () => {
     // Antes usaba store.deleteNode() (borrado "lápida" sin mover el nodo bajo
@@ -229,7 +236,8 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
             <button title={node.isFavorite ? t('tip.removeFavorite') : t('tip.addFavorite')} onClick={toggleFavorite} style={{ ...actBtn, color: node.isFavorite ? '#f59e0b' : 'var(--text-secondary,#666)' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill={node.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.9L12 17.8 5.8 21l1.2-6.9-5-4.9 6.9-1z"/></svg>
             </button>
-            {asDoc && !canvas && <>
+            {(lockable || locked) && <NoteLockButton node={node} style={actBtn} />}
+            {asDoc && !canvas && !locked && <>
               <button title={t('export.markdown')} onClick={() => { exportNodeMarkdown(node); toast(t('context.toastExportedMarkdown')) }} style={actBtn}>MD</button>
               <button title={t('export.html')} onClick={() => { exportNodeHtml(node); toast(t('context.toastExportedHtml')) }} style={actBtn}>HTML</button>
               <button title={t('export.pdf')} onClick={() => exportNodePdf(node)} style={actBtn}>PDF</button>
@@ -279,7 +287,9 @@ export function V2NoteBody({ node, onSelectCtx, inlinePage, hideContext, headerL
                 {/* Ficha de propiedades de un TIPO custom (Persona, Libro…) — solo si
                     este documento nació de un tipo (utils/typeDefsHelper.ts). */}
                 {!inlinePage && elementTypeId(node) && <TypePropertiesBar nodeId={node.id} typeId={elementTypeId(node)!} />}
-                <div style={{ padding: '18px 20px 12px' }}><DocEditorBoundary compact><DocEditor node={node} compact registerActive autofocus={(!node.body || node.body === '<p></p>') ? 'start' : false} /></DocEditorBoundary></div>
+                <div style={{ padding: '18px 20px 12px' }}>{locked
+                  ? <LockedNoteGate node={node} />
+                  : <DocEditorBoundary compact><DocEditor node={node} compact registerActive autofocus={(!node.body || node.body === '<p></p>') ? 'start' : false} /></DocEditorBoundary>}</div>
                 <V2Backlinks nodeId={node.id} />
               </>
             : <Outliner parentId={node.id} autoFocusEmpty placeholder={t('v2.outlinerPlaceholder', 'Escribe aquí… (usa «/» para insertar tabla, kanban, calendario…)')} />}

@@ -4,6 +4,19 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.98 · Mac — 30 septiembre 2026 · Notas con candado
+
+- **Protege una nota con contraseña**: pulsa el candado arriba a la derecha de cualquier nota. La
+  primera vez eliges tu contraseña de notas (una para todas) y te damos una clave de recuperación
+  para guardarla en Contraseñas de Apple.
+- **Cifrado de extremo a extremo**: el contenido se cifra en tu dispositivo. Ni Fromly, ni su IA,
+  ni el buscador pueden leerlo; al bloquear una nota se borran también sus copias antiguas en claro.
+- **Se vuelve a bloquear sola** tras 5 minutos sin tocarla, o cuando pulsas «Bloquear ahora».
+- En el iPhone, por ahora, una nota con candado se ve como «🔒 Nota con candado» y no se puede
+  editar desde allí (llega en la próxima versión, con Face ID).
+
+---
+
 ## Web v9.10.97 · iPhone 2.25 — 23 septiembre 2026 · Los cumpleaños, ya convertidos en tarea
 
 - **Importa los cumpleaños de Google Calendar como tareas**: actívalo en Ajustes → Google y cada

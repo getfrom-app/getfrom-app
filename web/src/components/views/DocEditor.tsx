@@ -25,6 +25,7 @@ import { extractUserKnowledge } from '../../api/autoClassify'
 import { readProfileLines } from '../../api/userKnowledge'
 import { parseExtraData } from '../../utils/papeleraHelper'
 import { firstLineTitle, DOC } from '../../utils/docNode'
+import { isLockEnvelope } from '../../utils/noteLock'
 import { markdownToHtml } from '../../utils/importMarkdown'
 import DocMention from './DocMention'
 import DocContextMention from './DocContextMention'
@@ -100,8 +101,13 @@ const TaskItemLinked = TaskItem.extend({
   },
 })
 
-export default function DocEditor({ node, compact, registerActive, autofocus }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean; registerActive?: boolean; autofocus?: boolean | 'start' | 'end' }) {
+export default function DocEditor({ node, compact, registerActive, autofocus, locked }: { node: { id: string; body?: string | null; text?: string }; compact?: boolean; registerActive?: boolean; autofocus?: boolean | 'start' | 'end'; locked?: boolean }) {
   useStore()
+  // Nota con candado (LockedNoteGate): `node.body` llega DESCIFRADO. Nada de ese texto
+  // puede salir del dispositivo en claro: ni historial de versiones, ni extracción de
+  // conocimiento por IA, ni casillas convertidas en tareas-hijo (serían nodos en claro).
+  const lockedRef = useRef(!!locked)
+  lockedRef.current = !!locked
   const navigate = useNavigate()
   const { t } = useTranslation()
   const saveTimer = useRef<number | null>(null)
@@ -852,7 +858,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // contexto (`isContextKnowledge`, otro sistema, ver `maybeUpdateContextKnowledge`
   // más arriba en este mismo archivo).
   const doExtractDocKnowledge = useCallback(async (plainText: string) => {
-    if (hasExtractedKnowledgeRef.current) return
+    if (hasExtractedKnowledgeRef.current || lockedRef.current) return
     if (plainText.trim().length < 20) return
     if (isProfileKnowledge(node.text) || isContextKnowledge(node.text)) return
     hasExtractedKnowledgeRef.current = true
@@ -865,7 +871,14 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [node.id, node.text])
 
+  // Un sobre cifrado que llega SIN pasar por LockedNoteGate (tarjeta del lienzo, otras
+  // vistas) se muestra como aviso de solo lectura: si se pudiera editar, lo tecleado
+  // encima del aviso se cifraría y sustituiría a la nota real.
+  const rawEnvelope = isLockEnvelope(node.body)
+  const rawEnvelopeRef = useRef(rawEnvelope)
+  rawEnvelopeRef.current = rawEnvelope
   const editor = useEditor({
+    editable: !rawEnvelope,
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       Underline,
@@ -911,14 +924,17 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
         // vacía — `.trim()` a secas lo dejaba pasar como si tuviera contenido
         // real, guardando versiones "(vacío)" sin utilidad para deshacer nada.
         const prevHasContent = prevBody.replace(/<[^>]+>/g, '').trim().length > 0
-        if (prevHasContent && prevBody !== newBody && now - lastVersionSavedAtRef.current > 5 * 60 * 1000) {
+        if (!lockedRef.current && prevHasContent && prevBody !== newBody && now - lastVersionSavedAtRef.current > 5 * 60 * 1000) {
           lastVersionSavedAtRef.current = now
           saveNodeBodyVersion(node.id, prevBody).catch(() => { /* red de seguridad best-effort — nunca bloquea el guardado real */ })
         }
         lastSavedBodyRef.current = newBody
+        if (rawEnvelopeRef.current) { pendingSaveRef.current = false; return } // nunca guardar sobre un sobre sin descifrar
         store.updateNode(node.id, bodySave(newBody))
-        syncTasksToNodes()
-        syncCitationDescendants()
+        if (!lockedRef.current) {
+          syncTasksToNodes()
+          syncCitationDescendants()
+        }
         pendingSaveRef.current = false
       }, 500)
       detectSlash()
@@ -994,7 +1010,7 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
   // tiene título propio, no se toca — abrir el documento nunca debe retitularlo.
   useEffect(() => {
     if (!editor) return
-    if (keepsOwnTitle() || hasOwnTitle()) return
+    if (keepsOwnTitle() || hasOwnTitle() || lockedRef.current) return
     const t = firstLineTitle(editor.getHTML())
     if (t) store.updateNode(node.id, { text: t })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1050,14 +1066,19 @@ export default function DocEditor({ node, compact, registerActive, autofocus }: 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, node.body])
 
+  // Si la nota se bloquea con este editor abierto (fuera de LockedNoteGate), pasa a solo lectura.
+  useEffect(() => {
+    if (editor && editor.isEditable === rawEnvelope) editor.setEditable(!rawEnvelope)
+  }, [editor, rawEnvelope])
+
   // Limpieza del ancla fantasma del menú "/" (creada en detectSlash) al desmontar.
   useEffect(() => () => {
     document.getElementById('doc-slash-anchor-ghost')?.remove()
   }, [])
   useEffect(() => () => {
     if (saveTimer.current) clearTimeout(saveTimer.current)
-    if (editor) {
-      syncTasksToNodes() // reconcilia y asigna ids al doc ANTES de guardar el HTML final
+    if (editor && !rawEnvelopeRef.current) {
+      if (!lockedRef.current) syncTasksToNodes() // reconcilia y asigna ids al doc ANTES de guardar el HTML final
       store.updateNode(node.id, bodySave(editor.getHTML()))
     }
     // Si había una extracción de conocimiento pendiente, dispararla ya

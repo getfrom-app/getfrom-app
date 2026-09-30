@@ -1621,3 +1621,51 @@ button.v2-ctx-row { border: none; background: none; font: inherit; text-align: l
   white-space: nowrap;
 }
 .v2-resource-url-go:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Notas con candado (30 sep 2026) — components/LockedNote.tsx ─────────────── */
+.note-lock-overlay {
+  position: fixed; inset: 0; z-index: 10000; background: rgba(0,0,0,.35);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.note-lock-modal {
+  width: 100%; max-width: 420px; background: var(--v2-surface, var(--bg-primary, #fff));
+  color: var(--text-primary); border: 1px solid var(--v2-line); border-radius: 12px;
+  padding: 20px; box-shadow: 0 12px 40px rgba(0,0,0,.25); display: flex; flex-direction: column; gap: 10px;
+}
+.note-lock-modal h3 { margin: 0 0 4px; font-size: 16px; font-weight: 600; }
+.note-lock-help { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-secondary); }
+.note-lock-input {
+  width: 100%; box-sizing: border-box; padding: 9px 11px; border-radius: 8px; font-size: 14px;
+  border: 1px solid var(--border, #ddd); background: transparent; color: var(--text-primary); outline: none;
+}
+.note-lock-input:focus { border-color: var(--accent); }
+.note-lock-input.mono, .note-lock-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .5px; }
+.note-lock-code {
+  padding: 12px; border-radius: 8px; background: var(--accent-soft, rgba(99,102,241,.1));
+  font-size: 15px; text-align: center; word-break: break-all; user-select: all;
+}
+.note-lock-err { font-size: 12.5px; color: #dc2626; }
+.note-lock-actions { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 4px; }
+.note-lock-actions button, .note-lock-gate-btn {
+  padding: 7px 13px; border-radius: 8px; border: 1px solid var(--border, #ddd); background: transparent;
+  color: var(--text-primary); font-size: 13px; cursor: pointer;
+}
+.note-lock-actions button.primary, .note-lock-gate-btn { background: var(--accent); border-color: var(--accent); color: #fff; }
+.note-lock-actions button:disabled { opacity: .5; cursor: default; }
+.note-lock-actions button.link { border: none; padding: 7px 0; color: var(--text-secondary); text-decoration: underline; }
+.note-lock-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+.note-lock-menu {
+  position: absolute; top: calc(100% + 4px); right: 0; z-index: 50; min-width: 210px; padding: 4px;
+  background: var(--v2-surface, var(--bg-primary, #fff)); border: 1px solid var(--v2-line); border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.15); display: flex; flex-direction: column;
+}
+.note-lock-menu button {
+  text-align: left; padding: 8px 10px; border: none; background: none; border-radius: 6px;
+  color: var(--text-primary); font-size: 13px; cursor: pointer;
+}
+.note-lock-menu button:hover { background: var(--v2-hover); }
+.note-lock-gate {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+  padding: 60px 16px; color: var(--text-secondary); text-align: center;
+}
+.note-lock-gate-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
