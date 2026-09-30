@@ -17,7 +17,8 @@ import { isTaskNode } from '../../utils/taskNode'
 import { legacyNotesOf, migrateContextNotesToDoc } from '../migrateContextNotes'
 import { classifyElement } from '../elementKind'
 import ContextPicker from '../../components/panels/ContextPicker'
-import V2TaskList from './V2TaskList'
+import TaskRow from '../../components/panels/TaskRow'
+import { TaskPropsPopover } from '../../components/panels/DiaryPanelComponents'
 import V2QuickAddTask from './V2QuickAddTask'
 import V2ElementRow from './V2ElementRow'
 import V2SyncedFolders from './V2SyncedFolders'
@@ -114,20 +115,14 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
     return out
   }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Eventos aparte de las tareas (26 ago 2026, Alberto: "si es evento debe
-  // aparecer en un grupo aparte de Eventos") — mismo criterio visual que el
-  // planificador (isEvent sin checkbox), separado aquí en su propia sección
-  // en vez de mezclado con las tareas de verdad bajo "Tareas".
-  const plainTasks = useMemo(() => tasks.filter(n => !n.isEvent), [tasks])
-  const events = useMemo(() => tasks.filter(n => n.isEvent), [tasks])
-
   // ELEMENTOS del contexto: TODO lo que cuelga de él — documentos, PDF, imágenes,
   // enlaces, audios, AGENTES y CONVERSACIONES — en una única lista, cada uno con su
   // icono, ordenada de más reciente a más antigua. Antes iban en bloques separados
   // (Elementos/Agentes/Conversaciones); Alberto pidió fusionarlos: "deberían aparecer
   // junto y organizado de más reciente más antiguo, cada elemento con su icono".
   // Las notas de texto planas se omiten (las gestiona la migración, para no volver a
-  // llenar la columna) y las tareas tienen su propia lista arriba (con due/checkbox).
+  // llenar la columna). Las tareas y los eventos entran también aquí desde el 30 sep
+  // 2026 (antes tenían sus propios bloques encima), con su fila de tarea de siempre.
   const elements = useMemo(() => {
     void store.nodesVersion
     const out: { node: Node; icon: IconName; kind: string }[] = []
@@ -183,11 +178,21 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
         }
       }
     }
+    // TAREAS y EVENTOS dentro de la misma lista (30 sep 2026, Alberto: "unifica
+    // tareas, eventos y elementos en la columna derecha... que también se puedan
+    // organizar y seleccionar, igual que cualquier elemento"). Antes iban en dos
+    // bloques propios encima, con las completadas plegadas; ahora están todas
+    // aquí, completadas y pendientes, con su fila de tarea de siempre (TaskRow).
+    for (const n of tasks) {
+      if (seen.has(n.id)) continue
+      seen.add(n.id)
+      out.push(n.isEvent ? { node: n, icon: 'event', kind: 'event' } : { node: n, icon: 'task', kind: 'task' })
+    }
     // Por fecha de CREACIÓN, no de modificación (Alberto, 5 ago 2026): con
     // `updatedAt` la lista se reordenaba sola cada vez que se tocaba cualquier
     // elemento — imposible acordarse de dónde estaba nada.
     return out.sort((a, b) => (b.node.createdAt || '').localeCompare(a.node.createdAt || ''))
-  }, [ctxId, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [ctxId, tasks, store.nodesVersion]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Grupo (si hay) de cada elemento — botón "editar grupo" al hover en su fila
   // (26 ago 2026). Mapa único por render en vez de un `groupsContaining` por
@@ -231,9 +236,25 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
   // volver a arrastrar cualquier fila vuelve a "manual" con el nuevo orden.
   const ctxOrderOf = (n: Node): number => {
     const v = parseExtraData(n.extraData)._ctxOrder
-    return typeof v === 'number' ? v : Number.POSITIVE_INFINITY
+    // Sin orden manual guardado → ARRIBA del todo (30 sep 2026: "que por defecto
+    // aparezca arriba lo más reciente"). Antes caía al final (+∞), así que en
+    // «Tu orden» lo recién creado quedaba enterrado bajo lo ya ordenado.
+    return typeof v === 'number' ? v : Number.NEGATIVE_INFINITY
   }
-  const [elSortBy, setElSortBy] = useState<'manual' | 'title' | 'created' | 'updated'>('manual')
+  // Por defecto, fecha de creación (lo más reciente arriba). El modo elegido se
+  // recuerda entre visitas: quien ordena a mano conserva «Tu orden» al volver.
+  type ElSort = 'manual' | 'title' | 'created' | 'updated'
+  const [elSortBy, setElSortByState] = useState<ElSort>(() => {
+    const saved = localStorage.getItem('from_ctx_el_sort')
+    return saved === 'manual' || saved === 'title' || saved === 'updated' ? saved : 'created'
+  })
+  const setElSortBy = (v: ElSort) => { setElSortByState(v); localStorage.setItem('from_ctx_el_sort', v) }
+  // «Carpetas del Mac» plegado por defecto (30 sep 2026) — se recuerda si se abre.
+  const [foldersOpen, setFoldersOpenState] = useState(() => localStorage.getItem('from_ctx_folders_open') === '1')
+  const setFoldersOpen = (v: boolean) => { setFoldersOpenState(v); localStorage.setItem('from_ctx_folders_open', v ? '1' : '0') }
+  // Popover de fecha/repetición de una fila de tarea (el mismo que usaba V2TaskList).
+  const [propsNodeId, setPropsNodeId] = useState<string | null>(null)
+  const propsNode = propsNodeId ? store.getNode(propsNodeId) : null
   const [elSortMenuOpen, setElSortMenuOpen] = useState(false)
   const elementsWithGroups = useMemo(() => {
     // Un elemento que YA está dentro de uno de estos grupos no se lista suelto
@@ -281,6 +302,8 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
   // realmente aparecen en este contexto (con su recuento).
   const [elFilter, setElFilter] = useState<string>('all')
   const ELKIND_ORDER: { key: string; label: string }[] = [
+    { key: 'task',         label: t('elements.tasks', 'Tareas') },
+    { key: 'event',        label: t('elements.events', 'Eventos') },
     { key: 'document',     label: t('elements.texts', 'Textos') },
     { key: 'pdf',          label: t('elements.pdfs', 'PDFs') },
     { key: 'image',        label: t('elements.images', 'Imágenes') },
@@ -398,33 +421,32 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
           fuerza el centro cada vez que se entra al contexto, así que casi nunca se veía
           «vacía»: aparecía duplicada nada más entrar. */}
 
-      {/* Tareas del contexto — estilo Hoy. */}
+      {/* Carpetas del Mac — plegado por defecto (30 sep 2026); clic en el título lo abre. */}
       {!isGeneral && (
         <>
-          <div className="v2-section-label" style={{ padding: '18px 0 6px' }}>
+          <div
+            className="v2-section-label"
+            role="button"
+            aria-expanded={foldersOpen}
+            onClick={() => setFoldersOpen(!foldersOpen)}
+            style={{ padding: '18px 0 6px', display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer', userSelect: 'none' }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', transform: foldersOpen ? 'rotate(90deg)' : undefined, transition: 'transform .1s' }}>
+              <Icon name="chevron-right" size={12} />
+            </span>
             <span>{t('folders.title', 'Carpetas del Mac')}</span>
           </div>
-          <V2SyncedFolders contextId={ctxId} compact />
+          {foldersOpen && <V2SyncedFolders contextId={ctxId} compact />}
         </>
       )}
 
-      <div className="v2-section-label" style={{ padding: '18px 0 6px' }}>
-        <span>{t('v2.context.tasks', 'Tareas')}</span>
-      </div>
-      <V2TaskList tasks={plainTasks} />
       {/* Añadir tarea rápida cuelga la tarea del contexto — en General no hay un
-          nodo real del que colgarla, así que se omite (la lista sigue viéndose). */}
-      {ctxId !== null && <V2QuickAddTask parentId={ctxId} />}
-
-      {/* Eventos del contexto — aparte de las tareas, sin mezclar (un evento no
-          lleva checkbox, ver PlannerPanel.tsx 26 ago 2026). */}
-      {events.length > 0 && (
-        <>
-          <div className="v2-section-label" style={{ padding: '16px 0 6px' }}>
-            <span>{t('v2.context.events', 'Eventos')}</span>
-          </div>
-          <V2TaskList tasks={events} hideCheckbox />
-        </>
+          nodo real del que colgarla, así que se omite. La tarea creada aparece en
+          la lista de Elementos de debajo, como cualquier otro elemento. */}
+      {ctxId !== null && (
+        <div style={{ paddingTop: 14 }}>
+          <V2QuickAddTask parentId={ctxId} />
+        </div>
       )}
 
       {/* Elementos del contexto: documentos, archivos, audios, enlaces, AGENTES y
@@ -500,7 +522,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
             <div className="el-filterbar" style={{ marginBottom: 4 }}>
               {[{ key: 'all', label: t('elements.all', 'Todos') }, ...elKindChips].map(c => {
                 const active = elFilter === c.key
-                const n = c.key === 'all' ? elements.length : elCounts[c.key]
+                const n = c.key === 'all' ? elementsWithGroups.length : elCounts[c.key]
                 return (
                   <button key={c.key} onClick={() => setElFilter(c.key)}
                     style={{
@@ -519,6 +541,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
             const agentData = isAgentNode(n) ? getAgentData(n.id) : null
             const isSelected = selected.has(n.id)
             const isGroupRow = kind === 'group'
+            const isTaskRow = kind === 'task' || kind === 'event'
             const isExpanded = isGroupRow && expandedGroups.has(n.id)
             const members = isGroupRow ? groupMembers(n) : []
             return (
@@ -532,6 +555,11 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
                 style={{ opacity: draggedId === n.id ? 0.4 : 1, cursor: selectMode ? undefined : 'grab' }}
               >
                 <div style={{ position: 'relative' }}>
+                  {isTaskRow ? (
+                    // Fila de tarea ÚNICA de toda la app (checkbox, fecha, repetición).
+                    // Un evento va sin checkbox, como en el planificador.
+                    <TaskRow node={n} hideCheckbox={kind === 'event'} onOpenDate={x => setPropsNodeId(id => id === x.id ? null : x.id)} />
+                  ) : (
                   <V2ElementRow
                     node={n}
                     icon={icon}
@@ -546,6 +574,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
                     expanded={isExpanded}
                     onToggleExpand={() => toggleGroupExpanded(n.id)}
                   />
+                  )}
                   {/* Overlay de selección — mismo patrón que ElementsPanel: intercepta el
                       clic sin tocar V2ElementRow, el contenido de debajo sigue visible. */}
                   {selectMode && !isGroupRow && (
@@ -574,6 +603,7 @@ export default function V2ContextView({ ctxId, onSelectCtx, onOpenNode }: Props)
               </div>
             )
           })}
+          {propsNode && <TaskPropsPopover node={propsNode} allowRename allowDelete onClose={() => setPropsNodeId(null)} />}
         </>
       )}
       {/* Empty state SIEMPRE visible: un contexto con elementos ocultos (o sin

@@ -4,6 +4,18 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
+## Web v9.10.99 — 30 septiembre 2026 · Todo lo de un contexto, en una sola lista
+
+- **Tareas, eventos y elementos juntos**: en la columna derecha de un contexto ya no hay tres bloques
+  separados. Las tareas y los eventos aparecen en la lista de elementos, con su casilla y su fecha de
+  siempre, y se pueden reordenar, filtrar y seleccionar como cualquier otro elemento.
+- **Lo más reciente, arriba**: la lista se ordena por fecha de creación. Si prefieres tu propio orden,
+  elígelo una vez y Fromly lo recuerda.
+- **Las completadas ya no se esconden**: están en la misma lista, tachadas.
+- **«Carpetas del Mac» empieza plegado**: un clic en el título lo abre.
+
+---
+
 ## Web v9.10.98 · iPhone 2.26 · Mac — 30 septiembre 2026 · Notas con candado
 
 - **Protege una nota con contraseña**: pulsa el candado arriba a la derecha de cualquier nota. La
