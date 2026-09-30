@@ -2,7 +2,7 @@
 // Ficha de un TIME BLOCK (30 sep 2026): arriba enseña cuándo es (día, tramo
 // horario, repetición) y se edita con la misma ventana que tareas y eventos —
 // sin dejar de ser un time block (ni `isEvent` ni `status`).
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { createElement, act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { MemoryRouter } from 'react-router-dom'
@@ -12,10 +12,13 @@ import V2DetailView from '../v2/components/V2DetailView'
 
 ;(globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
+const roots: ReturnType<typeof createRoot>[] = []
+
 function render(nodeId: string): HTMLElement {
   const host = document.createElement('div')
   document.body.appendChild(host)
   const root = createRoot(host)
+  roots.push(root)
   act(() => { root.render(createElement(MemoryRouter, null, createElement(V2DetailView, { nodeId, onSelectCtx: () => {} }))) })
   return host
 }
@@ -29,6 +32,10 @@ function makeTimeBlock(recurrence?: string) {
 }
 
 describe('ficha de time block: cabecera editable como tarea/evento', () => {
+  // Desmontar al acabar: el menú flotante del editor lanza un temporizador que,
+  // si el árbol sigue vivo, dispara tras el test y CI lo cuenta como error.
+  afterEach(() => { act(() => { roots.splice(0).forEach(r => r.unmount()) }) })
+
   beforeEach(() => {
     store.nodes.clear()
     localStorage.clear()
