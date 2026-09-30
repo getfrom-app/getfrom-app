@@ -4,7 +4,7 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 
 ---
 
-## Web v9.10.98 · Mac — 30 septiembre 2026 · Notas con candado
+## Web v9.10.98 · iPhone 2.26 · Mac — 30 septiembre 2026 · Notas con candado
 
 - **Protege una nota con contraseña**: pulsa el candado arriba a la derecha de cualquier nota. La
   primera vez eliges tu contraseña de notas (una para todas) y te damos una clave de recuperación
@@ -12,8 +12,8 @@ Historial de versiones. Plataformas: Web · Mac · iPhone/iPad.
 - **Cifrado de extremo a extremo**: el contenido se cifra en tu dispositivo. Ni Fromly, ni su IA,
   ni el buscador pueden leerlo; al bloquear una nota se borran también sus copias antiguas en claro.
 - **Se vuelve a bloquear sola** tras 5 minutos sin tocarla, o cuando pulsas «Bloquear ahora».
-- En el iPhone, por ahora, una nota con candado se ve como «🔒 Nota con candado» y no se puede
-  editar desde allí (llega en la próxima versión, con Face ID).
+- **En el iPhone se abre con Face ID** (iPhone 2.26): pones la contraseña una vez y a partir de ahí
+  basta con la cara.
 
 ---
 
