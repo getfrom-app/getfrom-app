@@ -102,7 +102,7 @@ const TRANSLATIONS = {
     "support.faq11_q": "¿Cómo cancelo mi suscripción?",
     "support.faq11_a": "Puedes cancelar en cualquier momento desde <a href=\"account.html\">tu cuenta</a> o directamente en la app en Ajustes → Cuenta. La cancelación es inmediata y no se cobra más.",
     "support.faq12_q": "¿Cómo elimino mi cuenta?",
-    "support.faq12_a": "Envía un email a <a href=\"mailto:hello@fromly.app?subject=Solicitud%20de%20eliminaci%C3%B3n%20de%20cuenta\">hello@fromly.app</a> con el asunto \"Solicitud de eliminación de cuenta\". Eliminaremos todos los datos asociados en nuestro servidor. Tus notas locales no se ven afectadas.",
+    "support.faq12_a": "Usa el <a href=\"/support.html#contact\">formulario de contacto</a> con el asunto \"Solicitud de eliminación de cuenta\". Eliminaremos todos los datos asociados en nuestro servidor. Tus notas locales no se ven afectadas.",
 
     "support.cta_title": "¿No encuentras lo que buscas?",
     "support.cta_body":  "Escríbenos y te ayudaremos personalmente.",
@@ -145,7 +145,7 @@ const TRANSLATIONS = {
     "account.info3_q": "Pagos procesados por LemonSqueezy",
     "account.info3_a": "Los pagos se procesan de forma segura a través de LemonSqueezy. No almacenamos datos de tarjeta. Puedes gestionar tu método de pago desde el portal del cliente.",
     "account.info4_q": "¿Problemas con tu cuenta?",
-    "account.info4_a": "Escríbenos a <a href=\"mailto:hello@fromly.app\">hello@fromly.app</a> y te ayudaremos lo antes posible.",
+    "account.info4_a": "Escríbenos a través del <a href=\"/support.html#contact\">formulario de contacto</a> y te ayudaremos lo antes posible.",
 
     /* ── privacy.html ── */
     "privacy.meta_title":   "Política de Privacidad — Fromly",
@@ -258,7 +258,7 @@ const TRANSLATIONS = {
     "support.faq11_q": "How do I cancel my subscription?",
     "support.faq11_a": "You can cancel at any time from <a href=\"account.html\">your account</a> or directly in the app at Settings → Account. Cancellation is immediate and no further charges are made.",
     "support.faq12_q": "How do I delete my account?",
-    "support.faq12_a": "Send an email to <a href=\"mailto:hello@fromly.app?subject=Account%20deletion%20request\">hello@fromly.app</a> with the subject \"Account deletion request\". We'll remove all associated data from our server. Your local notes are not affected.",
+    "support.faq12_a": "Use the <a href=\"/en/support.html#contact\">contact form</a> with the subject \"Account deletion request\". We'll remove all associated data from our server. Your local notes are not affected.",
 
     "support.cta_title": "Can't find what you're looking for?",
     "support.cta_body":  "Write to us and we'll help you personally.",
@@ -301,7 +301,7 @@ const TRANSLATIONS = {
     "account.info3_q": "Payments processed by LemonSqueezy",
     "account.info3_a": "Payments are processed securely through LemonSqueezy. We don't store card data. You can manage your payment method from the customer portal.",
     "account.info4_q": "Issues with your account?",
-    "account.info4_a": "Write to us at <a href=\"mailto:hello@fromly.app\">hello@fromly.app</a> and we'll help you as soon as possible.",
+    "account.info4_a": "Write to us through the <a href=\"/support.html#contact\">contact form</a> and we'll help you as soon as possible.",
 
     /* ── privacy.html ── */
     "privacy.meta_title":   "Privacy Policy — Fromly",
